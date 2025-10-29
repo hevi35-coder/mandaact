@@ -1,12 +1,24 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { useAuthStore } from '@/store/authStore'
+import SignUpPage from '@/pages/SignUpPage'
 
-// Pages will be created in Phase 1 implementation
+// HomePage component
 function HomePage() {
+  const user = useAuthStore((state) => state.user)
+  const loading = useAuthStore((state) => state.loading)
+
+  if (loading) {
+    return (
+      <div className="container mx-auto flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -23,59 +35,55 @@ function HomePage() {
           </div>
         </div>
 
-        {/* UI Components Demo */}
+        {/* Auth Status */}
         <Card>
           <CardHeader>
-            <CardTitle>shadcn/ui Components Demo</CardTitle>
+            <CardTitle>인증 상태</CardTitle>
             <CardDescription>
-              Installed components: Button, Input, Card, Label, Form
+              {user ? `로그인됨: ${user.email}` : '로그인되지 않음'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Buttons */}
-            <div className="space-y-2">
-              <Label>Buttons</Label>
-              <div className="flex gap-2 flex-wrap">
-                <Button>Default</Button>
-                <Button variant="secondary">Secondary</Button>
-                <Button variant="outline">Outline</Button>
-                <Button variant="ghost">Ghost</Button>
-                <Button variant="destructive">Destructive</Button>
+          <CardContent className="space-y-4">
+            {!user ? (
+              <div className="flex gap-2">
+                <Link to="/signup" className="flex-1">
+                  <Button className="w-full">회원가입</Button>
+                </Link>
+                <Link to="/login" className="flex-1">
+                  <Button variant="outline" className="w-full">로그인</Button>
+                </Link>
               </div>
-            </div>
-
-            {/* Inputs */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Input</Label>
-              <Input id="email" type="email" placeholder="Enter your email" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password Input</Label>
-              <Input id="password" type="password" placeholder="Enter password" />
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  환영합니다! 만다라트를 만들어보세요.
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    useAuthStore.getState().signOut()
+                  }}
+                >
+                  로그아웃
+                </Button>
+              </div>
+            )}
           </CardContent>
-          <CardFooter className="text-sm text-muted-foreground">
-            🚀 Ready for Phase 1 implementation: Authentication System
-          </CardFooter>
         </Card>
 
-        {/* Next Steps */}
+        {/* Phase 1 Progress */}
         <Card>
           <CardHeader>
-            <CardTitle>Next Steps</CardTitle>
+            <CardTitle>Phase 1 개발 진행 상황</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">Phase 1 Development Roadmap:</h3>
-              <ol className="list-decimal list-inside space-y-1 text-sm">
-                <li>Authentication System (회원가입/로그인)</li>
-                <li>Mandalart Direct Input (9x9 그리드 템플릿)</li>
-                <li>Today View & Checklist (일일 실천 체크)</li>
-                <li>Image Upload & OCR (이미지 인식)</li>
-              </ol>
-            </div>
-            <Button className="w-full">Start Phase 1: Authentication</Button>
+          <CardContent>
+            <ol className="list-decimal list-inside space-y-1 text-sm">
+              <li className="text-green-600 font-medium">✅ 회원가입 기능 (테스트 중)</li>
+              <li className="text-muted-foreground">로그인 기능</li>
+              <li className="text-muted-foreground">Protected Routes</li>
+              <li className="text-muted-foreground">만다라트 직접 입력</li>
+            </ol>
           </CardContent>
         </Card>
       </div>
@@ -93,11 +101,18 @@ const queryClient = new QueryClient({
 })
 
 function App() {
+  const initialize = useAuthStore((state) => state.initialize)
+
+  useEffect(() => {
+    initialize()
+  }, [initialize])
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/signup" element={<SignUpPage />} />
           {/* More routes will be added in Phase 1 */}
         </Routes>
       </Router>
