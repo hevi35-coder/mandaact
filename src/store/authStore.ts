@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         // If identities array is empty, this is likely a duplicate email
         if (data.user.identities && data.user.identities.length === 0) {
-          throw new Error('이미 가입된 이메일입니다. 이메일 인증을 완료해주세요')
+          throw new Error('이미 가입된 이메일입니다')
         }
       }
 
