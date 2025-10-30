@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -18,9 +18,13 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const signIn = useAuthStore((state) => state.signIn)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Get the page user was trying to access
+  const from = (location.state as { from?: string })?.from || '/'
 
   const {
     register,
@@ -43,10 +47,10 @@ export default function LoginPage() {
       setError(error.message || '로그인 중 오류가 발생했습니다')
       setIsLoading(false)
     } else {
-      console.log('Login successful')
+      console.log('Login successful, redirecting to:', from)
       setIsLoading(false)
-      // Redirect to home page
-      navigate('/')
+      // Redirect to the page user was trying to access, or home
+      navigate(from, { replace: true })
     }
   }
 

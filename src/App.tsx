@@ -4,8 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import SignUpPage from '@/pages/SignUpPage'
 import LoginPage from '@/pages/LoginPage'
+import DashboardPage from '@/pages/DashboardPage'
 
 // HomePage component
 function HomePage() {
@@ -59,15 +61,20 @@ function HomePage() {
                 <p className="text-sm text-muted-foreground">
                   환영합니다! 만다라트를 만들어보세요.
                 </p>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    useAuthStore.getState().signOut()
-                  }}
-                >
-                  로그아웃
-                </Button>
+                <div className="flex gap-2">
+                  <Link to="/dashboard" className="flex-1">
+                    <Button className="w-full">대시보드</Button>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      useAuthStore.getState().signOut()
+                    }}
+                  >
+                    로그아웃
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
@@ -81,8 +88,8 @@ function HomePage() {
           <CardContent>
             <ol className="list-decimal list-inside space-y-1 text-sm">
               <li className="text-green-600 font-medium">✅ 회원가입 기능</li>
-              <li className="text-green-600 font-medium">✅ 로그인 기능 (테스트 중)</li>
-              <li className="text-muted-foreground">Protected Routes</li>
+              <li className="text-green-600 font-medium">✅ 로그인 기능</li>
+              <li className="text-green-600 font-medium">✅ Protected Routes (테스트 중)</li>
               <li className="text-muted-foreground">만다라트 직접 입력</li>
             </ol>
           </CardContent>
@@ -115,6 +122,14 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
           {/* More routes will be added in Phase 1 */}
         </Routes>
       </Router>
