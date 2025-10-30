@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import SignUpPage from '@/pages/SignUpPage'
+import LoginPage from '@/pages/LoginPage'
 
 // HomePage component
 function HomePage() {
@@ -79,8 +80,8 @@ function HomePage() {
           </CardHeader>
           <CardContent>
             <ol className="list-decimal list-inside space-y-1 text-sm">
-              <li className="text-green-600 font-medium">✅ 회원가입 기능 (테스트 중)</li>
-              <li className="text-muted-foreground">로그인 기능</li>
+              <li className="text-green-600 font-medium">✅ 회원가입 기능</li>
+              <li className="text-green-600 font-medium">✅ 로그인 기능 (테스트 중)</li>
               <li className="text-muted-foreground">Protected Routes</li>
               <li className="text-muted-foreground">만다라트 직접 입력</li>
             </ol>
@@ -113,6 +114,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/login" element={<LoginPage />} />
           {/* More routes will be added in Phase 1 */}
         </Routes>
       </Router>

@@ -83,12 +83,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Signin error from Supabase:', error)
+
+        // Translate common Supabase errors to Korean
+        let message = error.message
+
+        if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid credentials')) {
+          message = '이메일 또는 비밀번호가 올바르지 않습니다'
+        } else if (error.message.includes('Email not confirmed')) {
+          message = '이메일 인증이 완료되지 않았습니다. 이메일을 확인해주세요'
+        } else if (error.message.includes('invalid email')) {
+          message = '유효하지 않은 이메일 형식입니다'
+        } else if (error.message.includes('rate limit')) {
+          message = '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요'
+        }
+
+        throw new Error(message)
+      }
 
       set({ session: data.session, user: data.user })
       return { error: null }
     } catch (error) {
-      console.error('Signin error:', error)
+      console.error('Signin error (final catch):', error)
       return { error: error as Error }
     }
   },
