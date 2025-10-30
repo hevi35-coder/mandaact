@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -11,8 +11,14 @@ import DashboardPage from '@/pages/DashboardPage'
 
 // HomePage component
 function HomePage() {
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const loading = useAuthStore((state) => state.loading)
+
+  const handleLogout = async () => {
+    await useAuthStore.getState().signOut()
+    navigate('/', { replace: true })
+  }
 
   if (loading) {
     return (
@@ -68,9 +74,7 @@ function HomePage() {
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => {
-                      useAuthStore.getState().signOut()
-                    }}
+                    onClick={handleLogout}
                   >
                     로그아웃
                   </Button>

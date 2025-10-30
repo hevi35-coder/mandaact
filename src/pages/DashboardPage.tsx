@@ -1,11 +1,17 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const signOut = useAuthStore((state) => state.signOut)
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/', { replace: true })
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -18,7 +24,7 @@ export default function DashboardPage() {
               환영합니다, {user?.email}님!
             </p>
           </div>
-          <Button variant="outline" onClick={signOut}>
+          <Button variant="outline" onClick={handleLogout}>
             로그아웃
           </Button>
         </div>
