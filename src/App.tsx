@@ -10,6 +10,7 @@ import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import MandalartCreatePage from '@/pages/MandalartCreatePage'
 import MandalartListPage from '@/pages/MandalartListPage'
+import MandalartDetailPage from '@/pages/MandalartDetailPage'
 
 // HomePage component
 function HomePage() {
@@ -149,6 +150,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MandalartListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mandalart/:id"
+            element={
+              <ProtectedRoute>
+                <MandalartDetailPage />
               </ProtectedRoute>
             }
           />
