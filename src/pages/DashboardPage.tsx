@@ -61,8 +61,13 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Link to="/mandalart/create">
+              <Link to="/today">
                 <Button className="w-full" size="lg">
+                  ✅ 오늘의 실천
+                </Button>
+              </Link>
+              <Link to="/mandalart/create">
+                <Button className="w-full" variant="outline" size="lg">
                   + 새 만다라트 만들기
                 </Button>
               </Link>
@@ -79,12 +84,12 @@ export default function DashboardPage() {
               </p>
               <div className="grid gap-2">
                 <div className="p-3 border rounded-lg opacity-50">
-                  <p className="font-medium">✅ 일일 체크리스트</p>
-                  <p className="text-sm text-muted-foreground">오늘의 실천 항목 체크</p>
-                </div>
-                <div className="p-3 border rounded-lg opacity-50">
                   <p className="font-medium">📊 진행 상황 대시보드</p>
                   <p className="text-sm text-muted-foreground">실천율과 통계 확인</p>
+                </div>
+                <div className="p-3 border rounded-lg opacity-50">
+                  <p className="font-medium">🔔 일일 리마인더</p>
+                  <p className="text-sm text-muted-foreground">알림으로 실천 독려</p>
                 </div>
               </div>
             </div>

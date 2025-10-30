@@ -11,6 +11,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import MandalartCreatePage from '@/pages/MandalartCreatePage'
 import MandalartListPage from '@/pages/MandalartListPage'
 import MandalartDetailPage from '@/pages/MandalartDetailPage'
+import TodayChecklistPage from '@/pages/TodayChecklistPage'
 
 // HomePage component
 function HomePage() {
@@ -158,6 +159,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MandalartDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/today"
+            element={
+              <ProtectedRoute>
+                <TodayChecklistPage />
               </ProtectedRoute>
             }
           />

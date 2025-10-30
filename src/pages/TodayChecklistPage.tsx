@@ -1,0 +1,302 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { useAuthStore } from '@/store/authStore'
+import { supabase } from '@/lib/supabase'
+import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
+
+interface ActionWithContext extends Action {
+  sub_goal: SubGoal & {
+    mandalart: Mandalart
+  }
+  is_checked: boolean
+  check_id?: string
+}
+
+export default function TodayChecklistPage() {
+  const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
+
+  const [actions, setActions] = useState<ActionWithContext[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    fetchTodayActions()
+  }, [user, navigate])
+
+  const fetchTodayActions = async () => {
+    if (!user) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Fetch all actions with sub_goals and mandalarts
+      const { data: actionsData, error: actionsError } = await supabase
+        .from('actions')
+        .select(`
+          *,
+          sub_goal:sub_goals (
+            *,
+            mandalart:mandalarts (*)
+          )
+        `)
+        .eq('sub_goal.mandalart.user_id', user.id)
+
+      if (actionsError) throw actionsError
+
+      // Fetch today's check history
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+
+      const { data: checksData, error: checksError } = await supabase
+        .from('check_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('checked_at', today.toISOString())
+        .lt('checked_at', tomorrow.toISOString())
+
+      if (checksError) throw checksError
+
+      // Create a map of checked action IDs
+      const checkedActionsMap = new Map<string, string>()
+      checksData?.forEach((check: CheckHistory) => {
+        checkedActionsMap.set(check.action_id, check.id)
+      })
+
+      // Combine data
+      const actionsWithContext: ActionWithContext[] = (actionsData || [])
+        .filter((action: any) => action.sub_goal?.mandalart)
+        .map((action: any) => ({
+          ...action,
+          sub_goal: action.sub_goal,
+          is_checked: checkedActionsMap.has(action.id),
+          check_id: checkedActionsMap.get(action.id)
+        }))
+
+      setActions(actionsWithContext)
+    } catch (err) {
+      console.error('Fetch error:', err)
+      setError(err instanceof Error ? err.message : '데이터를 불러오는 중 오류가 발생했습니다')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleToggleCheck = async (action: ActionWithContext) => {
+    if (!user) return
+    if (checkingActions.has(action.id)) return // Prevent double-click
+
+    setCheckingActions(prev => new Set(prev).add(action.id))
+
+    try {
+      if (action.is_checked && action.check_id) {
+        // Uncheck: Delete from check_history
+        const { error: deleteError } = await supabase
+          .from('check_history')
+          .delete()
+          .eq('id', action.check_id)
+
+        if (deleteError) throw deleteError
+
+        // Optimistic update
+        setActions(prevActions =>
+          prevActions.map(a =>
+            a.id === action.id
+              ? { ...a, is_checked: false, check_id: undefined }
+              : a
+          )
+        )
+      } else {
+        // Check: Insert into check_history
+        const { data: checkData, error: insertError } = await supabase
+          .from('check_history')
+          .insert({
+            action_id: action.id,
+            user_id: user.id,
+            checked_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (insertError) throw insertError
+
+        // Optimistic update
+        setActions(prevActions =>
+          prevActions.map(a =>
+            a.id === action.id
+              ? { ...a, is_checked: true, check_id: checkData.id }
+              : a
+          )
+        )
+      }
+    } catch (err) {
+      console.error('Check toggle error:', err)
+      alert('체크 상태 변경 중 오류가 발생했습니다')
+      // Rollback by refetching
+      fetchTodayActions()
+    } finally {
+      setCheckingActions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(action.id)
+        return newSet
+      })
+    }
+  }
+
+  const checkedCount = actions.filter(a => a.is_checked).length
+  const totalCount = actions.length
+  const progressPercentage = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <p className="text-muted-foreground">로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+            {error}
+          </div>
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            대시보드로 돌아가기
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">오늘의 실천</h1>
+            <p className="text-muted-foreground mt-1">
+              {new Date().toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+              })}
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            대시보드로
+          </Button>
+        </div>
+
+        {/* Progress Card */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">오늘의 진행률</span>
+                <span className="text-muted-foreground">
+                  {checkedCount} / {totalCount} 완료
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-primary h-3 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+              <p className="text-center text-2xl font-bold text-primary">
+                {progressPercentage}%
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Empty State */}
+        {actions.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center space-y-4">
+              <div className="text-6xl">📝</div>
+              <div>
+                <p className="text-lg font-medium">실천 항목이 없습니다</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  먼저 만다라트를 만들어보세요
+                </p>
+              </div>
+              <Button onClick={() => navigate('/mandalart/create')}>
+                만다라트 만들기
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Actions List */}
+        {actions.length > 0 && (
+          <div className="space-y-4">
+            {actions.map((action) => (
+              <Card
+                key={action.id}
+                className={`transition-all ${
+                  action.is_checked ? 'bg-gray-50 border-gray-300' : 'hover:shadow-md'
+                }`}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={action.is_checked}
+                      onChange={() => handleToggleCheck(action)}
+                      disabled={checkingActions.has(action.id)}
+                      className="mt-1 h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <div className="flex-1">
+                      <CardTitle
+                        className={`text-base ${
+                          action.is_checked
+                            ? 'line-through text-gray-500'
+                            : 'text-gray-900'
+                        }`}
+                      >
+                        {action.title}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                        <span className="font-medium">
+                          {action.sub_goal.mandalart.title}
+                        </span>
+                        <span>›</span>
+                        <span>{action.sub_goal.title}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Back Button */}
+        <div className="pt-4">
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            대시보드로 돌아가기
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
