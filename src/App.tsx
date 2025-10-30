@@ -9,6 +9,7 @@ import SignUpPage from '@/pages/SignUpPage'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import MandalartCreatePage from '@/pages/MandalartCreatePage'
+import MandalartListPage from '@/pages/MandalartListPage'
 
 // HomePage component
 function HomePage() {
@@ -140,6 +141,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MandalartCreatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mandalart/list"
+            element={
+              <ProtectedRoute>
+                <MandalartListPage />
               </ProtectedRoute>
             }
           />

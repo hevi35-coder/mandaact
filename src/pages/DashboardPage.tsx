@@ -60,21 +60,24 @@ export default function DashboardPage() {
             <CardTitle>만다라트 관리</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Link to="/mandalart/create">
-              <Button className="w-full" size="lg">
-                + 새 만다라트 만들기
-              </Button>
-            </Link>
+            <div className="grid gap-2">
+              <Link to="/mandalart/create">
+                <Button className="w-full" size="lg">
+                  + 새 만다라트 만들기
+                </Button>
+              </Link>
+              <Link to="/mandalart/list">
+                <Button className="w-full" variant="outline" size="lg">
+                  📋 내 만다라트 목록
+                </Button>
+              </Link>
+            </div>
 
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-3">
                 앞으로 구현될 기능들:
               </p>
               <div className="grid gap-2">
-                <div className="p-3 border rounded-lg opacity-50">
-                  <p className="font-medium">📋 만다라트 목록</p>
-                  <p className="text-sm text-muted-foreground">저장된 만다라트 보기</p>
-                </div>
                 <div className="p-3 border rounded-lg opacity-50">
                   <p className="font-medium">✅ 일일 체크리스트</p>
                   <p className="text-sm text-muted-foreground">오늘의 실천 항목 체크</p>
