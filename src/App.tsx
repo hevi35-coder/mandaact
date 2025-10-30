@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import SignUpPage from '@/pages/SignUpPage'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
+import MandalartCreatePage from '@/pages/MandalartCreatePage'
 
 // HomePage component
 function HomePage() {
@@ -93,8 +94,8 @@ function HomePage() {
             <ol className="list-decimal list-inside space-y-1 text-sm">
               <li className="text-green-600 font-medium">✅ 회원가입 기능</li>
               <li className="text-green-600 font-medium">✅ 로그인 기능</li>
-              <li className="text-green-600 font-medium">✅ Protected Routes (테스트 중)</li>
-              <li className="text-muted-foreground">만다라트 직접 입력</li>
+              <li className="text-green-600 font-medium">✅ Protected Routes</li>
+              <li className="text-green-600 font-medium">✅ 만다라트 직접 입력 (테스트 중)</li>
             </ol>
           </CardContent>
         </Card>
@@ -131,6 +132,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mandalart/create"
+            element={
+              <ProtectedRoute>
+                <MandalartCreatePage />
               </ProtectedRoute>
             }
           />
