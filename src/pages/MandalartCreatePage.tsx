@@ -6,10 +6,17 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
+import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
+import { getActionTypeLabel } from '@/lib/actionTypes'
+
+interface ActionData {
+  title: string
+  typeData?: ActionTypeData
+}
 
 interface SubGoalData {
   title: string
-  actions: string[] // 8 actions per sub-goal
+  actions: ActionData[] // 8 actions per sub-goal
 }
 
 export default function MandalartCreatePage() {
@@ -21,12 +28,16 @@ export default function MandalartCreatePage() {
   const [subGoals, setSubGoals] = useState<SubGoalData[]>(
     Array(8).fill(null).map(() => ({
       title: '',
-      actions: Array(8).fill('')
+      actions: Array(8).fill(null).map(() => ({ title: '' }))
     }))
   )
   const [expandedSubGoal, setExpandedSubGoal] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Action type selector state
+  const [typeSelectorOpen, setTypeSelectorOpen] = useState(false)
+  const [selectedAction, setSelectedAction] = useState<{ sgIndex: number; actionIndex: number } | null>(null)
 
   const updateSubGoalTitle = (index: number, value: string) => {
     const newSubGoals = [...subGoals]
@@ -36,7 +47,20 @@ export default function MandalartCreatePage() {
 
   const updateAction = (subGoalIndex: number, actionIndex: number, value: string) => {
     const newSubGoals = [...subGoals]
-    newSubGoals[subGoalIndex].actions[actionIndex] = value
+    newSubGoals[subGoalIndex].actions[actionIndex].title = value
+    setSubGoals(newSubGoals)
+  }
+
+  const openTypeSelector = (sgIndex: number, actionIndex: number) => {
+    setSelectedAction({ sgIndex, actionIndex })
+    setTypeSelectorOpen(true)
+  }
+
+  const handleTypeSave = (typeData: ActionTypeData) => {
+    if (!selectedAction) return
+
+    const newSubGoals = [...subGoals]
+    newSubGoals[selectedAction.sgIndex].actions[selectedAction.actionIndex].typeData = typeData
     setSubGoals(newSubGoals)
   }
 
@@ -100,10 +124,20 @@ export default function MandalartCreatePage() {
         if (!originalSubGoal) return []
 
         return originalSubGoal.actions
-          .map((actionTitle, actionIndex) => ({
+          .map((action, actionIndex) => ({
             sub_goal_id: sg.id,
             position: actionIndex + 1,
-            title: actionTitle.trim()
+            title: action.title.trim(),
+            // Type data
+            type: action.typeData?.type || 'routine',
+            routine_frequency: action.typeData?.routine_frequency,
+            routine_weekdays: action.typeData?.routine_weekdays,
+            routine_count_per_period: action.typeData?.routine_count_per_period,
+            mission_completion_type: action.typeData?.mission_completion_type,
+            mission_period_cycle: action.typeData?.mission_period_cycle,
+            mission_current_period_start: action.typeData?.mission_current_period_start,
+            mission_current_period_end: action.typeData?.mission_current_period_end,
+            ai_suggestion: action.typeData?.ai_suggestion
           }))
           .filter(action => action.title)
       })
@@ -217,12 +251,27 @@ export default function MandalartCreatePage() {
                       <div key={actionIndex} className="flex items-center gap-2">
                         <Label className="w-16 text-xs">항목 {actionIndex + 1}</Label>
                         <Input
-                          size={30}
                           placeholder={`실천 항목 ${actionIndex + 1}`}
-                          value={action}
+                          value={action.title}
                           onChange={(e) => updateAction(sgIndex, actionIndex, e.target.value)}
                           disabled={isLoading}
+                          className="flex-1"
                         />
+                        {action.title.trim() && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openTypeSelector(sgIndex, actionIndex)}
+                              disabled={isLoading}
+                            >
+                              {action.typeData
+                                ? getActionTypeLabel(action.typeData.type)
+                                : '타입 설정'}
+                            </Button>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -251,6 +300,21 @@ export default function MandalartCreatePage() {
           </Button>
         </div>
       </div>
+
+      {/* Action Type Selector Dialog */}
+      {selectedAction && (
+        <ActionTypeSelector
+          open={typeSelectorOpen}
+          onOpenChange={setTypeSelectorOpen}
+          actionTitle={
+            subGoals[selectedAction.sgIndex]?.actions[selectedAction.actionIndex]?.title || ''
+          }
+          initialData={
+            subGoals[selectedAction.sgIndex]?.actions[selectedAction.actionIndex]?.typeData
+          }
+          onSave={handleTypeSave}
+        />
+      )}
     </div>
   )
 }

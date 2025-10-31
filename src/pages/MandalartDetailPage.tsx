@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Mandalart, SubGoal, Action } from '@/types'
+import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
+import { getActionTypeLabel } from '@/lib/actionTypes'
 
 interface MandalartWithDetails extends Mandalart {
   sub_goals: (SubGoal & { actions: Action[] })[]
@@ -19,6 +21,10 @@ export default function MandalartDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedSubGoal, setSelectedSubGoal] = useState<number | null>(null)
+
+  // Action type editor state
+  const [typeSelectorOpen, setTypeSelectorOpen] = useState(false)
+  const [selectedAction, setSelectedAction] = useState<Action | null>(null)
 
   useEffect(() => {
     if (!user) {
@@ -87,6 +93,41 @@ export default function MandalartDetailPage() {
 
   const getSubGoalByPosition = (position: number) => {
     return mandalart?.sub_goals.find(sg => sg.position === position)
+  }
+
+  const openTypeEditor = (action: Action, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent sub-goal selection
+    setSelectedAction(action)
+    setTypeSelectorOpen(true)
+  }
+
+  const handleTypeSave = async (typeData: ActionTypeData) => {
+    if (!selectedAction) return
+
+    try {
+      const { error: updateError } = await supabase
+        .from('actions')
+        .update({
+          type: typeData.type,
+          routine_frequency: typeData.routine_frequency,
+          routine_weekdays: typeData.routine_weekdays,
+          routine_count_per_period: typeData.routine_count_per_period,
+          mission_completion_type: typeData.mission_completion_type,
+          mission_period_cycle: typeData.mission_period_cycle,
+          mission_current_period_start: typeData.mission_current_period_start,
+          mission_current_period_end: typeData.mission_current_period_end,
+          ai_suggestion: typeData.ai_suggestion
+        })
+        .eq('id', selectedAction.id)
+
+      if (updateError) throw updateError
+
+      // Refresh mandalart data
+      await fetchMandalart()
+    } catch (err) {
+      console.error('Update error:', err)
+      setError(err instanceof Error ? err.message : '타입 업데이트 중 오류가 발생했습니다')
+    }
   }
 
   // Grid position mapping for 9x9 layout
@@ -209,8 +250,19 @@ export default function MandalartDetailPage() {
                             <p className="text-xs font-medium text-muted-foreground">실천 항목:</p>
                             {subGoal.actions.length > 0 ? (
                               subGoal.actions.map((action, idx) => (
-                                <div key={action.id} className="text-xs p-1 bg-white rounded">
-                                  {idx + 1}. {action.title}
+                                <div
+                                  key={action.id}
+                                  className="text-xs p-2 bg-white rounded flex items-center justify-between gap-2 hover:bg-gray-50 group"
+                                >
+                                  <span className="flex-1">
+                                    {idx + 1}. {action.title}
+                                  </span>
+                                  <button
+                                    onClick={(e) => openTypeEditor(action, e)}
+                                    className="text-xs px-2 py-0.5 rounded border border-gray-300 hover:border-primary hover:bg-primary/5 transition-colors"
+                                  >
+                                    {getActionTypeLabel(action.type)}
+                                  </button>
                                 </div>
                               ))
                             ) : (
@@ -242,10 +294,32 @@ export default function MandalartDetailPage() {
               <li>중앙의 핵심 목표를 중심으로 8개의 세부 목표가 배치되어 있습니다</li>
               <li>세부 목표를 클릭하면 해당 목표의 실천 항목을 볼 수 있습니다</li>
               <li>각 세부 목표는 최대 8개의 실천 항목을 가질 수 있습니다</li>
+              <li>실천 항목 옆의 타입 배지를 클릭하면 타입 설정을 변경할 수 있습니다</li>
             </ul>
           </CardContent>
         </Card>
       </div>
+
+      {/* Action Type Selector Dialog */}
+      {selectedAction && (
+        <ActionTypeSelector
+          open={typeSelectorOpen}
+          onOpenChange={setTypeSelectorOpen}
+          actionTitle={selectedAction.title}
+          initialData={{
+            type: selectedAction.type,
+            routine_frequency: selectedAction.routine_frequency,
+            routine_weekdays: selectedAction.routine_weekdays,
+            routine_count_per_period: selectedAction.routine_count_per_period,
+            mission_completion_type: selectedAction.mission_completion_type,
+            mission_period_cycle: selectedAction.mission_period_cycle,
+            mission_current_period_start: selectedAction.mission_current_period_start,
+            mission_current_period_end: selectedAction.mission_current_period_end,
+            ai_suggestion: selectedAction.ai_suggestion
+          }}
+          onSave={handleTypeSave}
+        />
+      )}
     </div>
   )
 }

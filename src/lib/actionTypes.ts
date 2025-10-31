@@ -212,25 +212,27 @@ export function getInitialPeriod(cycle: MissionPeriodCycle): { start: Date; end:
     case 'daily':
       end.setHours(23, 59, 59, 999)
       break
-    case 'weekly':
+    case 'weekly': {
       // End of this week (Saturday)
       const dayOfWeek = start.getDay()
       end.setDate(end.getDate() + (6 - dayOfWeek))
       end.setHours(23, 59, 59, 999)
       break
+    }
     case 'monthly':
       // End of this month
       end.setMonth(end.getMonth() + 1)
       end.setDate(0) // Last day of current month
       end.setHours(23, 59, 59, 999)
       break
-    case 'quarterly':
+    case 'quarterly': {
       // End of this quarter
       const currentQuarter = Math.floor(start.getMonth() / 3)
       end.setMonth((currentQuarter + 1) * 3)
       end.setDate(0)
       end.setHours(23, 59, 59, 999)
       break
+    }
     case 'yearly':
       // End of this year
       end.setMonth(11)
@@ -286,7 +288,7 @@ export function shouldShowToday(action: {
       return true
 
     case 'reference':
-      return false // Hidden by default
+      return true // Show in list (but checkbox disabled and excluded from progress)
 
     default:
       return true

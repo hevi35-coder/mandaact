@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
+import { ActionType, shouldShowToday, getActionTypeLabel } from '@/lib/actionTypes'
+import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 
 interface ActionWithContext extends Action {
   sub_goal: SubGoal & {
@@ -22,6 +24,13 @@ export default function TodayChecklistPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
+
+  // Type filter state - multiple selection using Set
+  const [activeFilters, setActiveFilters] = useState<Set<ActionType>>(new Set())
+
+  // Action type editor state
+  const [typeSelectorOpen, setTypeSelectorOpen] = useState(false)
+  const [selectedAction, setSelectedAction] = useState<ActionWithContext | null>(null)
 
   useEffect(() => {
     if (!user) {
@@ -75,8 +84,10 @@ export default function TodayChecklistPage() {
 
       // Combine data
       const actionsWithContext: ActionWithContext[] = (actionsData || [])
-        .filter((action: any) => action.sub_goal?.mandalart)
-        .map((action: any) => ({
+        .filter((action): action is typeof action & { sub_goal: { mandalart: Mandalart } } =>
+          action.sub_goal?.mandalart != null
+        )
+        .map((action) => ({
           ...action,
           sub_goal: action.sub_goal,
           is_checked: checkedActionsMap.has(action.id),
@@ -153,8 +164,76 @@ export default function TodayChecklistPage() {
     }
   }
 
-  const checkedCount = actions.filter(a => a.is_checked).length
-  const totalCount = actions.length
+  const openTypeEditor = (action: ActionWithContext, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedAction(action)
+    setTypeSelectorOpen(true)
+  }
+
+  const handleTypeSave = async (typeData: ActionTypeData) => {
+    if (!selectedAction) return
+
+    try {
+      const { error: updateError } = await supabase
+        .from('actions')
+        .update({
+          type: typeData.type,
+          routine_frequency: typeData.routine_frequency,
+          routine_weekdays: typeData.routine_weekdays,
+          routine_count_per_period: typeData.routine_count_per_period,
+          mission_completion_type: typeData.mission_completion_type,
+          mission_period_cycle: typeData.mission_period_cycle,
+          mission_current_period_start: typeData.mission_current_period_start,
+          mission_current_period_end: typeData.mission_current_period_end,
+          ai_suggestion: typeData.ai_suggestion
+        })
+        .eq('id', selectedAction.id)
+
+      if (updateError) throw updateError
+
+      // Refresh actions list
+      await fetchTodayActions()
+    } catch (err) {
+      console.error('Update error:', err)
+      alert('타입 업데이트 중 오류가 발생했습니다')
+    }
+  }
+
+  // Filter toggle functions
+  const toggleFilter = (type: ActionType) => {
+    setActiveFilters(prev => {
+      const newFilters = new Set(prev)
+      if (newFilters.has(type)) {
+        newFilters.delete(type) // Re-click: deactivate
+      } else {
+        newFilters.add(type) // First click: activate
+      }
+      return newFilters
+    })
+  }
+
+  const clearAllFilters = () => {
+    setActiveFilters(new Set())
+  }
+
+  // Filter actions based on type and shouldShowToday logic
+  const filteredActions = actions.filter((action) => {
+    // Apply shouldShowToday logic
+    const shouldShow = shouldShowToday(action)
+    if (!shouldShow) return false
+
+    // Apply type filters (multiple selection)
+    // If no filters selected, show all types
+    if (activeFilters.size === 0) return true
+
+    // Show only if action type is in active filters
+    return activeFilters.has(action.type)
+  })
+
+  // Calculate progress (exclude reference actions)
+  const nonReferenceActions = filteredActions.filter(a => a.type !== 'reference')
+  const checkedCount = nonReferenceActions.filter(a => a.is_checked).length
+  const totalCount = nonReferenceActions.length
   const progressPercentage = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0
 
   if (isLoading) {
@@ -205,6 +284,50 @@ export default function TodayChecklistPage() {
           </Button>
         </div>
 
+        {/* Type Filter */}
+        {actions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">타입 필터</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={activeFilters.size === 0 ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={clearAllFilters}
+                >
+                  전체
+                </Button>
+                <Button
+                  variant={activeFilters.has('routine') ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => toggleFilter('routine')}
+                >
+                  {getActionTypeLabel('routine')}
+                </Button>
+                <Button
+                  variant={activeFilters.has('mission') ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => toggleFilter('mission')}
+                >
+                  {getActionTypeLabel('mission')}
+                </Button>
+                <Button
+                  variant={activeFilters.has('reference') ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => toggleFilter('reference')}
+                >
+                  {getActionTypeLabel('reference')}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                💡 참고 항목은 체크할 수 없으며, 진행률에 포함되지 않습니다
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Progress Card */}
         <Card>
           <CardContent className="pt-6">
@@ -246,14 +369,33 @@ export default function TodayChecklistPage() {
           </Card>
         )}
 
+        {/* Filtered Empty State */}
+        {actions.length > 0 && filteredActions.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center space-y-4">
+              <div className="text-4xl">🔍</div>
+              <div>
+                <p className="text-lg font-medium">필터에 맞는 항목이 없습니다</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  다른 타입 필터를 선택해보세요
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Actions List */}
-        {actions.length > 0 && (
+        {filteredActions.length > 0 && (
           <div className="space-y-4">
-            {actions.map((action) => (
+            {filteredActions.map((action) => (
               <Card
                 key={action.id}
                 className={`transition-all ${
-                  action.is_checked ? 'bg-gray-50 border-gray-300' : 'hover:shadow-md'
+                  action.is_checked
+                    ? 'bg-gray-50 border-gray-300'
+                    : action.type === 'reference'
+                    ? 'bg-gray-50/50 border-gray-200'
+                    : 'hover:shadow-md'
                 }`}
               >
                 <CardHeader className="pb-3">
@@ -262,19 +404,31 @@ export default function TodayChecklistPage() {
                       type="checkbox"
                       checked={action.is_checked}
                       onChange={() => handleToggleCheck(action)}
-                      disabled={checkingActions.has(action.id)}
-                      className="mt-1 h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:cursor-not-allowed"
+                      disabled={checkingActions.has(action.id) || action.type === 'reference'}
+                      className={`mt-1 h-5 w-5 rounded border-gray-300 text-primary ${
+                        action.type === 'reference'
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'cursor-pointer focus:ring-primary'
+                      } disabled:cursor-not-allowed`}
                     />
                     <div className="flex-1">
-                      <CardTitle
-                        className={`text-base ${
-                          action.is_checked
-                            ? 'line-through text-gray-500'
-                            : 'text-gray-900'
-                        }`}
-                      >
-                        {action.title}
-                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle
+                          className={`text-base flex-1 ${
+                            action.is_checked
+                              ? 'line-through text-gray-500'
+                              : 'text-gray-900'
+                          }`}
+                        >
+                          {action.title}
+                        </CardTitle>
+                        <button
+                          onClick={(e) => openTypeEditor(action, e)}
+                          className="text-xs px-2 py-0.5 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                        >
+                          {getActionTypeLabel(action.type)}
+                        </button>
+                      </div>
                       <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                         <span className="font-medium">
                           {action.sub_goal.mandalart.title}
@@ -297,6 +451,27 @@ export default function TodayChecklistPage() {
           </Button>
         </div>
       </div>
+
+      {/* Action Type Selector Dialog */}
+      {selectedAction && (
+        <ActionTypeSelector
+          open={typeSelectorOpen}
+          onOpenChange={setTypeSelectorOpen}
+          actionTitle={selectedAction.title}
+          initialData={{
+            type: selectedAction.type,
+            routine_frequency: selectedAction.routine_frequency,
+            routine_weekdays: selectedAction.routine_weekdays,
+            routine_count_per_period: selectedAction.routine_count_per_period,
+            mission_completion_type: selectedAction.mission_completion_type,
+            mission_period_cycle: selectedAction.mission_period_cycle,
+            mission_current_period_start: selectedAction.mission_current_period_start,
+            mission_current_period_end: selectedAction.mission_current_period_end,
+            ai_suggestion: selectedAction.ai_suggestion
+          }}
+          onSave={handleTypeSave}
+        />
+      )}
     </div>
   )
 }
