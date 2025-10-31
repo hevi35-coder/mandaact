@@ -26,6 +26,28 @@ export interface Action {
   position: number // 1-8
   title: string
   created_at: string
+
+  // Type system
+  type: 'routine' | 'mission' | 'reference'
+
+  // Routine settings
+  routine_frequency?: 'daily' | 'weekly' | 'monthly'
+  routine_weekdays?: number[] // [0,1,2,3,4] = Sun-Thu
+  routine_count_per_period?: number // Weekly: 3 times, Monthly: 2 times
+
+  // Mission settings
+  mission_completion_type?: 'once' | 'periodic'
+  mission_period_cycle?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+  mission_current_period_start?: string
+  mission_current_period_end?: string
+  mission_status?: 'active' | 'completed' | 'failed'
+
+  // AI suggestion record
+  ai_suggestion?: {
+    type: string
+    confidence: string
+    reason: string
+  }
 }
 
 export interface CheckHistory {
@@ -34,6 +56,16 @@ export interface CheckHistory {
   user_id: string
   checked_at: string
   note?: string
+}
+
+export interface MissionHistory {
+  id: string
+  action_id: string
+  period_start: string
+  period_end: string
+  status: 'completed' | 'failed'
+  completed_at?: string
+  created_at: string
 }
 
 export interface User {
