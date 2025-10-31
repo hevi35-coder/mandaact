@@ -73,3 +73,40 @@ export interface User {
   email: string
   created_at: string
 }
+
+export interface ChatSession {
+  id: string
+  user_id: string
+  title?: string
+  started_at: string
+  last_message_at: string
+  is_active: boolean
+}
+
+export interface ChatMessage {
+  id: string
+  session_id: string
+  role: 'user' | 'assistant'
+  content: string
+  context_data?: {
+    center_goal?: string
+    check_rate?: number
+    total_checks?: number
+    low_performance_areas?: string[]
+  }
+  created_at: string
+}
+
+export interface CoachingContext {
+  user_id: string
+  mandalart?: {
+    center_goal: string
+    sub_goals: string[]
+  }
+  recent_activity?: {
+    last_7_days_check_rate: number
+    total_checks_this_week: number
+    low_performance_areas: string[]
+    streak_days: number
+  }
+}

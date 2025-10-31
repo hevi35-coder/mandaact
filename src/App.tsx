@@ -14,6 +14,7 @@ import MandalartDetailPage from '@/pages/MandalartDetailPage'
 import TodayChecklistPage from '@/pages/TodayChecklistPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
 import StatsPage from '@/pages/StatsPage'
+import ChatCoach from '@/components/ChatCoach'
 
 // HomePage component
 function HomePage() {
@@ -190,6 +191,7 @@ function App() {
           />
           {/* More routes will be added in future phases */}
         </Routes>
+        <ChatCoach />
       </Router>
     </QueryClientProvider>
   )
