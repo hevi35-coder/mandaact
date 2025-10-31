@@ -1,13 +1,38 @@
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'
+import { getCompletionStats, getStreakStats, type CompletionStats, type StreakStats } from '@/lib/stats'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const signOut = useAuthStore((state) => state.signOut)
+
+  const [completionStats, setCompletionStats] = useState<CompletionStats | null>(null)
+  const [streakStats, setStreakStats] = useState<StreakStats | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      fetchStats()
+    }
+  }, [user])
+
+  const fetchStats = async () => {
+    if (!user) return
+    try {
+      const [completion, streak] = await Promise.all([
+        getCompletionStats(user.id),
+        getStreakStats(user.id)
+      ])
+      setCompletionStats(completion)
+      setStreakStats(streak)
+    } catch (error) {
+      console.error('Failed to fetch stats:', error)
+    }
+  }
 
   const handleLogout = async () => {
     await signOut()
@@ -32,6 +57,39 @@ export default function DashboardPage() {
 
         {/* Notification Permission Prompt */}
         <NotificationPermissionPrompt />
+
+        {/* Stats Summary */}
+        {completionStats && streakStats && (
+          <Card>
+            <CardHeader>
+              <CardTitle>오늘의 진행 상황</CardTitle>
+              <CardDescription>실천 통계를 한눈에 확인하세요</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="text-3xl font-bold text-blue-600">{completionStats.today.percentage}%</div>
+                  <p className="text-sm text-muted-foreground mt-1">오늘 완료율</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {completionStats.today.checked}개 완료 / {completionStats.today.total}개
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="text-3xl font-bold text-orange-600">{streakStats.current}일</div>
+                  <p className="text-sm text-muted-foreground mt-1">연속 실천</p>
+                  <p className="text-xs text-muted-foreground mt-1">최장: {streakStats.longest}일</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Link to="/stats">
+                  <Button variant="outline" className="w-full">
+                    📊 전체 통계 보기
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Welcome Card */}
         <Card>
@@ -101,12 +159,12 @@ export default function DashboardPage() {
               </p>
               <div className="grid gap-2">
                 <div className="p-3 border rounded-lg opacity-50">
-                  <p className="font-medium">📊 진행 상황 대시보드</p>
-                  <p className="text-sm text-muted-foreground">실천율과 통계 확인</p>
-                </div>
-                <div className="p-3 border rounded-lg opacity-50">
                   <p className="font-medium">🤖 AI 코칭</p>
                   <p className="text-sm text-muted-foreground">맞춤형 동기부여 및 조언</p>
+                </div>
+                <div className="p-3 border rounded-lg opacity-50">
+                  <p className="font-medium">📸 이미지 OCR</p>
+                  <p className="text-sm text-muted-foreground">사진으로 만다라트 자동 생성</p>
                 </div>
               </div>
             </div>

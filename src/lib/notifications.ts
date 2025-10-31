@@ -72,7 +72,6 @@ export async function sendTestNotification(): Promise<void> {
           icon: 'vite.svg',
           tag: 'test-notification-sw',
           requireInteraction: false,
-          vibrate: [200, 100, 200],
           data: {
             url: '/dashboard'
           }
@@ -129,7 +128,6 @@ export async function scheduleDailyReminder(
           icon: 'vite.svg',
           tag: 'daily-reminder',
           requireInteraction: false,
-          vibrate: [200, 100, 200],
           data: {
             url: '/today'
           }

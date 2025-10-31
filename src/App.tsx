@@ -13,6 +13,7 @@ import MandalartListPage from '@/pages/MandalartListPage'
 import MandalartDetailPage from '@/pages/MandalartDetailPage'
 import TodayChecklistPage from '@/pages/TodayChecklistPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
+import StatsPage from '@/pages/StatsPage'
 
 // HomePage component
 function HomePage() {
@@ -179,7 +180,15 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* More routes will be added in Phase 1 */}
+          <Route
+            path="/stats"
+            element={
+              <ProtectedRoute>
+                <StatsPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* More routes will be added in future phases */}
         </Routes>
       </Router>
     </QueryClientProvider>
