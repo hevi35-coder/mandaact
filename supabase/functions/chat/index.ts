@@ -27,13 +27,17 @@ serve(async (req) => {
   }
 
   try {
-    // Get Supabase client
+    // Get Supabase client using environment variables (auto-injected by Supabase)
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
         },
       }
     )
@@ -45,7 +49,17 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser()
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      console.error('Auth failed:', {
+        hasAuthError: !!authError,
+        authErrorMessage: authError?.message,
+        authErrorStatus: authError?.status,
+        hasUser: !!user,
+        authHeader: req.headers.get('Authorization')?.substring(0, 30) + '...'
+      })
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        debug: authError?.message
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
