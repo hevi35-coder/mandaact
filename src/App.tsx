@@ -12,6 +12,7 @@ import MandalartCreatePage from '@/pages/MandalartCreatePage'
 import MandalartListPage from '@/pages/MandalartListPage'
 import MandalartDetailPage from '@/pages/MandalartDetailPage'
 import TodayChecklistPage from '@/pages/TodayChecklistPage'
+import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
 
 // HomePage component
 function HomePage() {
@@ -167,6 +168,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TodayChecklistPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationSettingsPage />
               </ProtectedRoute>
             }
           />

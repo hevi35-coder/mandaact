@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
+import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -28,6 +29,9 @@ export default function DashboardPage() {
             로그아웃
           </Button>
         </div>
+
+        {/* Notification Permission Prompt */}
+        <NotificationPermissionPrompt />
 
         {/* Welcome Card */}
         <Card>
@@ -80,6 +84,19 @@ export default function DashboardPage() {
 
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-3">
+                설정:
+              </p>
+              <div className="grid gap-2">
+                <Link to="/settings/notifications">
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    🔔 알림 설정
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-3">
                 앞으로 구현될 기능들:
               </p>
               <div className="grid gap-2">
@@ -88,8 +105,8 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground">실천율과 통계 확인</p>
                 </div>
                 <div className="p-3 border rounded-lg opacity-50">
-                  <p className="font-medium">🔔 일일 리마인더</p>
-                  <p className="text-sm text-muted-foreground">알림으로 실천 독려</p>
+                  <p className="font-medium">🤖 AI 코칭</p>
+                  <p className="text-sm text-muted-foreground">맞춤형 동기부여 및 조언</p>
                 </div>
               </div>
             </div>

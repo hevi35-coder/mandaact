@@ -9,22 +9,25 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      },
       manifest: {
-        name: 'MandaAct',
+        name: 'MandaAct - 만다라트 실천 트래커',
         short_name: 'MandaAct',
-        description: 'AI-powered Mandalart action tracker',
+        description: 'AI 기반 만다라트 목표 관리 및 일일 실천 트래커',
         theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
+        scope: '/',
+        orientation: 'portrait',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            src: '/vite.svg',
+            sizes: 'any',
+            type: 'image/svg+xml'
           }
         ]
       },
