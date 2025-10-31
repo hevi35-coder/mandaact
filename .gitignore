@@ -42,3 +42,4 @@ lerna-debug.log*
 workbox-*.js
 sw.js
 dev-dist/
+supabase/.temp/
