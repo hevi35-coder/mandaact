@@ -2,6 +2,106 @@
 
 Phase 4-B에서 추가된 AI 코칭 기능을 사용하기 위한 설정 가이드입니다.
 
+## 0. 환경변수 관리 이해하기 (중요!)
+
+### 왜 .env.local이 아닌 Supabase Secrets인가?
+
+#### 실행 환경 분리
+
+```
+┌─────────────────────────────────────┐
+│  Frontend (Browser)                 │
+│  - React + Vite로 빌드               │
+│  - .env.local의 VITE_* 변수 사용     │
+│  - 클라이언트 사이드 실행             │
+└─────────────────────────────────────┘
+                 ↕ HTTPS
+┌─────────────────────────────────────┐
+│  Supabase Edge Function (Server)   │
+│  - Deno 런타임                       │
+│  - Supabase Secrets 접근            │
+│  - 서버 사이드 실행                  │
+│  - ❌ .env.local 접근 불가           │
+└─────────────────────────────────────┘
+```
+
+**핵심:** Edge Function은 Supabase 클라우드에서 실행되므로 로컬 파일(`.env.local`)에 접근할 수 없습니다.
+
+#### 보안 문제
+
+만약 프론트엔드에서 직접 Perplexity API를 호출한다면:
+
+```typescript
+// ❌ 위험: API 키가 브라우저에 노출됨
+const response = await fetch('https://api.perplexity.ai/chat', {
+  headers: {
+    'Authorization': `Bearer ${import.meta.env.VITE_PERPLEXITY_API_KEY}`
+    // ↑ 브라우저 개발자 도구 Network 탭에서 확인 가능
+    // ↑ JavaScript 소스코드에 포함됨 (빌드해도 난독화만 됨)
+  }
+})
+```
+
+**문제점:**
+- 사용자가 Network 탭에서 API 키를 쉽게 추출 가능
+- 악의적 사용자가 키를 복사해서 무제한 사용 → 과금 폭탄 💸
+- Rate limiting이나 사용자별 제한 불가능
+
+현재 방식 (Edge Function 사용):
+
+```typescript
+// ✅ 안전: API 키는 서버에만 존재
+const response = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
+  headers: {
+    'Authorization': `Bearer ${user_jwt_token}` // 사용자 인증 토큰
+  },
+  body: JSON.stringify({ message: "안녕하세요" })
+})
+// → Edge Function 내부에서만 Perplexity API 키 사용
+// → 사용자는 절대 API 키를 볼 수 없음
+```
+
+#### 비용 관리
+
+| 방식 | 비용 제어 | 악용 방지 |
+|------|----------|----------|
+| 프론트엔드 직접 호출 | ❌ 불가능 | ❌ 키 탈취 시 무제한 사용 |
+| Edge Function | ✅ 서버에서 제어 | ✅ 인증/Rate limiting 가능 |
+
+Edge Function에서:
+- 일일 메시지 제한 구현 가능 (예: 20회/일)
+- 사용자별 통계 수집
+- 비정상 사용 패턴 감지 및 차단
+
+#### 개발/프로덕션 환경 분리
+
+```bash
+# 개발 환경
+supabase secrets set PERPLEXITY_API_KEY=pplx-dev-key \
+  --project-ref dev-project-id
+
+# 프로덕션 환경
+supabase secrets set PERPLEXITY_API_KEY=pplx-prod-key \
+  --project-ref prod-project-id
+```
+
+- 개발 중 프로덕션 API 비용 발생 방지
+- 환경별 Quota 분리 관리
+- 배포 시 환경변수 변경 불필요
+
+### 정리
+
+**`.env.local`에 PERPLEXITY_API_KEY가 있다면?**
+- ⚠️ **제거하셔도 됩니다** - 실제로 사용되지 않습니다
+- 또는 그대로 두셔도 무방합니다 - Edge Function이 읽지 않습니다
+- `.env.example`의 주석을 참고하세요
+
+**필수 설정:**
+- ✅ Supabase Secrets에만 설정: `supabase secrets set PERPLEXITY_API_KEY=pplx-xxxxx`
+- ❌ .env.local에 설정: 불필요하며 혼란만 야기
+
+---
+
 ## 1. Database Migration 실행
 
 Chat 기능을 위한 테이블을 생성해야 합니다.
