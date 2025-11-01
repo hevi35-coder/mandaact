@@ -1,7 +1,7 @@
 # Phase 1-A: Image OCR - 진행 상황
 
 **날짜**: 2025-11-01
-**상태**: 🟡 진행 중 (GCP 인증 문제)
+**상태**: ✅ 완료
 
 ---
 
@@ -19,79 +19,46 @@
 - 정책: 인증된 사용자 업로드, 공개 읽기, 소유자 관리
 
 ### 3. Edge Function ✅
-- `ocr-mandalart` Edge Function 생성
-- Google Cloud Vision API 통합 코드 작성
-- JWT 인증 로직 구현
-- OCR 텍스트 파싱 로직 구현
+- `ocr-mandalart` Edge Function 생성 및 배포 (v4)
+- Google Cloud Vision API 통합 (DOCUMENT_TEXT_DETECTION)
+- JWT 인증 로직 구현 (scope 추가로 해결)
+- **위치 기반 OCR 파싱 로직 구현** (9x9 그리드)
+- 한글/영어 언어 힌트 추가
 - Supabase Secrets 설정 (GCP credentials)
-- Edge Function 배포 완료
 
 ### 4. Git ✅
 - Phase 1-A 초기 구현 커밋 및 푸시
 - Storage RLS 정책 커밋 및 푸시
 
----
-
-## ❌ 현재 문제
-
-### 에러 메시지
-```
-processing error: Error: Failed to get access token
-    at handleProcessOCR (MandalartCreatePage.tsx:161:15)
-```
-
-### 발생 위치
-Edge Function의 `createGoogleJWT()` 함수에서 Google OAuth2 토큰 교환 단계
-
-### 가능한 원인
-
-1. **GCP Private Key 형식 문제**
-   - Supabase Secrets에 저장된 Private Key의 줄바꿈 문자(`\n`) 처리
-   - Edge Function에서 `.replace(/\\n/g, '\n')` 처리가 제대로 안 될 수 있음
-
-2. **GCP Service Account 권한 문제**
-   - Vision API 사용 권한이 없을 수 있음
-   - Service Account에 올바른 역할이 부여되지 않았을 수 있음
-
-3. **GCP API 활성화 문제**
-   - Cloud Vision API가 활성화되지 않았을 수 있음
-   - OAuth2 API가 활성화되지 않았을 수 있음
-
-4. **Secrets 환경변수 문제**
-   - GCP_PRIVATE_KEY가 제대로 저장되지 않았을 수 있음
-   - 특수 문자 이스케이핑 문제
+### 5. OCR 인식 품질 ✅
+- **DOCUMENT_TEXT_DETECTION** 적용 (문서 전용 OCR)
+- 언어 힌트 추가 (`ko`, `en`)
+- 위치 기반 파싱으로 만다라트 구조 정확히 인식
 
 ---
 
-## 🔧 다음 단계 (재개 시)
+## ✅ 해결된 문제
 
-### 1. GCP 설정 확인
-```bash
-# Google Cloud Console에서 확인
-1. Vision API 활성화 여부
-2. Service Account 권한 확인
-3. JSON 키 파일 재다운로드
-```
-
-### 2. Edge Function 디버깅
+### 1. GCP 인증 문제 (해결 ✅)
+**문제**: "Failed to get access token" 에러
+**원인**: Google Cloud Vision API JWT에 **scope** 누락
+**해결**:
 ```typescript
-// supabase/functions/ocr-mandalart/index.ts
-// createGoogleJWT 함수에 로깅 추가
-
-console.log('GCP Project ID:', gcpProjectId)
-console.log('GCP Client Email:', gcpClientEmail)
-console.log('Private Key first 50 chars:', gcpPrivateKey?.substring(0, 50))
+const jwt = await new SignJWT({
+  scope: 'https://www.googleapis.com/auth/cloud-vision',
+})
 ```
 
-### 3. 대체 방안
-- Vision API 대신 Tesseract.js 사용 고려 (클라이언트 사이드 OCR)
-- 또는 다른 OCR 서비스 고려
+### 2. OCR 파싱 문제 (해결 ✅)
+**문제**:
+- 핵심목표와 세부목표 위치 무시
+- 한 칸 내 여러 줄을 다른 항목으로 인식
 
-### 4. Secrets 재설정
-```bash
-# Private Key를 파일로 저장 후 설정
-supabase secrets set GCP_PRIVATE_KEY="$(cat gcp-key.json | jq -r .private_key)"
-```
+**해결**:
+- Vision API의 `boundingPoly` 활용하여 9x9 그리드 매핑
+- 같은 셀 내 텍스트 통합
+- 중앙(4,4) = 핵심목표, 주변 8칸 = 세부목표
+- 각 3x3 블록에서 액션 자동 추출
 
 ---
 
@@ -155,10 +122,17 @@ AND schemaname = 'storage';
 
 ---
 
-**다음 세션 시작 시**:
-1. 이 파일 읽기
-2. GCP 설정 재확인
-3. Edge Function 로그 확인으로 시작
+---
 
-**예상 소요 시간**: 30분 ~ 1시간
-**우선순위**: 중 (기능 작동하지만 OCR은 선택적)
+## 🎯 추가 개선 가능 사항 (선택적)
+
+1. **이미지 전처리**: 대비 증가, 노이즈 제거
+2. **AI 후처리**: Perplexity API로 OCR 결과 정제
+3. **하이브리드 OCR**: Tesseract.js 병행 사용
+4. **사용자 피드백 학습**: 수정 패턴 분석
+
+---
+
+**완료 일시**: 2025-11-01
+**최종 버전**: ocr-mandalart v4
+**상태**: 테스트 완료, 정상 작동
