@@ -79,6 +79,16 @@ export default function ChatCoach() {
     setError(null)
     setIsLoading(true)
 
+    // Optimistic update: Show user message immediately
+    const tempUserMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      session_id: currentSession?.id || '',
+      role: 'user',
+      content: userMessage,
+      created_at: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, tempUserMessage])
+
     try {
       // Call Edge Function
       const { data: { session }, error: authError } = await supabase.auth.getSession()
@@ -119,13 +129,21 @@ export default function ChatCoach() {
         }
       }
 
-      // Reload messages
-      if (result.session_id) {
-        await loadMessages(result.session_id)
+      // Add assistant response immediately
+      const assistantMessage: ChatMessage = {
+        id: `temp-assistant-${Date.now()}`,
+        session_id: result.session_id,
+        role: 'assistant',
+        content: result.reply,
+        created_at: new Date().toISOString(),
       }
+      setMessages((prev) => [...prev, assistantMessage])
+
     } catch (err) {
       console.error('Send message error:', err)
       setError(err instanceof Error ? err.message : '메시지 전송에 실패했습니다')
+      // Remove the optimistic user message on error
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempUserMessage.id))
     } finally {
       setIsLoading(false)
     }

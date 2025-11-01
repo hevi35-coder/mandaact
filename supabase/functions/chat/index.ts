@@ -27,38 +27,53 @@ serve(async (req) => {
   }
 
   try {
-    // Get Supabase client using environment variables (auto-injected by Supabase)
+    // Get authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Create Supabase client with service role for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+
+    // Create client with user's auth token for user-specific operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
         auth: {
           persistSession: false,
-          autoRefreshToken: false,
         },
       }
     )
 
-    // Verify user authentication
+    // Verify user authentication using the user-token client
+    // Extract JWT token from Authorization header
+    const jwt = authHeader.replace('Bearer ', '')
     const {
       data: { user },
       error: authError,
-    } = await supabaseClient.auth.getUser()
+    } = await supabaseClient.auth.getUser(jwt)
 
     if (authError || !user) {
       console.error('Auth failed:', {
         hasAuthError: !!authError,
         authErrorMessage: authError?.message,
-        authErrorStatus: authError?.status,
         hasUser: !!user,
-        authHeader: req.headers.get('Authorization')?.substring(0, 30) + '...'
+        authHeaderPresent: !!authHeader,
       })
       return new Response(JSON.stringify({
         error: 'Unauthorized',
-        debug: authError?.message
+        message: authError?.message || 'Authentication failed',
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -104,7 +119,36 @@ serve(async (req) => {
 
     if (historyError) throw historyError
 
-    // Save user message
+    // Build messages for Perplexity API - requires strict user/assistant alternation
+    const systemPrompt = buildSystemPrompt(context)
+    const messages: any[] = []
+
+    // If this is the first message, include system prompt
+    if (!history || history.length === 0) {
+      messages.push({
+        role: 'user',
+        content: `${systemPrompt}\n\n사용자 질문: ${message}`
+      })
+    } else {
+      // Add conversation history
+      messages.push(...history.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content,
+      })))
+
+      // Ensure proper alternation: if last message is user, replace it with current message
+      const lastMessage = history[history.length - 1]
+      if (lastMessage && lastMessage.role === 'user') {
+        // Previous API call might have failed, remove the orphaned user message
+        console.warn('Last message was user, removing orphaned message for proper alternation')
+        messages.pop() // Remove the orphaned user message
+      }
+
+      // Add current user message
+      messages.push({ role: 'user', content: message })
+    }
+
+    // Save user message to DB BEFORE API call
     const { error: userMessageError } = await supabaseClient
       .from('chat_messages')
       .insert({
@@ -115,17 +159,6 @@ serve(async (req) => {
 
     if (userMessageError) throw userMessageError
 
-    // Call Perplexity API
-    const systemPrompt = buildSystemPrompt(context)
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...(history || []).map((msg: any) => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-      { role: 'user', content: message },
-    ]
-
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -133,7 +166,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'sonar',
         messages: messages,
         temperature: 0.7,
         max_tokens: 500,
@@ -141,9 +174,13 @@ serve(async (req) => {
     })
 
     if (!perplexityResponse.ok) {
-      const error = await perplexityResponse.text()
-      console.error('Perplexity API error:', error)
-      throw new Error('Failed to get AI response')
+      const errorText = await perplexityResponse.text()
+      console.error('Perplexity API error:', {
+        status: perplexityResponse.status,
+        statusText: perplexityResponse.statusText,
+        body: errorText,
+      })
+      throw new Error(`Perplexity API failed: ${perplexityResponse.status} - ${errorText}`)
     }
 
     const perplexityData = await perplexityResponse.json()
