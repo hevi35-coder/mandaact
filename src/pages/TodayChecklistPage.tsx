@@ -230,6 +230,34 @@ export default function TodayChecklistPage() {
     return activeFilters.has(action.type)
   })
 
+  // Group actions by mandalart
+  const actionsByMandalart = filteredActions.reduce((groups, action) => {
+    const mandalartId = action.sub_goal.mandalart.id
+    if (!groups[mandalartId]) {
+      groups[mandalartId] = {
+        mandalart: action.sub_goal.mandalart,
+        actions: []
+      }
+    }
+    groups[mandalartId].actions.push(action)
+    return groups
+  }, {} as Record<string, { mandalart: Mandalart; actions: ActionWithContext[] }>)
+
+  // Section collapse state - default expanded
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+
+  const toggleSection = (mandalartId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(mandalartId)) {
+        newSet.delete(mandalartId)
+      } else {
+        newSet.add(mandalartId)
+      }
+      return newSet
+    })
+  }
+
   // Calculate progress (exclude reference actions)
   const nonReferenceActions = filteredActions.filter(a => a.type !== 'reference')
   const checkedCount = nonReferenceActions.filter(a => a.is_checked).length
@@ -333,7 +361,7 @@ export default function TodayChecklistPage() {
           <CardContent className="pt-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">오늘의 진행률</span>
+                <span className="font-medium">오늘의 진행상황</span>
                 <span className="text-muted-foreground">
                   {checkedCount} / {totalCount} 완료
                 </span>
@@ -384,63 +412,89 @@ export default function TodayChecklistPage() {
           </Card>
         )}
 
-        {/* Actions List */}
+        {/* Actions List - Grouped by Mandalart */}
         {filteredActions.length > 0 && (
-          <div className="space-y-4">
-            {filteredActions.map((action) => (
-              <Card
-                key={action.id}
-                className={`transition-all ${
-                  action.is_checked
-                    ? 'bg-gray-50 border-gray-300'
-                    : action.type === 'reference'
-                    ? 'bg-gray-50/50 border-gray-200'
-                    : 'hover:shadow-md'
-                }`}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={action.is_checked}
-                      onChange={() => handleToggleCheck(action)}
-                      disabled={checkingActions.has(action.id) || action.type === 'reference'}
-                      className={`mt-1 h-5 w-5 rounded border-gray-300 text-primary ${
-                        action.type === 'reference'
-                          ? 'opacity-50 cursor-not-allowed'
-                          : 'cursor-pointer focus:ring-primary'
-                      } disabled:cursor-not-allowed`}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle
-                          className={`text-base flex-1 ${
+          <div className="space-y-6">
+            {Object.entries(actionsByMandalart).map(([mandalartId, { mandalart, actions: mandalartActions }]) => {
+              const isCollapsed = collapsedSections.has(mandalartId)
+              const mandalartNonRef = mandalartActions.filter(a => a.type !== 'reference')
+              const mandalartChecked = mandalartNonRef.filter(a => a.is_checked).length
+              const mandalartTotal = mandalartNonRef.length
+
+              return (
+                <div key={mandalartId} className="space-y-3">
+                  {/* Section Header */}
+                  <button
+                    onClick={() => toggleSection(mandalartId)}
+                    className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-semibold">{mandalart.title}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {mandalartChecked}/{mandalartTotal}
+                      </span>
+                    </div>
+                    <span className="text-xl">{isCollapsed ? '▶' : '▼'}</span>
+                  </button>
+
+                  {/* Actions in this Mandalart */}
+                  {!isCollapsed && (
+                    <div className="space-y-3 pl-2">
+                      {mandalartActions.map((action) => (
+                        <Card
+                          key={action.id}
+                          className={`transition-all ${
                             action.is_checked
-                              ? 'line-through text-gray-500'
-                              : 'text-gray-900'
+                              ? 'bg-gray-50 border-gray-300'
+                              : action.type === 'reference'
+                              ? 'bg-gray-50/50 border-gray-200'
+                              : 'hover:shadow-md'
                           }`}
                         >
-                          {action.title}
-                        </CardTitle>
-                        <button
-                          onClick={(e) => openTypeEditor(action, e)}
-                          className="text-xs px-2 py-0.5 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
-                        >
-                          {getActionTypeLabel(action.type)}
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                        <span className="font-medium">
-                          {action.sub_goal.mandalart.title}
-                        </span>
-                        <span>›</span>
-                        <span>{action.sub_goal.title}</span>
-                      </div>
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={action.is_checked}
+                                onChange={() => handleToggleCheck(action)}
+                                disabled={checkingActions.has(action.id) || action.type === 'reference'}
+                                className={`mt-1 h-5 w-5 rounded border-gray-300 text-primary ${
+                                  action.type === 'reference'
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : 'cursor-pointer focus:ring-primary'
+                                } disabled:cursor-not-allowed`}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <CardTitle
+                                    className={`text-base flex-1 ${
+                                      action.is_checked
+                                        ? 'line-through text-gray-500'
+                                        : 'text-gray-900'
+                                    }`}
+                                  >
+                                    {action.title}
+                                  </CardTitle>
+                                  <button
+                                    onClick={(e) => openTypeEditor(action, e)}
+                                    className="text-xs px-2 py-0.5 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                                  >
+                                    {getActionTypeLabel(action.type)}
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                                  <span>{action.sub_goal.title}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                        </Card>
+                      ))}
                     </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 

@@ -15,6 +15,7 @@ import TodayChecklistPage from '@/pages/TodayChecklistPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
 import StatsPage from '@/pages/StatsPage'
 import ChatCoach from '@/components/ChatCoach'
+import Navigation from '@/components/Navigation'
 
 // HomePage component
 function HomePage() {
@@ -129,6 +130,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <Navigation />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/signup" element={<SignUpPage />} />

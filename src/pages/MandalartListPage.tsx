@@ -87,7 +87,7 @@ export default function MandalartListPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">내 만다라트</h1>
+            <h1 className="text-3xl font-bold">만다라트 관리</h1>
             <p className="text-muted-foreground mt-1">
               저장된 만다라트 {mandalarts.length}개
             </p>

@@ -62,7 +62,7 @@ export default function DashboardPage() {
         {completionStats && streakStats && (
           <Card>
             <CardHeader>
-              <CardTitle>오늘의 진행 상황</CardTitle>
+              <CardTitle>오늘의 진행상황</CardTitle>
               <CardDescription>실천 통계를 한눈에 확인하세요</CardDescription>
             </CardHeader>
             <CardContent>
@@ -80,10 +80,15 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground mt-1">최장: {streakStats.longest}일</p>
                 </div>
               </div>
-              <div className="mt-4">
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Link to="/today">
+                  <Button variant="default" className="w-full">
+                    ✅ 실천하러 가기
+                  </Button>
+                </Link>
                 <Link to="/stats">
                   <Button variant="outline" className="w-full">
-                    📊 전체 통계 보기
+                    📊 전체 통계
                   </Button>
                 </Link>
               </div>
