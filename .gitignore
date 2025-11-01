@@ -43,3 +43,4 @@ workbox-*.js
 sw.js
 dev-dist/
 supabase/.temp/
+CURRENT_STATUS.md
