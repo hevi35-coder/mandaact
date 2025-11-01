@@ -114,17 +114,28 @@ export default function MandalartCreatePage() {
       const fileName = `${user.id}-${Date.now()}.${fileExt}`
       const filePath = `${fileName}`
 
-      const { error: uploadError } = await supabase.storage
-        .from('mandalart-images')
-        .upload(filePath, selectedImage)
+      console.log('Uploading image:', { fileName, size: selectedImage.size, type: selectedImage.type })
 
-      if (uploadError) throw uploadError
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('mandalart-images')
+        .upload(filePath, selectedImage, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw new Error(`이미지 업로드 실패: ${uploadError.message}`)
+      }
+
+      console.log('Upload successful:', uploadData)
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('mandalart-images')
         .getPublicUrl(filePath)
 
+      console.log('Public URL:', publicUrl)
       setUploadedImageUrl(publicUrl)
 
       // 2. Call OCR Edge Function
