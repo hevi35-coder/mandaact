@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 import { getActionTypeLabel } from '@/lib/actionTypes'
+import { Upload, Image as ImageIcon } from 'lucide-react'
 
 interface ActionData {
   title: string
@@ -22,6 +23,15 @@ interface SubGoalData {
 export default function MandalartCreatePage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+
+  // Input method selection
+  const [inputMethod, setInputMethod] = useState<'image' | 'manual' | null>(null)
+
+  // Image upload state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
 
   const [title, setTitle] = useState('')
   const [centerGoal, setCenterGoal] = useState('')
@@ -64,6 +74,112 @@ export default function MandalartCreatePage() {
     setSubGoals(newSubGoals)
   }
 
+  // Image upload handlers
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('이미지 파일만 업로드할 수 있습니다')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('이미지 크기는 5MB 이하여야 합니다')
+      return
+    }
+
+    setSelectedImage(file)
+    setError(null)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleProcessOCR = async () => {
+    if (!selectedImage || !user) return
+
+    setIsProcessingOCR(true)
+    setError(null)
+
+    try {
+      // 1. Upload image to Supabase Storage
+      const fileExt = selectedImage.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('mandalart-images')
+        .upload(filePath, selectedImage)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('mandalart-images')
+        .getPublicUrl(filePath)
+
+      setUploadedImageUrl(publicUrl)
+
+      // 2. Call OCR Edge Function
+      const { data: { session }, error: authError } = await supabase.auth.getSession()
+      if (authError || !session) throw new Error('Not authenticated')
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ocr-mandalart`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image_url: publicUrl,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'OCR 처리 실패')
+      }
+
+      const result = await response.json()
+
+      // 3. Populate form with OCR results
+      if (result.center_goal) setCenterGoal(result.center_goal)
+      if (result.sub_goals) {
+        const newSubGoals = [...subGoals]
+        result.sub_goals.forEach((sg: any, index: number) => {
+          if (index < 8) {
+            newSubGoals[index].title = sg.title || ''
+            if (sg.actions) {
+              sg.actions.forEach((action: string, actionIndex: number) => {
+                if (actionIndex < 8) {
+                  newSubGoals[index].actions[actionIndex].title = action || ''
+                }
+              })
+            }
+          }
+        })
+        setSubGoals(newSubGoals)
+      }
+
+      setError(null)
+    } catch (err) {
+      console.error('OCR processing error:', err)
+      setError(err instanceof Error ? err.message : 'OCR 처리 중 오류가 발생했습니다')
+    } finally {
+      setIsProcessingOCR(false)
+    }
+  }
+
   const handleSave = async () => {
     if (!user) {
       setError('로그인이 필요합니다')
@@ -87,13 +203,14 @@ export default function MandalartCreatePage() {
 
     try {
       // 1. Create mandalart
-      const { data: mandalart, error: mandalartError } = await supabase
+      const { data: mandalart, error: mandalartError} = await supabase
         .from('mandalarts')
         .insert({
           user_id: user.id,
           title: title.trim(),
           center_goal: centerGoal.trim(),
-          input_method: 'manual'
+          input_method: inputMethod || 'manual',
+          image_url: uploadedImageUrl,
         })
         .select()
         .single()
@@ -168,7 +285,7 @@ export default function MandalartCreatePage() {
         <div>
           <h1 className="text-3xl font-bold">만다라트 만들기</h1>
           <p className="text-muted-foreground mt-1">
-            핵심 목표와 세부 목표, 실천 항목을 입력하세요
+            이미지 업로드 또는 직접 입력으로 만다라트를 만드세요
           </p>
         </div>
 
@@ -179,7 +296,110 @@ export default function MandalartCreatePage() {
           </div>
         )}
 
+        {/* Input Method Selection */}
+        {!inputMethod && (
+          <Card>
+            <CardHeader>
+              <CardTitle>입력 방식 선택</CardTitle>
+              <CardDescription>어떤 방식으로 만다라트를 만들까요?</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                className="h-32 flex-col gap-2"
+                onClick={() => setInputMethod('image')}
+              >
+                <Upload className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-semibold">이미지 업로드</div>
+                  <div className="text-xs text-muted-foreground">
+                    만다라트 이미지를 업로드하여 자동 인식
+                  </div>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-32 flex-col gap-2"
+                onClick={() => setInputMethod('manual')}
+              >
+                <ImageIcon className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-semibold">직접 입력</div>
+                  <div className="text-xs text-muted-foreground">
+                    목표와 실천 항목을 직접 입력
+                  </div>
+                </div>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Image Upload UI */}
+        {inputMethod === 'image' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>이미지 업로드</CardTitle>
+              <CardDescription>
+                만다라트 이미지를 업로드하면 자동으로 텍스트를 추출합니다
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!imagePreview ? (
+                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    id="image-upload"
+                    disabled={isProcessingOCR}
+                  />
+                  <Label
+                    htmlFor="image-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Upload className="w-12 h-12 text-muted-foreground" />
+                    <div className="text-sm text-muted-foreground">
+                      클릭하여 이미지 선택 (최대 5MB)
+                    </div>
+                  </Label>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="relative border rounded-lg overflow-hidden">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedImage(null)
+                        setImagePreview(null)
+                      }}
+                      disabled={isProcessingOCR}
+                    >
+                      다시 선택
+                    </Button>
+                    <Button
+                      onClick={handleProcessOCR}
+                      disabled={isProcessingOCR}
+                      className="flex-1"
+                    >
+                      {isProcessingOCR ? 'OCR 처리 중...' : '텍스트 추출'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Title and Center Goal */}
+        {inputMethod && (
         <Card>
           <CardHeader>
             <CardTitle>기본 정보</CardTitle>
@@ -209,8 +429,10 @@ export default function MandalartCreatePage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Sub Goals */}
+        {inputMethod && (
         <Card>
           <CardHeader>
             <CardTitle>세부 목표 (8개)</CardTitle>
@@ -280,8 +502,10 @@ export default function MandalartCreatePage() {
             ))}
           </CardContent>
         </Card>
+        )}
 
         {/* Actions */}
+        {inputMethod && (
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -299,6 +523,7 @@ export default function MandalartCreatePage() {
             {isLoading ? '저장 중...' : '저장'}
           </Button>
         </div>
+        )}
       </div>
 
       {/* Action Type Selector Dialog */}
