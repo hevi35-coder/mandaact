@@ -1,14 +1,14 @@
-# MandaAct Session Summary - Phase 1-A 완료
+# MandaAct Session Summary - Phase 1-A OCR + UX 개선 완료
 
 **날짜**: 2025-11-01
-**작업 시간**: 약 1.5시간
+**작업 시간**: 약 3시간
 **상태**: ✅ 완료
 
 ---
 
 ## 🎉 완료된 작업
 
-### Phase 1-A: Image OCR 기능
+### Session 1: Phase 1-A - Image OCR 기능
 
 #### 1. 구현 완료
 - ✅ UI: 이미지 업로드 vs 수동 입력 선택
@@ -28,6 +28,26 @@
 - 한 칸 내 여러 줄 텍스트 통합
 - 한글/영어 언어 힌트로 정확도 개선
 
+### Session 2: Phase 1 - UX 개선
+
+#### 1. 네비게이션 시스템 구현
+- ✅ Navigation 컴포넌트 생성
+- ✅ 데스크톱: 상단 네비게이션 바
+- ✅ 모바일: 하단 고정 네비게이션
+- ✅ 주요 메뉴: 대시보드, 오늘의 실천, 만다라트 관리, 통계
+
+#### 2. 용어 통일
+- ✅ "만다라트 관리" (일관성)
+- ✅ "오늘의 진행상황" (명확성)
+
+#### 3. 만다라트별 그룹화
+- ✅ 오늘의 실천: 만다라트별 섹션
+- ✅ 접힘/펼침 토글 (기본 펼침)
+- ✅ 섹션별 진행률 표시
+
+#### 4. 바로가기 링크
+- ✅ 대시보드 → 오늘의 실천 버튼
+
 ---
 
 ## 📊 프로젝트 현재 상태
@@ -37,9 +57,9 @@
 Branch: main
 Status: Up to date with origin/main
 Recent commits:
+- 7a77ffc: feat: Phase 1 UX improvements - Navigation, terminology, and grouping
 - afe92ab: feat: Complete Phase 1-A - Image OCR with position-based parsing
-- 3c19be7: feat: Complete Phase 4-B AI Coaching deployment
-- 2f4b7fe: chore: Add supabase temp files to gitignore
+- 2986ef7: docs: Update session summary for Phase 1-A completion
 ```
 
 ### Supabase
@@ -65,22 +85,34 @@ Type check: Passing
 
 ---
 
-## 🎯 다음 단계 (추후)
+## 🎯 다음 단계 (다음 세션)
 
-### 우선순위 낮음 - 선택적 개선
-1. **OCR 인식률 향상**
-   - 이미지 전처리 (대비, 노이즈 제거)
-   - AI 후처리 (Perplexity API로 결과 정제)
-   - Tesseract.js 병행 사용
+### Phase 2: 기능 확장 (Week 2-3 예정)
+**우선순위**: 높음
 
-2. **AI 코칭 품질 개선**
-   - 모델 변경 고려 (sonar → sonar-pro)
-   - 프롬프트 튜닝
-   - 주간 리포트 자동 생성
+1. **만다라트 활성화/비활성화** (2.1)
+   - Migration: `is_active` 컬럼 추가
+   - 토글 UI
+   - 오늘의 실천: 활성화된 만다라트만 표시
 
-### 다음 Phase
-- 다른 기능 개선
-- 또는 새로운 Phase 구현
+2. **날짜 선택 기능** (2.2)
+   - DatePicker 컴포넌트
+   - URL 파라미터로 날짜 관리
+   - 과거/미래 날짜 조회
+
+3. **알림 권한 해지 안내** (2.3)
+   - 권한 상태별 안내 메시지
+   - 브라우저 설정 링크
+
+4. **통계 페이지 만다라트 필터** (1.3에서 이동)
+   - 만다라트 선택 드롭다운
+   - 필터링된 통계 표시
+
+### 선택적 개선 (우선순위 낮음)
+- OCR 인식률 향상
+- AI 코칭 품질 개선
+- 퀴즈 기능
+- 접힘/펼침 사용자 설정
 
 ---
 
@@ -109,6 +141,10 @@ git log --oneline -5
 ### 주요 파일 위치
 ```
 Frontend:
+- src/components/Navigation.tsx (네비게이션)
+- src/pages/TodayChecklistPage.tsx (오늘의 실천 - 그룹화)
+- src/pages/DashboardPage.tsx (대시보드 - 바로가기)
+- src/pages/MandalartListPage.tsx (만다라트 관리)
 - src/pages/MandalartCreatePage.tsx (OCR UI)
 - src/components/ChatCoach.tsx (AI Chat)
 
@@ -120,6 +156,7 @@ Database:
 - supabase/migrations/20251101000002_add_storage_policies.sql (Storage RLS)
 
 Docs:
+- IMPROVEMENTS.md (개선사항 추적)
 - PHASE_1A_STATUS.md (OCR 완료 상태)
 - SESSION_SUMMARY.md (전체 요약)
 ```
@@ -160,12 +197,20 @@ Docs:
 
 ## 🎊 성과
 
-**Phase 1-A: Image OCR** 기능이 완전히 작동합니다! 🎉
+**Phase 1-A: Image OCR + Phase 1: UX 개선** 완료! 🎉
 
-사용자는 이제:
-- 만다라트 이미지를 업로드하면
-- 자동으로 핵심목표와 8개 세부목표를 인식하여
-- 바로 편집 가능한 상태로 불러올 수 있습니다
+### OCR 기능
+- 만다라트 이미지 업로드
+- 자동 텍스트 인식 (9x9 그리드)
+- 편집 가능한 상태로 불러오기
+
+### UX 개선
+- 통합 네비게이션 시스템
+- 일관된 용어 사용
+- 만다라트별 그룹화
+- 빠른 이동 링크
+
+**개선 진행률**: 4/20 완료 (20%)
 
 배포 완료 및 테스트 검증 완료! ✅
 
