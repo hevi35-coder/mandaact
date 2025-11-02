@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
 import { ActionType, shouldShowToday, getActionTypeLabel } from '@/lib/actionTypes'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
+import { format } from 'date-fns'
+import { ko } from 'date-fns/locale/ko'
 
 interface ActionWithContext extends Action {
   sub_goal: SubGoal & {
@@ -19,11 +23,18 @@ interface ActionWithContext extends Action {
 export default function TodayChecklistPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [actions, setActions] = useState<ActionWithContext[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
+
+  // Date selection
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const dateParam = searchParams.get('date')
+    return dateParam ? new Date(dateParam) : new Date()
+  })
 
   // Type filter state - multiple selection using Set
   const [activeFilters, setActiveFilters] = useState<Set<ActionType>>(new Set())
@@ -38,7 +49,38 @@ export default function TodayChecklistPage() {
       return
     }
     fetchTodayActions()
-  }, [user, navigate])
+  }, [user, navigate, selectedDate])
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date)
+      const dateStr = format(date, 'yyyy-MM-dd')
+      setSearchParams({ date: dateStr })
+    }
+  }
+
+  const isToday = (date: Date) => {
+    const today = new Date()
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    )
+  }
+
+  const isYesterday = (date: Date) => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    return (
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear()
+    )
+  }
+
+  const isTodayOrYesterday = (date: Date) => {
+    return isToday(date) || isYesterday(date)
+  }
 
   const fetchTodayActions = async () => {
     if (!user) return
@@ -61,18 +103,18 @@ export default function TodayChecklistPage() {
 
       if (actionsError) throw actionsError
 
-      // Fetch today's check history
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
+      // Fetch check history for selected date
+      const dayStart = new Date(selectedDate)
+      dayStart.setHours(0, 0, 0, 0)
+      const dayEnd = new Date(dayStart)
+      dayEnd.setDate(dayEnd.getDate() + 1)
 
       const { data: checksData, error: checksError } = await supabase
         .from('check_history')
         .select('*')
         .eq('user_id', user.id)
-        .gte('checked_at', today.toISOString())
-        .lt('checked_at', tomorrow.toISOString())
+        .gte('checked_at', dayStart.toISOString())
+        .lt('checked_at', dayEnd.toISOString())
 
       if (checksError) throw checksError
 
@@ -86,6 +128,10 @@ export default function TodayChecklistPage() {
       const actionsWithContext: ActionWithContext[] = (actionsData || [])
         .filter((action): action is typeof action & { sub_goal: { mandalart: Mandalart } } =>
           action.sub_goal?.mandalart != null
+        )
+        .filter((action) =>
+          // Only show actions from active mandalarts
+          action.sub_goal.mandalart.is_active !== false
         )
         .map((action) => ({
           ...action,
@@ -106,6 +152,7 @@ export default function TodayChecklistPage() {
   const handleToggleCheck = async (action: ActionWithContext) => {
     if (!user) return
     if (checkingActions.has(action.id)) return // Prevent double-click
+    if (!isTodayOrYesterday(selectedDate)) return // Can only check today or yesterday
 
     setCheckingActions(prev => new Set(prev).add(action.id))
 
@@ -128,13 +175,16 @@ export default function TodayChecklistPage() {
           )
         )
       } else {
-        // Check: Insert into check_history
+        // Check: Insert into check_history with selected date
+        const checkDate = new Date(selectedDate)
+        checkDate.setHours(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds())
+
         const { data: checkData, error: insertError } = await supabase
           .from('check_history')
           .insert({
             action_id: action.id,
             user_id: user.id,
-            checked_at: new Date().toISOString()
+            checked_at: checkDate.toISOString()
           })
           .select()
           .single()
@@ -295,21 +345,65 @@ export default function TodayChecklistPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">오늘의 실천</h1>
-            <p className="text-muted-foreground mt-1">
-              {new Date().toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                weekday: 'long'
-              })}
-            </p>
+        <div>
+          <h1 className="text-3xl font-bold mb-4">오늘의 실천</h1>
+
+          {/* Date Navigation */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Quick Navigation Buttons */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const yesterday = new Date(selectedDate)
+                  yesterday.setDate(yesterday.getDate() - 1)
+                  handleDateChange(yesterday)
+                }}
+              >
+                ← 어제
+              </Button>
+              <Button
+                variant={isToday(selectedDate) ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleDateChange(new Date())}
+              >
+                오늘
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const tomorrow = new Date(selectedDate)
+                  tomorrow.setDate(tomorrow.getDate() + 1)
+                  handleDateChange(tomorrow)
+                }}
+              >
+                내일 →
+              </Button>
+            </div>
+
+            {/* Divider */}
+            <div className="h-8 w-px bg-gray-300" />
+
+            {/* Calendar Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  📅 {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateChange}
+                  initialFocus
+                  locale={ko}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            대시보드로
-          </Button>
         </div>
 
         {/* Type Filter */}
@@ -457,9 +551,13 @@ export default function TodayChecklistPage() {
                                 type="checkbox"
                                 checked={action.is_checked}
                                 onChange={() => handleToggleCheck(action)}
-                                disabled={checkingActions.has(action.id) || action.type === 'reference'}
+                                disabled={
+                                  checkingActions.has(action.id) ||
+                                  action.type === 'reference' ||
+                                  !isTodayOrYesterday(selectedDate)
+                                }
                                 className={`mt-1 h-5 w-5 rounded border-gray-300 text-primary ${
-                                  action.type === 'reference'
+                                  action.type === 'reference' || !isTodayOrYesterday(selectedDate)
                                     ? 'opacity-50 cursor-not-allowed'
                                     : 'cursor-pointer focus:ring-primary'
                                 } disabled:cursor-not-allowed`}

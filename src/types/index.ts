@@ -6,6 +6,7 @@ export interface Mandalart {
   input_method: 'image' | 'manual'
   image_url?: string
   raw_ocr_data?: Record<string, unknown>
+  is_active: boolean
   created_at: string
   updated_at: string
   sub_goals?: SubGoal[]

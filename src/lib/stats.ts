@@ -41,14 +41,17 @@ export interface MotivationalMessage {
   message: string
   emoji: string
   variant: 'success' | 'warning' | 'info'
+  showAIButton?: boolean
 }
 
 /**
  * Get total number of actions for a user
+ * @param userId - User ID
+ * @param mandalartId - Optional mandalart ID to filter by
  */
-export async function getTotalActionsCount(userId: string): Promise<number> {
+export async function getTotalActionsCount(userId: string, mandalartId?: string): Promise<number> {
   // Get all actions for user's mandalarts
-  const { data: actions, error } = await supabase
+  let query = supabase
     .from('actions')
     .select(`
       id,
@@ -56,11 +59,20 @@ export async function getTotalActionsCount(userId: string): Promise<number> {
         id,
         mandalart:mandalarts!inner(
           id,
-          user_id
+          user_id,
+          is_active
         )
       )
     `)
     .eq('sub_goal.mandalart.user_id', userId)
+    .eq('sub_goal.mandalart.is_active', true)
+
+  // Add mandalart filter if provided
+  if (mandalartId) {
+    query = query.eq('sub_goal.mandalart.id', mandalartId)
+  }
+
+  const { data: actions, error } = await query
 
   if (error) {
     console.error('Error getting total actions:', error)
@@ -72,8 +84,10 @@ export async function getTotalActionsCount(userId: string): Promise<number> {
 
 /**
  * Get completion statistics for today, this week, and this month
+ * @param userId - User ID
+ * @param mandalartId - Optional mandalart ID to filter by
  */
-export async function getCompletionStats(userId: string): Promise<CompletionStats> {
+export async function getCompletionStats(userId: string, mandalartId?: string): Promise<CompletionStats> {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const tomorrow = new Date(today)
@@ -89,7 +103,28 @@ export async function getCompletionStats(userId: string): Promise<CompletionStat
   monthStart.setHours(0, 0, 0, 0)
 
   // Get total actions count
-  const totalActions = await getTotalActionsCount(userId)
+  const totalActions = await getTotalActionsCount(userId, mandalartId)
+
+  // Get action IDs to filter checks (always filter by is_active)
+  let actionsQuery = supabase
+    .from('actions')
+    .select(`
+      id,
+      sub_goal:sub_goals!inner(
+        mandalart:mandalarts!inner(
+          id,
+          is_active
+        )
+      )
+    `)
+    .eq('sub_goal.mandalart.is_active', true)
+
+  if (mandalartId) {
+    actionsQuery = actionsQuery.eq('sub_goal.mandalart.id', mandalartId)
+  }
+
+  const { data: actions } = await actionsQuery
+  const actionIds = actions?.map(a => a.id) || []
 
   // Get today's checks
   const { count: todayCount } = await supabase
@@ -98,6 +133,7 @@ export async function getCompletionStats(userId: string): Promise<CompletionStat
     .eq('user_id', userId)
     .gte('checked_at', today.toISOString())
     .lt('checked_at', tomorrow.toISOString())
+    .in('action_id', actionIds)
 
   // Get this week's checks
   const { count: weekCount } = await supabase
@@ -105,6 +141,7 @@ export async function getCompletionStats(userId: string): Promise<CompletionStat
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .gte('checked_at', weekStart.toISOString())
+    .in('action_id', actionIds)
 
   // Get this month's checks
   const { count: monthCount } = await supabase
@@ -112,6 +149,7 @@ export async function getCompletionStats(userId: string): Promise<CompletionStat
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .gte('checked_at', monthStart.toISOString())
+    .in('action_id', actionIds)
 
   const todayChecked = todayCount || 0
   const weekChecked = weekCount || 0
@@ -239,17 +277,23 @@ export async function getStreakStats(userId: string): Promise<StreakStats> {
 
 /**
  * Get progress for each sub-goal
+ * @param userId - User ID
+ * @param mandalartId - Optional mandalart ID to filter by
  */
-export async function getGoalProgress(userId: string): Promise<GoalProgress[]> {
+export async function getGoalProgress(userId: string, mandalartId?: string): Promise<GoalProgress[]> {
   // Get all sub-goals with their actions and checks
-  const { data: subGoals, error } = await supabase
+  let query = supabase
     .from('sub_goals')
     .select(
       `
       id,
       title,
       position,
-      mandalart:mandalarts!inner(user_id),
+      mandalart:mandalarts!inner(
+        id,
+        user_id,
+        is_active
+      ),
       actions(
         id,
         check_history(checked_at)
@@ -257,7 +301,15 @@ export async function getGoalProgress(userId: string): Promise<GoalProgress[]> {
     `
     )
     .eq('mandalart.user_id', userId)
+    .eq('mandalart.is_active', true)
     .order('position')
+
+  // Add mandalart filter if provided
+  if (mandalartId) {
+    query = query.eq('mandalart.id', mandalartId)
+  }
+
+  const { data: subGoals, error } = await query
 
   if (error || !subGoals) {
     console.error('Error getting goal progress:', error)
@@ -322,17 +374,29 @@ export function generateMotivationalMessage(
   const { today, week } = completionStats
   const { current } = streakStats
 
-  // High achievement
+  // High achievement (80%+) - AI 코치 유도
   if (today.percentage >= 80) {
     return {
-      title: '대단해요!',
-      message: `오늘 ${today.percentage}% 달성! 완벽한 하루를 보내고 계시네요!`,
+      title: '완벽해요! 🎉',
+      message: `오늘 ${today.percentage}% 달성! AI 코치와 함께 더 나은 목표를 계획해보세요.`,
       emoji: '🎉',
-      variant: 'success'
+      variant: 'success',
+      showAIButton: true
     }
   }
 
-  // Good streak
+  // Very good progress (60-79%)
+  if (today.percentage >= 60) {
+    return {
+      title: '정말 잘하고 있어요!',
+      message: `오늘 ${today.percentage}% 달성! AI 코치와 성과를 분석해보실래요?`,
+      emoji: '✨',
+      variant: 'success',
+      showAIButton: true
+    }
+  }
+
+  // Good streak (7일+)
   if (current >= 7) {
     return {
       title: '연속 실천 중!',
@@ -342,7 +406,7 @@ export function generateMotivationalMessage(
     }
   }
 
-  // Good weekly progress
+  // Good weekly progress (50-59%)
   if (week.percentage >= 50) {
     return {
       title: '좋은 진행이에요!',
@@ -352,18 +416,8 @@ export function generateMotivationalMessage(
     }
   }
 
-  // Need encouragement
-  if (today.percentage < 30 && week.percentage < 30) {
-    return {
-      title: '시작이 반이에요!',
-      message: '작은 실천 하나가 큰 변화를 만듭니다. 오늘 하나만 체크해보세요!',
-      emoji: '💪',
-      variant: 'warning'
-    }
-  }
-
-  // Moderate progress
-  if (today.percentage >= 30 && today.percentage < 80) {
+  // Moderate progress (30-49%)
+  if (today.percentage >= 30) {
     return {
       title: '잘하고 있어요!',
       message: `오늘 ${today.checked}개 완료! 조금만 더 힘내봐요!`,
@@ -372,7 +426,27 @@ export function generateMotivationalMessage(
     }
   }
 
-  // Default encouragement
+  // Low progress (10-29%) - 동기부여
+  if (today.percentage >= 10) {
+    return {
+      title: '작은 시작이 중요해요',
+      message: '한 걸음씩 나아가고 있어요. 오늘 하나만 더 체크해볼까요?',
+      emoji: '💪',
+      variant: 'info'
+    }
+  }
+
+  // Very low progress (<10%) - 강한 동기부여
+  if (today.percentage < 10) {
+    return {
+      title: '시작이 반입니다!',
+      message: '작은 실천 하나가 큰 변화를 만듭니다. 오늘 하나만 체크해보세요!',
+      emoji: '🌱',
+      variant: 'warning'
+    }
+  }
+
+  // Default
   return {
     title: '오늘도 화이팅!',
     message: '목표를 향한 작은 실천이 쌓이고 있어요. 꾸준히 해나가봐요!',

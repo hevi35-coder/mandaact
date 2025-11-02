@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
+import { supabase } from '@/lib/supabase'
+import { Mandalart } from '@/types'
 import {
   getCompletionStats,
   getStreakStats,
@@ -20,28 +22,59 @@ export default function StatsPage() {
   const user = useAuthStore((state) => state.user)
 
   const [isLoading, setIsLoading] = useState(true)
+  const [mandalarts, setMandalarts] = useState<Mandalart[]>([])
+  const [selectedMandalartId, setSelectedMandalartId] = useState<string>('')
   const [completionStats, setCompletionStats] = useState<CompletionStats | null>(null)
   const [streakStats, setStreakStats] = useState<StreakStats | null>(null)
   const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([])
   const [motivationalMsg, setMotivationalMsg] = useState<MotivationalMessage | null>(null)
+
+  const [inactiveCount, setInactiveCount] = useState(0)
 
   useEffect(() => {
     if (!user) {
       navigate('/login')
       return
     }
-    fetchAllStats()
+    fetchMandalarts()
   }, [user, navigate])
+
+  useEffect(() => {
+    if (user && mandalarts.length > 0) {
+      fetchAllStats()
+    }
+  }, [user, selectedMandalartId, mandalarts])
+
+  const fetchMandalarts = async () => {
+    if (!user) return
+
+    try {
+      const { data, error } = await supabase
+        .from('mandalarts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const allMandalarts = data || []
+      setMandalarts(allMandalarts)
+      setInactiveCount(allMandalarts.filter(m => !m.is_active).length)
+    } catch (error) {
+      console.error('Failed to fetch mandalarts:', error)
+    }
+  }
 
   const fetchAllStats = async () => {
     if (!user) return
 
     setIsLoading(true)
     try {
+      const mandalartId = selectedMandalartId || undefined
       const [completion, streak, progress] = await Promise.all([
-        getCompletionStats(user.id),
+        getCompletionStats(user.id, mandalartId),
         getStreakStats(user.id),
-        getGoalProgress(user.id)
+        getGoalProgress(user.id, mandalartId)
       ])
 
       setCompletionStats(completion)
@@ -90,24 +123,38 @@ export default function StatsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">진행 상황</h1>
-            <p className="text-muted-foreground mt-1">나의 실천 통계와 진행도를 확인하세요</p>
+            <h1 className="text-3xl font-bold">통계/리포트</h1>
+            <p className="text-muted-foreground mt-1">실천 통계와 리포트를 확인하세요</p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            대시보드로
-          </Button>
         </div>
 
         {/* Motivational Message */}
         {motivationalMsg && (
           <Card className={`border-2 ${getVariantColor(motivationalMsg.variant)}`}>
             <CardContent className="py-6">
-              <div className="flex items-center gap-4">
-                <div className="text-4xl">{motivationalMsg.emoji}</div>
-                <div>
-                  <h3 className="text-lg font-bold">{motivationalMsg.title}</h3>
-                  <p className="text-sm mt-1">{motivationalMsg.message}</p>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="text-4xl">{motivationalMsg.emoji}</div>
+                  <div>
+                    <h3 className="text-lg font-bold">{motivationalMsg.title}</h3>
+                    <p className="text-sm mt-1">{motivationalMsg.message}</p>
+                  </div>
                 </div>
+                {motivationalMsg.showAIButton && (
+                  <div className="flex items-center">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="whitespace-nowrap"
+                      onClick={() => {
+                        // ChatCoach 컴포넌트가 우하단에 있으므로 스크롤
+                        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+                      }}
+                    >
+                      💬 AI 코치와 대화하기
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -132,6 +179,60 @@ export default function StatsPage() {
                   <div className="text-3xl font-bold text-blue-600">{streakStats.longest}일</div>
                   <p className="text-sm text-muted-foreground mt-1">최장 스트릭</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Inactive Mandalart Warning */}
+        {inactiveCount > 0 && (
+          <Card className="border-2 border-amber-200 bg-amber-50">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <div>
+                    <p className="font-medium text-amber-900">
+                      비활성 상태의 만다라트 {inactiveCount}개는 통계에서 제외됩니다
+                    </p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      만다라트를 다시 활성화하려면 만다라트 관리에서 변경하세요
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/mandalart/list')}
+                  className="whitespace-nowrap border-amber-300 hover:bg-amber-100"
+                >
+                  만다라트 관리
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Mandalart Filter */}
+        {mandalarts.filter(m => m.is_active).length > 1 && (
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center gap-4">
+                <label className="font-medium text-sm">만다라트 선택:</label>
+                <select
+                  value={selectedMandalartId}
+                  onChange={(e) => setSelectedMandalartId(e.target.value)}
+                  className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">전체 만다라트 (활성)</option>
+                  {mandalarts
+                    .filter(m => m.is_active)
+                    .map((mandalart) => (
+                      <option key={mandalart.id} value={mandalart.id}>
+                        {mandalart.title}
+                      </option>
+                    ))}
+                </select>
               </div>
             </CardContent>
           </Card>
@@ -277,13 +378,6 @@ export default function StatsPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Back Button */}
-        <div className="pt-4">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            대시보드로 돌아가기
-          </Button>
-        </div>
       </div>
     </div>
   )

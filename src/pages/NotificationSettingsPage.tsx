@@ -133,6 +133,37 @@ export default function NotificationSettingsPage() {
     setSettings({ ...settings, customDays: newCustomDays })
   }
 
+  // 브라우저별 설정 경로 반환
+  const getBrowserSettingsInstruction = () => {
+    const userAgent = navigator.userAgent.toLowerCase()
+
+    if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+      return {
+        name: 'Chrome',
+        path: '설정 > 개인정보 및 보안 > 사이트 설정 > 알림'
+      }
+    } else if (userAgent.includes('firefox')) {
+      return {
+        name: 'Firefox',
+        path: '설정 > 개인정보 및 보안 > 권한 > 알림'
+      }
+    } else if (userAgent.includes('edg')) {
+      return {
+        name: 'Edge',
+        path: '설정 > 쿠키 및 사이트 권한 > 알림'
+      }
+    } else if (userAgent.includes('safari')) {
+      return {
+        name: 'Safari',
+        path: '시스템 환경설정 > 알림'
+      }
+    }
+    return {
+      name: '브라우저',
+      path: '설정에서 알림 권한 메뉴'
+    }
+  }
+
   if (!isNotificationSupported()) {
     return (
       <div className="container mx-auto py-8 px-4">
@@ -184,39 +215,69 @@ export default function NotificationSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">
-                  현재 상태:{' '}
-                  {permission === 'granted' && (
-                    <span className="text-green-600">허용됨 ✓</span>
-                  )}
-                  {permission === 'denied' && (
-                    <span className="text-red-600">거부됨 ✗</span>
-                  )}
-                  {permission === 'default' && (
-                    <span className="text-gray-600">대기 중</span>
-                  )}
-                </p>
-                {permission === 'denied' && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    브라우저 설정에서 알림 권한을 허용해주세요
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">
+                    현재 상태:{' '}
+                    {permission === 'granted' && (
+                      <span className="text-green-600">허용됨 ✓</span>
+                    )}
+                    {permission === 'denied' && (
+                      <span className="text-red-600">거부됨 ✗</span>
+                    )}
+                    {permission === 'default' && (
+                      <span className="text-gray-600">대기 중</span>
+                    )}
                   </p>
+                </div>
+                {permission !== 'granted' && (
+                  <Button onClick={handleRequestPermission}>
+                    권한 요청
+                  </Button>
+                )}
+                {permission === 'granted' && (
+                  <Button
+                    variant="outline"
+                    onClick={handleTestNotification}
+                    disabled={isTesting}
+                  >
+                    {isTesting ? '전송 중...' : '테스트 알림'}
+                  </Button>
                 )}
               </div>
-              {permission !== 'granted' && (
-                <Button onClick={handleRequestPermission}>
-                  권한 요청
-                </Button>
-              )}
+
+              {/* 권한별 안내 메시지 */}
               {permission === 'granted' && (
-                <Button
-                  variant="outline"
-                  onClick={handleTestNotification}
-                  disabled={isTesting}
-                >
-                  {isTesting ? '전송 중...' : '테스트 알림'}
-                </Button>
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-sm text-blue-900 mb-2 font-medium">
+                    💡 알림 권한을 해제하려면 브라우저 설정에서 변경할 수 있습니다.
+                  </p>
+                  <p className="text-sm text-blue-800">
+                    <span className="font-medium">{getBrowserSettingsInstruction().name}:</span>{' '}
+                    {getBrowserSettingsInstruction().path}
+                  </p>
+                </div>
+              )}
+
+              {permission === 'denied' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+                  <p className="text-sm text-amber-900 mb-2 font-medium">
+                    ⚠️ 알림이 차단되어 있습니다. 알림을 받으려면 브라우저 설정에서 권한을 허용해주세요.
+                  </p>
+                  <p className="text-sm text-amber-800">
+                    <span className="font-medium">{getBrowserSettingsInstruction().name}:</span>{' '}
+                    {getBrowserSettingsInstruction().path}
+                  </p>
+                </div>
+              )}
+
+              {permission === 'default' && (
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                  <p className="text-sm text-gray-700">
+                    📬 "권한 요청" 버튼을 눌러 알림을 활성화하세요.
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>

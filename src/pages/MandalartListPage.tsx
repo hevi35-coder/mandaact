@@ -48,6 +48,25 @@ export default function MandalartListPage() {
     }
   }
 
+  const handleToggleActive = async (id: string, currentIsActive: boolean) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('mandalarts')
+        .update({ is_active: !currentIsActive })
+        .eq('id', id)
+
+      if (updateError) throw updateError
+
+      // Update local state
+      setMandalarts(mandalarts.map(m =>
+        m.id === id ? { ...m, is_active: !currentIsActive } : m
+      ))
+    } catch (err) {
+      console.error('Toggle error:', err)
+      alert('활성화 상태 변경 중 오류가 발생했습니다')
+    }
+  }
+
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`"${title}" 만다라트를 삭제하시겠습니까? 모든 하위 데이터가 함께 삭제됩니다.`)) {
       return
@@ -125,17 +144,43 @@ export default function MandalartListPage() {
         {/* Mandalart List */}
         <div className="grid gap-4">
           {mandalarts.map((mandalart) => (
-            <Card key={mandalart.id} className="hover:shadow-md transition-shadow">
+            <Card
+              key={mandalart.id}
+              className={`hover:shadow-md transition-shadow ${!mandalart.is_active ? 'opacity-60' : ''}`}
+            >
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <CardTitle>{mandalart.title}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle>{mandalart.title}</CardTitle>
+                      {!mandalart.is_active && (
+                        <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
+                          비활성
+                        </span>
+                      )}
+                    </div>
                     <CardDescription className="mt-2">
                       핵심 목표: {mandalart.center_goal}
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    {mandalart.input_method === 'manual' ? '📝' : '📸'}
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs text-muted-foreground">
+                      {mandalart.input_method === 'manual' ? '📝' : '📸'}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={mandalart.is_active}
+                          onChange={() => handleToggleActive(mandalart.id, mandalart.is_active)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                      <span className="text-xs text-muted-foreground">
+                        {mandalart.is_active ? '활성' : '비활성'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
