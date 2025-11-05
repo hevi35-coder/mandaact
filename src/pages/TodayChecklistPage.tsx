@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
 import { ActionType, shouldShowToday, getActionTypeLabel } from '@/lib/actionTypes'
+import { getTypeIcon } from '@/lib/iconUtils'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
@@ -425,21 +426,27 @@ export default function TodayChecklistPage() {
                   variant={activeFilters.has('routine') ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => toggleFilter('routine')}
+                  className="flex items-center gap-1"
                 >
+                  {getTypeIcon('routine')}
                   {getActionTypeLabel('routine')}
                 </Button>
                 <Button
                   variant={activeFilters.has('mission') ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => toggleFilter('mission')}
+                  className="flex items-center gap-1"
                 >
+                  {getTypeIcon('mission')}
                   {getActionTypeLabel('mission')}
                 </Button>
                 <Button
                   variant={activeFilters.has('reference') ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => toggleFilter('reference')}
+                  className="flex items-center gap-1"
                 >
+                  {getTypeIcon('reference')}
                   {getActionTypeLabel('reference')}
                 </Button>
               </div>
@@ -575,9 +582,10 @@ export default function TodayChecklistPage() {
                                   </CardTitle>
                                   <button
                                     onClick={(e) => openTypeEditor(action, e)}
-                                    className="text-xs px-2 py-0.5 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                                    className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
                                   >
-                                    {getActionTypeLabel(action.type)}
+                                    {getTypeIcon(action.type)}
+                                    <span>{getActionTypeLabel(action.type)}</span>
                                   </button>
                                 </div>
                                 <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">

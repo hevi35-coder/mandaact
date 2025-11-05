@@ -30,6 +30,7 @@ import {
   getWeekdayNames,
   getInitialPeriod,
 } from '@/lib/actionTypes'
+import { getTypeIcon } from '@/lib/iconUtils'
 
 export interface ActionTypeData {
   type: ActionType
@@ -196,7 +197,10 @@ export default function ActionTypeSelector({
               <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
                 <RadioGroupItem value="routine" id="routine" />
                 <Label htmlFor="routine" className="flex-1 cursor-pointer">
-                  <div className="font-medium">{getActionTypeLabel('routine')}</div>
+                  <div className="font-medium flex items-center gap-2">
+                    {getTypeIcon('routine')}
+                    {getActionTypeLabel('routine')}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     매일, 매주, 매월 등 반복적으로 실천하는 항목
                   </div>
@@ -206,7 +210,10 @@ export default function ActionTypeSelector({
               <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
                 <RadioGroupItem value="mission" id="mission" />
                 <Label htmlFor="mission" className="flex-1 cursor-pointer">
-                  <div className="font-medium">{getActionTypeLabel('mission')}</div>
+                  <div className="font-medium flex items-center gap-2">
+                    {getTypeIcon('mission')}
+                    {getActionTypeLabel('mission')}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     완료 시점이 있는 목표 (자격증 취득, 프로젝트 완료 등)
                   </div>
@@ -216,7 +223,10 @@ export default function ActionTypeSelector({
               <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
                 <RadioGroupItem value="reference" id="reference" />
                 <Label htmlFor="reference" className="flex-1 cursor-pointer">
-                  <div className="font-medium">{getActionTypeLabel('reference')}</div>
+                  <div className="font-medium flex items-center gap-2">
+                    {getTypeIcon('reference')}
+                    {getActionTypeLabel('reference')}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     마음가짐, 가치관 등 체크가 필요없는 참고 항목
                   </div>

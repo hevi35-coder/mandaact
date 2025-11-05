@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Mandalart, SubGoal, Action } from '@/types'
-import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
-import { getActionTypeLabel } from '@/lib/actionTypes'
+import { Repeat, Target, Lightbulb } from 'lucide-react'
+import SubGoalEditModal from '@/components/SubGoalEditModal'
+import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 
 interface MandalartWithDetails extends Mandalart {
   sub_goals: (SubGoal & { actions: Action[] })[]
@@ -20,11 +21,11 @@ export default function MandalartDetailPage() {
   const [mandalart, setMandalart] = useState<MandalartWithDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedSubGoal, setSelectedSubGoal] = useState<number | null>(null)
-
-  // Action type editor state
-  const [typeSelectorOpen, setTypeSelectorOpen] = useState(false)
-  const [selectedAction, setSelectedAction] = useState<Action | null>(null)
+  const [selectedSection, setSelectedSection] = useState<number | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedSubGoal, setSelectedSubGoal] = useState<(SubGoal & { actions: Action[] }) | null>(null)
+  const [mobileExpandedSection, setMobileExpandedSection] = useState<number | null>(null)
+  const [coreGoalModalOpen, setCoreGoalModalOpen] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -95,59 +96,181 @@ export default function MandalartDetailPage() {
     return mandalart?.sub_goals.find(sg => sg.position === position)
   }
 
-  const openTypeEditor = (action: Action, e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent sub-goal selection
-    setSelectedAction(action)
-    setTypeSelectorOpen(true)
-  }
-
-  const handleTypeSave = async (typeData: ActionTypeData) => {
-    if (!selectedAction) return
+  const createEmptySubGoal = async (position: number): Promise<(SubGoal & { actions: Action[] }) | undefined> => {
+    if (!mandalart) return undefined
 
     try {
-      const { error: updateError } = await supabase
-        .from('actions')
-        .update({
-          type: typeData.type,
-          routine_frequency: typeData.routine_frequency,
-          routine_weekdays: typeData.routine_weekdays,
-          routine_count_per_period: typeData.routine_count_per_period,
-          mission_completion_type: typeData.mission_completion_type,
-          mission_period_cycle: typeData.mission_period_cycle,
-          mission_current_period_start: typeData.mission_current_period_start,
-          mission_current_period_end: typeData.mission_current_period_end,
-          ai_suggestion: typeData.ai_suggestion
+      const { data, error } = await supabase
+        .from('sub_goals')
+        .insert({
+          mandalart_id: mandalart.id,
+          title: `세부목표 ${position}`,
+          position: position
         })
-        .eq('id', selectedAction.id)
+        .select()
+        .single()
 
-      if (updateError) throw updateError
+      if (error) throw error
 
-      // Refresh mandalart data
-      await fetchMandalart()
+      return { ...data, actions: [] } as SubGoal & { actions: Action[] }
     } catch (err) {
-      console.error('Update error:', err)
-      setError(err instanceof Error ? err.message : '타입 업데이트 중 오류가 발생했습니다')
+      console.error('Error creating sub-goal:', err)
+      alert('세부목표 생성에 실패했습니다.')
+      return undefined
     }
   }
 
-  // Grid position mapping for 9x9 layout
-  // Positions 1-8 are arranged around center (position 0)
-  const positionMap = [
-    { position: 1, gridArea: '1 / 1 / 4 / 4' },   // Top-left
-    { position: 2, gridArea: '1 / 4 / 4 / 7' },   // Top-center
-    { position: 3, gridArea: '1 / 7 / 4 / 10' },  // Top-right
-    { position: 4, gridArea: '4 / 1 / 7 / 4' },   // Middle-left
-    { position: 0, gridArea: '4 / 4 / 7 / 7' },   // Center (핵심 목표)
-    { position: 5, gridArea: '4 / 7 / 7 / 10' },  // Middle-right
-    { position: 6, gridArea: '7 / 1 / 10 / 4' },  // Bottom-left
-    { position: 7, gridArea: '7 / 4 / 10 / 7' },  // Bottom-center
-    { position: 8, gridArea: '7 / 7 / 10 / 10' }, // Bottom-right
-  ]
+  const handleSectionClick = async (sectionPos: number) => {
+    let subGoal = getSubGoalByPosition(sectionPos)
+
+    // If sub-goal doesn't exist, create it
+    if (!subGoal) {
+      const newSubGoal = await createEmptySubGoal(sectionPos)
+      if (!newSubGoal) return
+
+      // Refresh data to update UI
+      await fetchMandalart()
+
+      // Get the refreshed sub-goal
+      subGoal = getSubGoalByPosition(sectionPos)
+      if (!subGoal) return
+    }
+
+    setSelectedSection(sectionPos)
+    setSelectedSubGoal(subGoal)
+    setModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setModalOpen(false)
+    setSelectedSection(null)
+    setSelectedSubGoal(null)
+  }
+
+  const handleModalSave = () => {
+    // Refresh data after save
+    fetchMandalart()
+  }
+
+  const handleMobileSectionTap = (sectionPos: number) => {
+    // On mobile: first tap expands, second tap (or long press) opens modal
+    if (mobileExpandedSection === sectionPos) {
+      // Already expanded, open modal
+      handleSectionClick(sectionPos)
+    } else {
+      // Expand section
+      setMobileExpandedSection(sectionPos)
+    }
+  }
+
+  const handleMobileBack = () => {
+    setMobileExpandedSection(null)
+  }
+
+  // Render a single cell in the 9x9 grid
+  const renderCell = (sectionPos: number, cellPos: number) => {
+    // Center section (position 0)
+    if (sectionPos === 0) {
+      if (cellPos === 4) {
+        // Center of center: Core goal
+        return (
+          <div
+            className="flex items-center justify-center h-full p-2 cursor-pointer hover:opacity-90 transition-opacity"
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            }}
+            onClick={() => setCoreGoalModalOpen(true)}
+          >
+            <p className="text-sm font-bold text-center line-clamp-3 text-white">
+              {mandalart?.center_goal}
+            </p>
+          </div>
+        )
+      } else {
+        // Surrounding cells: Sub-goal titles
+        const subGoalPosition = cellPos < 4 ? cellPos + 1 : cellPos
+        const subGoal = getSubGoalByPosition(subGoalPosition)
+        return (
+          <div className="flex items-center justify-center h-full p-2 bg-blue-50 hover:bg-blue-100 transition-colors">
+            <p className="text-xs font-medium text-center line-clamp-2">
+              {subGoal?.title || `세부${subGoalPosition}`}
+            </p>
+          </div>
+        )
+      }
+    }
+
+    // Outer sections (positions 1-8)
+    const subGoal = getSubGoalByPosition(sectionPos)
+    if (!subGoal) {
+      // Empty sub-goal cell
+      return (
+        <div className="flex items-center justify-center h-full p-2 bg-gray-50 hover:bg-gray-100 transition-colors">
+          <p className="text-[10px] text-muted-foreground text-center">클릭하여 추가</p>
+        </div>
+      )
+    }
+
+    if (cellPos === 4) {
+      // Center of section: Sub-goal title
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-2 bg-blue-50 border border-blue-200">
+          <p className="text-xs font-semibold text-center line-clamp-2">{subGoal.title}</p>
+        </div>
+      )
+    } else {
+      // Surrounding cells: Actions
+      const actionIndex = cellPos < 4 ? cellPos : cellPos - 1
+      const action = subGoal.actions[actionIndex]
+
+      if (!action) {
+        return (
+          <div className="flex items-center justify-center h-full p-2 bg-white">
+            <p className="text-[10px] text-muted-foreground">-</p>
+          </div>
+        )
+      }
+
+      return (
+        <div className="flex items-center justify-center h-full p-2 bg-white hover:bg-gray-50 transition-colors">
+          <p className="text-[11px] leading-tight line-clamp-3 text-center">{action.title}</p>
+        </div>
+      )
+    }
+  }
+
+  // Render a 3x3 section
+  const renderSection = (sectionPos: number) => {
+    const isCenter = sectionPos === 0
+    const isSelected = selectedSection === sectionPos
+
+    return (
+      <div
+        key={sectionPos}
+        className={`
+          grid grid-cols-3 grid-rows-3 gap-px bg-gray-300 rounded
+          ${!isCenter ? 'cursor-pointer hover:ring-2 hover:ring-primary/50' : ''}
+          ${isSelected ? 'ring-2 ring-primary' : ''}
+          transition-all
+        `}
+        onClick={() => !isCenter && handleSectionClick(sectionPos)}
+      >
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
+          <div key={cellPos} className="bg-white">
+            {renderCell(sectionPos, cellPos)}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // Section position mapping for 3x3 layout of sections
+  const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <p className="text-muted-foreground">로딩 중...</p>
           </div>
@@ -159,7 +282,7 @@ export default function MandalartDetailPage() {
   if (error || !mandalart) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="max-w-6xl mx-auto space-y-4">
+        <div className="max-w-7xl mx-auto space-y-4">
           <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
             {error || '만다라트를 찾을 수 없습니다'}
           </div>
@@ -173,7 +296,7 @@ export default function MandalartDetailPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -187,137 +310,139 @@ export default function MandalartDetailPage() {
           </Button>
         </div>
 
-        {/* 9x9 Grid */}
-        <Card>
+        {/* Desktop: 9x9 Grid (3x3 of 3x3 sections) */}
+        <Card className="hidden md:block">
           <CardContent className="p-6">
-            <div
-              className="grid gap-2"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(9, 1fr)',
-                gridTemplateRows: 'repeat(9, 1fr)',
-                minHeight: '600px'
-              }}
-            >
-              {positionMap.map(({ position, gridArea }) => {
-                if (position === 0) {
-                  // Center: 핵심 목표
+            <div className="grid grid-cols-3 gap-4">
+              {sectionPositions.map((sectionPos) => renderSection(sectionPos))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Mobile: Adaptive View */}
+        <Card className="md:hidden">
+          <CardContent className="p-4">
+            {mobileExpandedSection === null ? (
+              // Collapsed: 3x3 Sub-goals only
+              <div className="grid grid-cols-3 gap-2">
+                {sectionPositions.map((sectionPos) => {
+                  if (sectionPos === 0) {
+                    // Center: Core goal
+                    return (
+                      <div
+                        key={sectionPos}
+                        className="aspect-square flex items-center justify-center p-3 rounded-lg cursor-pointer active:opacity-90 transition-opacity"
+                        style={{
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        }}
+                        onClick={() => setCoreGoalModalOpen(true)}
+                      >
+                        <p className="text-sm font-bold text-center line-clamp-3 text-white">
+                          {mandalart.center_goal}
+                        </p>
+                      </div>
+                    )
+                  }
+
+                  const subGoal = getSubGoalByPosition(sectionPos)
                   return (
                     <div
-                      key="center"
-                      className="border-2 border-primary bg-primary/10 rounded-lg p-4 flex items-center justify-center text-center"
-                      style={{ gridArea }}
+                      key={sectionPos}
+                      className="aspect-square flex flex-col items-center justify-center p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer active:bg-blue-200 transition-colors"
+                      onClick={() => handleMobileSectionTap(sectionPos)}
                     >
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-2">핵심 목표</p>
-                        <p className="font-bold text-lg">{mandalart.center_goal}</p>
-                      </div>
-                    </div>
-                  )
-                }
-
-                const subGoal = getSubGoalByPosition(position)
-                if (!subGoal) {
-                  return (
-                    <div
-                      key={position}
-                      className="border border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center text-center"
-                      style={{ gridArea }}
-                    >
-                      <p className="text-xs text-muted-foreground">세부 목표 {position}</p>
-                    </div>
-                  )
-                }
-
-                const isSelected = selectedSubGoal === position
-                return (
-                  <div
-                    key={position}
-                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-primary bg-primary/5 shadow-md'
-                        : 'border-gray-300 hover:border-primary/50 hover:bg-gray-50'
-                    }`}
-                    style={{ gridArea }}
-                    onClick={() => setSelectedSubGoal(isSelected ? null : position)}
-                  >
-                    <div className="h-full flex flex-col">
-                      <p className="text-xs text-muted-foreground mb-2">세부 목표 {position}</p>
-                      <p className="font-medium text-sm mb-2">{subGoal.title}</p>
-                      <div className="flex-1 overflow-y-auto">
-                        {isSelected && (
-                          <div className="space-y-1 mt-2 pt-2 border-t">
-                            <p className="text-xs font-medium text-muted-foreground">실천 항목:</p>
-                            {subGoal.actions.length > 0 ? (
-                              subGoal.actions.map((action, idx) => (
-                                <div
-                                  key={action.id}
-                                  className="text-xs p-2 bg-white rounded flex items-center justify-between gap-2 hover:bg-gray-50 group"
-                                >
-                                  <span className="flex-1">
-                                    {idx + 1}. {action.title}
-                                  </span>
-                                  <button
-                                    onClick={(e) => openTypeEditor(action, e)}
-                                    className="text-xs px-2 py-0.5 rounded border border-gray-300 hover:border-primary hover:bg-primary/5 transition-colors"
-                                  >
-                                    {getActionTypeLabel(action.type)}
-                                  </button>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-xs text-muted-foreground italic">실천 항목 없음</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      {!isSelected && subGoal.actions.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          📋 {subGoal.actions.length}개 항목
+                      <p className="text-[10px] text-muted-foreground mb-1">세부 {sectionPos}</p>
+                      <p className="text-xs font-medium text-center line-clamp-2">
+                        {subGoal?.title || '-'}
+                      </p>
+                      {subGoal && (
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {subGoal.actions.length}개
                         </p>
                       )}
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            ) : (
+              // Expanded: 3x3 grid of selected section
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMobileBack}
+                  >
+                    ← 뒤로
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleSectionClick(mobileExpandedSection)}
+                  >
+                    편집
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-px bg-gray-300 rounded">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
+                    <div key={cellPos} className="aspect-square bg-white">
+                      {renderCell(mobileExpandedSection, cellPos)}
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  다시 탭하거나 "편집" 버튼을 눌러 편집할 수 있습니다
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Instructions */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">사용 방법</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <ul className="list-disc list-inside space-y-1">
-              <li>중앙의 핵심 목표를 중심으로 8개의 세부 목표가 배치되어 있습니다</li>
-              <li>세부 목표를 클릭하면 해당 목표의 실천 항목을 볼 수 있습니다</li>
-              <li>각 세부 목표는 최대 8개의 실천 항목을 가질 수 있습니다</li>
-              <li>실천 항목 옆의 타입 배지를 클릭하면 타입 설정을 변경할 수 있습니다</li>
-            </ul>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p className="font-medium text-foreground mb-2">💡 사용 방법</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li className="hidden md:list-item">
+                  전통적인 9x9 만다라트 형식으로 모든 내용(핵심목표 + 세부목표 8개 + 실천항목 64개)이 표시됩니다
+                </li>
+                <li className="hidden md:list-item">
+                  각 3x3 섹션을 클릭하면 해당 세부목표와 실천항목을 편집할 수 있습니다
+                </li>
+                <li className="md:hidden">
+                  세부목표를 탭하면 상세보기 및 편집이 가능합니다
+                </li>
+                <li>
+                  타입 아이콘: <Repeat className="inline w-3 h-3 text-blue-500" /> 루틴,
+                  <Target className="inline w-3 h-3 text-green-500 mx-1" /> 미션,
+                  <Lightbulb className="inline w-3 h-3 text-amber-500 mx-1" /> 참고
+                </li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Action Type Selector Dialog */}
-      {selectedAction && (
-        <ActionTypeSelector
-          open={typeSelectorOpen}
-          onOpenChange={setTypeSelectorOpen}
-          actionTitle={selectedAction.title}
-          initialData={{
-            type: selectedAction.type,
-            routine_frequency: selectedAction.routine_frequency,
-            routine_weekdays: selectedAction.routine_weekdays,
-            routine_count_per_period: selectedAction.routine_count_per_period,
-            mission_completion_type: selectedAction.mission_completion_type,
-            mission_period_cycle: selectedAction.mission_period_cycle,
-            mission_current_period_start: selectedAction.mission_current_period_start,
-            mission_current_period_end: selectedAction.mission_current_period_end,
-            ai_suggestion: selectedAction.ai_suggestion
-          }}
-          onSave={handleTypeSave}
+      {/* SubGoal Edit Modal */}
+      {selectedSubGoal && (
+        <SubGoalEditModal
+          open={modalOpen}
+          onOpenChange={handleModalClose}
+          subGoal={selectedSubGoal}
+          onSave={handleModalSave}
+        />
+      )}
+
+      {/* Core Goal Edit Modal */}
+      {mandalart && (
+        <CoreGoalEditModal
+          open={coreGoalModalOpen}
+          onOpenChange={setCoreGoalModalOpen}
+          mandalart={mandalart}
+          onSave={fetchMandalart}
         />
       )}
     </div>

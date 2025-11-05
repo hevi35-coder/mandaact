@@ -39,15 +39,15 @@ export function getActionTypeLabel(type: ActionType, showDescription: boolean = 
     reference: {
       main: '참고',
       description: '마음가짐',
-      icon: '📝'
+      icon: '💡'
     }
   }
 
   const label = labels[type]
   if (showDescription) {
-    return `${label.icon} ${label.main}(${label.description})`
+    return `${label.main}(${label.description})`
   }
-  return `${label.icon} ${label.main}`
+  return label.main
 }
 
 /**
