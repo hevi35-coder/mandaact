@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'
-import { getCompletionStats, getStreakStats, type CompletionStats, type StreakStats } from '@/lib/stats'
+import { getCompletionStats, getStreakStats, generateMotivationalMessage, type CompletionStats, type StreakStats } from '@/lib/stats'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -39,9 +39,13 @@ export default function DashboardPage() {
     navigate('/', { replace: true })
   }
 
+  const motivationalMessage = completionStats && streakStats
+    ? generateMotivationalMessage(completionStats, streakStats)
+    : null
+
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="container mx-auto pt-8 pb-24 md:pb-8 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -58,132 +62,137 @@ export default function DashboardPage() {
         {/* Notification Permission Prompt */}
         <NotificationPermissionPrompt />
 
-        {/* Stats Summary */}
-        {completionStats && streakStats && (
-          <Card>
-            <CardHeader>
-              <CardTitle>오늘의 진행상황</CardTitle>
-              <CardDescription>실천 통계를 한눈에 확인하세요</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-3xl font-bold text-blue-600">{completionStats.today.percentage}%</div>
-                  <p className="text-sm text-muted-foreground mt-1">오늘 완료율</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {completionStats.today.checked}개 완료 / {completionStats.today.total}개
-                  </p>
+        {/* Motivational Message */}
+        {motivationalMessage && (
+          <Card className={
+            motivationalMessage.variant === 'success' ? 'border-green-200 bg-green-50' :
+            motivationalMessage.variant === 'warning' ? 'border-yellow-200 bg-yellow-50' :
+            'border-blue-200 bg-blue-50'
+          }>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="text-3xl">{motivationalMessage.emoji}</div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">{motivationalMessage.title}</h3>
+                  <p className="text-sm text-muted-foreground">{motivationalMessage.message}</p>
+                  {motivationalMessage.showAIButton && (
+                    <Link to="/chat" className="inline-block mt-3">
+                      <Button size="sm">
+                        🤖 AI 코치와 대화하기
+                      </Button>
+                    </Link>
+                  )}
                 </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="text-3xl font-bold text-orange-600">{streakStats.current}일</div>
-                  <p className="text-sm text-muted-foreground mt-1">연속 실천</p>
-                  <p className="text-xs text-muted-foreground mt-1">최장: {streakStats.longest}일</p>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <Link to="/today">
-                  <Button variant="default" className="w-full">
-                    ✅ 실천하러 가기
-                  </Button>
-                </Link>
-                <Link to="/stats">
-                  <Button variant="outline" className="w-full">
-                    📊 전체 통계
-                  </Button>
-                </Link>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Welcome Card */}
+        {/* Stats Grid */}
+        {completionStats && streakStats && (
+          <div className="grid grid-cols-2 gap-4">
+            {/* Today */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-blue-600">{completionStats.today.percentage}%</div>
+                  <p className="text-sm font-medium mt-2">오늘 완료율</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {completionStats.today.checked} / {completionStats.today.total}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Week */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-purple-600">{completionStats.week.percentage}%</div>
+                  <p className="text-sm font-medium mt-2">주간 완료율</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {completionStats.week.checked} / {completionStats.week.total}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Month */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-green-600">{completionStats.month.percentage}%</div>
+                  <p className="text-sm font-medium mt-2">월간 완료율</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {completionStats.month.checked} / {completionStats.month.total}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Streak */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-orange-600">{streakStats.current}일</div>
+                  <p className="text-sm font-medium mt-2">연속 실천</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    최장: {streakStats.longest}일
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Action Hub */}
         <Card>
           <CardHeader>
-            <CardTitle>🎯 보호된 페이지입니다!</CardTitle>
-            <CardDescription>
-              로그인한 사용자만 이 페이지를 볼 수 있습니다
-            </CardDescription>
+            <CardTitle>빠른 실행</CardTitle>
+            <CardDescription>자주 사용하는 기능에 빠르게 접근하세요</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              이 페이지는 ProtectedRoute 컴포넌트로 보호되고 있습니다.
-              로그인하지 않은 사용자가 이 페이지에 접근하면 자동으로 로그인 페이지로 리다이렉트됩니다.
-            </p>
-
-            <div className="pt-4 border-t">
-              <h3 className="font-medium mb-2">현재 사용자 정보:</h3>
-              <ul className="text-sm space-y-1">
-                <li>📧 이메일: {user?.email}</li>
-                <li>🆔 ID: {user?.id}</li>
-                <li>📅 생성일: {user?.created_at ? new Date(user.created_at).toLocaleDateString('ko-KR') : 'N/A'}</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>만다라트 관리</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
               <Link to="/today">
-                <Button className="w-full" size="lg">
-                  ✅ 오늘의 실천
-                </Button>
-              </Link>
-              <Link to="/mandalart/create">
-                <Button className="w-full" variant="outline" size="lg">
-                  + 새 만다라트 만들기
+                <Button className="w-full h-20 flex flex-col items-center justify-center gap-2" size="lg">
+                  <span className="text-2xl">✅</span>
+                  <span className="text-sm font-medium">오늘의 실천</span>
                 </Button>
               </Link>
               <Link to="/mandalart/list">
-                <Button className="w-full" variant="outline" size="lg">
-                  📋 내 만다라트 목록
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2" size="lg">
+                  <span className="text-2xl">📋</span>
+                  <span className="text-sm font-medium">만다라트 관리</span>
+                </Button>
+              </Link>
+              <Link to="/stats">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2" size="lg">
+                  <span className="text-2xl">📊</span>
+                  <span className="text-sm font-medium">통계/리포트</span>
+                </Button>
+              </Link>
+              <Link to="/chat">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center gap-2" size="lg">
+                  <span className="text-2xl">🤖</span>
+                  <span className="text-sm font-medium">AI 코치</span>
                 </Button>
               </Link>
             </div>
 
-            <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-3">
-                설정:
-              </p>
-              <div className="grid gap-2">
-                <Link to="/settings/notifications">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    🔔 알림 설정
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-3">
-                앞으로 구현될 기능들:
-              </p>
-              <div className="grid gap-2">
-                <div className="p-3 border rounded-lg opacity-50">
-                  <p className="font-medium">🤖 AI 코칭</p>
-                  <p className="text-sm text-muted-foreground">맞춤형 동기부여 및 조언</p>
-                </div>
-                <div className="p-3 border rounded-lg opacity-50">
-                  <p className="font-medium">📸 이미지 OCR</p>
-                  <p className="text-sm text-muted-foreground">사진으로 만다라트 자동 생성</p>
-                </div>
-              </div>
+            <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3">
+              <Link to="/mandalart/create">
+                <Button variant="outline" className="w-full justify-start" size="sm">
+                  ➕ 새 만다라트 만들기
+                </Button>
+              </Link>
+              <Link to="/settings/notifications">
+                <Button variant="outline" className="w-full justify-start" size="sm">
+                  🔔 알림 설정
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
-
-        {/* Navigation */}
-        <div className="flex gap-2">
-          <Link to="/" className="flex-1">
-            <Button variant="outline" className="w-full">
-              홈으로
-            </Button>
-          </Link>
-        </div>
       </div>
     </div>
   )
