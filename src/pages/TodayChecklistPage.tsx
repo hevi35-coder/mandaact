@@ -628,6 +628,10 @@ export default function TodayChecklistPage() {
             mission_current_period_start: selectedAction.mission_current_period_start,
             mission_current_period_end: selectedAction.mission_current_period_end,
             ai_suggestion: selectedAction.ai_suggestion
+              ? (typeof selectedAction.ai_suggestion === 'string'
+                  ? JSON.parse(selectedAction.ai_suggestion)
+                  : selectedAction.ai_suggestion)
+              : undefined
           }}
           onSave={handleTypeSave}
         />

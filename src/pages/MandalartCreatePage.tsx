@@ -7,8 +7,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
-import { getActionTypeLabel } from '@/lib/actionTypes'
-import { Upload, Image as ImageIcon } from 'lucide-react'
+import { getActionTypeLabel, suggestActionType } from '@/lib/actionTypes'
+import { Upload, Image as ImageIcon, FileText } from 'lucide-react'
 
 interface ActionData {
   title: string
@@ -25,13 +25,17 @@ export default function MandalartCreatePage() {
   const user = useAuthStore((state) => state.user)
 
   // Input method selection
-  const [inputMethod, setInputMethod] = useState<'image' | 'manual' | null>(null)
+  const [inputMethod, setInputMethod] = useState<'image' | 'manual' | 'text' | null>(null)
 
   // Image upload state
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [isProcessingOCR, setIsProcessingOCR] = useState(false)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
+
+  // Text paste state
+  const [pastedText, setPastedText] = useState('')
+  const [isProcessingText, setIsProcessingText] = useState(false)
 
   const [title, setTitle] = useState('')
   const [centerGoal, setCenterGoal] = useState('')
@@ -164,23 +168,7 @@ export default function MandalartCreatePage() {
       const result = await response.json()
 
       // 3. Populate form with OCR results
-      if (result.center_goal) setCenterGoal(result.center_goal)
-      if (result.sub_goals) {
-        const newSubGoals = [...subGoals]
-        result.sub_goals.forEach((sg: any, index: number) => {
-          if (index < 8) {
-            newSubGoals[index].title = sg.title || ''
-            if (sg.actions) {
-              sg.actions.forEach((action: string, actionIndex: number) => {
-                if (actionIndex < 8) {
-                  newSubGoals[index].actions[actionIndex].title = action || ''
-                }
-              })
-            }
-          }
-        })
-        setSubGoals(newSubGoals)
-      }
+      populateFormWithParsedData(result)
 
       setError(null)
     } catch (err) {
@@ -188,6 +176,70 @@ export default function MandalartCreatePage() {
       setError(err instanceof Error ? err.message : 'OCR 처리 중 오류가 발생했습니다')
     } finally {
       setIsProcessingOCR(false)
+    }
+  }
+
+  const handleProcessText = async () => {
+    if (!pastedText.trim() || !user) return
+
+    setIsProcessingText(true)
+    setError(null)
+
+    try {
+      // Call parse-mandalart-text Edge Function
+      const { data: { session }, error: authError } = await supabase.auth.getSession()
+      if (authError || !session) throw new Error('Not authenticated')
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-mandalart-text`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: pastedText,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '텍스트 분석 실패')
+      }
+
+      const result = await response.json()
+
+      // Populate form with parsed results
+      populateFormWithParsedData(result)
+
+      setError(null)
+    } catch (err) {
+      console.error('Text processing error:', err)
+      setError(err instanceof Error ? err.message : '텍스트 분석 중 오류가 발생했습니다')
+    } finally {
+      setIsProcessingText(false)
+    }
+  }
+
+  const populateFormWithParsedData = (result: any) => {
+    if (result.center_goal) setCenterGoal(result.center_goal)
+    if (result.sub_goals) {
+      const newSubGoals = [...subGoals]
+      result.sub_goals.forEach((sg: any, index: number) => {
+        if (index < 8) {
+          newSubGoals[index].title = sg.title || ''
+          if (sg.actions) {
+            sg.actions.forEach((action: string, actionIndex: number) => {
+              if (actionIndex < 8) {
+                newSubGoals[index].actions[actionIndex].title = action || ''
+              }
+            })
+          }
+        }
+      })
+      setSubGoals(newSubGoals)
     }
   }
 
@@ -252,22 +304,52 @@ export default function MandalartCreatePage() {
         if (!originalSubGoal) return []
 
         return originalSubGoal.actions
-          .map((action, actionIndex) => ({
-            sub_goal_id: sg.id,
-            position: actionIndex + 1,
-            title: action.title.trim(),
-            // Type data
-            type: action.typeData?.type || 'routine',
-            routine_frequency: action.typeData?.routine_frequency,
-            routine_weekdays: action.typeData?.routine_weekdays,
-            routine_count_per_period: action.typeData?.routine_count_per_period,
-            mission_completion_type: action.typeData?.mission_completion_type,
-            mission_period_cycle: action.typeData?.mission_period_cycle,
-            mission_current_period_start: action.typeData?.mission_current_period_start,
-            mission_current_period_end: action.typeData?.mission_current_period_end,
-            ai_suggestion: action.typeData?.ai_suggestion
-          }))
-          .filter(action => action.title)
+          .map((action, actionIndex) => {
+            if (!action.title.trim()) return null
+
+            // Use AI suggestion if no typeData is provided
+            let finalTypeData: ActionTypeData | undefined
+            let aiSuggestionStr: string | undefined
+
+            if (action.typeData) {
+              // User manually set the type
+              finalTypeData = action.typeData
+              aiSuggestionStr = action.typeData.ai_suggestion
+                ? JSON.stringify(action.typeData.ai_suggestion)
+                : undefined
+            } else {
+              // Use AI suggestion
+              const aiSuggestion = suggestActionType(action.title.trim())
+              finalTypeData = {
+                type: aiSuggestion.type,
+                routine_frequency: aiSuggestion.routineFrequency,
+                mission_completion_type: aiSuggestion.missionCompletionType,
+                mission_period_cycle: aiSuggestion.missionPeriodCycle,
+              }
+              aiSuggestionStr = JSON.stringify({
+                type: aiSuggestion.type,
+                confidence: aiSuggestion.confidence,
+                reason: aiSuggestion.reason
+              })
+            }
+
+            return {
+              sub_goal_id: sg.id,
+              position: actionIndex + 1,
+              title: action.title.trim(),
+              // Type data: use manual selection or AI suggestion
+              type: finalTypeData?.type || 'routine',
+              routine_frequency: finalTypeData?.routine_frequency,
+              routine_weekdays: finalTypeData?.routine_weekdays,
+              routine_count_per_period: finalTypeData?.routine_count_per_period,
+              mission_completion_type: finalTypeData?.mission_completion_type,
+              mission_period_cycle: finalTypeData?.mission_period_cycle,
+              mission_current_period_start: finalTypeData?.mission_current_period_start,
+              mission_current_period_end: finalTypeData?.mission_current_period_end,
+              ai_suggestion: aiSuggestionStr
+            }
+          })
+          .filter((action): action is NonNullable<typeof action> => action !== null)
       })
 
       if (actionsToInsert.length > 0) {
@@ -296,7 +378,7 @@ export default function MandalartCreatePage() {
         <div>
           <h1 className="text-3xl font-bold">만다라트 만들기</h1>
           <p className="text-muted-foreground mt-1">
-            이미지 업로드 또는 직접 입력으로 만다라트를 만드세요
+            이미지 업로드, 텍스트 붙여넣기 또는 직접 입력으로 만다라트를 만드세요
           </p>
         </div>
 
@@ -314,7 +396,7 @@ export default function MandalartCreatePage() {
               <CardTitle>입력 방식 선택</CardTitle>
               <CardDescription>어떤 방식으로 만다라트를 만들까요?</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-3 gap-4">
               <Button
                 variant="outline"
                 className="h-32 flex-col gap-2"
@@ -325,6 +407,19 @@ export default function MandalartCreatePage() {
                   <div className="font-semibold">이미지 업로드</div>
                   <div className="text-xs text-muted-foreground">
                     만다라트 이미지를 업로드하여 자동 인식
+                  </div>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-32 flex-col gap-2"
+                onClick={() => setInputMethod('text')}
+              >
+                <FileText className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-semibold">텍스트 붙여넣기</div>
+                  <div className="text-xs text-muted-foreground">
+                    ChatGPT 등에서 생성한 텍스트로 자동 생성
                   </div>
                 </div>
               </Button>
@@ -405,6 +500,73 @@ export default function MandalartCreatePage() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Text Paste UI */}
+        {inputMethod === 'text' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>텍스트 붙여넣기</CardTitle>
+              <CardDescription>
+                ChatGPT, Claude 등에서 생성한 만다라트 텍스트를 붙여넣으세요
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="pastedText">만다라트 텍스트</Label>
+                <textarea
+                  id="pastedText"
+                  className="w-full min-h-[300px] p-3 border rounded-md text-sm font-mono resize-y"
+                  placeholder={`예시:
+
+핵심 목표: 건강한 삶
+
+1. 운동
+   - 매일 30분 걷기
+   - 주 3회 근력 운동
+   - 스트레칭 하기
+   - 요가 수업 듣기
+   - 자전거 타기
+   - 등산 가기
+   - 수영 배우기
+   - 홈트레이닝 루틴 만들기
+
+2. 식습관
+   - 아침 거르지 않기
+   - 물 2L 마시기
+   - 채소 많이 먹기
+   - 가공식품 줄이기
+   - 규칙적인 식사
+   - 과식하지 않기
+   - 건강한 간식
+   - 영양소 균형 맞추기
+
+... (8개 세부 목표, 각 8개 실천 항목)`}
+                  value={pastedText}
+                  onChange={(e) => setPastedText(e.target.value)}
+                  disabled={isProcessingText}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPastedText('')
+                  }}
+                  disabled={isProcessingText}
+                >
+                  지우기
+                </Button>
+                <Button
+                  onClick={handleProcessText}
+                  disabled={isProcessingText || !pastedText.trim()}
+                  className="flex-1"
+                >
+                  {isProcessingText ? 'AI가 텍스트를 분석 중입니다...' : '텍스트 분석'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

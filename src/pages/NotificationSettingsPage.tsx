@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
+import { useToast } from '@/hooks/use-toast'
 import {
   isNotificationSupported,
   getNotificationPermission,
@@ -18,12 +19,12 @@ import {
 export default function NotificationSettingsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const { toast } = useToast()
 
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [settings, setSettings] = useState<NotificationSettings>(getNotificationSettings())
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
-  const [saveMessage, setSaveMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) {
@@ -42,11 +43,16 @@ export default function NotificationSettingsPage() {
       setPermission(result)
 
       if (result === 'granted') {
-        setSaveMessage('알림 권한이 허용되었습니다!')
-        setTimeout(() => setSaveMessage(null), 3000)
+        toast({
+          title: "✅ 알림 권한 허용",
+          description: "알림 권한이 허용되었습니다!",
+        })
       } else {
-        setSaveMessage('알림 권한이 거부되었습니다.')
-        setTimeout(() => setSaveMessage(null), 3000)
+        toast({
+          title: "❌ 알림 권한 거부",
+          description: "알림 권한이 거부되었습니다.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Failed to request permission:', error)
@@ -65,11 +71,17 @@ export default function NotificationSettingsPage() {
         scheduleDailyReminder(message.title, message.body, settings.time)
       }
 
-      setSaveMessage('설정이 저장되었습니다!')
-      setTimeout(() => setSaveMessage(null), 3000)
+      toast({
+        title: "✅ 저장 완료",
+        description: "설정이 저장되었습니다!",
+      })
     } catch (error) {
       console.error('Failed to save settings:', error)
-      setSaveMessage('설정 저장에 실패했습니다.')
+      toast({
+        title: "❌ 저장 실패",
+        description: "설정 저장에 실패했습니다.",
+        variant: "destructive",
+      })
     } finally {
       setIsSaving(false)
     }
@@ -80,8 +92,11 @@ export default function NotificationSettingsPage() {
     console.log('Current permission:', permission)
 
     if (permission !== 'granted') {
-      setSaveMessage('먼저 알림 권한을 허용해주세요.')
-      setTimeout(() => setSaveMessage(null), 3000)
+      toast({
+        title: "⚠️ 알림 권한 필요",
+        description: "먼저 알림 권한을 허용해주세요.",
+        variant: "destructive",
+      })
       return
     }
 
@@ -91,14 +106,20 @@ export default function NotificationSettingsPage() {
       console.log('Calling sendTestNotification...')
       await sendTestNotification()
       console.log('sendTestNotification completed')
-      setSaveMessage('테스트 알림이 전송되었습니다!')
+      toast({
+        title: "✅ 테스트 알림 전송",
+        description: "테스트 알림이 전송되었습니다!",
+      })
     } catch (error) {
       console.error('Failed to send test notification:', error)
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
-      setSaveMessage(`테스트 알림 전송 실패: ${errorMessage}`)
+      toast({
+        title: "❌ 전송 실패",
+        description: `테스트 알림 전송 실패: ${errorMessage}`,
+        variant: "destructive",
+      })
     } finally {
       setIsTesting(false)
-      setTimeout(() => setSaveMessage(null), 5000)
     }
   }
 
@@ -198,13 +219,6 @@ export default function NotificationSettingsPage() {
             대시보드로
           </Button>
         </div>
-
-        {/* Save Message */}
-        {saveMessage && (
-          <div className="p-3 text-sm bg-primary/10 text-primary border border-primary/20 rounded">
-            {saveMessage}
-          </div>
-        )}
 
         {/* Permission Status */}
         <Card>

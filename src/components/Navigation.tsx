@@ -12,8 +12,8 @@ export default function Navigation() {
   }
 
   const navItems = [
-    { path: '/dashboard', label: '대시보드', icon: '🏠' },
     { path: '/today', label: '오늘의 실천', icon: '✅' },
+    { path: '/dashboard', label: '대시보드', icon: '🏠' },
     { path: '/mandalart/list', label: '만다라트 관리', icon: '📋' },
     { path: '/stats', label: '통계/리포트', icon: '📊' },
   ]

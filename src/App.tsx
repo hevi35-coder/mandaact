@@ -16,6 +16,7 @@ import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
 import StatsPage from '@/pages/StatsPage'
 import ChatCoach from '@/components/ChatCoach'
 import Navigation from '@/components/Navigation'
+import { Toaster } from '@/components/ui/toaster'
 
 // HomePage component
 function HomePage() {
@@ -194,6 +195,7 @@ function App() {
           {/* More routes will be added in future phases */}
         </Routes>
         <ChatCoach />
+        <Toaster />
       </Router>
     </QueryClientProvider>
   )

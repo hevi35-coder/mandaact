@@ -52,70 +52,88 @@ export function getActionTypeLabel(type: ActionType, showDescription: boolean = 
 
 /**
  * AI-powered action type suggestion based on title
- * Uses rule-based pattern matching
+ * Uses rule-based pattern matching with priority-based logic
  */
 export function suggestActionType(title: string): AISuggestion {
   const lower = title.toLowerCase()
 
-  // Pattern 1: Routine with explicit frequency
-  if (/매일|하루|daily/.test(lower)) {
+  // Detect patterns first (for complex logic)
+  const hasCompletionKeyword = /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진/.test(lower)
+  const hasGoalKeyword = /목표|도전|성공/.test(lower)
+  const hasNumberGoal = /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일)/.test(lower)
+  const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심/.test(lower)
+  const hasRoutineVerb = /읽기|공부|운동|명상|기도|쓰기|보기|듣기|하기|걷기|달리기|먹기|마시기|일어나기|자기|정리|청소|체크|확인|검토|복습|예습/.test(lower)
+
+  // Check if it's a time-based routine (e.g., "30분 운동", "1시간 공부")
+  const isTimePlusVerb = /\d+\s*(시간|분)\s*(운동|공부|읽기|쓰기|명상|걷기|달리기)/.test(lower)
+
+  const hasDailyKeyword = /매일|하루|daily|날마다|일일/.test(lower)
+  const hasWeeklyKeyword = /매주|주\s*\d+회|주간|weekly/.test(lower)
+  const hasMonthlyKeyword = /매월|월\s*\d+회|월간|monthly/.test(lower)
+  const hasQuarterlyKeyword = /분기|quarter/.test(lower)
+  const hasYearlyKeyword = /매년|연간|년\s*\d+회|yearly/.test(lower)
+
+  // Priority 1: Reference/mindset (highest specificity)
+  if (hasReferenceKeyword) {
     return {
-      type: 'routine',
+      type: 'reference',
       confidence: 'high',
-      reason: '매일 반복하는 실천으로 보여요',
-      routineFrequency: 'daily'
+      reason: '마음가짐이나 원칙 관련 항목으로 보여요'
     }
   }
 
-  if (/매주|주\s*\d+회|주간/.test(lower)) {
+  // Priority 2: Periodic missions with explicit cycle
+  if (hasQuarterlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
     return {
-      type: 'routine',
+      type: 'mission',
       confidence: 'high',
-      reason: '매주 반복하는 실천으로 보여요',
-      routineFrequency: 'weekly'
+      reason: '분기별 반복 목표로 보여요',
+      missionCompletionType: 'periodic',
+      missionPeriodCycle: 'quarterly'
     }
   }
 
-  if (/매월|월\s*\d+회|월간/.test(lower)) {
-    // Check if it's a goal (매월 달성)
-    if (/달성|목표/.test(lower)) {
-      return {
-        type: 'mission',
-        confidence: 'high',
-        reason: '매월 반복되는 목표로 보여요',
-        missionCompletionType: 'periodic',
-        missionPeriodCycle: 'monthly'
-      }
-    }
+  if (hasYearlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
     return {
-      type: 'routine',
-      confidence: 'medium',
-      reason: '매월 반복하는 실천으로 보여요',
-      routineFrequency: 'monthly'
+      type: 'mission',
+      confidence: 'high',
+      reason: '연간 반복 목표로 보여요',
+      missionCompletionType: 'periodic',
+      missionPeriodCycle: 'yearly'
     }
   }
 
-  // Pattern 2: Mission with completion keyword
-  if (/달성|취득|완료|마치기|끝내기|획득|통과/.test(lower)) {
-    // Check if it's periodic
-    if (/분기|quarter/.test(lower)) {
-      return {
-        type: 'mission',
-        confidence: 'high',
-        reason: '분기별 반복 목표로 보여요',
-        missionCompletionType: 'periodic',
-        missionPeriodCycle: 'quarterly'
-      }
+  if (hasMonthlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
+    return {
+      type: 'mission',
+      confidence: 'high',
+      reason: '매월 반복되는 목표로 보여요',
+      missionCompletionType: 'periodic',
+      missionPeriodCycle: 'monthly'
     }
-    if (/매년|연간|년\s*\d+회/.test(lower)) {
-      return {
-        type: 'mission',
-        confidence: 'medium',
-        reason: '연간 반복 목표로 보여요',
-        missionCompletionType: 'periodic',
-        missionPeriodCycle: 'yearly'
-      }
+  }
+
+  if (hasWeeklyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
+    return {
+      type: 'mission',
+      confidence: 'high',
+      reason: '매주 반복되는 목표로 보여요',
+      missionCompletionType: 'periodic',
+      missionPeriodCycle: 'weekly'
     }
+  }
+
+  // Priority 3: One-time missions with strong indicators
+  if (hasCompletionKeyword && hasNumberGoal) {
+    return {
+      type: 'mission',
+      confidence: 'high',
+      reason: '완료해야 할 수치 목표가 있어요',
+      missionCompletionType: 'once'
+    }
+  }
+
+  if (hasCompletionKeyword || hasGoalKeyword) {
     return {
       type: 'mission',
       confidence: 'medium',
@@ -124,32 +142,60 @@ export function suggestActionType(title: string): AISuggestion {
     }
   }
 
-  // Pattern 3: Reference/mindset
-  if (/마음|태도|정신|자세|생각|마인드|가치|철학/.test(lower)) {
-    return {
-      type: 'reference',
-      confidence: 'high',
-      reason: '마음가짐 관련 항목으로 보여요'
+  // Priority 4: Number-based goals without frequency (likely one-time mission)
+  // BUT: Time + verb combinations are routines (e.g., "30분 운동")
+  if (hasNumberGoal && !hasDailyKeyword && !hasWeeklyKeyword && !hasMonthlyKeyword) {
+    if (isTimePlusVerb) {
+      return {
+        type: 'routine',
+        confidence: 'medium',
+        reason: '시간 기반 반복 실천으로 보여요',
+        routineFrequency: 'daily'
+      }
     }
-  }
-
-  // Pattern 4: Common action verbs - likely routine
-  if (/읽기|공부|운동|명상|기도|쓰기|보기|듣기|하기/.test(lower)) {
-    return {
-      type: 'routine',
-      confidence: 'medium',
-      reason: '반복적으로 하는 실천으로 보여요',
-      routineFrequency: 'daily'
-    }
-  }
-
-  // Pattern 5: Score/number-based goals - likely mission
-  if (/\d+점|\d+개|\d+명|\d+만원|\d+%/.test(lower)) {
     return {
       type: 'mission',
       confidence: 'medium',
       reason: '수치 목표가 있는 것 같아요',
       missionCompletionType: 'once'
+    }
+  }
+
+  // Priority 5: Routines with explicit frequency
+  if (hasDailyKeyword) {
+    return {
+      type: 'routine',
+      confidence: 'high',
+      reason: '매일 반복하는 실천으로 보여요',
+      routineFrequency: 'daily'
+    }
+  }
+
+  if (hasWeeklyKeyword) {
+    return {
+      type: 'routine',
+      confidence: 'high',
+      reason: '매주 반복하는 실천으로 보여요',
+      routineFrequency: 'weekly'
+    }
+  }
+
+  if (hasMonthlyKeyword) {
+    return {
+      type: 'routine',
+      confidence: 'medium',
+      reason: '매월 반복하는 실천으로 보여요',
+      routineFrequency: 'monthly'
+    }
+  }
+
+  // Priority 6: Common action verbs (likely routine)
+  if (hasRoutineVerb) {
+    return {
+      type: 'routine',
+      confidence: 'medium',
+      reason: '반복적으로 하는 실천으로 보여요',
+      routineFrequency: 'daily'
     }
   }
 

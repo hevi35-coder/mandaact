@@ -91,7 +91,7 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
           mission_period_cycle: typeData.mission_period_cycle,
           mission_current_period_start: typeData.mission_current_period_start,
           mission_current_period_end: typeData.mission_current_period_end,
-          ai_suggestion: typeData.ai_suggestion
+          ai_suggestion: typeData.ai_suggestion ? JSON.stringify(typeData.ai_suggestion) : null
         })
         .eq('id', selectedAction.id)
 
@@ -99,7 +99,18 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
 
       // Update local state
       setActions(actions.map(a =>
-        a.id === selectedAction.id ? { ...a, ...typeData } : a
+        a.id === selectedAction.id ? {
+          ...a,
+          type: typeData.type,
+          routine_frequency: typeData.routine_frequency,
+          routine_weekdays: typeData.routine_weekdays,
+          routine_count_per_period: typeData.routine_count_per_period,
+          mission_completion_type: typeData.mission_completion_type,
+          mission_period_cycle: typeData.mission_period_cycle,
+          mission_current_period_start: typeData.mission_current_period_start,
+          mission_current_period_end: typeData.mission_current_period_end,
+          ai_suggestion: typeData.ai_suggestion
+        } : a
       ))
       setTypeSelectorOpen(false)
       setSelectedAction(null)
@@ -346,6 +357,10 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
             mission_current_period_start: selectedAction.mission_current_period_start,
             mission_current_period_end: selectedAction.mission_current_period_end,
             ai_suggestion: selectedAction.ai_suggestion
+              ? (typeof selectedAction.ai_suggestion === 'string'
+                  ? JSON.parse(selectedAction.ai_suggestion)
+                  : selectedAction.ai_suggestion)
+              : undefined
           }}
           onSave={handleTypeSave}
         />
