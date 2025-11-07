@@ -7,7 +7,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
-import { ActionType, shouldShowToday, getActionTypeLabel } from '@/lib/actionTypes'
+import { ActionType, shouldShowToday, getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 import { format } from 'date-fns'
@@ -540,7 +540,7 @@ export default function TodayChecklistPage() {
 
                   {/* Actions in this Mandalart */}
                   {!isCollapsed && (
-                    <div className="space-y-3 pl-2">
+                    <div className="space-y-2 pl-2">
                       {mandalartActions.map((action) => (
                         <Card
                           key={action.id}
@@ -552,8 +552,8 @@ export default function TodayChecklistPage() {
                               : 'hover:shadow-md'
                           }`}
                         >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start gap-3">
+                          <div className="p-3">
+                            <div className="flex items-center gap-3">
                               <input
                                 type="checkbox"
                                 checked={action.is_checked}
@@ -563,37 +563,41 @@ export default function TodayChecklistPage() {
                                   action.type === 'reference' ||
                                   !isTodayOrYesterday(selectedDate)
                                 }
-                                className={`mt-1 h-5 w-5 rounded border-gray-300 text-primary ${
+                                className={`h-5 w-5 rounded border-gray-300 text-primary flex-shrink-0 ${
                                   action.type === 'reference' || !isTodayOrYesterday(selectedDate)
                                     ? 'opacity-50 cursor-not-allowed'
                                     : 'cursor-pointer focus:ring-primary'
                                 } disabled:cursor-not-allowed`}
                               />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <CardTitle
-                                    className={`text-base flex-1 ${
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span
+                                    className={`text-sm font-medium ${
                                       action.is_checked
                                         ? 'line-through text-gray-500'
                                         : 'text-gray-900'
                                     }`}
                                   >
                                     {action.title}
-                                  </CardTitle>
-                                  <button
-                                    onClick={(e) => openTypeEditor(action, e)}
-                                    className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
-                                  >
-                                    {getTypeIcon(action.type)}
-                                    <span>{getActionTypeLabel(action.type)}</span>
-                                  </button>
-                                </div>
-                                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                                  <span>{action.sub_goal.title}</span>
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">·</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {action.sub_goal.title} ({mandalart.title})
+                                  </span>
                                 </div>
                               </div>
+                              <button
+                                onClick={(e) => openTypeEditor(action, e)}
+                                className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex-shrink-0"
+                                title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
+                              >
+                                {getTypeIcon(action.type)}
+                                <span className="hidden sm:inline">
+                                  {formatTypeDetails(action) || getActionTypeLabel(action.type)}
+                                </span>
+                              </button>
                             </div>
-                          </CardHeader>
+                          </div>
                         </Card>
                       ))}
                     </div>

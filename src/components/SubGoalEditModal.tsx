@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SubGoal, Action } from '@/types'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
-import { getActionTypeLabel } from '@/lib/actionTypes'
+import { getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -291,10 +291,10 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
                           <button
                             onClick={() => handleTypeEdit(action)}
                             className="flex items-center gap-1 px-2 py-1 text-xs border rounded hover:bg-gray-100 transition-colors"
-                            title={getActionTypeLabel(action.type)}
+                            title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
                           >
                             {getTypeIcon(action.type)}
-                            <span>{getActionTypeLabel(action.type)}</span>
+                            <span>{formatTypeDetails(action) || getActionTypeLabel(action.type)}</span>
                           </button>
 
                           <Button

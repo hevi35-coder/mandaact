@@ -1,13 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Mandalart, SubGoal, Action } from '@/types'
-import { Repeat, Target, Lightbulb } from 'lucide-react'
+import { Repeat, Target, Lightbulb, Download } from 'lucide-react'
 import SubGoalEditModal from '@/components/SubGoalEditModal'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
+import html2canvas from 'html2canvas'
+import { useToast } from '@/hooks/use-toast'
 
 interface MandalartWithDetails extends Mandalart {
   sub_goals: (SubGoal & { actions: Action[] })[]
@@ -17,6 +25,8 @@ export default function MandalartDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const { toast } = useToast()
+  const gridRef = useRef<HTMLDivElement>(null)
 
   const [mandalart, setMandalart] = useState<MandalartWithDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -26,6 +36,7 @@ export default function MandalartDetailPage() {
   const [selectedSubGoal, setSelectedSubGoal] = useState<(SubGoal & { actions: Action[] }) | null>(null)
   const [mobileExpandedSection, setMobileExpandedSection] = useState<number | null>(null)
   const [coreGoalModalOpen, setCoreGoalModalOpen] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -167,21 +178,79 @@ export default function MandalartDetailPage() {
     setMobileExpandedSection(null)
   }
 
+  const handleDownloadImage = async (size: 'mobile' | 'tablet' | 'desktop') => {
+    if (!gridRef.current || !mandalart) return
+
+    setIsDownloading(true)
+    toast({
+      title: '이미지 생성 중...',
+      description: '잠시만 기다려주세요.',
+    })
+
+    try {
+      const sizeMap = {
+        mobile: 800,
+        tablet: 1200,
+        desktop: 1600,
+      }
+      const targetWidth = sizeMap[size]
+      const scale = targetWidth / gridRef.current.offsetWidth
+
+      const canvas = await html2canvas(gridRef.current, {
+        scale: scale,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+      })
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('Failed to create image')
+        }
+
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        const fileName = `${mandalart.title}_${size}_${new Date().toISOString().split('T')[0]}.png`
+        link.href = url
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        toast({
+          title: '다운로드 완료!',
+          description: `${size === 'mobile' ? '모바일' : size === 'tablet' ? '태블릿' : '데스크톱'} 사이즈 (${targetWidth}x${targetWidth}px)`,
+        })
+      }, 'image/png')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast({
+        title: '다운로드 실패',
+        description: '이미지 생성 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   // Render a single cell in the 9x9 grid
-  const renderCell = (sectionPos: number, cellPos: number) => {
+  const renderCell = (sectionPos: number, cellPos: number, forDownload = false, forMobile = false) => {
     // Center section (position 0)
     if (sectionPos === 0) {
       if (cellPos === 4) {
         // Center of center: Core goal
         return (
           <div
-            className="flex items-center justify-center h-full p-2 cursor-pointer hover:opacity-90 transition-opacity"
+            className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} ${!forDownload ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
             style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             }}
-            onClick={() => setCoreGoalModalOpen(true)}
+            onClick={!forDownload ? () => setCoreGoalModalOpen(true) : undefined}
           >
-            <p className="text-sm font-bold text-center line-clamp-3 text-white">
+            <p className={`${forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-xl'} font-bold ${!forDownload ? 'line-clamp-4' : ''} text-white text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
               {mandalart?.center_goal}
             </p>
           </div>
@@ -191,8 +260,8 @@ export default function MandalartDetailPage() {
         const subGoalPosition = cellPos < 4 ? cellPos + 1 : cellPos
         const subGoal = getSubGoalByPosition(subGoalPosition)
         return (
-          <div className="flex items-center justify-center h-full p-2 bg-blue-50 hover:bg-blue-100 transition-colors">
-            <p className="text-xs font-medium text-center line-clamp-2">
+          <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-blue-50 ${!forDownload ? 'hover:bg-blue-100 transition-colors' : ''}`}>
+            <p className={`${forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-lg'} font-medium ${!forDownload ? 'line-clamp-4' : ''} text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
               {subGoal?.title || `세부${subGoalPosition}`}
             </p>
           </div>
@@ -205,8 +274,10 @@ export default function MandalartDetailPage() {
     if (!subGoal) {
       // Empty sub-goal cell
       return (
-        <div className="flex items-center justify-center h-full p-2 bg-gray-50 hover:bg-gray-100 transition-colors">
-          <p className="text-[10px] text-muted-foreground text-center">클릭하여 추가</p>
+        <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-gray-50 ${!forDownload ? 'hover:bg-gray-100 transition-colors' : ''}`}>
+          <div className="flex items-center justify-center w-full h-full">
+            <p className="text-[10px] text-muted-foreground text-center">클릭하여 추가</p>
+          </div>
         </div>
       )
     }
@@ -214,8 +285,10 @@ export default function MandalartDetailPage() {
     if (cellPos === 4) {
       // Center of section: Sub-goal title
       return (
-        <div className="flex flex-col items-center justify-center h-full p-2 bg-blue-50 border border-blue-200">
-          <p className="text-xs font-semibold text-center line-clamp-2">{subGoal.title}</p>
+        <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-blue-50 border border-blue-200`}>
+          <p className={`${forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-lg'} font-semibold ${!forDownload ? 'line-clamp-4' : ''} text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
+            {subGoal.title}
+          </p>
         </div>
       )
     } else {
@@ -225,22 +298,26 @@ export default function MandalartDetailPage() {
 
       if (!action) {
         return (
-          <div className="flex items-center justify-center h-full p-2 bg-white">
-            <p className="text-[10px] text-muted-foreground">-</p>
+          <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-white`}>
+            <div className="flex items-center justify-center w-full h-full">
+              <p className="text-[10px] text-muted-foreground">-</p>
+            </div>
           </div>
         )
       }
 
       return (
-        <div className="flex items-center justify-center h-full p-2 bg-white hover:bg-gray-50 transition-colors">
-          <p className="text-[11px] leading-tight line-clamp-3 text-center">{action.title}</p>
+        <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-white ${!forDownload ? 'hover:bg-gray-50 transition-colors' : ''}`}>
+          <p className={`${forDownload ? 'text-xl' : forMobile ? 'text-sm' : 'text-base'} ${forDownload ? '' : 'leading-tight'} ${!forDownload ? 'line-clamp-4' : ''} text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
+            {action.title}
+          </p>
         </div>
       )
     }
   }
 
   // Render a 3x3 section
-  const renderSection = (sectionPos: number) => {
+  const renderSection = (sectionPos: number, forDownload = false) => {
     const isCenter = sectionPos === 0
     const isSelected = selectedSection === sectionPos
 
@@ -249,15 +326,16 @@ export default function MandalartDetailPage() {
         key={sectionPos}
         className={`
           grid grid-cols-3 grid-rows-3 gap-px bg-gray-300 rounded
-          ${!isCenter ? 'cursor-pointer hover:ring-2 hover:ring-primary/50' : ''}
-          ${isSelected ? 'ring-2 ring-primary' : ''}
-          transition-all
+          ${forDownload ? 'h-full' : ''}
+          ${!forDownload && !isCenter ? 'cursor-pointer hover:ring-2 hover:ring-primary/50' : ''}
+          ${!forDownload && isSelected ? 'ring-2 ring-primary' : ''}
+          ${!forDownload ? 'transition-all' : ''}
         `}
-        onClick={() => !isCenter && handleSectionClick(sectionPos)}
+        onClick={!forDownload ? () => !isCenter && handleSectionClick(sectionPos) : undefined}
       >
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
-          <div key={cellPos} className="bg-white">
-            {renderCell(sectionPos, cellPos)}
+          <div key={cellPos} className={`bg-white ${forDownload ? 'h-full' : 'aspect-square'}`}>
+            {renderCell(sectionPos, cellPos, forDownload)}
           </div>
         ))}
       </div>
@@ -298,16 +376,44 @@ export default function MandalartDetailPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-3xl font-bold">{mandalart.title}</h1>
             <p className="text-muted-foreground mt-1">
               핵심 목표: {mandalart.center_goal}
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
-            목록으로
-          </Button>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" disabled={isDownloading}>
+                  <Download className="w-4 h-4 mr-2" />
+                  {isDownloading ? '생성 중...' : '이미지 다운로드'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleDownloadImage('mobile')}>
+                  📱 모바일 (800x800px)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadImage('tablet')}>
+                  💻 태블릿 (1200x1200px)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadImage('desktop')}>
+                  🖥️ 데스크톱 (1600x1600px)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
+              목록으로
+            </Button>
+          </div>
+        </div>
+
+        {/* Hidden Grid for Download (always rendered, works on mobile too) */}
+        <div className="fixed -left-[9999px] top-0 bg-white" style={{ width: '1200px', height: '1200px' }}>
+          <div ref={gridRef} className="grid grid-cols-3 grid-rows-3 gap-2 p-4 h-full">
+            {sectionPositions.map((sectionPos) => renderSection(sectionPos, true))}
+          </div>
         </div>
 
         {/* Desktop: 9x9 Grid (3x3 of 3x3 sections) */}
@@ -331,13 +437,13 @@ export default function MandalartDetailPage() {
                     return (
                       <div
                         key={sectionPos}
-                        className="aspect-square flex items-center justify-center p-3 rounded-lg cursor-pointer active:opacity-90 transition-opacity"
+                        className="aspect-square flex items-center justify-center p-1.5 rounded-lg cursor-pointer active:opacity-90 transition-opacity"
                         style={{
                           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         }}
                         onClick={() => setCoreGoalModalOpen(true)}
                       >
-                        <p className="text-sm font-bold text-center line-clamp-3 text-white">
+                        <p className="text-base font-bold text-center line-clamp-3 text-white">
                           {mandalart.center_goal}
                         </p>
                       </div>
@@ -348,11 +454,11 @@ export default function MandalartDetailPage() {
                   return (
                     <div
                       key={sectionPos}
-                      className="aspect-square flex flex-col items-center justify-center p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer active:bg-blue-200 transition-colors"
+                      className="aspect-square flex flex-col items-center justify-center p-1.5 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer active:bg-blue-200 transition-colors"
                       onClick={() => handleMobileSectionTap(sectionPos)}
                     >
                       <p className="text-[10px] text-muted-foreground mb-1">세부 {sectionPos}</p>
-                      <p className="text-xs font-medium text-center line-clamp-2">
+                      <p className="text-sm font-medium text-center line-clamp-2">
                         {subGoal?.title || '-'}
                       </p>
                       {subGoal && (
@@ -384,16 +490,19 @@ export default function MandalartDetailPage() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-px bg-gray-300 rounded">
+                <div
+                  className="grid grid-cols-3 gap-px bg-gray-300 rounded cursor-pointer"
+                  onClick={() => handleSectionClick(mobileExpandedSection)}
+                >
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
                     <div key={cellPos} className="aspect-square bg-white">
-                      {renderCell(mobileExpandedSection, cellPos)}
+                      {renderCell(mobileExpandedSection, cellPos, false, true)}
                     </div>
                   ))}
                 </div>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  다시 탭하거나 "편집" 버튼을 눌러 편집할 수 있습니다
+                  그리드를 탭하거나 "편집" 버튼을 눌러 편집할 수 있습니다
                 </p>
               </div>
             )}

@@ -99,9 +99,15 @@ export default function ActionTypeSelector({
   useEffect(() => {
     if (!open || !actionTitle) return
 
-    // Skip auto suggestion if editing existing action (has initialData)
+    // Reset states when editing existing action (has initialData)
     if (initialData) {
-      // For existing actions, just use the provided initialData
+      setType(initialData.type)
+      setRoutineFrequency(initialData.routine_frequency || 'daily')
+      setRoutineWeekdays(initialData.routine_weekdays || [])
+      setRoutineCountPerPeriod(initialData.routine_count_per_period || 0)
+      setMissionCompletionType(initialData.mission_completion_type || 'once')
+      setMissionPeriodCycle(initialData.mission_period_cycle || 'monthly')
+      setAiSuggestion(initialData.ai_suggestion)
       return
     }
 

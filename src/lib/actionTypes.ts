@@ -381,3 +381,63 @@ export function getWeekdayNames(): Array<{ value: number; label: string; short: 
     { value: 6, label: '토요일', short: '토' }
   ]
 }
+
+/**
+ * Format type details for display (e.g., "매일", "주 3회 (월, 수, 금)", "월 5회")
+ */
+export function formatTypeDetails(action: {
+  type: ActionType
+  routine_frequency?: RoutineFrequency
+  routine_weekdays?: number[]
+  routine_count_per_period?: number
+  mission_completion_type?: MissionCompletionType
+  mission_period_cycle?: MissionPeriodCycle
+}): string {
+  if (action.type === 'reference') {
+    return '' // No details for reference type
+  }
+
+  if (action.type === 'routine') {
+    const frequency = action.routine_frequency || 'daily'
+
+    if (frequency === 'daily') {
+      return '매일'
+    }
+
+    if (frequency === 'weekly') {
+      const weekdays = action.routine_weekdays || []
+      if (weekdays.length > 0) {
+        const weekdayNames = getWeekdayNames()
+        const selectedDays = weekdays
+          .sort((a, b) => a - b)
+          .map(day => weekdayNames[day].short)
+          .join(', ')
+        return `주 ${weekdays.length}회 (${selectedDays})`
+      }
+      return '매주'
+    }
+
+    if (frequency === 'monthly') {
+      const count = action.routine_count_per_period || 0
+      if (count > 0) {
+        return `월 ${count}회`
+      }
+      return '매월'
+    }
+  }
+
+  if (action.type === 'mission') {
+    const completionType = action.mission_completion_type || 'once'
+
+    if (completionType === 'once') {
+      return '1회 완료'
+    }
+
+    if (completionType === 'periodic') {
+      const cycle = action.mission_period_cycle || 'monthly'
+      return getPeriodCycleLabel(cycle)
+    }
+  }
+
+  return ''
+}

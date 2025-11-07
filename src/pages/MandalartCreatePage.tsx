@@ -373,7 +373,7 @@ export default function MandalartCreatePage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6 pb-20 md:pb-0">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold">만다라트 만들기</h1>
