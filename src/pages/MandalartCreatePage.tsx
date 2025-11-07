@@ -8,8 +8,7 @@ import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 import { getActionTypeLabel, suggestActionType } from '@/lib/actionTypes'
-import { Upload, Image as ImageIcon, FileText, MessageCircle } from 'lucide-react'
-import CoachingModal from '@/components/CoachingCreation/CoachingModal'
+import { Upload, Image as ImageIcon, FileText } from 'lucide-react'
 
 interface ActionData {
   title: string
@@ -26,10 +25,7 @@ export default function MandalartCreatePage() {
   const user = useAuthStore((state) => state.user)
 
   // Input method selection
-  const [inputMethod, setInputMethod] = useState<'image' | 'manual' | 'text' | 'coaching' | null>(null)
-
-  // Coaching modal state
-  const [coachingModalOpen, setCoachingModalOpen] = useState(false)
+  const [inputMethod, setInputMethod] = useState<'image' | 'manual' | 'text' | null>(null)
 
   // Image upload state
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -227,11 +223,11 @@ export default function MandalartCreatePage() {
     }
   }
 
-  const populateFormWithParsedData = (result: any) => {
+  const populateFormWithParsedData = (result: { center_goal?: string; sub_goals?: Array<{ title?: string; actions?: string[] }> }) => {
     if (result.center_goal) setCenterGoal(result.center_goal)
     if (result.sub_goals) {
       const newSubGoals = [...subGoals]
-      result.sub_goals.forEach((sg: any, index: number) => {
+      result.sub_goals.forEach((sg, index: number) => {
         if (index < 8) {
           newSubGoals[index].title = sg.title || ''
           if (sg.actions) {
@@ -382,7 +378,7 @@ export default function MandalartCreatePage() {
         <div>
           <h1 className="text-3xl font-bold">만다라트 만들기</h1>
           <p className="text-muted-foreground mt-1">
-            이미지 업로드, 텍스트 붙여넣기, AI 코치와 대화 또는 직접 입력으로 만다라트를 만드세요
+            이미지 업로드, 텍스트 붙여넣기, 또는 직접 입력으로 만다라트를 만드세요
           </p>
         </div>
 
@@ -400,7 +396,7 @@ export default function MandalartCreatePage() {
               <CardTitle>입력 방식 선택</CardTitle>
               <CardDescription>어떤 방식으로 만다라트를 만들까요?</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button
                 variant="outline"
                 className="h-32 flex-col gap-2"
@@ -424,22 +420,6 @@ export default function MandalartCreatePage() {
                   <div className="font-semibold">텍스트 붙여넣기</div>
                   <div className="text-xs text-muted-foreground">
                     ChatGPT 등에서 생성한 텍스트로 자동 생성
-                  </div>
-                </div>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-32 flex-col gap-2 bg-blue-50 border-blue-200 hover:bg-blue-100"
-                onClick={() => {
-                  setInputMethod('coaching')
-                  setCoachingModalOpen(true)
-                }}
-              >
-                <MessageCircle className="w-8 h-8 text-blue-600" />
-                <div className="text-center">
-                  <div className="font-semibold text-blue-700">AI 코치와 대화</div>
-                  <div className="text-xs text-blue-600">
-                    AI 코치와 대화하며 단계별로 만들기
                   </div>
                 </div>
               </Button>
@@ -733,21 +713,6 @@ export default function MandalartCreatePage() {
           onSave={handleTypeSave}
         />
       )}
-
-      {/* Coaching Modal */}
-      <CoachingModal
-        isOpen={coachingModalOpen}
-        onClose={() => {
-          setCoachingModalOpen(false)
-          setInputMethod(null)
-        }}
-        onComplete={(mandalartData) => {
-          // TODO: Handle coaching completion - populate form
-          console.log('Coaching completed:', mandalartData)
-          setCoachingModalOpen(false)
-          // Will implement in Phase E
-        }}
-      />
     </div>
   )
 }
