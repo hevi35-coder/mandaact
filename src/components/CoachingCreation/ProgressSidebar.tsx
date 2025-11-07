@@ -40,7 +40,7 @@ export default function ProgressSidebar({ currentPhase, progress }: ProgressSide
   ]
 
   return (
-    <div className="w-64 border-r bg-gray-50 p-4">
+    <div className="w-48 border-r bg-gray-50 p-4">
       <h3 className="font-semibold text-sm text-gray-700 mb-4">진행 상황</h3>
       <div className="space-y-3">
         {phases.map((phase) => (
