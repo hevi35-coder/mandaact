@@ -111,3 +111,22 @@ export interface CoachingContext {
     streak_days: number
   }
 }
+
+// Grid data structure for MandalartGrid component
+export interface MandalartGridData {
+  center_goal: string
+  sub_goals: Array<{
+    position: number // 1-8
+    title: string
+    actions: Array<{
+      position: number // 1-8
+      title: string
+      type?: 'routine' | 'mission' | 'reference'
+    }>
+  }>
+}
+
+// For DetailPage compatibility
+export interface MandalartWithDetails extends Mandalart {
+  sub_goals: (SubGoal & { actions: Action[] })[]
+}

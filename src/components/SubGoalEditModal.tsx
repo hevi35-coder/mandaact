@@ -17,26 +17,78 @@ import { getTypeIcon } from '@/lib/iconUtils'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
+// Simplified action for create mode (no DB operations)
+interface LocalAction {
+  tempId: string  // Temporary ID for local state management
+  title: string
+  type: 'routine' | 'mission' | 'reference'  // Required, defaults to 'routine'
+  routine_frequency?: 'daily' | 'weekly' | 'monthly'
+  mission_completion_type?: 'once' | 'periodic'
+}
+
 interface SubGoalEditModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  subGoal: SubGoal & { actions: Action[] }
-  onSave: () => void
+  mode: 'create' | 'edit'
+  position: number  // 1-8
+  subGoal?: SubGoal & { actions: Action[] }  // Required for edit mode
+  initialTitle?: string  // For create mode
+  initialActions?: Array<{ title: string; type?: 'routine' | 'mission' | 'reference' }>  // For create mode
+  onCreate?: (data: {
+    position: number
+    title: string
+    actions: Array<{ title: string; type?: 'routine' | 'mission' | 'reference' }>
+  }) => void  // For create mode
+  onEdit?: () => void  // For edit mode
 }
 
-export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }: SubGoalEditModalProps) {
-  const [subGoalTitle, setSubGoalTitle] = useState(subGoal.title)
-  const [actions, setActions] = useState<Action[]>(subGoal.actions)
+export default function SubGoalEditModal({
+  open,
+  onOpenChange,
+  mode,
+  position,
+  subGoal,
+  initialTitle = '',
+  initialActions = [],
+  onCreate,
+  onEdit
+}: SubGoalEditModalProps) {
+  const [subGoalTitle, setSubGoalTitle] = useState(
+    mode === 'edit' && subGoal ? subGoal.title : initialTitle
+  )
+  const [actions, setActions] = useState<Action[]>(
+    mode === 'edit' && subGoal ? subGoal.actions : []
+  )
+  const [localActions, setLocalActions] = useState<LocalAction[]>(
+    mode === 'create'
+      ? initialActions.map((a, idx) => ({
+          tempId: `temp-${idx}`,
+          title: a.title,
+          type: a.type || 'routine'
+        }))
+      : []
+  )
   const [editingActionId, setEditingActionId] = useState<string | null>(null)
   const [editingActionTitle, setEditingActionTitle] = useState('')
   const [typeSelectorOpen, setTypeSelectorOpen] = useState(false)
-  const [selectedAction, setSelectedAction] = useState<Action | null>(null)
+  const [selectedAction, setSelectedAction] = useState<Action | LocalAction | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    setSubGoalTitle(subGoal.title)
-    setActions(subGoal.actions)
-  }, [subGoal])
+    if (mode === 'edit' && subGoal) {
+      setSubGoalTitle(subGoal.title)
+      setActions(subGoal.actions)
+    } else {
+      setSubGoalTitle(initialTitle)
+      setLocalActions(
+        initialActions.map((a, idx) => ({
+          tempId: `temp-${idx}`,
+          title: a.title,
+          type: a.type || 'routine'
+        }))
+      )
+    }
+  }, [mode, subGoal, initialTitle, initialActions])
 
   const handleActionTitleEdit = (actionId: string, currentTitle: string) => {
     setEditingActionId(actionId)
@@ -46,6 +98,17 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
   const handleActionTitleSave = async (actionId: string) => {
     if (editingActionTitle.trim() === '') return
 
+    if (mode === 'create') {
+      // Create mode: update local state only
+      setLocalActions(localActions.map(a =>
+        a.tempId === actionId ? { ...a, title: editingActionTitle.trim() } : a
+      ))
+      setEditingActionId(null)
+      setEditingActionTitle('')
+      return
+    }
+
+    // Edit mode: update DB
     try {
       const { error } = await supabase
         .from('actions')
@@ -71,7 +134,7 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
     setEditingActionTitle('')
   }
 
-  const handleTypeEdit = (action: Action) => {
+  const handleTypeEdit = (action: Action | LocalAction) => {
     setSelectedAction(action)
     setTypeSelectorOpen(true)
   }
@@ -79,7 +142,25 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
   const handleTypeSave = async (typeData: ActionTypeData) => {
     if (!selectedAction) return
 
+    if (mode === 'create') {
+      // Create mode: update local state only
+      const tempId = (selectedAction as LocalAction).tempId
+      setLocalActions(localActions.map(a =>
+        a.tempId === tempId ? {
+          ...a,
+          type: typeData.type,
+          routine_frequency: typeData.routine_frequency,
+          mission_completion_type: typeData.mission_completion_type
+        } : a
+      ))
+      setTypeSelectorOpen(false)
+      setSelectedAction(null)
+      return
+    }
+
+    // Edit mode: update DB
     try {
+      const actionId = (selectedAction as Action).id
       const { error } = await supabase
         .from('actions')
         .update({
@@ -93,13 +174,13 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
           mission_current_period_end: typeData.mission_current_period_end,
           ai_suggestion: typeData.ai_suggestion ? JSON.stringify(typeData.ai_suggestion) : null
         })
-        .eq('id', selectedAction.id)
+        .eq('id', actionId)
 
       if (error) throw error
 
       // Update local state
       setActions(actions.map(a =>
-        a.id === selectedAction.id ? {
+        a.id === actionId ? {
           ...a,
           type: typeData.type,
           routine_frequency: typeData.routine_frequency,
@@ -123,6 +204,13 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
   const handleActionDelete = async (actionId: string) => {
     if (!confirm('이 실천항목을 삭제하시겠습니까?')) return
 
+    if (mode === 'create') {
+      // Create mode: update local state only
+      setLocalActions(localActions.filter(a => a.tempId !== actionId))
+      return
+    }
+
+    // Edit mode: delete from DB
     try {
       const { error } = await supabase
         .from('actions')
@@ -140,13 +228,29 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
   }
 
   const handleActionAdd = async () => {
-    if (actions.length >= 8) {
+    const currentCount = mode === 'create' ? localActions.length : actions.length
+
+    if (currentCount >= 8) {
       alert('실천항목은 최대 8개까지 추가할 수 있습니다.')
       return
     }
 
-    const newActionTitle = `새 실천항목 ${actions.length + 1}`
-    const newPosition = actions.length + 1
+    if (mode === 'create') {
+      // Create mode: add to local state only
+      const newAction: LocalAction = {
+        tempId: `temp-${Date.now()}`,
+        title: `새 실천항목 ${currentCount + 1}`,
+        type: 'routine'
+      }
+      setLocalActions([...localActions, newAction])
+      return
+    }
+
+    // Edit mode: add to DB
+    if (!subGoal) return
+
+    const newActionTitle = `새 실천항목 ${currentCount + 1}`
+    const newPosition = currentCount + 1
 
     try {
       const { data, error } = await supabase
@@ -176,6 +280,28 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
       return
     }
 
+    if (mode === 'create') {
+      // Create mode: pass data to parent without DB operation
+      if (onCreate) {
+        onCreate({
+          position,
+          title: subGoalTitle.trim(),
+          actions: localActions.map(a => ({
+            title: a.title,
+            type: a.type
+          }))
+        })
+      }
+      onOpenChange(false)
+      return
+    }
+
+    // Edit mode: update DB
+    if (!subGoal) {
+      alert('세부목표 정보가 없습니다.')
+      return
+    }
+
     setIsSaving(true)
 
     try {
@@ -186,7 +312,7 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
 
       if (error) throw error
 
-      onSave()
+      if (onEdit) onEdit()
       onOpenChange(false)
     } catch (err) {
       console.error('Error saving sub-goal:', err)
@@ -196,14 +322,23 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
     }
   }
 
+  // Helper to get current actions array based on mode
+  const currentActionsArray = mode === 'create' ? localActions : actions
+  const getActionId = (action: Action | LocalAction) =>
+    mode === 'create' ? (action as LocalAction).tempId : (action as Action).id
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>세부목표 편집</DialogTitle>
+            <DialogTitle>
+              {mode === 'create' ? '세부목표 입력' : '세부목표 편집'}
+            </DialogTitle>
             <DialogDescription>
-              세부목표 제목과 실천항목을 수정할 수 있습니다.
+              {mode === 'create'
+                ? '세부목표 제목과 실천항목을 입력하세요.'
+                : '세부목표 제목과 실천항목을 수정할 수 있습니다.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -222,8 +357,8 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
             {/* Actions List */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>실천 항목 ({actions.length}/8)</Label>
-                {actions.length < 8 && (
+                <Label>실천 항목 ({currentActionsArray.length}/8)</Label>
+                {currentActionsArray.length < 8 && (
                   <Button
                     type="button"
                     variant="outline"
@@ -237,70 +372,72 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
               </div>
 
               <div className="space-y-2">
-                {actions.length === 0 ? (
+                {currentActionsArray.length === 0 ? (
                   <div className="text-sm text-muted-foreground text-center py-8 border border-dashed rounded">
                     실천 항목이 없습니다. 추가 버튼을 클릭하여 항목을 추가하세요.
                   </div>
                 ) : (
-                  actions.map((action, idx) => (
-                    <div
-                      key={action.id}
-                      className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <span className="text-sm font-medium text-muted-foreground w-6">
-                        {idx + 1}.
-                      </span>
+                  currentActionsArray.map((action, idx) => {
+                    const actionId = getActionId(action)
+                    return (
+                      <div
+                        key={actionId}
+                        className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-muted-foreground w-6">
+                          {idx + 1}.
+                        </span>
 
-                      {editingActionId === action.id ? (
-                        // Editing mode
-                        <div className="flex-1 flex items-center gap-2">
-                          <Input
-                            value={editingActionTitle}
-                            onChange={(e) => setEditingActionTitle(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleActionTitleSave(action.id)
-                              } else if (e.key === 'Escape') {
-                                handleActionTitleCancel()
-                              }
-                            }}
-                            autoFocus
-                            className="flex-1"
-                          />
-                          <Button
-                            size="sm"
-                            onClick={() => handleActionTitleSave(action.id)}
-                          >
-                            저장
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleActionTitleCancel}
-                          >
-                            취소
-                          </Button>
-                        </div>
-                      ) : (
-                        // View mode
-                        <>
+                        {editingActionId === actionId ? (
+                          // Editing mode
                           <div className="flex-1 flex items-center gap-2">
-                            <span className="text-sm">{action.title}</span>
+                            <Input
+                              value={editingActionTitle}
+                              onChange={(e) => setEditingActionTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleActionTitleSave(actionId)
+                                } else if (e.key === 'Escape') {
+                                  handleActionTitleCancel()
+                                }
+                              }}
+                              autoFocus
+                              className="flex-1"
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => handleActionTitleSave(actionId)}
+                            >
+                              저장
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleActionTitleCancel}
+                            >
+                              취소
+                            </Button>
                           </div>
+                        ) : (
+                          // View mode
+                          <>
+                            <div className="flex-1 flex items-center gap-2">
+                              <span className="text-sm">{action.title}</span>
+                            </div>
 
-                          <button
-                            onClick={() => handleTypeEdit(action)}
-                            className="flex items-center gap-1 px-2 py-1 text-xs border rounded hover:bg-gray-100 transition-colors"
-                            title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
-                          >
-                            {getTypeIcon(action.type)}
-                            <span>{formatTypeDetails(action) || getActionTypeLabel(action.type)}</span>
-                          </button>
+                            <button
+                              onClick={() => handleTypeEdit(action)}
+                              className="flex items-center gap-1 px-2 py-1 text-xs border rounded hover:bg-gray-100 transition-colors"
+                              title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
+                            >
+                              {getTypeIcon(action.type)}
+                              <span>{formatTypeDetails(action) || getActionTypeLabel(action.type)}</span>
+                            </button>
 
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleActionTitleEdit(action.id, action.title)}
+                            onClick={() => handleActionTitleEdit(actionId, action.title)}
                           >
                             <Pencil className="w-3 h-3" />
                           </Button>
@@ -308,14 +445,15 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleActionDelete(action.id)}
+                            onClick={() => handleActionDelete(actionId)}
                           >
                             <Trash2 className="w-3 h-3 text-red-500" />
                           </Button>
                         </>
                       )}
                     </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
             </div>
@@ -350,13 +488,13 @@ export default function SubGoalEditModal({ open, onOpenChange, subGoal, onSave }
           initialData={{
             type: selectedAction.type,
             routine_frequency: selectedAction.routine_frequency,
-            routine_weekdays: selectedAction.routine_weekdays,
-            routine_count_per_period: selectedAction.routine_count_per_period,
+            routine_weekdays: 'routine_weekdays' in selectedAction ? selectedAction.routine_weekdays : undefined,
+            routine_count_per_period: 'routine_count_per_period' in selectedAction ? selectedAction.routine_count_per_period : undefined,
             mission_completion_type: selectedAction.mission_completion_type,
-            mission_period_cycle: selectedAction.mission_period_cycle,
-            mission_current_period_start: selectedAction.mission_current_period_start,
-            mission_current_period_end: selectedAction.mission_current_period_end,
-            ai_suggestion: selectedAction.ai_suggestion
+            mission_period_cycle: 'mission_period_cycle' in selectedAction ? selectedAction.mission_period_cycle : undefined,
+            mission_current_period_start: 'mission_current_period_start' in selectedAction ? selectedAction.mission_current_period_start : undefined,
+            mission_current_period_end: 'mission_current_period_end' in selectedAction ? selectedAction.mission_current_period_end : undefined,
+            ai_suggestion: 'ai_suggestion' in selectedAction && selectedAction.ai_suggestion
               ? (typeof selectedAction.ai_suggestion === 'string'
                   ? JSON.parse(selectedAction.ai_suggestion)
                   : selectedAction.ai_suggestion)

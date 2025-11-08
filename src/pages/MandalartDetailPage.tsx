@@ -10,16 +10,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
-import { Mandalart, SubGoal, Action } from '@/types'
+import { SubGoal, Action, MandalartGridData, MandalartWithDetails } from '@/types'
 import { Repeat, Target, Lightbulb, Download } from 'lucide-react'
 import SubGoalEditModal from '@/components/SubGoalEditModal'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
+import MandalartGrid from '@/components/MandalartGrid'
 import html2canvas from 'html2canvas'
 import { useToast } from '@/hooks/use-toast'
-
-interface MandalartWithDetails extends Mandalart {
-  sub_goals: (SubGoal & { actions: Action[] })[]
-}
 
 export default function MandalartDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -31,7 +28,6 @@ export default function MandalartDetailPage() {
   const [mandalart, setMandalart] = useState<MandalartWithDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedSection, setSelectedSection] = useState<number | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedSubGoal, setSelectedSubGoal] = useState<(SubGoal & { actions: Action[] }) | null>(null)
   const [mobileExpandedSection, setMobileExpandedSection] = useState<number | null>(null)
@@ -107,6 +103,29 @@ export default function MandalartDetailPage() {
     return mandalart?.sub_goals.find(sg => sg.position === position)
   }
 
+  // Convert MandalartWithDetails to MandalartGridData
+  const convertToGridData = (): MandalartGridData => {
+    if (!mandalart) {
+      return {
+        center_goal: '',
+        sub_goals: []
+      }
+    }
+
+    return {
+      center_goal: mandalart.center_goal,
+      sub_goals: mandalart.sub_goals.map(sg => ({
+        position: sg.position,
+        title: sg.title,
+        actions: sg.actions.map(a => ({
+          position: a.position,
+          title: a.title,
+          type: a.type
+        }))
+      }))
+    }
+  }
+
   const createEmptySubGoal = async (position: number): Promise<(SubGoal & { actions: Action[] }) | undefined> => {
     if (!mandalart) return undefined
 
@@ -147,14 +166,12 @@ export default function MandalartDetailPage() {
       if (!subGoal) return
     }
 
-    setSelectedSection(sectionPos)
     setSelectedSubGoal(subGoal)
     setModalOpen(true)
   }
 
   const handleModalClose = () => {
     setModalOpen(false)
-    setSelectedSection(null)
     setSelectedSubGoal(null)
   }
 
@@ -164,7 +181,7 @@ export default function MandalartDetailPage() {
   }
 
   const handleMobileSectionTap = (sectionPos: number) => {
-    // On mobile: first tap expands, second tap (or long press) opens modal
+    // On mobile: first tap expands, second tap opens modal
     if (mobileExpandedSection === sectionPos) {
       // Already expanded, open modal
       handleSectionClick(sectionPos)
@@ -177,6 +194,39 @@ export default function MandalartDetailPage() {
   const handleMobileBack = () => {
     setMobileExpandedSection(null)
   }
+
+  // Render cell for mobile expanded view
+  const renderMobileCell = (sectionPos: number, cellPos: number) => {
+    const subGoal = getSubGoalByPosition(sectionPos)
+    if (!subGoal) return null
+
+    if (cellPos === 4) {
+      // Center: Sub-goal title
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-2 bg-blue-50 border border-blue-200">
+          <p className="text-base font-semibold line-clamp-3 text-center">
+            {subGoal.title}
+          </p>
+        </div>
+      )
+    } else {
+      // Actions
+      const actionIndex = cellPos < 4 ? cellPos : cellPos - 1
+      const action = subGoal.actions[actionIndex]
+
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-2 bg-white">
+          {action?.title && (
+            <p className="text-sm leading-tight line-clamp-3 text-center">
+              {action.title}
+            </p>
+          )}
+        </div>
+      )
+    }
+  }
+
+  const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   const handleDownloadImage = async (size: 'mobile' | 'tablet' | 'desktop') => {
     if (!gridRef.current || !mandalart) return
@@ -236,114 +286,6 @@ export default function MandalartDetailPage() {
     }
   }
 
-  // Render a single cell in the 9x9 grid
-  const renderCell = (sectionPos: number, cellPos: number, forDownload = false, forMobile = false) => {
-    // Center section (position 0)
-    if (sectionPos === 0) {
-      if (cellPos === 4) {
-        // Center of center: Core goal
-        return (
-          <div
-            className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} ${!forDownload ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
-            style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            }}
-            onClick={!forDownload ? () => setCoreGoalModalOpen(true) : undefined}
-          >
-            <p className={`${forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-xl'} font-bold ${!forDownload ? 'line-clamp-4' : ''} text-white text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
-              {mandalart?.center_goal}
-            </p>
-          </div>
-        )
-      } else {
-        // Surrounding cells: Sub-goal titles
-        const subGoalPosition = cellPos < 4 ? cellPos + 1 : cellPos
-        const subGoal = getSubGoalByPosition(subGoalPosition)
-        return (
-          <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-blue-50 ${!forDownload ? 'hover:bg-blue-100 transition-colors' : ''}`}>
-            <p className={`${forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-lg'} font-medium ${!forDownload ? 'line-clamp-4' : ''} text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
-              {subGoal?.title || `세부${subGoalPosition}`}
-            </p>
-          </div>
-        )
-      }
-    }
-
-    // Outer sections (positions 1-8)
-    const subGoal = getSubGoalByPosition(sectionPos)
-    if (!subGoal) {
-      // Empty sub-goal cell
-      return (
-        <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-gray-50 ${!forDownload ? 'hover:bg-gray-100 transition-colors' : ''}`}>
-          <div className="flex items-center justify-center w-full h-full">
-            <p className="text-[10px] text-muted-foreground text-center">클릭하여 추가</p>
-          </div>
-        </div>
-      )
-    }
-
-    if (cellPos === 4) {
-      // Center of section: Sub-goal title
-      return (
-        <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-blue-50 border border-blue-200`}>
-          <p className={`${forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-lg'} font-semibold ${!forDownload ? 'line-clamp-4' : ''} text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
-            {subGoal.title}
-          </p>
-        </div>
-      )
-    } else {
-      // Surrounding cells: Actions
-      const actionIndex = cellPos < 4 ? cellPos : cellPos - 1
-      const action = subGoal.actions[actionIndex]
-
-      if (!action) {
-        return (
-          <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-white`}>
-            <div className="flex items-center justify-center w-full h-full">
-              <p className="text-[10px] text-muted-foreground">-</p>
-            </div>
-          </div>
-        )
-      }
-
-      return (
-        <div className={`flex flex-col items-center justify-center h-full min-h-full ${forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'} bg-white ${!forDownload ? 'hover:bg-gray-50 transition-colors' : ''}`}>
-          <p className={`${forDownload ? 'text-xl' : forMobile ? 'text-sm' : 'text-base'} ${forDownload ? '' : 'leading-tight'} ${!forDownload ? 'line-clamp-4' : ''} text-center`} style={forDownload ? { margin: 0, wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: '1.4', width: '100%', display: 'block', textAlign: 'center' } : { textAlign: 'center', margin: 0 }}>
-            {action.title}
-          </p>
-        </div>
-      )
-    }
-  }
-
-  // Render a 3x3 section
-  const renderSection = (sectionPos: number, forDownload = false) => {
-    const isCenter = sectionPos === 0
-    const isSelected = selectedSection === sectionPos
-
-    return (
-      <div
-        key={sectionPos}
-        className={`
-          grid grid-cols-3 grid-rows-3 gap-px bg-gray-300 rounded
-          ${forDownload ? 'h-full' : ''}
-          ${!forDownload && !isCenter ? 'cursor-pointer hover:ring-2 hover:ring-primary/50' : ''}
-          ${!forDownload && isSelected ? 'ring-2 ring-primary' : ''}
-          ${!forDownload ? 'transition-all' : ''}
-        `}
-        onClick={!forDownload ? () => !isCenter && handleSectionClick(sectionPos) : undefined}
-      >
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
-          <div key={cellPos} className={`bg-white ${forDownload ? 'h-full' : 'aspect-square'}`}>
-            {renderCell(sectionPos, cellPos, forDownload)}
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  // Section position mapping for 3x3 layout of sections
-  const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   if (isLoading) {
     return (
@@ -411,21 +353,29 @@ export default function MandalartDetailPage() {
 
         {/* Hidden Grid for Download (always rendered, works on mobile too) */}
         <div className="fixed -left-[9999px] top-0 bg-white" style={{ width: '1200px', height: '1200px' }}>
-          <div ref={gridRef} className="grid grid-cols-3 grid-rows-3 gap-2 p-4 h-full">
-            {sectionPositions.map((sectionPos) => renderSection(sectionPos, true))}
+          <div ref={gridRef}>
+            <MandalartGrid
+              mode="view"
+              data={convertToGridData()}
+              readonly
+              forDownload
+            />
           </div>
         </div>
 
         {/* Desktop: 9x9 Grid (3x3 of 3x3 sections) */}
         <Card className="hidden md:block">
           <CardContent className="p-6">
-            <div className="grid grid-cols-3 gap-4">
-              {sectionPositions.map((sectionPos) => renderSection(sectionPos))}
-            </div>
+            <MandalartGrid
+              mode="view"
+              data={convertToGridData()}
+              onCoreGoalClick={() => setCoreGoalModalOpen(true)}
+              onSectionClick={handleSectionClick}
+            />
           </CardContent>
         </Card>
 
-        {/* Mobile: Adaptive View */}
+        {/* Mobile: Adaptive 3x3 View */}
         <Card className="md:hidden">
           <CardContent className="p-4">
             {mobileExpandedSection === null ? (
@@ -496,7 +446,7 @@ export default function MandalartDetailPage() {
                 >
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
                     <div key={cellPos} className="aspect-square bg-white">
-                      {renderCell(mobileExpandedSection, cellPos, false, true)}
+                      {renderMobileCell(mobileExpandedSection, cellPos)}
                     </div>
                   ))}
                 </div>
@@ -540,8 +490,10 @@ export default function MandalartDetailPage() {
         <SubGoalEditModal
           open={modalOpen}
           onOpenChange={handleModalClose}
+          mode="edit"
+          position={selectedSubGoal.position}
           subGoal={selectedSubGoal}
-          onSave={handleModalSave}
+          onEdit={handleModalSave}
         />
       )}
 
@@ -550,8 +502,9 @@ export default function MandalartDetailPage() {
         <CoreGoalEditModal
           open={coreGoalModalOpen}
           onOpenChange={setCoreGoalModalOpen}
+          mode="edit"
           mandalart={mandalart}
-          onSave={fetchMandalart}
+          onEdit={fetchMandalart}
         />
       )}
     </div>

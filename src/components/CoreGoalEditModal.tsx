@@ -16,23 +16,59 @@ import { supabase } from '@/lib/supabase'
 interface CoreGoalEditModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  mandalart: Mandalart
-  onSave: () => void
+  mode: 'create' | 'edit'
+  mandalart?: Mandalart  // Required for edit mode
+  initialTitle?: string  // For create mode
+  initialCenterGoal?: string  // For create mode
+  onCreate?: (data: { title: string; centerGoal: string }) => void  // For create mode
+  onEdit?: () => void  // For edit mode
 }
 
-export default function CoreGoalEditModal({ open, onOpenChange, mandalart, onSave }: CoreGoalEditModalProps) {
-  const [title, setTitle] = useState(mandalart.title)
-  const [centerGoal, setCenterGoal] = useState(mandalart.center_goal)
+export default function CoreGoalEditModal({
+  open,
+  onOpenChange,
+  mode,
+  mandalart,
+  initialTitle = '',
+  initialCenterGoal = '',
+  onCreate,
+  onEdit
+}: CoreGoalEditModalProps) {
+  const [title, setTitle] = useState(mode === 'edit' && mandalart ? mandalart.title : initialTitle)
+  const [centerGoal, setCenterGoal] = useState(mode === 'edit' && mandalart ? mandalart.center_goal : initialCenterGoal)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    setTitle(mandalart.title)
-    setCenterGoal(mandalart.center_goal)
-  }, [mandalart])
+    if (mode === 'edit' && mandalart) {
+      setTitle(mandalart.title)
+      setCenterGoal(mandalart.center_goal)
+    } else {
+      setTitle(initialTitle)
+      setCenterGoal(initialCenterGoal)
+    }
+  }, [mode, mandalart, initialTitle, initialCenterGoal])
 
   const handleSave = async () => {
     if (title.trim() === '' || centerGoal.trim() === '') {
       alert('만다라트 제목과 핵심목표를 모두 입력해주세요.')
+      return
+    }
+
+    if (mode === 'create') {
+      // Create mode: pass data to parent without DB operation
+      if (onCreate) {
+        onCreate({
+          title: title.trim(),
+          centerGoal: centerGoal.trim()
+        })
+      }
+      onOpenChange(false)
+      return
+    }
+
+    // Edit mode: update DB
+    if (!mandalart) {
+      alert('만다라트 정보가 없습니다.')
       return
     }
 
@@ -49,7 +85,7 @@ export default function CoreGoalEditModal({ open, onOpenChange, mandalart, onSav
 
       if (error) throw error
 
-      onSave()
+      if (onEdit) onEdit()
       onOpenChange(false)
     } catch (err) {
       console.error('Error saving mandalart:', err)
@@ -63,9 +99,13 @@ export default function CoreGoalEditModal({ open, onOpenChange, mandalart, onSav
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>만다라트 정보 수정</DialogTitle>
+          <DialogTitle>
+            {mode === 'create' ? '만다라트 정보 입력' : '만다라트 정보 수정'}
+          </DialogTitle>
           <DialogDescription>
-            만다라트 제목과 핵심목표를 수정할 수 있습니다.
+            {mode === 'create'
+              ? '만다라트 제목과 핵심목표를 입력하세요.'
+              : '만다라트 제목과 핵심목표를 수정할 수 있습니다.'}
           </DialogDescription>
         </DialogHeader>
 
