@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Upload, Image as ImageIcon, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { MandalartGridData } from '@/types'
+import { suggestActionType } from '@/lib/actionTypes'
 
 interface InputMethodSelectorProps {
   onMethodSelect: (method: 'image' | 'text' | 'manual') => void
@@ -126,8 +127,8 @@ export default function InputMethodSelector({
 
       const result = await response.json()
 
-      // 3. Convert to MandalartGridData and notify parent
-      const gridData = convertToGridData(result)
+      // 3. Convert to MandalartGridData with AI classification
+      const gridData = await convertToGridData(result)
       onMethodSelect('image')
       onImageProcessComplete(gridData, publicUrl)
 
@@ -172,8 +173,8 @@ export default function InputMethodSelector({
 
       const result = await response.json()
 
-      // Convert to MandalartGridData and notify parent
-      const gridData = convertToGridData(result)
+      // Convert to MandalartGridData with AI classification
+      const gridData = await convertToGridData(result)
       onMethodSelect('text')
       onTextProcessComplete(gridData)
 
@@ -186,27 +187,37 @@ export default function InputMethodSelector({
     }
   }
 
-  // Convert OCR/text parsing result to MandalartGridData
-  const convertToGridData = (result: {
+  // Convert OCR/text parsing result to MandalartGridData with AI classification
+  const convertToGridData = async (result: {
     center_goal?: string
     sub_goals?: Array<{ title?: string; actions?: string[] }>
-  }): MandalartGridData => {
+  }): Promise<MandalartGridData> => {
     const gridData: MandalartGridData = {
       center_goal: result.center_goal || '',
       sub_goals: []
     }
 
-    if (result.sub_goals) {
+    if (!result.sub_goals) {
+      return gridData
+    }
+
+    // Get session for API calls
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    if (authError || !session) {
+      console.error('Auth error in convertToGridData:', authError)
+      // Fallback to rule-based without throwing
       result.sub_goals.forEach((sg, index) => {
         if (index < 8 && sg.title) {
-          const actions: Array<{ position: number; title: string }> = []
+          const actions: Array<{ position: number; title: string; type?: 'routine' | 'mission' | 'reference' }> = []
 
           if (sg.actions) {
             sg.actions.forEach((actionTitle, actionIndex) => {
               if (actionIndex < 8 && actionTitle) {
+                const suggestion = suggestActionType(actionTitle)
                 actions.push({
                   position: actionIndex + 1,
-                  title: actionTitle
+                  title: actionTitle,
+                  type: suggestion.type
                 })
               }
             })
@@ -219,7 +230,78 @@ export default function InputMethodSelector({
           })
         }
       })
+      return gridData
     }
+
+    // Collect all action titles for batch classification
+    const actionTitles: Array<{ sgIndex: number; actionIndex: number; title: string }> = []
+    result.sub_goals.forEach((sg, sgIndex) => {
+      if (sgIndex < 8 && sg.title && sg.actions) {
+        sg.actions.forEach((actionTitle, actionIndex) => {
+          if (actionIndex < 8 && actionTitle) {
+            actionTitles.push({ sgIndex, actionIndex, title: actionTitle })
+          }
+        })
+      }
+    })
+
+    // Classify all actions in parallel using API
+    const classificationPromises = actionTitles.map(async ({ title }) => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/classify-action-type`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action_title: title }),
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error('Classification failed')
+        }
+
+        const classification = await response.json()
+        return { type: classification.type }
+      } catch (error) {
+        console.error(`Failed to classify "${title}", using fallback:`, error)
+        // Fallback to rule-based for this action
+        const suggestion = suggestActionType(title)
+        return { type: suggestion.type }
+      }
+    })
+
+    const classifications = await Promise.all(classificationPromises)
+
+    // Build gridData with classified actions
+    let classificationIndex = 0
+    result.sub_goals.forEach((sg, sgIndex) => {
+      if (sgIndex < 8 && sg.title) {
+        const actions: Array<{ position: number; title: string; type?: 'routine' | 'mission' | 'reference' }> = []
+
+        if (sg.actions) {
+          sg.actions.forEach((actionTitle, actionIndex) => {
+            if (actionIndex < 8 && actionTitle) {
+              const classification = classifications[classificationIndex++]
+              actions.push({
+                position: actionIndex + 1,
+                title: actionTitle,
+                type: classification.type as 'routine' | 'mission' | 'reference'
+              })
+            }
+          })
+        }
+
+        gridData.sub_goals.push({
+          position: sgIndex + 1,
+          title: sg.title,
+          actions
+        })
+      }
+    })
 
     return gridData
   }

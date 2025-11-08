@@ -31,6 +31,7 @@ import {
   getInitialPeriod,
 } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
+import { supabase } from '@/lib/supabase'
 
 export interface ActionTypeData {
   type: ActionType
@@ -112,23 +113,73 @@ export default function ActionTypeSelector({
     }
 
     // Only run auto suggestion for new actions
-    const suggestion = suggestActionType(actionTitle)
-    setAiSuggestion({
-      type: suggestion.type,
-      confidence: suggestion.confidence,
-      reason: suggestion.reason,
-    })
-    setType(suggestion.type)
+    const fetchClassification = async () => {
+      try {
+        // Call LLM API for classification
+        const { data: { session }, error: authError } = await supabase.auth.getSession()
+        if (authError || !session) {
+          console.error('Auth error:', authError)
+          throw new Error('Authentication failed')
+        }
 
-    if (suggestion.routineFrequency) {
-      setRoutineFrequency(suggestion.routineFrequency)
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/classify-action-type`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action_title: actionTitle }),
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error('Classification API failed')
+        }
+
+        const suggestion = await response.json()
+
+        setAiSuggestion({
+          type: suggestion.type,
+          confidence: suggestion.confidence,
+          reason: suggestion.reason,
+        })
+        setType(suggestion.type)
+
+        if (suggestion.routine_frequency) {
+          setRoutineFrequency(suggestion.routine_frequency)
+        }
+        if (suggestion.mission_completion_type) {
+          setMissionCompletionType(suggestion.mission_completion_type)
+        }
+        if (suggestion.mission_period_cycle) {
+          setMissionPeriodCycle(suggestion.mission_period_cycle)
+        }
+      } catch (error) {
+        console.error('Classification error, falling back to rule-based:', error)
+        // Fallback to rule-based classification
+        const suggestion = suggestActionType(actionTitle)
+        setAiSuggestion({
+          type: suggestion.type,
+          confidence: suggestion.confidence,
+          reason: suggestion.reason,
+        })
+        setType(suggestion.type)
+
+        if (suggestion.routineFrequency) {
+          setRoutineFrequency(suggestion.routineFrequency)
+        }
+        if (suggestion.missionCompletionType) {
+          setMissionCompletionType(suggestion.missionCompletionType)
+        }
+        if (suggestion.missionPeriodCycle) {
+          setMissionPeriodCycle(suggestion.missionPeriodCycle)
+        }
+      }
     }
-    if (suggestion.missionCompletionType) {
-      setMissionCompletionType(suggestion.missionCompletionType)
-    }
-    if (suggestion.missionPeriodCycle) {
-      setMissionPeriodCycle(suggestion.missionPeriodCycle)
-    }
+
+    fetchClassification()
   }, [open, actionTitle, initialData])
 
   const handleWeekdayToggle = (day: number) => {
