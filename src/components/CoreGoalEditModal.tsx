@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Mandalart } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { Info } from 'lucide-react'
 
 interface CoreGoalEditModalProps {
   open: boolean
@@ -117,8 +118,12 @@ export default function CoreGoalEditModal({
               id="mandalart-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="만다라트 제목을 입력하세요"
+              placeholder="예: 2025년 목표"
             />
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              만다라트를 구분할 짧은 이름을 입력하세요
+            </p>
           </div>
 
           {/* Core Goal */}
@@ -128,10 +133,11 @@ export default function CoreGoalEditModal({
               id="core-goal"
               value={centerGoal}
               onChange={(e) => setCenterGoal(e.target.value)}
-              placeholder="핵심 목표를 입력하세요"
+              placeholder="예: 건강하고 활력 넘치는 삶"
             />
-            <p className="text-xs text-muted-foreground">
-              💡 핵심 목표는 만다라트의 중심이 되는 가장 중요한 목표입니다.
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              9x9 그리드 중앙에 표시될 목표를 입력하세요
             </p>
           </div>
         </div>

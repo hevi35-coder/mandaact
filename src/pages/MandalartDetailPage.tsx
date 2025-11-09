@@ -84,13 +84,18 @@ export default function MandalartDetailPage() {
       // Combine data
       const subGoalsWithActions = (subGoalsData || []).map(sg => ({
         ...sg,
-        actions: (actionsData || []).filter(action => action.sub_goal_id === sg.id)
+        actions: (actionsData || [])
+          .filter(action => action.sub_goal_id === sg.id)
+          .sort((a, b) => a.position - b.position)
       }))
 
-      setMandalart({
+      const newMandalart = {
         ...mandalartData,
         sub_goals: subGoalsWithActions
-      })
+      }
+
+      setMandalart(newMandalart)
+      return newMandalart // Return the fresh data
     } catch (err) {
       console.error('Fetch error:', err)
       setError(err instanceof Error ? err.message : '만다라트를 불러오는 중 오류가 발생했습니다')
@@ -175,9 +180,20 @@ export default function MandalartDetailPage() {
     setSelectedSubGoal(null)
   }
 
-  const handleModalSave = () => {
+  const handleModalSave = async () => {
     // Refresh data after save
-    fetchMandalart()
+    if (!selectedSubGoal) return
+
+    const position = selectedSubGoal.position
+    const freshData = await fetchMandalart()
+
+    // Update selectedSubGoal with fresh data
+    if (freshData) {
+      const updatedSubGoal = freshData.sub_goals.find((sg: SubGoal & { actions: Action[] }) => sg.position === position)
+      if (updatedSubGoal) {
+        setSelectedSubGoal(updatedSubGoal)
+      }
+    }
   }
 
   const handleMobileSectionTap = (sectionPos: number) => {
@@ -227,6 +243,37 @@ export default function MandalartDetailPage() {
   }
 
   const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
+
+  const handleDelete = async () => {
+    if (!mandalart || !id) return
+
+    if (!confirm(`"${mandalart.title}" 만다라트를 삭제하시겠습니까? 모든 하위 데이터가 함께 삭제됩니다.`)) {
+      return
+    }
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('mandalarts')
+        .delete()
+        .eq('id', id)
+
+      if (deleteError) throw deleteError
+
+      toast({
+        title: '삭제 완료',
+        description: '만다라트가 삭제되었습니다.',
+      })
+
+      navigate('/mandalart/list')
+    } catch (err) {
+      console.error('Delete error:', err)
+      toast({
+        title: '삭제 실패',
+        description: '삭제 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      })
+    }
+  }
 
   const handleDownloadImage = async (size: 'mobile' | 'tablet' | 'desktop') => {
     if (!gridRef.current || !mandalart) return
@@ -315,8 +362,8 @@ export default function MandalartDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
@@ -326,11 +373,14 @@ export default function MandalartDetailPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
+              목록
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="default" disabled={isDownloading}>
                   <Download className="w-4 h-4 mr-2" />
-                  {isDownloading ? '생성 중...' : '이미지 다운로드'}
+                  {isDownloading ? '생성 중...' : '다운로드'}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -345,8 +395,11 @@ export default function MandalartDetailPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
-              목록으로
+            <Button
+              variant="outline"
+              onClick={handleDelete}
+            >
+              삭제
             </Button>
           </div>
         </div>
@@ -436,7 +489,7 @@ export default function MandalartDetailPage() {
                     size="sm"
                     onClick={() => handleSectionClick(mobileExpandedSection)}
                   >
-                    편집
+                    수정
                   </Button>
                 </div>
 
@@ -450,10 +503,6 @@ export default function MandalartDetailPage() {
                     </div>
                   ))}
                 </div>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  그리드를 탭하거나 "편집" 버튼을 눌러 편집할 수 있습니다
-                </p>
               </div>
             )}
           </CardContent>
@@ -462,24 +511,31 @@ export default function MandalartDetailPage() {
         {/* Instructions */}
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p className="font-medium text-foreground mb-2">💡 사용 방법</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li className="hidden md:list-item">
-                  전통적인 9x9 만다라트 형식으로 모든 내용(핵심목표 + 세부목표 8개 + 실천항목 64개)이 표시됩니다
-                </li>
-                <li className="hidden md:list-item">
-                  각 3x3 섹션을 클릭하면 해당 세부목표와 실천항목을 편집할 수 있습니다
-                </li>
-                <li className="md:hidden">
-                  세부목표를 탭하면 상세보기 및 편집이 가능합니다
-                </li>
-                <li>
-                  타입 아이콘: <Repeat className="inline w-3 h-3 text-blue-500" /> 루틴,
-                  <Target className="inline w-3 h-3 text-green-500 mx-1" /> 미션,
-                  <Lightbulb className="inline w-3 h-3 text-amber-500 mx-1" /> 참고
-                </li>
-              </ul>
+            <div className="space-y-3">
+              <p className="text-sm font-medium flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-primary" />
+                사용 방법
+              </p>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <p>• 각 영역을 탭하여 상세보기 및 수정이 가능합니다.</p>
+                <div className="flex items-center gap-2">
+                  <span>• 타입 구분:</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <Repeat className="w-3 h-3 text-blue-500" />
+                      <span>루틴</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Target className="w-3 h-3 text-green-500" />
+                      <span>미션</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Lightbulb className="w-3 h-3 text-amber-500" />
+                      <span>참고</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -490,8 +546,6 @@ export default function MandalartDetailPage() {
         <SubGoalEditModal
           open={modalOpen}
           onOpenChange={handleModalClose}
-          mode="edit"
-          position={selectedSubGoal.position}
           subGoal={selectedSubGoal}
           onEdit={handleModalSave}
         />

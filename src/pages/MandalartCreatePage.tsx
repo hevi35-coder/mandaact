@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
@@ -10,9 +9,9 @@ import { MandalartGridData } from '@/types'
 import MandalartGrid from '@/components/MandalartGrid'
 import InputMethodSelector from '@/components/InputMethodSelector'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
-import SubGoalEditModal from '@/components/SubGoalEditModal'
+import SubGoalCreateModal from '@/components/SubGoalCreateModal'
 import { suggestActionType } from '@/lib/actionTypes'
-import { Plus } from 'lucide-react'
+import { Plus, Info } from 'lucide-react'
 
 export default function MandalartCreatePage() {
   const navigate = useNavigate()
@@ -319,7 +318,6 @@ export default function MandalartCreatePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Label htmlFor="title">제목</Label>
                 <Input
                   id="title"
                   placeholder="예: 2025년 목표"
@@ -327,6 +325,10 @@ export default function MandalartCreatePage() {
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={isLoading}
                 />
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Info className="h-3 w-3" />
+                  만다라트를 구분할 짧은 이름을 입력하세요
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -481,12 +483,11 @@ export default function MandalartCreatePage() {
         onCreate={handleCoreGoalSave}
       />
 
-      {/* Sub Goal Edit Modal */}
+      {/* Sub Goal Create Modal */}
       {selectedSubGoalPosition !== null && (
-        <SubGoalEditModal
+        <SubGoalCreateModal
           open={subGoalModalOpen}
           onOpenChange={setSubGoalModalOpen}
-          mode="create"
           position={selectedSubGoalPosition}
           initialTitle={getSubGoalInitialData().title}
           initialActions={getSubGoalInitialData().actions}
