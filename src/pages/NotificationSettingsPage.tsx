@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Info } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -16,6 +26,32 @@ import {
   type NotificationSettings
 } from '@/lib/notifications'
 
+// 프리셋 시간 정의
+const PRESET_TIMES = [
+  { label: '오전 9시', value: '09:00' },
+  { label: '오후 12시', value: '12:00' },
+  { label: '오후 8시', value: '20:00' },
+]
+
+// 시간 문자열을 시/분/오전오후로 파싱
+const parseTime = (timeStr: string) => {
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+  return { hour: hour12.toString(), minute: minutes.toString().padStart(2, '0'), period }
+}
+
+// 시/분/오전오후를 24시간 형식 문자열로 변환
+const formatTime = (hour: string, minute: string, period: string) => {
+  let hour24 = parseInt(hour)
+  if (period === 'PM' && hour24 !== 12) {
+    hour24 += 12
+  } else if (period === 'AM' && hour24 === 12) {
+    hour24 = 0
+  }
+  return `${hour24.toString().padStart(2, '0')}:${minute.padStart(2, '0')}`
+}
+
 export default function NotificationSettingsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
@@ -25,6 +61,12 @@ export default function NotificationSettingsPage() {
   const [settings, setSettings] = useState<NotificationSettings>(getNotificationSettings())
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
+
+  // 시간 선택을 위한 state
+  const initialTime = parseTime(settings.time)
+  const [selectedHour, setSelectedHour] = useState(initialTime.hour)
+  const [selectedMinute, setSelectedMinute] = useState(initialTime.minute)
+  const [selectedPeriod, setSelectedPeriod] = useState(initialTime.period)
 
   useEffect(() => {
     if (!user) {
@@ -127,8 +169,18 @@ export default function NotificationSettingsPage() {
     setSettings({ ...settings, enabled })
   }
 
-  const handleTimeChange = (time: string) => {
-    setSettings({ ...settings, time })
+  // 드롭다운 값 변경 시 settings의 time 업데이트
+  useEffect(() => {
+    const newTime = formatTime(selectedHour, selectedMinute, selectedPeriod)
+    setSettings(prev => ({ ...prev, time: newTime }))
+  }, [selectedHour, selectedMinute, selectedPeriod])
+
+  // 프리셋 버튼 클릭 핸들러
+  const handlePresetClick = (timeValue: string) => {
+    const parsed = parseTime(timeValue)
+    setSelectedHour(parsed.hour)
+    setSelectedMinute(parsed.minute)
+    setSelectedPeriod(parsed.period)
   }
 
   const handleFrequencyChange = (frequency: 'daily' | 'weekdays' | 'custom') => {
@@ -136,13 +188,13 @@ export default function NotificationSettingsPage() {
   }
 
   const weekdays = [
-    { value: 0, label: '일' },
-    { value: 1, label: '월' },
-    { value: 2, label: '화' },
-    { value: 3, label: '수' },
-    { value: 4, label: '목' },
-    { value: 5, label: '금' },
-    { value: 6, label: '토' }
+    { value: 1, label: '월', short: '월' },
+    { value: 2, label: '화', short: '화' },
+    { value: 3, label: '수', short: '수' },
+    { value: 4, label: '목', short: '목' },
+    { value: 5, label: '금', short: '금' },
+    { value: 6, label: '토', short: '토' },
+    { value: 0, label: '일', short: '일' }
   ]
 
   const handleCustomDayToggle = (day: number) => {
@@ -187,15 +239,23 @@ export default function NotificationSettingsPage() {
 
   if (!isNotificationSupported()) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
         <div className="max-w-4xl mx-auto space-y-4">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl font-bold inline-block">알림 설정</h1>
+            <span className="text-muted-foreground ml-3 text-sm">일일 실천 리마인더</span>
+          </div>
           <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                이 브라우저는 알림 기능을 지원하지 않습니다.
-              </p>
-              <Button variant="outline" onClick={() => navigate('/dashboard')} className="mt-4">
-                대시보드로 돌아가기
+            <CardContent className="py-12 text-center space-y-4">
+              <div className="text-4xl">🔕</div>
+              <div>
+                <p className="text-lg font-medium">알림 기능 미지원</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  이 브라우저는 알림 기능을 지원하지 않습니다
+                </p>
+              </div>
+              <Button variant="outline" onClick={() => navigate('/home')}>
+                홈으로 돌아가기
               </Button>
             </CardContent>
           </Card>
@@ -205,30 +265,23 @@ export default function NotificationSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">알림 설정</h1>
-            <p className="text-muted-foreground mt-1">
-              일일 실천 리마인더를 설정하세요
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            대시보드로
-          </Button>
+        <div className="text-center md:text-left">
+          <h1 className="text-3xl font-bold inline-block">알림 설정</h1>
+          <span className="text-muted-foreground ml-3 text-sm">일일 실천 리마인더</span>
         </div>
 
         {/* Permission Status */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>알림 권한</CardTitle>
             <CardDescription>
               알림을 받으려면 먼저 권한을 허용해주세요
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-0">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -263,35 +316,36 @@ export default function NotificationSettingsPage() {
 
               {/* 권한별 안내 메시지 */}
               {permission === 'granted' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                  <p className="text-sm text-blue-900 mb-2 font-medium">
-                    💡 알림 권한을 해제하려면 브라우저 설정에서 변경할 수 있습니다.
+                <div className="space-y-2 pt-4 border-t">
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>알림 권한을 해제하려면 브라우저 설정에서 변경할 수 있습니다.</span>
                   </p>
-                  <p className="text-sm text-blue-800">
-                    <span className="font-medium">{getBrowserSettingsInstruction().name}:</span>{' '}
-                    {getBrowserSettingsInstruction().path}
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span><span className="font-medium">{getBrowserSettingsInstruction().name}:</span> {getBrowserSettingsInstruction().path}</span>
                   </p>
                 </div>
               )}
 
               {permission === 'denied' && (
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-                  <p className="text-sm text-amber-900 mb-2 font-medium">
-                    ⚠️ 알림이 차단되어 있습니다. 알림을 받으려면 브라우저 설정에서 권한을 허용해주세요.
+                <div className="space-y-2 pt-4 border-t">
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>알림이 차단되어 있습니다. 알림을 받으려면 브라우저 설정에서 권한을 허용해주세요.</span>
                   </p>
-                  <p className="text-sm text-amber-800">
-                    <span className="font-medium">{getBrowserSettingsInstruction().name}:</span>{' '}
-                    {getBrowserSettingsInstruction().path}
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span><span className="font-medium">{getBrowserSettingsInstruction().name}:</span> {getBrowserSettingsInstruction().path}</span>
                   </p>
                 </div>
               )}
 
               {permission === 'default' && (
-                <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                  <p className="text-sm text-gray-700">
-                    📬 "권한 요청" 버튼을 눌러 알림을 활성화하세요.
-                  </p>
-                </div>
+                <p className="text-xs text-muted-foreground flex items-start gap-1 pt-4 border-t">
+                  <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                  <span>"권한 요청" 버튼을 눌러 알림을 활성화하세요.</span>
+                </p>
               )}
             </div>
           </CardContent>
@@ -299,16 +353,16 @@ export default function NotificationSettingsPage() {
 
         {/* Notification Settings */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>알림 설정</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pt-0">
             {/* Enable/Disable */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">일일 알림</p>
+                <p className="font-medium">실천 알림</p>
                 <p className="text-sm text-muted-foreground">
-                  매일 설정한 시간에 실천 알림 받기
+                  설정한 시간과 요일에 실천 알림 받기
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -323,78 +377,150 @@ export default function NotificationSettingsPage() {
               </label>
             </div>
 
-            {/* Time Setting */}
-            <div className="space-y-2">
-              <label className="font-medium">알림 시간</label>
-              <input
-                type="time"
-                value={settings.time}
-                onChange={(e) => handleTimeChange(e.target.value)}
-                disabled={!settings.enabled || permission !== 'granted'}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-
             {/* Frequency */}
             <div className="space-y-3">
-              <label className="font-medium">알림 빈도</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="frequency"
-                    value="daily"
-                    checked={settings.frequency === 'daily'}
-                    onChange={() => handleFrequencyChange('daily')}
-                    disabled={!settings.enabled || permission !== 'granted'}
-                    className="w-4 h-4 text-primary"
-                  />
-                  <span>매일</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="frequency"
-                    value="weekdays"
-                    checked={settings.frequency === 'weekdays'}
-                    onChange={() => handleFrequencyChange('weekdays')}
-                    disabled={!settings.enabled || permission !== 'granted'}
-                    className="w-4 h-4 text-primary"
-                  />
-                  <span>평일만 (월-금)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="frequency"
-                    value="custom"
-                    checked={settings.frequency === 'custom'}
-                    onChange={() => handleFrequencyChange('custom')}
-                    disabled={!settings.enabled || permission !== 'granted'}
-                    className="w-4 h-4 text-primary"
-                  />
-                  <span>커스텀</span>
-                </label>
+              <label className="font-medium">알림 요일</label>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => handleFrequencyChange('daily')}
+                  disabled={!settings.enabled || permission !== 'granted'}
+                  className={`px-4 py-2 text-sm rounded-md border transition-colors ${
+                    settings.frequency === 'daily'
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-primary'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  매일
+                </button>
+                <button
+                  onClick={() => handleFrequencyChange('weekdays')}
+                  disabled={!settings.enabled || permission !== 'granted'}
+                  className={`px-4 py-2 text-sm rounded-md border transition-colors ${
+                    settings.frequency === 'weekdays'
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-primary'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  평일 (월-금)
+                </button>
+                <button
+                  onClick={() => handleFrequencyChange('custom')}
+                  disabled={!settings.enabled || permission !== 'granted'}
+                  className={`px-4 py-2 text-sm rounded-md border transition-colors ${
+                    settings.frequency === 'custom'
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-primary'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  선택
+                </button>
+              </div>
 
-                {/* Custom Days Selection */}
-                {settings.frequency === 'custom' && (
-                  <div className="ml-6 flex gap-2 flex-wrap">
-                    {weekdays.map((day) => (
-                      <button
-                        key={day.value}
-                        onClick={() => handleCustomDayToggle(day.value)}
+              {/* Custom Days Selection */}
+              {settings.frequency === 'custom' && (
+                <div className="grid grid-cols-7 gap-2 pt-2">
+                  {weekdays.map((day) => (
+                    <div key={day.value} className="flex items-center space-x-1">
+                      <Checkbox
+                        id={`weekday-${day.value}`}
+                        checked={settings.customDays?.includes(day.value) || false}
+                        onCheckedChange={() => handleCustomDayToggle(day.value)}
                         disabled={!settings.enabled || permission !== 'granted'}
-                        className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                          settings.customDays?.includes(day.value)
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-primary'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                      <Label
+                        htmlFor={`weekday-${day.value}`}
+                        className="text-sm cursor-pointer"
                       >
-                        {day.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        {day.short}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Time Setting */}
+            <div className="space-y-3">
+              <label className="font-medium">알림 시간</label>
+
+              {/* 빠른 선택 (프리셋) */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">빠른 선택</p>
+                <div className="flex gap-2">
+                  {PRESET_TIMES.map((preset) => (
+                    <button
+                      key={preset.value}
+                      onClick={() => handlePresetClick(preset.value)}
+                      disabled={!settings.enabled || permission !== 'granted'}
+                      className={`px-4 py-2 text-sm rounded-md border transition-colors whitespace-nowrap flex-1 ${
+                        settings.time === preset.value
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-primary'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 시간 설정 (드롭다운) */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">시간 설정</p>
+                <div className="flex gap-2 items-center">
+                  {/* 시간 선택 */}
+                  <Select
+                    value={selectedHour}
+                    onValueChange={setSelectedHour}
+                    disabled={!settings.enabled || permission !== 'granted'}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue placeholder="시" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((hour) => (
+                        <SelectItem key={hour} value={hour.toString()}>
+                          {hour}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <span className="text-muted-foreground">:</span>
+
+                  {/* 분 선택 */}
+                  <Select
+                    value={selectedMinute}
+                    onValueChange={setSelectedMinute}
+                    disabled={!settings.enabled || permission !== 'granted'}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue placeholder="분" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['00', '15', '30', '45'].map((minute) => (
+                        <SelectItem key={minute} value={minute}>
+                          {minute}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* 오전/오후 선택 */}
+                  <Select
+                    value={selectedPeriod}
+                    onValueChange={setSelectedPeriod}
+                    disabled={!settings.enabled || permission !== 'granted'}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue placeholder="오전/오후" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AM">오전</SelectItem>
+                      <SelectItem value="PM">오후</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
@@ -412,11 +538,13 @@ export default function NotificationSettingsPage() {
         </Card>
 
         {/* Back Button */}
-        <div className="pt-4">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            대시보드로 돌아가기
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => navigate('/home')}
+        >
+          홈으로 돌아가기
+        </Button>
       </div>
     </div>
   )
