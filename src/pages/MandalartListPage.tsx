@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Mandalart } from '@/types'
-import { formatDistanceToNow } from 'date-fns'
-import { ko } from 'date-fns/locale/ko'
 
 export default function MandalartListPage() {
   const navigate = useNavigate()
@@ -67,26 +65,27 @@ export default function MandalartListPage() {
     }
   }
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`"${title}" 만다라트를 삭제하시겠습니까? 모든 하위 데이터가 함께 삭제됩니다.`)) {
-      return
-    }
+  // Commented out - not currently used in UI
+  // const handleDelete = async (id: string, title: string) => {
+  //   if (!confirm(`"${title}" 만다라트를 삭제하시겠습니까? 모든 하위 데이터가 함께 삭제됩니다.`)) {
+  //     return
+  //   }
 
-    try {
-      const { error: deleteError } = await supabase
-        .from('mandalarts')
-        .delete()
-        .eq('id', id)
+  //   try {
+  //     const { error: deleteError } = await supabase
+  //       .from('mandalarts')
+  //       .delete()
+  //       .eq('id', id)
 
-      if (deleteError) throw deleteError
+  //     if (deleteError) throw deleteError
 
-      // Remove from local state
-      setMandalarts(mandalarts.filter(m => m.id !== id))
-    } catch (err) {
-      console.error('Delete error:', err)
-      alert('삭제 중 오류가 발생했습니다')
-    }
-  }
+  //     // Remove from local state
+  //     setMandalarts(mandalarts.filter(m => m.id !== id))
+  //   } catch (err) {
+  //     console.error('Delete error:', err)
+  //     alert('삭제 중 오류가 발생했습니다')
+  //   }
+  // }
 
   if (isLoading) {
     return (
@@ -101,17 +100,15 @@ export default function MandalartListPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">만다라트 관리</h1>
-            <p className="text-muted-foreground mt-1">
-              저장된 만다라트 {mandalarts.length}개
-            </p>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl font-bold inline-block">만다라트</h1>
+            <span className="text-muted-foreground ml-3 text-sm">목표 관리 • {mandalarts.length}개</span>
           </div>
-          <Button onClick={() => navigate('/mandalart/create')}>
+          <Button onClick={() => navigate('/mandalart/create')} className="w-full md:w-auto">
             + 새로 만들기
           </Button>
         </div>
@@ -146,78 +143,32 @@ export default function MandalartListPage() {
           {mandalarts.map((mandalart) => (
             <Card
               key={mandalart.id}
-              className={`hover:shadow-md transition-shadow ${!mandalart.is_active ? 'opacity-60' : ''}`}
+              className={`hover:shadow-md transition-shadow cursor-pointer ${!mandalart.is_active ? 'opacity-60' : ''}`}
+              onClick={() => navigate(`/mandalart/${mandalart.id}`)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle>{mandalart.title}</CardTitle>
-                      {!mandalart.is_active && (
-                        <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
-                          비활성
-                        </span>
-                      )}
-                    </div>
+                    <CardTitle>{mandalart.title}</CardTitle>
                     <CardDescription className="mt-2">
                       핵심 목표: {mandalart.center_goal}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-xs text-muted-foreground">
-                      {mandalart.input_method === 'manual' ? '📝' : '📸'}
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={mandalart.is_active}
-                          onChange={() => handleToggleActive(mandalart.id, mandalart.is_active)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                      <span className="text-xs text-muted-foreground">
-                        {mandalart.is_active ? '활성' : '비활성'}
-                      </span>
-                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={mandalart.is_active}
+                        onChange={() => handleToggleActive(mandalart.id, mandalart.is_active)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
                   </div>
                 </div>
               </CardHeader>
-              <CardFooter className="flex items-center justify-between border-t pt-4">
-                <p className="text-sm text-muted-foreground">
-                  {formatDistanceToNow(new Date(mandalart.created_at), {
-                    addSuffix: true,
-                    locale: ko
-                  })}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/mandalart/${mandalart.id}`)}
-                  >
-                    상세보기
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(mandalart.id, mandalart.title)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    삭제
-                  </Button>
-                </div>
-              </CardFooter>
             </Card>
           ))}
-        </div>
-
-        {/* Back to Dashboard */}
-        <div className="pt-4">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            대시보드로 돌아가기
-          </Button>
         </div>
       </div>
     </div>

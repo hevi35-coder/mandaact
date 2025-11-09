@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
+import { CalendarCheck, Home, Grid3x3, Bell } from 'lucide-react'
 
 export default function Navigation() {
   const location = useLocation()
@@ -12,10 +13,9 @@ export default function Navigation() {
   }
 
   const navItems = [
-    { path: '/today', label: '오늘의 실천', icon: '✅' },
-    { path: '/dashboard', label: '대시보드', icon: '🏠' },
-    { path: '/mandalart/list', label: '만다라트 관리', icon: '📋' },
-    { path: '/stats', label: '통계/리포트', icon: '📊' },
+    { path: '/today', label: '투데이', icon: CalendarCheck },
+    { path: '/home', label: '홈', icon: Home },
+    { path: '/mandalart/list', label: '만다라트', icon: Grid3x3 },
   ]
 
   const isActive = (path: string) => location.pathname === path
@@ -26,49 +26,75 @@ export default function Navigation() {
       <nav className="hidden md:block border-b bg-white sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/dashboard" className="text-xl font-bold">
-              MandaAct
+            <Link to="/home" className="text-xl font-bold">
+              <span className="text-gray-700">Manda</span>
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Act</span>
             </Link>
-            <div className="flex items-center gap-2">
-              {navItems.map((item) => (
-                <Link key={item.path} to={item.path}>
-                  <Button
-                    variant={isActive(item.path) ? 'default' : 'ghost'}
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </Button>
-                </Link>
-              ))}
+            <div className="flex items-center gap-1">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link key={item.path} to={item.path}>
+                    <Button
+                      variant={isActive(item.path) ? 'default' : 'ghost'}
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Button>
+                  </Link>
+                )
+              })}
+              <Link to="/settings/notifications">
+                <Button variant="ghost" size="sm">
+                  <Bell className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Header - Top */}
+      <nav className="md:hidden sticky top-0 border-b bg-white z-50">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-14">
+            <Link to="/home" className="text-lg font-bold">
+              <span className="text-gray-700">Manda</span>
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Act</span>
+            </Link>
+            <Link to="/settings/notifications">
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Bell className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </nav>
 
       {/* Mobile Navigation - Bottom */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-white z-50">
-        <div className="grid grid-cols-4 h-16">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center gap-1 text-xs transition-colors ${
-                isActive(item.path)
-                  ? 'text-primary font-medium bg-primary/5'
-                  : 'text-muted-foreground hover:text-primary'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+        <div className="grid grid-cols-3 h-16">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center justify-center gap-1 text-xs transition-colors ${
+                  isActive(item.path)
+                    ? 'text-primary font-medium bg-primary/5'
+                    : 'text-muted-foreground hover:text-primary'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
         </div>
       </nav>
-
-      {/* Mobile Spacer */}
-      <div className="md:hidden h-16" />
     </>
   )
 }

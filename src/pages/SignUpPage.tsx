@@ -10,6 +10,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { useAuthStore } from '@/store/authStore'
 
 const signUpSchema = z.object({
+  nickname: z.string()
+    .min(2, '닉네임은 최소 2자 이상이어야 합니다')
+    .max(12, '닉네임은 최대 12자까지 가능합니다')
+    .regex(/^[가-힣a-zA-Z0-9]+$/, '닉네임은 한글, 영문, 숫자만 사용 가능합니다'),
   email: z.string().email('유효한 이메일 주소를 입력해주세요'),
   password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
   confirmPassword: z.string(),
@@ -39,9 +43,9 @@ export default function SignUpPage() {
     setIsLoading(true)
     setError(null)
 
-    console.log('Attempting signup with email:', data.email)
+    console.log('Attempting signup with nickname:', data.nickname, 'email:', data.email)
 
-    const { error } = await signUp(data.email, data.password)
+    const { error } = await signUp(data.email, data.password, data.nickname)
 
     if (error) {
       console.error('Signup failed:', error)
@@ -95,6 +99,22 @@ export default function SignUpPage() {
                 {error}
               </div>
             )}
+
+            {/* Nickname Field */}
+            <div className="space-y-2">
+              <Label htmlFor="nickname">닉네임</Label>
+              <Input
+                id="nickname"
+                type="text"
+                placeholder="2~12자 (한글/영문/숫자)"
+                {...register('nickname')}
+                disabled={isLoading}
+                maxLength={12}
+              />
+              {errors.nickname && (
+                <p className="text-sm text-red-600">{errors.nickname.message}</p>
+              )}
+            </div>
 
             {/* Email Field */}
             <div className="space-y-2">

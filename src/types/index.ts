@@ -130,3 +130,89 @@ export interface MandalartGridData {
 export interface MandalartWithDetails extends Mandalart {
   sub_goals: (SubGoal & { actions: Action[] })[]
 }
+
+// Gamification types
+export interface UserLevel {
+  id: string
+  user_id: string
+  nickname: string
+  level: number
+  total_xp: number
+  last_perfect_day_date?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Achievement {
+  id: string
+  key: string
+  title: string
+  description: string
+  icon: string
+  category: 'streak' | 'completion' | 'volume' | 'special'
+  xp_reward: number
+  unlock_condition: AchievementUnlockCondition
+  display_order: number
+  created_at: string
+}
+
+export interface AchievementUnlockCondition {
+  type: 'streak' | 'perfect_day' | 'perfect_week' | 'perfect_month' | 'total_checks' | 'balanced' | 'time_pattern' | 'weekend_completion'
+  days?: number
+  count?: number
+  threshold?: number
+  period?: string
+}
+
+export interface UserAchievement {
+  id: string
+  user_id: string
+  achievement_id: string
+  unlocked_at: string
+  achievement?: Achievement
+}
+
+export interface AIReport {
+  id: string
+  user_id: string
+  report_type: 'weekly' | 'monthly' | 'insight' | 'prediction' | 'struggling'
+  content: string
+  metadata: Record<string, unknown>
+  generated_at: string
+}
+
+// Stats and analytics types
+export interface UserStats {
+  totalChecks: number
+  currentStreak: number
+  longestStreak: number
+  lastCheckDate: string | null
+  todayCompletion: {
+    checked: number
+    total: number
+    percentage: number
+  }
+  weekCompletion: {
+    checked: number
+    total: number
+    percentage: number
+  }
+  monthCompletion: {
+    checked: number
+    total: number
+    percentage: number
+  }
+}
+
+export interface SubGoalProgress {
+  sub_goal_id: string
+  sub_goal_title: string
+  weeklyCompletion: number
+}
+
+export interface PatternInsight {
+  type: 'weekday' | 'time_of_day' | 'goal_performance' | 'consistency'
+  message: string
+  data: Record<string, unknown>
+  actionable: boolean
+}

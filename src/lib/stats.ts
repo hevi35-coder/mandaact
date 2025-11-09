@@ -34,6 +34,8 @@ export interface GoalProgress {
   checkedToday: number
   checkedThisWeek: number
   weeklyPercentage: number
+  mandalartId?: string
+  mandalartTitle?: string
 }
 
 export interface MotivationalMessage {
@@ -200,6 +202,9 @@ export async function getStreakStats(userId: string): Promise<StreakStats> {
     }
   }
 
+  // Get actual last check time (with full timestamp)
+  const lastCheckDate = checks.length > 0 ? new Date(checks[0].checked_at) : null
+
   // Extract unique dates (convert to YYYY-MM-DD format)
   const uniqueDates = Array.from(
     new Set(
@@ -218,9 +223,8 @@ export async function getStreakStats(userId: string): Promise<StreakStats> {
     }
   }
 
-  // Parse dates
+  // Parse dates for streak calculation
   const dates = uniqueDates.map((dateStr) => new Date(dateStr))
-  const lastCheckDate = dates[0]
 
   // Calculate current streak
   let currentStreak = 0
@@ -291,6 +295,7 @@ export async function getGoalProgress(userId: string, mandalartId?: string): Pro
       position,
       mandalart:mandalarts!inner(
         id,
+        title,
         user_id,
         is_active
       ),
@@ -359,7 +364,9 @@ export async function getGoalProgress(userId: string, mandalartId?: string): Pro
       totalActions,
       checkedToday,
       checkedThisWeek,
-      weeklyPercentage: totalActions > 0 ? Math.round((checkedThisWeek / (totalActions * 7)) * 100) : 0
+      weeklyPercentage: totalActions > 0 ? Math.round((checkedThisWeek / (totalActions * 7)) * 100) : 0,
+      mandalartId: sg.mandalart?.id,
+      mandalartTitle: sg.mandalart?.title
     }
   })
 }
@@ -453,4 +460,463 @@ export function generateMotivationalMessage(
     emoji: '🌟',
     variant: 'info'
   }
+}
+
+// ============================================================================
+// GAMIFICATION FUNCTIONS
+// ============================================================================
+
+/**
+ * XP Calculation Formula:
+ * - Base: 10 XP per check
+ * - Streak bonus: +5 XP per check when on streak (7+ days)
+ * - Perfect day bonus: +50 XP when 100% completion
+ * - Perfect week bonus: +200 XP when weekly 80%+
+ */
+
+export interface XPCalculation {
+  baseXP: number
+  streakBonus: number
+  perfectDayBonus: number
+  totalXP: number
+}
+
+/**
+ * Calculate XP earned from today's activity
+ */
+export async function calculateTodayXP(userId: string): Promise<XPCalculation> {
+  const completionStats = await getCompletionStats(userId)
+  const streakStats = await getStreakStats(userId)
+
+  const todayChecks = completionStats.today.checked
+  const baseXP = todayChecks * 10
+
+  // Streak bonus: +5 XP per check if on 7+ day streak
+  const streakBonus = streakStats.current >= 7 ? todayChecks * 5 : 0
+
+  // Perfect day bonus: +50 XP if 100% completion
+  const perfectDayBonus = completionStats.today.percentage === 100 ? 50 : 0
+
+  return {
+    baseXP,
+    streakBonus,
+    perfectDayBonus,
+    totalXP: baseXP + streakBonus + perfectDayBonus
+  }
+}
+
+/**
+ * Calculate total XP from all-time check history
+ */
+export async function calculateTotalXP(userId: string): Promise<number> {
+  // Get total check count
+  const { count: totalChecks } = await supabase
+    .from('check_history')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  // Base XP: 10 per check
+  const baseXP = (totalChecks || 0) * 10
+
+  // Get perfect days (100% completion days) for bonus XP
+  const { data: checks } = await supabase
+    .from('check_history')
+    .select('checked_at')
+    .eq('user_id', userId)
+
+  if (!checks) return baseXP
+
+  // Count perfect days (days with 100% completion)
+  // This is a simplified calculation - in production, you'd want to store this
+  // or calculate it properly by comparing daily checks vs total actions
+  const perfectDayBonus = 0 // TODO: Implement proper perfect day tracking
+
+  return baseXP + perfectDayBonus
+}
+
+/**
+ * Level calculation from XP
+ * Formula: Level = floor(sqrt(totalXP / 100)) + 1
+ * Example: 0-99 XP = Level 1, 100-399 = Level 2, 400-899 = Level 3, etc.
+ */
+export function calculateLevelFromXP(totalXP: number): number {
+  return Math.floor(Math.sqrt(totalXP / 100)) + 1
+}
+
+/**
+ * Calculate XP needed for next level
+ */
+export function getXPForNextLevel(currentLevel: number): number {
+  // Inverse of level formula: XP = (level - 1)^2 * 100
+  return Math.pow(currentLevel, 2) * 100
+}
+
+/**
+ * Calculate XP progress to next level
+ */
+export function getXPProgress(totalXP: number): {
+  currentLevel: number
+  currentLevelXP: number
+  nextLevelXP: number
+  progressXP: number
+  progressPercentage: number
+} {
+  const currentLevel = calculateLevelFromXP(totalXP)
+  const currentLevelXP = Math.pow(currentLevel - 1, 2) * 100
+  const nextLevelXP = Math.pow(currentLevel, 2) * 100
+  const progressXP = totalXP - currentLevelXP
+  const neededXP = nextLevelXP - currentLevelXP
+  const progressPercentage = Math.round((progressXP / neededXP) * 100)
+
+  return {
+    currentLevel,
+    currentLevelXP,
+    nextLevelXP,
+    progressXP,
+    progressPercentage
+  }
+}
+
+/**
+ * Get or create user level record
+ */
+export async function getUserLevel(userId: string) {
+  const { data, error } = await supabase
+    .from('user_levels')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (error || !data) {
+    // Create initial level record
+    const totalXP = await calculateTotalXP(userId)
+    const level = calculateLevelFromXP(totalXP)
+
+    const { data: newLevel, error: insertError } = await supabase
+      .from('user_levels')
+      .insert({ user_id: userId, level, total_xp: totalXP })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error creating user level:', insertError)
+      return null
+    }
+
+    return newLevel
+  }
+
+  return data
+}
+
+/**
+ * Update user XP and level
+ */
+export async function updateUserXP(userId: string, xpToAdd: number) {
+  const currentLevel = await getUserLevel(userId)
+  if (!currentLevel) return null
+
+  // Prevent negative XP (minimum is 0)
+  const newTotalXP = Math.max(0, currentLevel.total_xp + xpToAdd)
+  const newLevel = calculateLevelFromXP(newTotalXP)
+
+  const { data, error } = await supabase
+    .from('user_levels')
+    .update({
+      total_xp: newTotalXP,
+      level: newLevel
+    })
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating user XP:', error)
+    return null
+  }
+
+  // Return level up status
+  return {
+    ...data,
+    leveledUp: newLevel > currentLevel.level,
+    oldLevel: currentLevel.level,
+    xpGained: xpToAdd
+  }
+}
+
+// ============================================================================
+// ACHIEVEMENT CHECKING FUNCTIONS
+// ============================================================================
+
+/**
+ * Check if user meets criteria for a specific achievement
+ */
+export async function checkAchievementUnlock(
+  userId: string,
+  _achievementKey: string,
+  unlockCondition: any
+): Promise<boolean> {
+  const { type } = unlockCondition
+
+  switch (type) {
+    case 'streak': {
+      const streakStats = await getStreakStats(userId)
+      return streakStats.current >= unlockCondition.days || streakStats.longest >= unlockCondition.days
+    }
+
+    case 'perfect_day': {
+      // Count days with 100% completion
+      // This requires checking daily completion history
+      // For now, simplified check
+      const completionStats = await getCompletionStats(userId)
+      return completionStats.today.percentage === 100
+    }
+
+    case 'perfect_week': {
+      const completionStats = await getCompletionStats(userId)
+      return completionStats.week.percentage >= (unlockCondition.threshold || 80)
+    }
+
+    case 'perfect_month': {
+      const completionStats = await getCompletionStats(userId)
+      return completionStats.month.percentage >= (unlockCondition.threshold || 90)
+    }
+
+    case 'total_checks': {
+      const { count } = await supabase
+        .from('check_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+      return (count || 0) >= unlockCondition.count
+    }
+
+    case 'balanced': {
+      const goalProgress = await getGoalProgress(userId)
+      if (goalProgress.length === 0) return false
+      // Check if all sub-goals meet threshold
+      const threshold = unlockCondition.threshold || 60
+      return goalProgress.every(goal => goal.weeklyPercentage >= threshold)
+    }
+
+    case 'time_pattern': {
+      // Check time-of-day patterns (morning checks)
+      const { data: checks } = await supabase
+        .from('check_history')
+        .select('checked_at')
+        .eq('user_id', userId)
+
+      if (!checks || checks.length === 0) return false
+
+      const morningChecks = checks.filter(check => {
+        const hour = new Date(check.checked_at).getHours()
+        return hour >= 5 && hour < 12
+      })
+
+      const morningPercentage = (morningChecks.length / checks.length) * 100
+      return morningPercentage >= (unlockCondition.threshold || 70)
+    }
+
+    case 'weekend_completion': {
+      // Compare weekend vs weekday completion
+      const { data: checks } = await supabase
+        .from('check_history')
+        .select('checked_at')
+        .eq('user_id', userId)
+
+      if (!checks || checks.length === 0) return false
+
+      const weekendChecks = checks.filter(check => {
+        const day = new Date(check.checked_at).getDay()
+        return day === 0 || day === 6 // Sunday or Saturday
+      })
+
+      const weekdayChecks = checks.filter(check => {
+        const day = new Date(check.checked_at).getDay()
+        return day >= 1 && day <= 5
+      })
+
+      if (weekdayChecks.length === 0) return false
+
+      const weekendRate = weekendChecks.length / 2 // 2 days (Sat, Sun)
+      const weekdayRate = weekdayChecks.length / 5 // 5 days (Mon-Fri)
+
+      return weekendRate > weekdayRate
+    }
+
+    default:
+      return false
+  }
+}
+
+/**
+ * Check all achievements for a user and unlock new ones
+ */
+export async function checkAndUnlockAchievements(userId: string) {
+  // Get all achievements
+  const { data: achievements, error: achievementsError } = await supabase
+    .from('achievements')
+    .select('*')
+    .order('display_order')
+
+  if (achievementsError || !achievements) {
+    console.error('Error fetching achievements:', achievementsError)
+    return []
+  }
+
+  // Get user's current achievements
+  const { data: userAchievements, error: userAchievementsError } = await supabase
+    .from('user_achievements')
+    .select('achievement_id')
+    .eq('user_id', userId)
+
+  if (userAchievementsError) {
+    console.error('Error fetching user achievements:', userAchievementsError)
+    return []
+  }
+
+  const unlockedIds = new Set(userAchievements?.map(ua => ua.achievement_id) || [])
+  const newlyUnlocked = []
+
+  // Check each achievement
+  for (const achievement of achievements) {
+    // Skip if already unlocked
+    if (unlockedIds.has(achievement.id)) continue
+
+    // Check if criteria met
+    const unlocked = await checkAchievementUnlock(userId, achievement.key, achievement.unlock_condition)
+
+    if (unlocked) {
+      // Unlock achievement
+      const { error: insertError } = await supabase
+        .from('user_achievements')
+        .insert({
+          user_id: userId,
+          achievement_id: achievement.id
+        })
+
+      if (!insertError) {
+        // Award XP
+        await updateUserXP(userId, achievement.xp_reward)
+        newlyUnlocked.push(achievement)
+      }
+    }
+  }
+
+  return newlyUnlocked
+}
+
+// ============================================================================
+// PATTERN ANALYSIS FUNCTIONS
+// ============================================================================
+
+/**
+ * Analyze user's check patterns by day of week
+ */
+export async function analyzeWeekdayPatterns(userId: string) {
+  const { data: checks, error } = await supabase
+    .from('check_history')
+    .select('checked_at')
+    .eq('user_id', userId)
+
+  if (error || !checks || checks.length === 0) {
+    return null
+  }
+
+  // Group by day of week
+  const dayGroups: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
+  checks.forEach(check => {
+    const day = new Date(check.checked_at).getDay()
+    dayGroups[day]++
+  })
+
+  const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
+  const sortedDays = Object.entries(dayGroups)
+    .map(([day, count]) => ({
+      day: parseInt(day),
+      dayName: dayNames[parseInt(day)],
+      count
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  return {
+    bestDay: sortedDays[0],
+    worstDay: sortedDays[sortedDays.length - 1],
+    allDays: sortedDays
+  }
+}
+
+/**
+ * Analyze user's check patterns by time of day
+ */
+export async function analyzeTimePatterns(userId: string) {
+  const { data: checks, error } = await supabase
+    .from('check_history')
+    .select('checked_at')
+    .eq('user_id', userId)
+
+  if (error || !checks || checks.length === 0) {
+    return null
+  }
+
+  // Group by time period
+  const periods = {
+    morning: 0,   // 5-12
+    afternoon: 0, // 12-18
+    evening: 0,   // 18-22
+    night: 0      // 22-5
+  }
+
+  checks.forEach(check => {
+    const hour = new Date(check.checked_at).getHours()
+    if (hour >= 5 && hour < 12) periods.morning++
+    else if (hour >= 12 && hour < 18) periods.afternoon++
+    else if (hour >= 18 && hour < 22) periods.evening++
+    else periods.night++
+  })
+
+  const total = checks.length
+  return {
+    morning: { count: periods.morning, percentage: Math.round((periods.morning / total) * 100) },
+    afternoon: { count: periods.afternoon, percentage: Math.round((periods.afternoon / total) * 100) },
+    evening: { count: periods.evening, percentage: Math.round((periods.evening / total) * 100) },
+    night: { count: periods.night, percentage: Math.round((periods.night / total) * 100) }
+  }
+}
+
+/**
+ * Get daily completion data for heatmap (last N days)
+ */
+export async function getDailyCompletionData(userId: string, days: number = 365) {
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - days)
+
+  // Get all checks in period
+  const { data: checks, error } = await supabase
+    .from('check_history')
+    .select('checked_at')
+    .eq('user_id', userId)
+    .gte('checked_at', startDate.toISOString())
+
+  if (error) {
+    console.error('Error fetching check history:', error)
+    return []
+  }
+
+  // Get total actions per day (need this for completion percentage)
+  const totalActions = await getTotalActionsCount(userId)
+
+  // Group by date
+  const dateMap: Record<string, number> = {}
+  checks?.forEach(check => {
+    const date = new Date(check.checked_at)
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    dateMap[dateStr] = (dateMap[dateStr] || 0) + 1
+  })
+
+  // Convert to array with completion percentages
+  return Object.entries(dateMap).map(([date, count]) => ({
+    date,
+    count,
+    percentage: totalActions > 0 ? Math.round((count / totalActions) * 100) : 0
+  }))
 }

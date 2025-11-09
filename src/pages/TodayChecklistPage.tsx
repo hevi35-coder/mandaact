@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
+import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
 import { ActionType, shouldShowToday, getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
@@ -30,6 +32,7 @@ export default function TodayChecklistPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
+  const [totalMandalartCount, setTotalMandalartCount] = useState(0)
 
   // Date selection
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -90,6 +93,15 @@ export default function TodayChecklistPage() {
     setError(null)
 
     try {
+      // Fetch total mandalart count (including inactive)
+      const { count: mandalartCount, error: countError } = await supabase
+        .from('mandalarts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+
+      if (countError) throw countError
+      setTotalMandalartCount(mandalartCount || 0)
+
       // Fetch all actions with sub_goals and mandalarts
       const { data: actionsData, error: actionsError } = await supabase
         .from('actions')
@@ -158,14 +170,45 @@ export default function TodayChecklistPage() {
     setCheckingActions(prev => new Set(prev).add(action.id))
 
     try {
-      if (action.is_checked && action.check_id) {
+      // Double-check current state before proceeding
+      const dayStart = new Date(selectedDate)
+      dayStart.setHours(0, 0, 0, 0)
+      const dayEnd = new Date(dayStart)
+      dayEnd.setDate(dayEnd.getDate() + 1)
+
+      const { data: existingChecks } = await supabase
+        .from('check_history')
+        .select('*')
+        .eq('action_id', action.id)
+        .eq('user_id', user.id)
+        .gte('checked_at', dayStart.toISOString())
+        .lt('checked_at', dayEnd.toISOString())
+
+      const currentCheck = existingChecks && existingChecks.length > 0 ? existingChecks[0] : null
+
+      if (currentCheck) {
         // Uncheck: Delete from check_history
         const { error: deleteError } = await supabase
           .from('check_history')
           .delete()
-          .eq('id', action.check_id)
+          .eq('id', currentCheck.id)
 
         if (deleteError) throw deleteError
+
+        // Subtract XP when unchecking
+        try {
+          const { updateUserXP, getStreakStats } = await import('@/lib/stats')
+
+          // Calculate XP to subtract (same logic as adding)
+          const streakStats = await getStreakStats(user.id)
+          const baseXP = 10
+          const streakBonus = streakStats.current >= 7 ? 5 : 0
+          const totalXP = baseXP + streakBonus
+
+          await updateUserXP(user.id, -totalXP) // Negative to subtract
+        } catch (xpError) {
+          console.error('XP update error:', xpError)
+        }
 
         // Optimistic update
         setActions(prevActions =>
@@ -191,6 +234,59 @@ export default function TodayChecklistPage() {
           .single()
 
         if (insertError) throw insertError
+
+        // Update user XP for the new check
+        {
+          try {
+            const { updateUserXP, getStreakStats, getCompletionStats } = await import('@/lib/stats')
+
+            // Calculate XP based on streak
+            const streakStats = await getStreakStats(user.id)
+            const baseXP = 10
+            const streakBonus = streakStats.current >= 7 ? 5 : 0
+            let totalXP = baseXP + streakBonus
+
+            await updateUserXP(user.id, totalXP)
+
+            // Check for perfect day bonus (100% completion)
+            // Wait a bit for the check to be reflected in stats
+            setTimeout(async () => {
+              try {
+                const completionStats = await getCompletionStats(user.id)
+
+                if (completionStats.today.percentage === 100) {
+                  // Check if we already gave the bonus today
+                  const today = new Date().toISOString().split('T')[0]
+                  const { data: userLevel } = await supabase
+                    .from('user_levels')
+                    .select('last_perfect_day_date')
+                    .eq('user_id', user.id)
+                    .single()
+
+                  const lastBonusDate = userLevel?.last_perfect_day_date
+
+                  // Only give bonus once per day
+                  if (lastBonusDate !== today) {
+                    await updateUserXP(user.id, 50) // Perfect day bonus
+
+                    // Update last perfect day date
+                    await supabase
+                      .from('user_levels')
+                      .update({ last_perfect_day_date: today })
+                      .eq('user_id', user.id)
+
+                    console.log('🎉 Perfect day bonus awarded: +50 XP')
+                  }
+                }
+              } catch (bonusError) {
+                console.error('Perfect day bonus error:', bonusError)
+              }
+            }, 500)
+          } catch (xpError) {
+            console.error('XP update error:', xpError)
+            // Don't fail the whole operation if XP update fails
+          }
+        }
 
         // Optimistic update
         setActions(prevActions =>
@@ -297,6 +393,9 @@ export default function TodayChecklistPage() {
   // Section collapse state - default expanded
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
 
+  // Type filter collapse state - default collapsed
+  const [typeFilterCollapsed, setTypeFilterCollapsed] = useState(true)
+
   const toggleSection = (mandalartId: string) => {
     setCollapsedSections(prev => {
       const newSet = new Set(prev)
@@ -343,14 +442,17 @@ export default function TodayChecklistPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold mb-4">오늘의 실천</h1>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl font-bold inline-block">투데이</h1>
+            <span className="text-muted-foreground ml-3 text-sm">오늘의 실천</span>
+          </div>
 
           {/* Date Navigation */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap justify-center md:justify-end">
             {/* Quick Navigation Buttons */}
             <div className="flex items-center gap-1">
               <Button
@@ -391,7 +493,8 @@ export default function TodayChecklistPage() {
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
-                  📅 {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                  <CalendarIcon className="h-4 w-4" />
+                  {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -407,76 +510,96 @@ export default function TodayChecklistPage() {
           </div>
         </div>
 
-        {/* Type Filter */}
-        {actions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">타입 필터</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={activeFilters.size === 0 ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={clearAllFilters}
-                >
-                  전체
-                </Button>
-                <Button
-                  variant={activeFilters.has('routine') ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleFilter('routine')}
-                  className="flex items-center gap-1"
-                >
-                  {getTypeIcon('routine')}
-                  {getActionTypeLabel('routine')}
-                </Button>
-                <Button
-                  variant={activeFilters.has('mission') ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleFilter('mission')}
-                  className="flex items-center gap-1"
-                >
-                  {getTypeIcon('mission')}
-                  {getActionTypeLabel('mission')}
-                </Button>
-                <Button
-                  variant={activeFilters.has('reference') ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => toggleFilter('reference')}
-                  className="flex items-center gap-1"
-                >
-                  {getTypeIcon('reference')}
-                  {getActionTypeLabel('reference')}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                💡 참고 항목은 체크할 수 없으며, 진행률에 포함되지 않습니다
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Progress Card */}
+        {/* Progress Card with Type Filter */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">오늘의 진행상황</span>
-                <span className="text-muted-foreground">
-                  {checkedCount} / {totalCount} 완료
-                </span>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-base">오늘의 달성율</CardTitle>
+                <span className="text-lg font-bold text-primary">{progressPercentage}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className="bg-primary h-3 rounded-full transition-all duration-300"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-              <p className="text-center text-2xl font-bold text-primary">
-                {progressPercentage}%
-              </p>
+              <span className="text-sm text-muted-foreground">
+                {checkedCount} / {totalCount}
+              </span>
             </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="bg-primary h-3 rounded-full transition-all duration-300"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-left flex items-center justify-start gap-1">
+              <Info className="h-3 w-3" />
+              오늘과 어제 날짜만 달성(체크) 가능합니다
+            </p>
+
+            {/* Type Filter - Collapsible Section */}
+            {actions.length > 0 && (
+              <>
+                <div className="border-t pt-4">
+                  <button
+                    onClick={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
+                    className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity mb-3"
+                  >
+                    <span className="text-sm font-medium">타입 필터</span>
+                    {typeFilterCollapsed ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </button>
+
+                  {!typeFilterCollapsed && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-4 gap-2">
+                        <Button
+                          variant={activeFilters.size === 0 ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={clearAllFilters}
+                          className="w-full"
+                        >
+                          전체
+                        </Button>
+                        <Button
+                          variant={activeFilters.has('routine') ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => toggleFilter('routine')}
+                          className="flex items-center gap-1 w-full justify-center"
+                        >
+                          {getTypeIcon('routine')}
+                          {getActionTypeLabel('routine')}
+                        </Button>
+                        <Button
+                          variant={activeFilters.has('mission') ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => toggleFilter('mission')}
+                          className="flex items-center gap-1 w-full justify-center"
+                        >
+                          {getTypeIcon('mission')}
+                          {getActionTypeLabel('mission')}
+                        </Button>
+                        <Button
+                          variant={activeFilters.has('reference') ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => toggleFilter('reference')}
+                          className="flex items-center gap-1 w-full justify-center"
+                        >
+                          {getTypeIcon('reference')}
+                          {getActionTypeLabel('reference')}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Info className="h-3 w-3" />
+                        참고 타입은 달성율에 포함되지 않습니다
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -488,12 +611,25 @@ export default function TodayChecklistPage() {
               <div>
                 <p className="text-lg font-medium">실천 항목이 없습니다</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  먼저 만다라트를 만들어보세요
+                  {totalMandalartCount === 0
+                    ? '먼저 만다라트를 만들어보세요'
+                    : '만다라트를 활성화하거나 새로 만들어보세요'}
                 </p>
               </div>
-              <Button onClick={() => navigate('/mandalart/create')}>
-                만다라트 만들기
-              </Button>
+              {totalMandalartCount === 0 ? (
+                <Button onClick={() => navigate('/mandalart/create')}>
+                  만다라트 만들기
+                </Button>
+              ) : (
+                <div className="flex gap-2 justify-center">
+                  <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
+                    만다라트 관리
+                  </Button>
+                  <Button onClick={() => navigate('/mandalart/create')}>
+                    새로 만들기
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -529,13 +665,20 @@ export default function TodayChecklistPage() {
                     onClick={() => toggleSection(mandalartId)}
                     className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-semibold">{mandalart.title}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {mandalartChecked}/{mandalartTotal}
-                      </span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg font-semibold">{mandalart.title}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {mandalartChecked}/{mandalartTotal}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1 text-left">핵심 목표: {mandalart.center_goal}</p>
                     </div>
-                    <span className="text-xl">{isCollapsed ? '▶' : '▼'}</span>
+                    {isCollapsed ? (
+                      <ChevronRight className="h-5 w-5 flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 flex-shrink-0" />
+                    )}
                   </button>
 
                   {/* Actions in this Mandalart */}
@@ -582,7 +725,7 @@ export default function TodayChecklistPage() {
                                   </span>
                                   <span className="text-xs text-muted-foreground">·</span>
                                   <span className="text-xs text-muted-foreground">
-                                    {action.sub_goal.title} ({mandalart.title})
+                                    {action.sub_goal.title}
                                   </span>
                                 </div>
                               </div>
@@ -592,7 +735,7 @@ export default function TodayChecklistPage() {
                                 title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
                               >
                                 {getTypeIcon(action.type)}
-                                <span className="hidden sm:inline">
+                                <span>
                                   {formatTypeDetails(action) || getActionTypeLabel(action.type)}
                                 </span>
                               </button>
@@ -608,11 +751,9 @@ export default function TodayChecklistPage() {
           </div>
         )}
 
-        {/* Back Button */}
+        {/* Notification Permission Prompt */}
         <div className="pt-4">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            대시보드로 돌아가기
-          </Button>
+          <NotificationPermissionPrompt />
         </div>
       </div>
 

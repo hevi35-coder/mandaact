@@ -7,19 +7,17 @@ import { useAuthStore } from '@/store/authStore'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import SignUpPage from '@/pages/SignUpPage'
 import LoginPage from '@/pages/LoginPage'
-import DashboardPage from '@/pages/DashboardPage'
+import HomePage from '@/pages/HomePage'
 import MandalartCreatePage from '@/pages/MandalartCreatePage'
 import MandalartListPage from '@/pages/MandalartListPage'
 import MandalartDetailPage from '@/pages/MandalartDetailPage'
 import TodayChecklistPage from '@/pages/TodayChecklistPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
-import StatsPage from '@/pages/StatsPage'
-import ChatCoach from '@/components/ChatCoach'
 import Navigation from '@/components/Navigation'
 import { Toaster } from '@/components/ui/toaster'
 
-// HomePage component
-function HomePage() {
+// LandingPage component
+function LandingPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const loading = useAuthStore((state) => state.loading)
@@ -77,8 +75,8 @@ function HomePage() {
                   환영합니다! 만다라트를 만들어보세요.
                 </p>
                 <div className="flex gap-2">
-                  <Link to="/dashboard" className="flex-1">
-                    <Button className="w-full">대시보드</Button>
+                  <Link to="/home" className="flex-1">
+                    <Button className="w-full">홈으로 가기</Button>
                   </Link>
                   <Button
                     variant="outline"
@@ -133,14 +131,14 @@ function App() {
       <Router>
         <Navigation />
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
-            path="/dashboard"
+            path="/home"
             element={
               <ProtectedRoute>
-                <DashboardPage />
+                <HomePage />
               </ProtectedRoute>
             }
           />
@@ -184,17 +182,12 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/stats"
-            element={
-              <ProtectedRoute>
-                <StatsPage />
-              </ProtectedRoute>
-            }
-          />
           {/* More routes will be added in future phases */}
         </Routes>
-        <ChatCoach />
+
+        {/* Mobile Bottom Spacer - ensures content isn't hidden behind bottom nav */}
+        <div className="md:hidden h-16" aria-hidden="true" />
+
         <Toaster />
       </Router>
     </QueryClientProvider>
