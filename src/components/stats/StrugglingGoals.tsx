@@ -121,7 +121,7 @@ export function StrugglingGoals() {
 
   if (strugglingGoals.length === 0) {
     return (
-      <Card className="border-2 border-green-500/30 bg-gradient-to-br from-background to-green-500/5">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-green-500" />
@@ -144,7 +144,7 @@ export function StrugglingGoals() {
   }
 
   return (
-    <Card className="border-2 border-orange-500/30">
+    <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-orange-500" />
@@ -162,7 +162,7 @@ export function StrugglingGoals() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="p-4 bg-orange-500/5 rounded-lg border-2 border-orange-500/20"
+            className="p-4 bg-orange-500/5 rounded-lg border-l-2 border-orange-500/30"
           >
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
@@ -225,7 +225,7 @@ export function StrugglingGoals() {
         ))}
 
         {/* Overall Advice */}
-        <div className="mt-6 p-4 bg-blue-500/5 rounded-lg border-2 border-blue-500/20">
+        <div className="mt-6 p-4 bg-blue-500/5 rounded-lg border-l-2 border-blue-500/30">
           <div className="flex items-start gap-3">
             <Sparkles className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
             <div className="space-y-2">

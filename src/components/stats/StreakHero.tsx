@@ -59,7 +59,7 @@ export function StreakHero() {
   const heatmapMap = new Map(heatmapData.map(d => [d.date, d]))
 
   return (
-    <Card className="overflow-hidden border-2 border-orange-500/30 bg-gradient-to-br from-background to-orange-500/5">
+    <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-500" />
@@ -157,7 +157,7 @@ export function StreakHero() {
             최근 30일 활동
           </div>
 
-          <div className="grid grid-cols-10 gap-1.5 md:gap-2">
+          <div className="grid grid-cols-7 md:grid-cols-10 gap-2">
             {last30Days.map((date, index) => {
               const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
               const data = heatmapMap.get(dateStr)

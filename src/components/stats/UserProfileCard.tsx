@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -12,11 +11,10 @@ import { useAuthStore } from '@/store/authStore'
 import { getUserLevel, getXPProgress } from '@/lib/stats'
 import { supabase } from '@/lib/supabase'
 import type { UserLevel, UserAchievement, Achievement } from '@/types'
-import { Trophy, Zap, Target, LogOut, Edit2 } from 'lucide-react'
+import { Trophy, Zap, Target, Edit2 } from 'lucide-react'
 
 export function UserProfileCard() {
-  const { user, signOut } = useAuthStore()
-  const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null)
   const [recentBadges, setRecentBadges] = useState<(UserAchievement & { achievement: Achievement })[]>([])
   const [totalChecks, setTotalChecks] = useState(0)
@@ -28,11 +26,6 @@ export function UserProfileCard() {
   const [newNickname, setNewNickname] = useState('')
   const [nicknameError, setNicknameError] = useState('')
   const [saving, setSaving] = useState(false)
-
-  const handleLogout = async () => {
-    await signOut()
-    navigate('/', { replace: true })
-  }
 
   const openEditDialog = () => {
     setNewNickname(userLevel?.nickname || '')
@@ -179,7 +172,7 @@ export function UserProfileCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-background to-primary/5">
+      <Card>
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -206,21 +199,9 @@ export function UserProfileCard() {
                 {user.email}
               </CardDescription>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">총 XP</div>
-                <div className="text-2xl font-bold text-primary">{userLevel.total_xp.toLocaleString()}</div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="shrink-0"
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">로그아웃</span>
-                <span className="sm:hidden">나가기</span>
-              </Button>
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground">총 XP</div>
+              <div className="text-2xl font-bold text-primary">{userLevel.total_xp.toLocaleString()}</div>
             </div>
           </div>
         </CardHeader>

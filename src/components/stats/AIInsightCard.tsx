@@ -134,7 +134,7 @@ export function AIInsightCard() {
   const nextGenTime = getNextGenerationTime()
 
   return (
-    <Card className="border-2 border-purple-500/20 bg-gradient-to-br from-background to-purple-500/5">
+    <Card>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>

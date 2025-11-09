@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 
 // Gamification Components
@@ -13,11 +14,11 @@ import { LiveInsights } from '@/components/stats/LiveInsights'
 import { GoalPrediction } from '@/components/stats/GoalPrediction'
 import { StrugglingGoals } from '@/components/stats/StrugglingGoals'
 
-import { Sparkles, Scroll, Lightbulb, TrendingUp } from 'lucide-react'
+import { Sparkles, Scroll, Lightbulb, TrendingUp, LogOut } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const user = useAuthStore((state) => state.user)
+  const { user, signOut } = useAuthStore()
 
   useEffect(() => {
     if (!user) {
@@ -25,6 +26,11 @@ export default function HomePage() {
       return
     }
   }, [user, navigate])
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/', { replace: true })
+  }
 
   if (!user) {
     return (
@@ -38,13 +44,11 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="max-w-5xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent inline-block">
-              홈
-            </h1>
+            <h1 className="text-3xl font-bold inline-block">홈</h1>
             <span className="text-muted-foreground ml-3 text-sm">성장 대시보드</span>
           </div>
         </div>
@@ -102,6 +106,16 @@ export default function HomePage() {
             <GoalPrediction />
           </TabsContent>
         </Tabs>
+
+        {/* Logout Button */}
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          로그아웃
+        </Button>
       </div>
     </div>
   )
