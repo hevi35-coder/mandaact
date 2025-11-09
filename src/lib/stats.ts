@@ -743,8 +743,72 @@ export async function checkAchievementUnlock(
       return weekendRate > weekdayRate
     }
 
+    case 'monthly_completion': {
+      const completionStats = await getCompletionStats(userId)
+      return completionStats.month.percentage >= (unlockCondition.threshold || 90)
+    }
+
+    case 'perfect_week_in_month': {
+      // Check if user had at least one perfect week in the current month
+      // This requires checking weekly completion for the past 4 weeks
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+      // Check each week of the month
+      let hasPerfectWeek = false
+      for (let weekOffset = 0; weekOffset < 5; weekOffset++) {
+        const weekStart = new Date(monthStart)
+        weekStart.setDate(monthStart.getDate() + (weekOffset * 7))
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 7)
+
+        if (weekEnd > now) break // Don't check future weeks
+
+        // Get completion for this week
+        const weekCompletion = await getCompletionStatsForPeriod(userId, weekStart, weekEnd)
+        if (weekCompletion.percentage === 100) {
+          hasPerfectWeek = true
+          break
+        }
+      }
+
+      return hasPerfectWeek
+    }
+
+    case 'monthly_streak': {
+      const streakStats = await getStreakStats(userId)
+      // Check if current streak is at least the required days (30 for monthly)
+      return streakStats.current >= (unlockCondition.days || 30)
+    }
+
     default:
       return false
+  }
+}
+
+/**
+ * Get completion stats for a specific period
+ */
+async function getCompletionStatsForPeriod(userId: string, start: Date, end: Date) {
+  // Get total actions
+  const totalActions = await getTotalActionsCount(userId)
+
+  // Get checks in period
+  const { data: checks } = await supabase
+    .from('check_history')
+    .select('id')
+    .eq('user_id', userId)
+    .gte('checked_at', start.toISOString())
+    .lt('checked_at', end.toISOString())
+
+  const checked = checks?.length || 0
+  const daysInPeriod = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  const total = totalActions * daysInPeriod
+
+  return {
+    checked,
+    total,
+    percentage: total > 0 ? (checked / total) * 100 : 0
   }
 }
 
@@ -803,6 +867,92 @@ export async function checkAndUnlockAchievements(userId: string) {
   }
 
   return newlyUnlocked
+}
+
+/**
+ * Calculate progress toward unlocking a specific badge
+ * Returns progress value (0-100) and current/target values
+ */
+export async function calculateBadgeProgress(
+  userId: string,
+  _achievementKey: string,
+  unlockCondition: any
+): Promise<{ progress: number; current: number; target: number } | null> {
+  const { type } = unlockCondition
+
+  switch (type) {
+    case 'streak': {
+      const streakStats = await getStreakStats(userId)
+      const target = unlockCondition.days
+      const current = Math.max(streakStats.current, streakStats.longest)
+      return {
+        progress: Math.min((current / target) * 100, 100),
+        current,
+        target
+      }
+    }
+
+    case 'total_checks': {
+      const { count } = await supabase
+        .from('check_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+      const target = unlockCondition.count
+      const current = count || 0
+      return {
+        progress: Math.min((current / target) * 100, 100),
+        current,
+        target
+      }
+    }
+
+    case 'perfect_week': {
+      // Count weeks with threshold% completion
+      // This is an approximation - would need detailed weekly tracking
+      const completionStats = await getCompletionStats(userId)
+      const threshold = unlockCondition.threshold || 80
+      const target = unlockCondition.count
+      const current = completionStats.week.percentage >= threshold ? 1 : 0
+      return {
+        progress: Math.min((current / target) * 100, 100),
+        current,
+        target
+      }
+    }
+
+    case 'perfect_month':
+    case 'monthly_completion': {
+      const completionStats = await getCompletionStats(userId)
+      const threshold = unlockCondition.threshold || 90
+      const current = completionStats.month.percentage
+      return {
+        progress: Math.min((current / threshold) * 100, 100),
+        current: Math.round(current),
+        target: threshold
+      }
+    }
+
+    case 'monthly_streak': {
+      const streakStats = await getStreakStats(userId)
+      const target = unlockCondition.days || 30
+      const current = streakStats.current
+      return {
+        progress: Math.min((current / target) * 100, 100),
+        current,
+        target
+      }
+    }
+
+    // For complex conditions, don't show progress
+    case 'balanced':
+    case 'time_pattern':
+    case 'weekend_completion':
+    case 'perfect_week_in_month':
+      return null
+
+    default:
+      return null
+  }
 }
 
 // ============================================================================

@@ -149,15 +149,23 @@ export interface Achievement {
   title: string
   description: string
   icon: string
-  category: 'streak' | 'completion' | 'volume' | 'special'
+  category: 'streak' | 'completion' | 'volume' | 'special' | 'milestone'
   xp_reward: number
   unlock_condition: AchievementUnlockCondition
   display_order: number
   created_at: string
+  // Badge System v2
+  hint_level?: 'full' | 'cryptic' | 'hidden'
+  badge_type?: 'permanent' | 'monthly' | 'seasonal' | 'event'
+  is_repeatable?: boolean
+  repeat_xp_multiplier?: number
+  active_from?: string
+  active_until?: string
+  is_featured?: boolean
 }
 
 export interface AchievementUnlockCondition {
-  type: 'streak' | 'perfect_day' | 'perfect_week' | 'perfect_month' | 'total_checks' | 'balanced' | 'time_pattern' | 'weekend_completion'
+  type: 'streak' | 'perfect_day' | 'perfect_week' | 'perfect_month' | 'total_checks' | 'balanced' | 'time_pattern' | 'weekend_completion' | 'monthly_completion' | 'perfect_week_in_month' | 'monthly_streak'
   days?: number
   count?: number
   threshold?: number
@@ -170,6 +178,26 @@ export interface UserAchievement {
   achievement_id: string
   unlocked_at: string
   achievement?: Achievement
+}
+
+export interface AchievementProgress {
+  id: string
+  user_id: string
+  achievement_id: string
+  progress_value: number // 0-100 percentage
+  progress_current: number // e.g., 5 out of 7 days
+  progress_target?: number // e.g., 7 days
+  last_updated_at: string
+}
+
+export interface AchievementUnlockHistory {
+  id: string
+  user_id: string
+  achievement_id: string
+  unlocked_at: string
+  xp_awarded: number
+  repeat_count: number
+  unlock_context?: Record<string, unknown>
 }
 
 export interface AIReport {

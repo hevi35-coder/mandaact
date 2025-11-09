@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -10,13 +9,16 @@ import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/store/authStore'
 import { getUserLevel, getXPProgress } from '@/lib/stats'
 import { supabase } from '@/lib/supabase'
-import type { UserLevel, UserAchievement, Achievement } from '@/types'
-import { Trophy, Zap, Target, Edit2 } from 'lucide-react'
+import type { UserLevel, Achievement } from '@/types'
+import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp } from 'lucide-react'
+import { BadgeBottomSheet } from './BadgeBottomSheet'
 
 export function UserProfileCard() {
   const { user } = useAuthStore()
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null)
-  const [recentBadges, setRecentBadges] = useState<(UserAchievement & { achievement: Achievement })[]>([])
+  const [allBadges, setAllBadges] = useState<Achievement[]>([])
+  const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<Set<string>>(new Set())
+  const [unlockedBadgesMap, setUnlockedBadgesMap] = useState<Map<string, string>>(new Map())
   const [totalChecks, setTotalChecks] = useState(0)
   const [activeDays, setActiveDays] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -26,6 +28,12 @@ export function UserProfileCard() {
   const [newNickname, setNewNickname] = useState('')
   const [nicknameError, setNicknameError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // XP info collapsible state (default closed)
+  const [xpInfoOpen, setXpInfoOpen] = useState(false)
+
+  // Badge bottom sheet state
+  const [selectedBadge, setSelectedBadge] = useState<Achievement | null>(null)
 
   const openEditDialog = () => {
     setNewNickname(userLevel?.nickname || '')
@@ -102,8 +110,16 @@ export function UserProfileCard() {
       const level = await getUserLevel(user.id)
       setUserLevel(level)
 
-      // Get recent achievements (last 3)
-      const { data: achievements } = await supabase
+      // Get all achievements (for gallery)
+      const { data: allAchievements } = await supabase
+        .from('achievements')
+        .select('*')
+        .order('display_order', { ascending: true })
+
+      setAllBadges(allAchievements || [])
+
+      // Get user's unlocked achievements
+      const { data: userAchievements } = await supabase
         .from('user_achievements')
         .select(`
           *,
@@ -111,9 +127,12 @@ export function UserProfileCard() {
         `)
         .eq('user_id', user.id)
         .order('unlocked_at', { ascending: false })
-        .limit(3)
 
-      setRecentBadges(achievements || [])
+      // Track unlocked badge IDs and dates
+      const unlockedIds = new Set(userAchievements?.map(ua => ua.achievement_id) || [])
+      const unlockedMap = new Map(userAchievements?.map(ua => [ua.achievement_id, ua.unlocked_at]) || [])
+      setUnlockedBadgeIds(unlockedIds)
+      setUnlockedBadgesMap(unlockedMap)
 
       // Get total checks
       const { count: checksCount } = await supabase
@@ -195,9 +214,6 @@ export function UserProfileCard() {
                   <Edit2 className="h-3 w-3" />
                 </Button>
               </div>
-              <CardDescription className="text-xs mt-0.5">
-                {user.email}
-              </CardDescription>
             </div>
             <div className="text-right">
               <div className="text-sm text-muted-foreground">총 XP</div>
@@ -212,30 +228,35 @@ export function UserProfileCard() {
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-1 text-muted-foreground">
                 <Zap className="h-4 w-4" />
-                다음 레벨까지
+                레벨 {xpProgress.currentLevel + 1}까지
               </span>
               <span className="font-mono font-semibold">
                 {xpProgress.progressXP.toLocaleString()} / {(xpProgress.nextLevelXP - xpProgress.currentLevelXP).toLocaleString()} XP
               </span>
             </div>
             <Progress value={xpProgress.progressPercentage} className="h-3" />
-            <div className="text-xs text-right text-muted-foreground">
-              {xpProgress.progressPercentage}% 완료
-            </div>
           </div>
 
-          {/* XP 획득 방법 안내 */}
+          {/* XP 획득 방법 안내 - Collapsible */}
           <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
-            <div className="text-xs font-semibold text-primary mb-2 flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              XP 획득 방법
-            </div>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li>• 실천 1회: <span className="font-semibold text-foreground">+10 XP</span></li>
-              <li>• 7일+ 연속 시 실천 1회: <span className="font-semibold text-foreground">+15 XP</span> (보너스 +5)</li>
-              <li>• 하루 100% 달성: <span className="font-semibold text-foreground">+50 XP</span></li>
-              <li className="text-[10px] pt-1 opacity-70">※ 뱃지 획득 시 추가 XP 보상</li>
-            </ul>
+            <button
+              onClick={() => setXpInfoOpen(!xpInfoOpen)}
+              className="w-full text-xs font-semibold text-primary flex items-center justify-between hover:opacity-80 transition-opacity"
+            >
+              <span className="flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                XP 획득 방법
+              </span>
+              {xpInfoOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </button>
+            {xpInfoOpen && (
+              <ul className="text-xs text-muted-foreground space-y-1 mt-2">
+                <li>• 실천 1회: <span className="font-semibold text-foreground">+10 XP</span></li>
+                <li>• 7일+ 연속 시 실천 1회: <span className="font-semibold text-foreground">+15 XP</span> (보너스 +5)</li>
+                <li>• 하루 100% 달성: <span className="font-semibold text-foreground">+50 XP</span></li>
+                <li>• 뱃지 획득 시 추가 XP 보상</li>
+              </ul>
+            )}
           </div>
 
           {/* Stats Grid */}
@@ -250,39 +271,53 @@ export function UserProfileCard() {
             </div>
           </div>
 
-          {/* Recent Badges */}
-          {recentBadges.length > 0 && (
-            <div className="space-y-2">
+          {/* Badge Gallery - All Badges with Lock/Unlock States */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Target className="h-4 w-4" />
-                최근 획득 뱃지
+                뱃지 컬렉션
               </div>
-              <div className="flex flex-wrap gap-2">
-                {recentBadges.map((userAch) => (
-                  <motion.div
-                    key={userAch.id}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                  >
-                    <Badge
-                      variant="secondary"
-                      className="text-base px-3 py-1.5 cursor-help"
-                      title={`${userAch.achievement.title} - ${userAch.achievement.description}`}
-                    >
-                      {userAch.achievement.icon} {userAch.achievement.title}
-                    </Badge>
-                  </motion.div>
-                ))}
-              </div>
+              <span className="text-xs text-muted-foreground">
+                {unlockedBadgeIds.size}/{allBadges.length} 획득
+              </span>
             </div>
-          )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {allBadges.map((badge) => {
+                const isUnlocked = unlockedBadgeIds.has(badge.id)
 
-          {recentBadges.length === 0 && (
-            <div className="text-center py-4 text-sm text-muted-foreground">
-              아직 획득한 뱃지가 없습니다. 실천을 시작해보세요!
+                return (
+                  <motion.div
+                    key={badge.id}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                    onClick={() => setSelectedBadge(badge)}
+                    className={`
+                      relative p-3 rounded-lg border text-center transition-all cursor-pointer
+                      flex flex-col items-center justify-between min-h-[100px]
+                      ${isUnlocked
+                        ? 'bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-yellow-300 dark:border-yellow-700 shadow-sm hover:shadow-md'
+                        : 'bg-muted/30 border-muted-foreground/10 opacity-50 hover:opacity-70'
+                      }
+                    `}
+                  >
+                    <div className={`text-3xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
+                      {badge.icon}
+                    </div>
+                    <div className={`text-xs font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {badge.title}
+                    </div>
+                    {isUnlocked && (
+                      <div className="text-[10px] text-yellow-600 dark:text-yellow-400 font-semibold mt-1">
+                        +{badge.xp_reward} XP
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
@@ -330,6 +365,17 @@ export function UserProfileCard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Badge Bottom Sheet */}
+      {selectedBadge && (
+        <BadgeBottomSheet
+          badge={selectedBadge}
+          isUnlocked={unlockedBadgeIds.has(selectedBadge.id)}
+          unlockedAt={unlockedBadgesMap.get(selectedBadge.id)}
+          userId={user.id}
+          onClose={() => setSelectedBadge(null)}
+        />
+      )}
     </motion.div>
   )
 }
