@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -18,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Info } from 'lucide-react'
 import {
   ActionType,
   RoutineFrequency,
@@ -80,8 +82,9 @@ export default function ActionTypeSelector({
     initialData?.routine_weekdays || []
   )
   const [routineCountPerPeriod, setRoutineCountPerPeriod] = useState<number>(
-    initialData?.routine_count_per_period || 0
+    initialData?.routine_count_per_period || 1
   )
+  const [isCustomMonthlyCount, setIsCustomMonthlyCount] = useState(false)
 
   // Mission settings
   const [missionCompletionType, setMissionCompletionType] = useState<MissionCompletionType>(
@@ -202,10 +205,10 @@ export default function ActionTypeSelector({
         if (routineWeekdays.length > 0) {
           data.routine_weekdays = routineWeekdays
         } else {
-          data.routine_count_per_period = routineCountPerPeriod || 0
+          data.routine_count_per_period = routineCountPerPeriod || 1
         }
       } else if (routineFrequency === 'monthly') {
-        data.routine_count_per_period = routineCountPerPeriod || 0
+        data.routine_count_per_period = routineCountPerPeriod || 1
       }
     } else if (type === 'mission') {
       data.mission_completion_type = missionCompletionType
@@ -241,8 +244,9 @@ export default function ActionTypeSelector({
               <p className="text-sm font-medium text-blue-900">
                 💡 자동 추천: {getActionTypeLabel(aiSuggestion.type as ActionType)}
               </p>
-              <p className="text-xs text-blue-700 mt-1">
-                {aiSuggestion.reason} (신뢰도: {aiSuggestion.confidence === 'high' ? '높음' : aiSuggestion.confidence === 'medium' ? '중간' : '낮음'})
+              <p className="text-xs text-blue-700 mt-1 flex items-center gap-1">
+                <Info className="h-3 w-3 flex-shrink-0" />
+                <span>{aiSuggestion.reason} (신뢰도: {aiSuggestion.confidence === 'high' ? '높음' : aiSuggestion.confidence === 'medium' ? '중간' : '낮음'})</span>
               </p>
             </div>
           )}
@@ -272,7 +276,7 @@ export default function ActionTypeSelector({
                     {getActionTypeLabel('mission')}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    완료 시점이 있는 목표 (자격증 취득, 프로젝트 완료 등)
+                    끝이 있는 목표 (책 1권 읽기, 자격증 취득 등)
                   </div>
                 </Label>
               </div>
@@ -315,9 +319,9 @@ export default function ActionTypeSelector({
               {routineFrequency === 'weekly' && (
                 <div className="space-y-3">
                   <Label>주중 실천 요일 선택 (선택사항)</Label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-7 gap-2">
                     {weekdays.map((day) => (
-                      <div key={day.value} className="flex items-center space-x-2">
+                      <div key={day.value} className="flex items-center space-x-1">
                         <Checkbox
                           id={`weekday-${day.value}`}
                           checked={routineWeekdays.includes(day.value)}
@@ -332,8 +336,9 @@ export default function ActionTypeSelector({
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    요일을 선택하지 않으면 주간 횟수 기반으로 설정됩니다
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3 flex-shrink-0" />
+                    <span>요일을 선택하지 않으면 주간 횟수 기반으로 설정됩니다 (기본 주1회)</span>
                   </p>
 
                   {routineWeekdays.length === 0 && (
@@ -361,23 +366,73 @@ export default function ActionTypeSelector({
 
               {/* Monthly specific settings */}
               {routineFrequency === 'monthly' && (
-                <div className="space-y-2">
-                  <Label>월간 목표 횟수</Label>
-                  <Select
-                    value={String(routineCountPerPeriod)}
-                    onValueChange={(value) => setRoutineCountPerPeriod(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="횟수 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 8, 10, 12, 15, 20].map((count) => (
-                        <SelectItem key={count} value={String(count)}>
-                          월 {count}회
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>월간 목표 횟수</Label>
+                    <Select
+                      value={isCustomMonthlyCount ? 'custom' : String(routineCountPerPeriod)}
+                      onValueChange={(value) => {
+                        if (value === 'custom') {
+                          setIsCustomMonthlyCount(true)
+                          setRoutineCountPerPeriod(1)
+                        } else {
+                          setIsCustomMonthlyCount(false)
+                          setRoutineCountPerPeriod(Number(value))
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="횟수 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 8, 10, 15, 20, 30].map((count) => (
+                          <SelectItem key={count} value={String(count)}>
+                            월 {count}회
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">직접 입력</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Custom input for monthly count */}
+                  {isCustomMonthlyCount && (
+                    <div className="space-y-2">
+                      <Label>직접 입력 (1~30)</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="30"
+                        placeholder="1~30 사이 숫자 입력"
+                        value={routineCountPerPeriod === 0 ? '' : routineCountPerPeriod}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value === '') {
+                            setRoutineCountPerPeriod(0)
+                          } else {
+                            const num = Number(value)
+                            if (num >= 0 && num <= 30) {
+                              setRoutineCountPerPeriod(num)
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = Number(e.target.value)
+                          if (!value || value < 1 || value > 30) {
+                            alert('1~30 사이의 숫자를 입력해주세요')
+                            setRoutineCountPerPeriod(1)
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        autoFocus
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3 flex-shrink-0" />
+                    <span>매일 실천하는 항목은 반복 주기를 '매일'로 선택하세요</span>
+                  </p>
                 </div>
               )}
             </div>
@@ -436,9 +491,9 @@ export default function ActionTypeSelector({
           {/* Reference Info */}
           {type === 'reference' && (
             <div className="p-4 border rounded-lg bg-gray-50">
-              <p className="text-sm text-muted-foreground">
-                참고 항목은 체크리스트에 기본적으로 표시되지 않습니다.
-                마음가짐이나 가치관을 적어두고 필요할 때 참고하세요.
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Info className="h-4 w-4 flex-shrink-0" />
+                <span>참고 타입은 달성률에 포함되지 않습니다</span>
               </p>
             </div>
           )}

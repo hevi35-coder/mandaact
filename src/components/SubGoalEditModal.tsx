@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { SubGoal, Action } from '@/types'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 import ActionListItem from '@/components/ActionListItem'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Check, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   DndContext,
@@ -122,8 +121,8 @@ export default function SubGoalEditModal({
   subGoal,
   onEdit
 }: SubGoalEditModalProps) {
+  const [isEditingSubGoalTitle, setIsEditingSubGoalTitle] = useState(false)
   const [subGoalTitle, setSubGoalTitle] = useState(subGoal.title)
-  const [isSaving, setIsSaving] = useState(false)
 
   const [state, dispatch] = useReducer(actionsReducer, {
     actions: [...subGoal.actions].sort((a, b) => a.position - b.position),
@@ -366,32 +365,45 @@ export default function SubGoalEditModal({
     }
   }
 
-  // Sub-goal Title Save
-  const handleSubGoalTitleSave = async () => {
+  // Sub-goal Title Handlers
+  const handleSubGoalTitleEdit = useCallback(() => {
+    setIsEditingSubGoalTitle(true)
+  }, [])
+
+  const handleSubGoalTitleSave = useCallback(async () => {
     if (subGoalTitle.trim() === '') {
       alert('세부목표 제목을 입력해주세요.')
       return
     }
 
-    setIsSaving(true)
+    const trimmedTitle = subGoalTitle.trim()
 
+    // Optimistic update
+    setIsEditingSubGoalTitle(false)
+
+    // Background save
     try {
       const { error } = await supabase
         .from('sub_goals')
-        .update({ title: subGoalTitle.trim() })
+        .update({ title: trimmedTitle })
         .eq('id', subGoal.id)
 
       if (error) throw error
 
       if (onEdit) onEdit()
-      onOpenChange(false)
     } catch (err) {
       console.error('Error saving sub-goal:', err)
-      alert('저장에 실패했습니다.')
-    } finally {
-      setIsSaving(false)
+      alert('세부목표 제목 저장에 실패했습니다.')
+      // Revert on error
+      setSubGoalTitle(subGoal.title)
+      if (onEdit) onEdit()
     }
-  }
+  }, [subGoalTitle, subGoal.id, subGoal.title, onEdit])
+
+  const handleSubGoalTitleCancel = useCallback(() => {
+    setSubGoalTitle(subGoal.title)
+    setIsEditingSubGoalTitle(false)
+  }, [subGoal.title])
 
   return (
     <>
@@ -407,13 +419,48 @@ export default function SubGoalEditModal({
           <div className="space-y-6 py-4">
             {/* Sub-goal Title */}
             <div className="space-y-2">
-              <Label htmlFor="subgoal-title">세부목표</Label>
-              <Input
-                id="subgoal-title"
-                value={subGoalTitle}
-                onChange={(e) => setSubGoalTitle(e.target.value)}
-                placeholder="세부목표 제목을 입력하세요"
-              />
+              <Label>세부목표</Label>
+              {isEditingSubGoalTitle ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={subGoalTitle}
+                    onChange={(e) => setSubGoalTitle(e.target.value)}
+                    placeholder="세부목표 제목을 입력하세요"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSubGoalTitleSave()
+                      } else if (e.key === 'Escape') {
+                        handleSubGoalTitleCancel()
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSubGoalTitleSave}
+                  >
+                    <Check className="w-4 h-4 text-green-600" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSubGoalTitleCancel}
+                  >
+                    <X className="w-4 h-4 text-red-600" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer group"
+                  onClick={handleSubGoalTitleEdit}
+                >
+                  <span className="flex-1">{subGoalTitle}</span>
+                  <Pencil className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              )}
             </div>
 
             {/* Actions List */}
@@ -471,23 +518,15 @@ export default function SubGoalEditModal({
             </div>
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSaving}
             >
               닫기
             </Button>
-            <Button
-              type="button"
-              onClick={handleSubGoalTitleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? '저장 중...' : '저장'}
-            </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

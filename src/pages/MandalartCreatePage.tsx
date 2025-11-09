@@ -43,17 +43,22 @@ export default function MandalartCreatePage() {
   // Handle input method selection
   const handleMethodSelect = (method: 'image' | 'text' | 'manual') => {
     setInputMethod(method)
+    setError(null) // Clear error when switching input method
   }
 
   // Handle image processing complete
   const handleImageProcessComplete = (data: MandalartGridData, imageUrl: string) => {
     setGridData(data)
     setUploadedImageUrl(imageUrl)
+    // Auto-open modal to input title
+    setTimeout(() => setCoreGoalModalOpen(true), 300)
   }
 
   // Handle text processing complete
   const handleTextProcessComplete = (data: MandalartGridData) => {
     setGridData(data)
+    // Auto-open modal to input title
+    setTimeout(() => setCoreGoalModalOpen(true), 300)
   }
 
   // Handle core goal click (center cell)
@@ -207,8 +212,8 @@ export default function MandalartCreatePage() {
         if (actionsError) throw actionsError
       }
 
-      // Success! Redirect to dashboard
-      navigate('/dashboard')
+      // Success! Redirect to mandalart detail page
+      navigate(`/mandalart/${mandalart.id}`)
     } catch (err) {
       console.error('Save error:', err)
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다')
@@ -283,14 +288,12 @@ export default function MandalartCreatePage() {
   const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
       <div className="max-w-6xl mx-auto space-y-6 pb-20 md:pb-0">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">만다라트 만들기</h1>
-          <p className="text-muted-foreground mt-1">
-            9x9 그리드에서 목표를 직접 입력하거나, 이미지/텍스트로 자동 생성하세요
-          </p>
+        <div className="text-center md:text-left">
+          <h1 className="text-3xl font-bold inline-block">만다라트 만들기</h1>
+          <span className="text-muted-foreground ml-3 text-sm">새로운 목표 생성</span>
         </div>
 
         {/* Error Message */}
@@ -302,36 +305,38 @@ export default function MandalartCreatePage() {
 
         {/* Input Method Selector */}
         {!inputMethod && (
-          <InputMethodSelector
-            onMethodSelect={handleMethodSelect}
-            onImageProcessComplete={handleImageProcessComplete}
-            onTextProcessComplete={handleTextProcessComplete}
-            disabled={isLoading}
-          />
+          <>
+            <InputMethodSelector
+              onMethodSelect={handleMethodSelect}
+              onImageProcessComplete={handleImageProcessComplete}
+              onTextProcessComplete={handleTextProcessComplete}
+              disabled={isLoading}
+            />
+
+            {/* Back to List Button */}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setError(null)
+                navigate('/mandalart/list')
+              }}
+            >
+              만다라트 목록으로 돌아가기
+            </Button>
+          </>
         )}
 
-        {/* Title Input */}
-        {inputMethod && (
-          <Card>
-            <CardHeader>
-              <CardTitle>만다라트 제목</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Input
-                  id="title"
-                  placeholder="예: 2025년 목표"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Info className="h-3 w-3" />
-                  만다라트를 구분할 짧은 이름을 입력하세요
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Empty State Guide */}
+        {inputMethod && !gridData.center_goal && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-900 text-center font-medium">
+              👆 중앙 셀을 클릭하여 만다라트를 시작하세요
+            </p>
+            <p className="text-xs text-blue-700 text-center mt-1">
+              제목과 핵심 목표를 입력할 수 있습니다
+            </p>
+          </div>
         )}
 
         {/* Desktop: Mandalart Grid */}
@@ -457,7 +462,13 @@ export default function MandalartCreatePage() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                setInputMethod(null)
+                setTitle('')
+                setGridData({ center_goal: '', sub_goals: [] })
+                setUploadedImageUrl(null)
+                setError(null)
+              }}
               disabled={isLoading}
             >
               취소
@@ -481,6 +492,7 @@ export default function MandalartCreatePage() {
         initialTitle={title}
         initialCenterGoal={gridData.center_goal}
         onCreate={handleCoreGoalSave}
+        hideTitle={false}
       />
 
       {/* Sub Goal Create Modal */}

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Upload, Image as ImageIcon, FileText } from 'lucide-react'
+import { Image as ImageIcon, FileText, Pencil, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { MandalartGridData } from '@/types'
 import { suggestActionType } from '@/lib/actionTypes'
@@ -318,50 +318,50 @@ export default function InputMethodSelector({
       {/* Input Method Selection */}
       {!inputMethod && (
         <Card>
-          <CardHeader>
-            <CardTitle>입력 방식 선택</CardTitle>
-            <CardDescription>어떤 방식으로 만다라트를 만들까요?</CardDescription>
+          <CardHeader className="pb-4">
+            <CardTitle>생성 방식 선택</CardTitle>
+            <CardDescription>어떻게 만들까요?</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-0">
             <Button
               variant="outline"
-              className="h-32 flex-col gap-2"
+              className="h-28 flex-col gap-2 py-4"
               onClick={() => handleMethodSelect('image')}
               disabled={disabled}
             >
-              <Upload className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-semibold">이미지 업로드</div>
-                <div className="text-xs text-muted-foreground">
-                  만다라트 이미지를 업로드하여 자동 인식
+              <ImageIcon className="w-7 h-7" />
+              <div className="text-center space-y-1">
+                <div className="font-semibold text-sm">이미지 업로드</div>
+                <div className="text-xs text-muted-foreground leading-tight">
+                  만들어둔 만다라트가 있다면 사진 찍어 업로드
                 </div>
               </div>
             </Button>
             <Button
               variant="outline"
-              className="h-32 flex-col gap-2"
+              className="h-28 flex-col gap-2 py-4"
               onClick={() => handleMethodSelect('text')}
               disabled={disabled}
             >
-              <FileText className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-semibold">텍스트 붙여넣기</div>
-                <div className="text-xs text-muted-foreground">
-                  ChatGPT 등에서 생성한 텍스트로 자동 생성
+              <FileText className="w-7 h-7" />
+              <div className="text-center space-y-1">
+                <div className="font-semibold text-sm">텍스트 붙여넣기</div>
+                <div className="text-xs text-muted-foreground leading-tight">
+                  AI로 만든 텍스트가 있다면 복사해서 붙여넣기
                 </div>
               </div>
             </Button>
             <Button
               variant="outline"
-              className="h-32 flex-col gap-2"
+              className="h-28 flex-col gap-2 py-4"
               onClick={() => handleMethodSelect('manual')}
               disabled={disabled}
             >
-              <ImageIcon className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-semibold">직접 입력</div>
-                <div className="text-xs text-muted-foreground">
-                  목표와 실천 항목을 직접 입력
+              <Pencil className="w-7 h-7" />
+              <div className="text-center space-y-1">
+                <div className="font-semibold text-sm">직접 입력</div>
+                <div className="text-xs text-muted-foreground leading-tight">
+                  아직 없다면 빈 그리드에서 처음부터 작성
                 </div>
               </div>
             </Button>
@@ -429,6 +429,19 @@ export default function InputMethodSelector({
                 </div>
               </div>
             )}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setInputMethod(null)
+                setSelectedImage(null)
+                setImagePreview(null)
+                setError(null)
+              }}
+              disabled={isProcessingOCR || disabled}
+              className="w-full"
+            >
+              다른 방법 선택
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -496,6 +509,18 @@ export default function InputMethodSelector({
                 {isProcessingText ? 'AI가 텍스트를 분석 중입니다...' : '텍스트 분석'}
               </Button>
             </div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setInputMethod(null)
+                setPastedText('')
+                setError(null)
+              }}
+              disabled={isProcessingText || disabled}
+              className="w-full"
+            >
+              다른 방법 선택
+            </Button>
           </CardContent>
         </Card>
       )}

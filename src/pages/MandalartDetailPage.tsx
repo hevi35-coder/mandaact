@@ -365,16 +365,14 @@ export default function MandalartDetailPage() {
     <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
       <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h1 className="text-3xl font-bold">{mandalart.title}</h1>
-            <p className="text-muted-foreground mt-1">
-              핵심 목표: {mandalart.center_goal}
-            </p>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl font-bold inline-block">{mandalart.title}</h1>
+            <span className="text-muted-foreground ml-3 text-sm">{mandalart.center_goal}</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-center md:justify-end">
             <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
-              목록
+              만다라트 목록
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -368,17 +368,17 @@ export function getRoutineFrequencyLabel(frequency: RoutineFrequency): string {
 }
 
 /**
- * Get weekday names in Korean
+ * Get weekday names in Korean (starting from Monday)
  */
 export function getWeekdayNames(): Array<{ value: number; label: string; short: string }> {
   return [
-    { value: 0, label: '일요일', short: '일' },
     { value: 1, label: '월요일', short: '월' },
     { value: 2, label: '화요일', short: '화' },
     { value: 3, label: '수요일', short: '수' },
     { value: 4, label: '목요일', short: '목' },
     { value: 5, label: '금요일', short: '금' },
-    { value: 6, label: '토요일', short: '토' }
+    { value: 6, label: '토요일', short: '토' },
+    { value: 0, label: '일요일', short: '일' }
   ]
 }
 
@@ -407,14 +407,42 @@ export function formatTypeDetails(action: {
     if (frequency === 'weekly') {
       const weekdays = action.routine_weekdays || []
       if (weekdays.length > 0) {
+        // Sort weekdays starting from Monday (1-6, 0)
+        const sortedWeekdays = [...weekdays].sort((a, b) => {
+          // Convert Sunday (0) to 7 for sorting purposes
+          const aVal = a === 0 ? 7 : a
+          const bVal = b === 0 ? 7 : b
+          return aVal - bVal
+        })
+
+        // Check for weekdays (Mon-Fri): [1,2,3,4,5]
+        const isWeekdays = sortedWeekdays.length === 5 &&
+                          sortedWeekdays.every((day, idx) => day === idx + 1)
+
+        // Check for weekend (Sat-Sun): [0,6]
+        const isWeekend = sortedWeekdays.length === 2 &&
+                         sortedWeekdays[0] === 0 &&
+                         sortedWeekdays[1] === 6
+
+        if (isWeekdays) {
+          return '평일'
+        }
+
+        if (isWeekend) {
+          return '주말'
+        }
+
+        // Default: show individual days (without count)
         const weekdayNames = getWeekdayNames()
-        const selectedDays = weekdays
-          .sort((a, b) => a - b)
-          .map(day => weekdayNames[day].short)
-          .join(', ')
-        return `주 ${weekdays.length}회 (${selectedDays})`
+        const selectedDays = sortedWeekdays
+          .map(day => weekdayNames.find(w => w.value === day)?.short || '')
+          .join('')
+        return selectedDays
       }
-      return '매주'
+
+      // No weekdays selected: use count-based
+      const count = action.routine_count_per_period || 1
+      return `주${count}회`
     }
 
     if (frequency === 'monthly') {
