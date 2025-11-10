@@ -34,7 +34,7 @@ export default function MandalartGrid({
         // Center of center: Core goal
         return (
           <div
-            className={`flex flex-col items-center justify-center ${
+            className={`flex flex-col items-center justify-center h-full min-h-full ${
               forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
             } ${
               !forDownload && !readonly
@@ -63,7 +63,7 @@ export default function MandalartGrid({
                         margin: 0,
                         wordBreak: 'keep-all',
                         overflowWrap: 'break-word',
-                        lineHeight: '1.2',
+                        lineHeight: '1.4',
                         width: '100%',
                         display: 'block',
                         textAlign: 'center',
@@ -84,7 +84,7 @@ export default function MandalartGrid({
         const subGoal = getSubGoalByPosition(subGoalPosition)
         return (
           <div
-            className={`flex flex-col items-center justify-center ${
+            className={`flex flex-col items-center justify-center h-full min-h-full ${
               forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 ${
               !forDownload ? 'hover:bg-blue-100 transition-colors' : ''
@@ -103,7 +103,7 @@ export default function MandalartGrid({
                         margin: 0,
                         wordBreak: 'keep-all',
                         overflowWrap: 'break-word',
-                        lineHeight: '1.2',
+                        lineHeight: '1.4',
                         width: '100%',
                         display: 'block',
                         textAlign: 'center',
@@ -127,7 +127,7 @@ export default function MandalartGrid({
         // Center: blue background (same as filled sub-goal center)
         return (
           <div
-            className={`flex flex-col items-center justify-center ${
+            className={`flex flex-col items-center justify-center h-full min-h-full ${
               forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 border border-blue-200`}
           />
@@ -136,7 +136,7 @@ export default function MandalartGrid({
         // Surrounding cells: white background (for handwriting)
         return (
           <div
-            className={`flex flex-col items-center justify-center ${
+            className={`flex flex-col items-center justify-center h-full min-h-full ${
               forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
           />
@@ -148,7 +148,7 @@ export default function MandalartGrid({
       // Center of section: Sub-goal title
       return (
         <div
-          className={`flex flex-col items-center justify-center ${
+          className={`flex flex-col items-center justify-center h-full min-h-full ${
             forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
           } bg-blue-50 border border-blue-200`}
         >
@@ -162,7 +162,7 @@ export default function MandalartGrid({
                     margin: 0,
                     wordBreak: 'keep-all',
                     overflowWrap: 'break-word',
-                    lineHeight: '1.2',
+                    lineHeight: '1.4',
                     width: '100%',
                     display: 'block',
                     textAlign: 'center',
@@ -182,7 +182,7 @@ export default function MandalartGrid({
       if (!action || !action.title) {
         return (
           <div
-            className={`flex flex-col items-center justify-center ${
+            className={`flex flex-col items-center justify-center h-full min-h-full ${
               forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
           />
@@ -191,7 +191,7 @@ export default function MandalartGrid({
 
       return (
         <div
-          className={`flex flex-col items-center justify-center ${
+          className={`flex flex-col items-center justify-center h-full min-h-full ${
             forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
           } bg-white ${
             !forDownload ? 'hover:bg-gray-50 transition-colors' : ''
@@ -209,7 +209,7 @@ export default function MandalartGrid({
                     margin: 0,
                     wordBreak: 'keep-all',
                     overflowWrap: 'break-word',
-                    lineHeight: '1.2',
+                    lineHeight: '1.4',
                     width: '100%',
                     display: 'block',
                     textAlign: 'center',
