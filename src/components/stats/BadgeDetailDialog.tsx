@@ -106,13 +106,13 @@ export function BadgeDetailDialog({
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border-2 border-green-500/30"
+              className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border-2 border-green-500/30 space-y-3"
             >
               <div className="flex items-start gap-3">
                 <Trophy className="h-6 w-6 text-green-600 shrink-0" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-green-700 dark:text-green-400 mb-1 flex items-center gap-2">
-                    🎉 뱃지 획득 완료!
+                    🎉 배지 획득 완료!
                   </h4>
                   {unlockedAt && (
                     <div className="text-sm text-muted-foreground">
@@ -125,6 +125,13 @@ export function BadgeDetailDialog({
                   )}
                 </div>
               </div>
+
+              {/* Permanent badge notice */}
+              <div className="pt-2 border-t border-green-500/20">
+                <p className="text-xs text-green-700/80 dark:text-green-400/80">
+                  💎 한번 획득한 배지는 영구적으로 보존됩니다. 만다라트를 삭제하거나 데이터가 변경되어도 배지는 유지됩니다.
+                </p>
+              </div>
             </motion.div>
           ) : (
             <div className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/30 space-y-3">
@@ -132,7 +139,7 @@ export function BadgeDetailDialog({
                 <Lock className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-orange-700 dark:text-orange-400 mb-1">
-                    {hintLevel === 'hidden' ? '비밀 뱃지' : '잠금 해제 조건'}
+                    {hintLevel === 'hidden' ? '비밀 배지' : '잠금 해제 조건'}
                   </h4>
 
                   {hintLevel === 'hidden' ? (

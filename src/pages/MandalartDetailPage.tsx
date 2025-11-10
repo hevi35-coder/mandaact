@@ -244,10 +244,89 @@ export default function MandalartDetailPage() {
 
   const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
+  const handleDeactivate = async () => {
+    if (!mandalart || !id) return
+
+    try {
+      const { error: updateError } = await supabase
+        .from('mandalarts')
+        .update({ is_active: false })
+        .eq('id', id)
+
+      if (updateError) throw updateError
+
+      toast({
+        title: '비활성화 완료',
+        description: '만다라트가 비활성화되었습니다. 언제든지 다시 활성화할 수 있습니다.',
+      })
+
+      navigate('/mandalart/list')
+    } catch (err) {
+      console.error('Deactivate error:', err)
+      toast({
+        title: '비활성화 실패',
+        description: '비활성화 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const handleDelete = async () => {
     if (!mandalart || !id) return
 
-    if (!confirm(`"${mandalart.title}" 만다라트를 삭제하시겠습니까? 모든 하위 데이터가 함께 삭제됩니다.`)) {
+    // Get deletion impact data
+    const { data: checkCount } = await supabase
+      .from('check_history')
+      .select('id', { count: 'exact', head: true })
+      .in('action_id',
+        mandalart.sub_goals.flatMap(sg => sg.actions?.map(a => a.id) || [])
+      )
+
+    const totalChecks = checkCount || 0
+    const totalSubGoals = mandalart.sub_goals.length
+    const totalActions = mandalart.sub_goals.reduce((sum, sg) => sum + (sg.actions?.length || 0), 0)
+
+    // Show detailed impact and offer soft delete option
+    const confirmMessage = `⚠️ 경고: 이 작업은 되돌릴 수 없습니다
+
+삭제될 데이터:
+• ${totalChecks}회의 체크 기록
+• ${totalSubGoals}개의 세부 목표
+• ${totalActions}개의 실천 항목
+
+유지되는 데이터:
+• 획득한 XP 및 레벨 (변동 없음)
+• 해금된 배지 (영구 보존)
+
+💡 대신 비활성화하시겠습니까?
+비활성화하면 데이터는 보존되며 언제든 복구 가능합니다.
+
+"비활성화" = 데이터 보존 (권장)
+"영구 삭제" = 모든 데이터 삭제
+"취소" = 아무것도 하지 않음`
+
+    const userChoice = prompt(confirmMessage + '\n\n입력: "비활성화" 또는 "영구 삭제"')
+
+    if (!userChoice) {
+      return // User cancelled
+    }
+
+    if (userChoice.trim() === '비활성화') {
+      await handleDeactivate()
+      return
+    }
+
+    if (userChoice.trim() !== '영구 삭제') {
+      toast({
+        title: '취소됨',
+        description: '"비활성화" 또는 "영구 삭제"를 정확히 입력해주세요.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Final confirmation for permanent deletion
+    if (!confirm(`정말로 영구 삭제하시겠습니까? ${totalChecks}개의 체크 기록이 완전히 사라집니다.`)) {
       return
     }
 
@@ -260,8 +339,8 @@ export default function MandalartDetailPage() {
       if (deleteError) throw deleteError
 
       toast({
-        title: '삭제 완료',
-        description: '만다라트가 삭제되었습니다.',
+        title: '영구 삭제 완료',
+        description: '만다라트와 모든 관련 데이터가 삭제되었습니다.',
       })
 
       navigate('/mandalart/list')
@@ -275,7 +354,7 @@ export default function MandalartDetailPage() {
     }
   }
 
-  const handleDownloadImage = async (size: 'mobile' | 'tablet' | 'desktop') => {
+  const handleDownloadImage = async () => {
     if (!gridRef.current || !mandalart) return
 
     setIsDownloading(true)
@@ -285,19 +364,15 @@ export default function MandalartDetailPage() {
     })
 
     try {
-      const sizeMap = {
-        mobile: 800,
-        tablet: 1200,
-        desktop: 1600,
-      }
-      const targetWidth = sizeMap[size]
-      const scale = targetWidth / gridRef.current.offsetWidth
-
       const canvas = await html2canvas(gridRef.current, {
-        scale: scale,
+        width: 1600,
+        height: 1600,
+        scale: 2, // 2x for retina displays (3200x3200 actual output)
         backgroundColor: '#ffffff',
         logging: false,
         useCORS: true,
+        windowWidth: 1600,
+        windowHeight: 1600,
       })
 
       // Convert to blob and download
@@ -308,7 +383,7 @@ export default function MandalartDetailPage() {
 
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
-        const fileName = `${mandalart.title}_${size}_${new Date().toISOString().split('T')[0]}.png`
+        const fileName = `${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
         link.href = url
         link.download = fileName
         document.body.appendChild(link)
@@ -318,7 +393,7 @@ export default function MandalartDetailPage() {
 
         toast({
           title: '다운로드 완료!',
-          description: `${size === 'mobile' ? '모바일' : size === 'tablet' ? '태블릿' : '데스크톱'} 사이즈 (${targetWidth}x${targetWidth}px)`,
+          description: '고해상도 이미지 (3200×3200px) • 화면 & 인쇄용',
         })
       }, 'image/png')
     } catch (error) {
@@ -382,14 +457,8 @@ export default function MandalartDetailPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleDownloadImage('mobile')}>
-                  📱 모바일 (800x800px)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownloadImage('tablet')}>
-                  💻 태블릿 (1200x1200px)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownloadImage('desktop')}>
-                  🖥️ 데스크톱 (1600x1600px)
+                <DropdownMenuItem onClick={() => handleDownloadImage()}>
+                  🖥️ 고해상도 (3200x3200px)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -403,8 +472,8 @@ export default function MandalartDetailPage() {
         </div>
 
         {/* Hidden Grid for Download (always rendered, works on mobile too) */}
-        <div className="fixed -left-[9999px] top-0 bg-white" style={{ width: '1200px', height: '1200px' }}>
-          <div ref={gridRef}>
+        <div className="fixed -left-[9999px] top-0 bg-white flex items-center justify-center" style={{ width: '1600px', height: '1600px' }}>
+          <div ref={gridRef} style={{ width: '1600px', height: '1600px' }}>
             <MandalartGrid
               mode="view"
               data={convertToGridData()}
