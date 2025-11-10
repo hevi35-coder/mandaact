@@ -57,7 +57,7 @@ export default function MandalartGrid({
             {data.center_goal ? (
               <p
                 className={`${
-                  forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-xl'
+                  forDownload ? 'text-6xl' : forMobile ? 'text-base' : 'text-xl'
                 } font-bold ${
                   !forDownload ? 'line-clamp-4' : ''
                 } text-white text-center`}
@@ -99,7 +99,7 @@ export default function MandalartGrid({
             {subGoal?.title && (
               <p
                 className={`${
-                  forDownload ? 'text-4xl' : forMobile ? 'text-base' : 'text-lg'
+                  forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-lg'
                 } font-medium ${
                   !forDownload ? 'line-clamp-4' : ''
                 } text-center`}
@@ -170,7 +170,7 @@ export default function MandalartGrid({
         >
           <p
             className={`${
-              forDownload ? 'text-4xl' : forMobile ? 'text-base' : 'text-lg'
+              forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-lg'
             } font-semibold ${!forDownload ? 'line-clamp-4' : ''} text-center`}
             style={
               forDownload
@@ -219,7 +219,7 @@ export default function MandalartGrid({
         >
           <p
             className={`${
-              forDownload ? 'text-3xl' : forMobile ? 'text-sm' : 'text-base'
+              forDownload ? 'text-4xl' : forMobile ? 'text-sm' : 'text-base'
             } ${forDownload ? '' : 'leading-tight'} ${
               !forDownload ? 'line-clamp-4' : ''
             } text-center`}
