@@ -2,12 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { SubGoal, Action, MandalartGridData, MandalartWithDetails } from '@/types'
@@ -364,16 +358,23 @@ export default function MandalartDetailPage() {
     })
 
     try {
+      // Capture with exact dimensions to ensure perfect square
+      const size = 2000 // Base size for perfect square
       const canvas = await html2canvas(gridRef.current, {
-        width: 1600,
-        height: 1600,
-        scale: 2, // 2x for retina displays (3200x3200 actual output)
+        width: size,
+        height: size,
+        scale: 2, // 2x for high resolution (4000x4000 actual output)
         backgroundColor: '#ffffff',
         logging: false,
         useCORS: true,
-        windowWidth: 1600,
-        windowHeight: 1600,
+        windowWidth: size,
+        windowHeight: size,
       })
+
+      // Verify square output
+      if (canvas.width !== canvas.height) {
+        console.warn(`Canvas not square: ${canvas.width}x${canvas.height}`)
+      }
 
       // Convert to blob and download
       canvas.toBlob((blob) => {
@@ -383,7 +384,7 @@ export default function MandalartDetailPage() {
 
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
-        const fileName = `${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
+        const fileName = `만다라트_${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
         link.href = url
         link.download = fileName
         document.body.appendChild(link)
@@ -393,9 +394,9 @@ export default function MandalartDetailPage() {
 
         toast({
           title: '다운로드 완료!',
-          description: '고해상도 이미지 (3200×3200px) • 화면 & 인쇄용',
+          description: `고해상도 이미지 (${canvas.width}×${canvas.height}px) • 화면 & 인쇄용`,
         })
-      }, 'image/png')
+      }, 'image/png', 0.95) // High quality PNG
     } catch (error) {
       console.error('Download error:', error)
       toast({
@@ -449,19 +450,14 @@ export default function MandalartDetailPage() {
             <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
               만다라트 목록
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="default" disabled={isDownloading}>
-                  <Download className="w-4 h-4 mr-2" />
-                  {isDownloading ? '생성 중...' : '다운로드'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleDownloadImage()}>
-                  🖥️ 고해상도 (3200x3200px)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="default"
+              disabled={isDownloading}
+              onClick={handleDownloadImage}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isDownloading ? '생성 중...' : '이미지 다운로드'}
+            </Button>
             <Button
               variant="outline"
               onClick={handleDelete}
@@ -471,9 +467,25 @@ export default function MandalartDetailPage() {
           </div>
         </div>
 
-        {/* Hidden Grid for Download (always rendered, works on mobile too) */}
-        <div className="fixed -left-[9999px] top-0 bg-white flex items-center justify-center" style={{ width: '1600px', height: '1600px' }}>
-          <div ref={gridRef} style={{ width: '1600px', height: '1600px' }}>
+        {/* Hidden Grid for Download (perfect square, high resolution) */}
+        <div
+          className="fixed -left-[9999px] top-0 bg-white"
+          style={{
+            width: '2000px',
+            height: '2000px',
+            padding: '40px', // Padding for better visual balance
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <div
+            ref={gridRef}
+            style={{
+              width: '1920px',
+              height: '1920px' // Perfect square guaranteed
+            }}
+          >
             <MandalartGrid
               mode="view"
               data={convertToGridData()}
