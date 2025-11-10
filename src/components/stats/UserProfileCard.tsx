@@ -11,6 +11,8 @@ import { getUserLevel, getXPProgress } from '@/lib/stats'
 import { supabase } from '@/lib/supabase'
 import { evaluateAndUnlockBadges } from '@/lib/badgeEvaluator'
 import { useToast } from '@/hooks/use-toast'
+import { SUCCESS_MESSAGES } from '@/lib/notificationMessages'
+import { showSuccess } from '@/lib/notificationUtils'
 import type { UserLevel, Achievement } from '@/types'
 import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { BadgeDetailDialog } from './BadgeDetailDialog'
@@ -96,6 +98,9 @@ export function UserProfileCard() {
       // Update local state
       setUserLevel({ ...userLevel, nickname: newNickname })
       setEditDialogOpen(false)
+
+      // Show success feedback
+      showSuccess(SUCCESS_MESSAGES.nicknameUpdated())
     } catch (err) {
       console.error('Nickname update error:', err)
       setNicknameError('닉네임 변경 중 오류가 발생했습니다')

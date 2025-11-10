@@ -13,8 +13,8 @@ import { Label } from '@/components/ui/label'
 import { Mandalart } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { Info, Pencil, Check, X, Loader2 } from 'lucide-react'
-import { VALIDATION_MESSAGES, ERROR_MESSAGES } from '@/lib/notificationMessages'
-import { showWarning, showError } from '@/lib/notificationUtils'
+import { VALIDATION_MESSAGES, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/notificationMessages'
+import { showWarning, showError, showSuccess } from '@/lib/notificationUtils'
 
 interface CoreGoalEditModalProps {
   open: boolean
@@ -144,6 +144,9 @@ export default function CoreGoalEditModal({
 
       setIsEditingTitle(false)
       if (onEdit) onEdit()
+
+      // Show success feedback
+      showSuccess(SUCCESS_MESSAGES.updated())
     } catch (err) {
       console.error('Error saving title:', err)
       showError(ERROR_MESSAGES.titleSaveFailed())
@@ -189,6 +192,9 @@ export default function CoreGoalEditModal({
 
       setIsEditingCenterGoal(false)
       if (onEdit) onEdit()
+
+      // Show success feedback
+      showSuccess(SUCCESS_MESSAGES.updated())
     } catch (err) {
       console.error('Error saving center goal:', err)
       showError(ERROR_MESSAGES.centerGoalSaveFailed())
@@ -219,9 +225,9 @@ export default function CoreGoalEditModal({
           <DialogDescription>
             {mode === 'create'
               ? (hideTitle
-                  ? '9x9 그리드 중앙에 표시될 핵심 목표를 입력하세요.'
-                  : '만다라트 제목과 핵심목표를 입력하세요.')
-              : '만다라트 제목과 핵심목표를 수정할 수 있습니다.'}
+                  ? '9x9 그리드 중앙에 표시될 핵심 목표를 입력하세요'
+                  : '만다라트 제목과 핵심목표를 입력하세요')
+              : '만다라트 제목과 핵심목표를 수정할 수 있습니다'}
           </DialogDescription>
         </DialogHeader>
 
@@ -400,17 +406,7 @@ export default function CoreGoalEditModal({
               )}
             </Button>
           </DialogFooter>
-        ) : (
-          <div className="flex justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              닫기
-            </Button>
-          </div>
-        )}
+        ) : null}
       </DialogContent>
     </Dialog>
   )

@@ -52,9 +52,9 @@ export async function sendTestNotification(): Promise<void> {
 
   try {
     // Use basic Notification API for better compatibility
-    const notification = new Notification('MandaAct 테스트', {
-      body: '알림이 정상적으로 작동합니다! 🎉',
-      icon: 'vite.svg',
+    const notification = new Notification('MandaAct 알림 테스트', {
+      body: '알림 테스트에 성공했습니다.',
+      icon: '/vite.svg',
       tag: 'test-notification',
       requireInteraction: false
     })
@@ -67,9 +67,9 @@ export async function sendTestNotification(): Promise<void> {
         const registration = await navigator.serviceWorker.ready
         console.log('Service Worker ready:', registration)
 
-        await registration.showNotification('MandaAct SW 테스트', {
-          body: 'Service Worker를 통한 알림입니다',
-          icon: 'vite.svg',
+        await registration.showNotification('MandaAct 알림 테스트', {
+          body: 'Service Worker 알림이 정상 작동합니다.',
+          icon: '/vite.svg',
           tag: 'test-notification-sw',
           requireInteraction: false,
           data: {
@@ -125,7 +125,7 @@ export async function scheduleDailyReminder(
         const registration = await navigator.serviceWorker.ready
         await registration.showNotification(title, {
           body,
-          icon: 'vite.svg',
+          icon: '/vite.svg',
           tag: 'daily-reminder',
           requireInteraction: false,
           data: {
@@ -179,20 +179,20 @@ export function generateNotificationMessage(data?: {
     {
       title: 'MandaAct',
       body: data?.centerGoal
-        ? `오늘도 "${data.centerGoal}" 향해 한 걸음! 실천 항목을 체크해보세요.`
-        : '오늘의 실천 항목을 확인해보세요!'
+        ? `"${data.centerGoal}" 향해 오늘도 한 걸음 나아가세요.`
+        : '오늘의 실천 항목을 확인해보세요.'
     },
     {
-      title: '실천 시간입니다!',
+      title: '실천 시간',
       body: data?.yesterdayCheckCount
-        ? `어제 ${data.yesterdayCheckCount}개 완료하셨네요! 오늘도 화이팅!`
+        ? `어제 ${data.yesterdayCheckCount}개 완료하셨습니다. 오늘도 함께해요.`
         : '작은 실천이 큰 변화를 만듭니다.'
     },
     {
       title: '목표를 향한 하루',
       body: data?.totalActions
-        ? `${data.totalActions}개의 실천 항목이 기다리고 있어요.`
-        : '오늘도 꾸준히 실천해봐요!'
+        ? `${data.totalActions}개의 실천 항목이 기다리고 있습니다.`
+        : '오늘도 꾸준히 실천해보세요.'
     }
   ]
 

@@ -7,6 +7,7 @@
 
 import { toast } from '@/hooks/use-toast'
 import type { NotificationMessage } from './notificationMessages'
+import { NotificationIcon } from './notificationIcons'
 
 /**
  * Show a success notification
@@ -17,6 +18,7 @@ export function showSuccess(message: NotificationMessage) {
     description: message.description,
     variant: message.variant || 'default',
     duration: message.duration || 3000,
+    icon: <NotificationIcon type="success" />,
   })
 }
 
@@ -29,6 +31,7 @@ export function showError(message: NotificationMessage) {
     description: message.description,
     variant: message.variant || 'destructive',
     duration: message.duration || 5000,
+    icon: <NotificationIcon type="error" />,
   })
 }
 
@@ -41,6 +44,7 @@ export function showWarning(message: NotificationMessage) {
     description: message.description,
     variant: message.variant || 'destructive',
     duration: message.duration || 3000,
+    icon: <NotificationIcon type="warning" />,
   })
 }
 
@@ -53,6 +57,7 @@ export function showInfo(message: NotificationMessage) {
     description: message.description,
     variant: message.variant || 'default',
     duration: message.duration || 3000,
+    icon: <NotificationIcon type="info" />,
   })
 }
 
@@ -65,6 +70,7 @@ export function showCelebration(message: NotificationMessage) {
     description: message.description,
     variant: message.variant || 'default',
     duration: message.duration || 5000,
+    icon: <NotificationIcon type="celebration" />,
   })
 }
 

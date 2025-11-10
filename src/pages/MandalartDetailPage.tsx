@@ -2,23 +2,30 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { SubGoal, Action, MandalartGridData, MandalartWithDetails } from '@/types'
-import { Repeat, Target, Lightbulb, Download } from 'lucide-react'
+import { Repeat, Target, Lightbulb, Download, AlertTriangle, Info } from 'lucide-react'
+import { Label } from '@/components/ui/label'
 import SubGoalEditModal from '@/components/SubGoalEditModal'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 import MandalartGrid from '@/components/MandalartGrid'
 import { domToPng } from 'modern-screenshot'
-import { useToast } from '@/hooks/use-toast'
-import { ERROR_MESSAGES } from '@/lib/notificationMessages'
-import { showError } from '@/lib/notificationUtils'
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, DOWNLOAD_MESSAGES } from '@/lib/notificationMessages'
+import { showError, showSuccess, showInfo } from '@/lib/notificationUtils'
 
 export default function MandalartDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const { toast } = useToast()
   const gridRef = useRef<HTMLDivElement>(null)
 
   const [mandalart, setMandalart] = useState<MandalartWithDetails | null>(null)
@@ -29,6 +36,9 @@ export default function MandalartDetailPage() {
   const [mobileExpandedSection, setMobileExpandedSection] = useState<number | null>(null)
   const [coreGoalModalOpen, setCoreGoalModalOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteDialogStep, setDeleteDialogStep] = useState<'choice' | 'confirm'>('choice')
+  const [deletionStats, setDeletionStats] = useState({ totalChecks: 0, totalSubGoals: 0, totalActions: 0 })
 
   useEffect(() => {
     if (!user) {
@@ -251,19 +261,12 @@ export default function MandalartDetailPage() {
 
       if (updateError) throw updateError
 
-      toast({
-        title: '비활성화 완료',
-        description: '만다라트가 비활성화되었습니다. 언제든지 다시 활성화할 수 있습니다.',
-      })
+      showSuccess(SUCCESS_MESSAGES.deactivated())
 
       navigate('/mandalart/list')
     } catch (err) {
       console.error('Deactivate error:', err)
-      toast({
-        title: '비활성화 실패',
-        description: '비활성화 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      })
+      showError(ERROR_MESSAGES.deactivateFailed())
     }
   }
 
@@ -271,7 +274,7 @@ export default function MandalartDetailPage() {
     if (!mandalart || !id) return
 
     // Get deletion impact data
-    const { data: checkCount } = await supabase
+    const { count: checkCount } = await supabase
       .from('check_history')
       .select('id', { count: 'exact', head: true })
       .in('action_id',
@@ -282,49 +285,25 @@ export default function MandalartDetailPage() {
     const totalSubGoals = mandalart.sub_goals.length
     const totalActions = mandalart.sub_goals.reduce((sum, sg) => sum + (sg.actions?.length || 0), 0)
 
-    // Show detailed impact and offer soft delete option
-    const confirmMessage = `⚠️ 경고: 이 작업은 되돌릴 수 없습니다
+    // Store stats and open dialog
+    setDeletionStats({ totalChecks, totalSubGoals, totalActions })
+    setDeleteDialogStep('choice')
+    setDeleteDialogOpen(true)
+  }
 
-삭제될 데이터:
-• ${totalChecks}회의 체크 기록
-• ${totalSubGoals}개의 세부 목표
-• ${totalActions}개의 실천 항목
-
-유지되는 데이터:
-• 획득한 XP 및 레벨 (변동 없음)
-• 해금된 배지 (영구 보존)
-
-💡 대신 비활성화하시겠습니까?
-비활성화하면 데이터는 보존되며 언제든 복구 가능합니다.
-
-"비활성화" = 데이터 보존 (권장)
-"영구 삭제" = 모든 데이터 삭제
-"취소" = 아무것도 하지 않음`
-
-    const userChoice = prompt(confirmMessage + '\n\n입력: "비활성화" 또는 "영구 삭제"')
-
-    if (!userChoice) {
-      return // User cancelled
+  const handleDeleteChoice = (choice: 'deactivate' | 'delete') => {
+    if (choice === 'deactivate') {
+      setDeleteDialogOpen(false)
+      handleDeactivate()
+    } else {
+      setDeleteDialogStep('confirm')
     }
+  }
 
-    if (userChoice.trim() === '비활성화') {
-      await handleDeactivate()
-      return
-    }
+  const handlePermanentDelete = async () => {
+    if (!id) return
 
-    if (userChoice.trim() !== '영구 삭제') {
-      toast({
-        title: '취소됨',
-        description: '"비활성화" 또는 "영구 삭제"를 정확히 입력해주세요.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    // Final confirmation for permanent deletion
-    if (!confirm(`정말로 영구 삭제하시겠습니까? ${totalChecks}개의 체크 기록이 완전히 사라집니다.`)) {
-      return
-    }
+    setDeleteDialogOpen(false)
 
     try {
       const { error: deleteError } = await supabase
@@ -334,19 +313,12 @@ export default function MandalartDetailPage() {
 
       if (deleteError) throw deleteError
 
-      toast({
-        title: '영구 삭제 완료',
-        description: '만다라트와 모든 관련 데이터가 삭제되었습니다.',
-      })
+      showSuccess(SUCCESS_MESSAGES.permanentlyDeleted())
 
       navigate('/mandalart/list')
     } catch (err) {
       console.error('Delete error:', err)
-      toast({
-        title: '삭제 실패',
-        description: '삭제 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      })
+      showError(ERROR_MESSAGES.deleteFailed())
     }
   }
 
@@ -354,10 +326,7 @@ export default function MandalartDetailPage() {
     if (!gridRef.current || !mandalart) return
 
     setIsDownloading(true)
-    toast({
-      title: '이미지 생성 중...',
-      description: '잠시만 기다려주세요.',
-    })
+    showInfo(DOWNLOAD_MESSAGES.processing())
 
     try {
       // Use modern-screenshot for better Modern CSS support
@@ -377,17 +346,10 @@ export default function MandalartDetailPage() {
       link.click()
       document.body.removeChild(link)
 
-      toast({
-        title: '다운로드 완료!',
-        description: '고해상도 이미지 (3840×3840px) • 화면 & 인쇄용',
-      })
+      showSuccess(DOWNLOAD_MESSAGES.success())
     } catch (error) {
       console.error('Download error:', error)
-      toast({
-        title: '다운로드 실패',
-        description: '이미지 생성 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      })
+      showError(DOWNLOAD_MESSAGES.failed())
     } finally {
       setIsDownloading(false)
     }
@@ -624,6 +586,120 @@ export default function MandalartDetailPage() {
           onEdit={fetchMandalart}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteDialogStep === 'choice' ? '만다라트 삭제' : '영구 삭제 확인'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="flex items-center justify-center gap-2">
+              {deleteDialogStep === 'choice' ? (
+                <>
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0 text-destructive" />
+                  <span>경고: 이 작업은 되돌릴 수 없습니다</span>
+                </>
+              ) : (
+                '삭제된 데이터는 복구할 수 없습니다.'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4">
+            {deleteDialogStep === 'choice' ? (
+              <>
+
+                {/* 삭제되는 데이터 */}
+                <div className="space-y-2">
+                  <Label>삭제되는 데이터</Label>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span>•</span>
+                      <span>{deletionStats.totalChecks}회의 체크 기록</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span>•</span>
+                      <span>{deletionStats.totalSubGoals}개의 세부 목표</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span>•</span>
+                      <span>{deletionStats.totalActions}개의 실천 항목</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* 유지되는 데이터 */}
+                <div className="space-y-2">
+                  <Label>유지되는 데이터</Label>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span>•</span>
+                      <span>획득한 XP 및 레벨 (변동 없음)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span>•</span>
+                      <span>해금된 배지 (영구 보존)</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* 비활성화 권장 안내 */}
+                <p className="text-xs text-muted-foreground flex items-start gap-2">
+                  <Info className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <span className="font-medium">비활성화를 권장합니다.</span> 데이터는 보존되며 언제든 복구 가능합니다.
+                  </span>
+                </p>
+              </>
+              ) : (
+                <>
+                  {/* 최종 확인 안내 */}
+                  <p className="text-xs text-muted-foreground flex items-start gap-2">
+                    <Info className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                    <span>
+                      <span className="font-medium">정말로 영구 삭제하시겠습니까?</span><br />
+                      {deletionStats.totalChecks}개의 체크 기록이 완전히 사라집니다.
+                    </span>
+                  </p>
+                </>
+              )}
+          </div>
+
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            {deleteDialogStep === 'choice' ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDeleteChoice('delete')}
+                >
+                  영구 삭제
+                </Button>
+                <Button
+                  onClick={() => handleDeleteChoice('deactivate')}
+                >
+                  비활성화 (권장)
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteDialogStep('choice')}
+                >
+                  뒤로
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handlePermanentDelete}
+                >
+                  영구 삭제 확정
+                </Button>
+              </>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

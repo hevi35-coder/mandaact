@@ -307,7 +307,7 @@ export default function InputMethodSelector({
   }
 
   return (
-    <div className="space-y-4">
+    <>
       {/* Error Message */}
       {error && (
         <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
@@ -317,7 +317,7 @@ export default function InputMethodSelector({
 
       {/* Input Method Selection */}
       {!inputMethod && (
-        <Card>
+        <Card className="w-full">
           <CardHeader className="pb-4">
             <CardTitle>생성 방식 선택</CardTitle>
             <CardDescription>어떻게 만들까요?</CardDescription>
@@ -371,7 +371,7 @@ export default function InputMethodSelector({
 
       {/* Image Upload UI */}
       {inputMethod === 'image' && (
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>이미지 업로드</CardTitle>
             <CardDescription>
@@ -448,7 +448,7 @@ export default function InputMethodSelector({
 
       {/* Text Paste UI */}
       {inputMethod === 'text' && (
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>텍스트 붙여넣기</CardTitle>
             <CardDescription>
@@ -460,32 +460,26 @@ export default function InputMethodSelector({
               <Label htmlFor="pastedText">만다라트 텍스트</Label>
               <textarea
                 id="pastedText"
-                className="w-full min-h-[300px] p-3 border rounded-md text-sm font-mono resize-y"
-                placeholder={`예시:
-
-핵심 목표: 건강한 삶
+                className="w-full min-h-[200px] p-3 border rounded-md text-sm font-mono resize-y"
+                placeholder={`(예시) 핵심 목표: 건강한 삶
 
 1. 운동
    - 매일 30분 걷기
    - 주 3회 근력 운동
-   - 스트레칭 하기
-   - 요가 수업 듣기
-   - 자전거 타기
+   - 스트레칭 루틴
+   - 요가 수업
    - 등산 가기
    - 수영 배우기
-   - 홈트레이닝 루틴 만들기
+   - 홈트레이닝
+   - 자전거 타기
 
 2. 식습관
    - 아침 거르지 않기
    - 물 2L 마시기
-   - 채소 많이 먹기
+   - 채소 위주 식단
    - 가공식품 줄이기
-   - 규칙적인 식사
-   - 과식하지 않기
-   - 건강한 간식
-   - 영양소 균형 맞추기
 
-... (8개 세부 목표, 각 8개 실천 항목)`}
+... (총 8개 세부 목표, 각 8개 실천 항목)`}
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
                 disabled={isProcessingText || disabled}
@@ -524,6 +518,6 @@ export default function InputMethodSelector({
           </CardContent>
         </Card>
       )}
-    </div>
+    </>
   )
 }

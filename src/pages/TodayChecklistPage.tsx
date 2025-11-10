@@ -14,9 +14,8 @@ import { getTypeIcon } from '@/lib/iconUtils'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
-import { useToast } from '@/hooks/use-toast'
-import { ERROR_MESSAGES } from '@/lib/notificationMessages'
-import { showError } from '@/lib/notificationUtils'
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, ACHIEVEMENT_MESSAGES } from '@/lib/notificationMessages'
+import { showError, showSuccess, showCelebration } from '@/lib/notificationUtils'
 
 interface ActionWithContext extends Action {
   sub_goal: SubGoal & {
@@ -30,7 +29,6 @@ export default function TodayChecklistPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [searchParams, setSearchParams] = useSearchParams()
-  const { toast } = useToast()
 
   const [actions, setActions] = useState<ActionWithContext[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -261,12 +259,7 @@ export default function TodayChecklistPage() {
 
                 if (result.is_perfect_day && result.xp_awarded > 0) {
                   // Show success toast
-                  toast({
-                    title: '🎉 완벽한 하루!',
-                    description: `모든 실천을 완료했습니다! (+${result.xp_awarded} XP)`,
-                    variant: 'default',
-                    duration: 5000,
-                  })
+                  showCelebration(ACHIEVEMENT_MESSAGES.perfectDay(result.xp_awarded))
                   console.log('🎉 Perfect day bonus awarded: +' + result.xp_awarded + ' XP')
                 }
               } catch (bonusError) {
@@ -331,6 +324,9 @@ export default function TodayChecklistPage() {
 
       // Refresh actions list
       await fetchTodayActions()
+
+      // Show success feedback
+      showSuccess(SUCCESS_MESSAGES.typeUpdated())
     } catch (err) {
       console.error('Update error:', err)
       showError(ERROR_MESSAGES.typeUpdateFailed())

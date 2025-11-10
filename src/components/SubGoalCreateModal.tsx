@@ -112,7 +112,7 @@ export default function SubGoalCreateModal({
   }
 
   const handleActionDelete = (actionId: string) => {
-    if (!confirm('이 실천항목을 삭제하시겠습니까?')) return
+    if (!confirm('실천항목을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) return
     setLocalActions(localActions.filter(a => a.tempId !== actionId))
   }
 
@@ -159,7 +159,7 @@ export default function SubGoalCreateModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle>세부목표 입력</DialogTitle>
             <DialogDescription>
@@ -249,7 +249,7 @@ export default function SubGoalCreateModal({
                           // View mode
                           <>
                             <div className="flex-1 min-w-0">
-                              <span className="text-sm truncate block">{action.title || '(제목 없음)'}</span>
+                              <span className="text-sm break-words block">{action.title || '(제목 없음)'}</span>
                             </div>
 
                             <button

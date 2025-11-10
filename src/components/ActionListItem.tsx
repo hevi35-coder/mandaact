@@ -120,7 +120,7 @@ const ActionListItem = memo(({
         // View Mode
         <>
           <div className="flex-1 min-w-0">
-            <span className="text-sm truncate block">{action.title || '(제목 없음)'}</span>
+            <span className="text-sm break-words block">{action.title || '(제목 없음)'}</span>
           </div>
 
           {/* Type Button */}

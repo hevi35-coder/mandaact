@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuthStore } from '@/store/authStore'
-import { useToast } from '@/hooks/use-toast'
+import { showSuccess, showError, showWarning } from '@/lib/notificationUtils'
+import { PERMISSION_MESSAGES } from '@/lib/notificationMessages'
 import {
   isNotificationSupported,
   getNotificationPermission,
@@ -55,7 +56,6 @@ const formatTime = (hour: string, minute: string, period: string) => {
 export default function NotificationSettingsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const { toast } = useToast()
 
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [settings, setSettings] = useState<NotificationSettings>(getNotificationSettings())
@@ -85,16 +85,9 @@ export default function NotificationSettingsPage() {
       setPermission(result)
 
       if (result === 'granted') {
-        toast({
-          title: "✅ 알림 권한 허용",
-          description: "알림 권한이 허용되었습니다!",
-        })
+        showSuccess(PERMISSION_MESSAGES.granted())
       } else {
-        toast({
-          title: "❌ 알림 권한 거부",
-          description: "알림 권한이 거부되었습니다.",
-          variant: "destructive",
-        })
+        showError(PERMISSION_MESSAGES.denied())
       }
     } catch (error) {
       console.error('Failed to request permission:', error)
@@ -113,16 +106,18 @@ export default function NotificationSettingsPage() {
         scheduleDailyReminder(message.title, message.body, settings.time)
       }
 
-      toast({
-        title: "✅ 저장 완료",
-        description: "설정이 저장되었습니다!",
+      showSuccess({
+        title: '저장 완료',
+        description: '설정이 저장되었습니다.',
+        duration: 3000,
       })
     } catch (error) {
       console.error('Failed to save settings:', error)
-      toast({
-        title: "❌ 저장 실패",
-        description: "설정 저장에 실패했습니다.",
-        variant: "destructive",
+      showError({
+        title: '저장 실패',
+        description: '설정 저장에 실패했습니다.',
+        variant: 'destructive',
+        duration: 3000,
       })
     } finally {
       setIsSaving(false)
@@ -134,11 +129,7 @@ export default function NotificationSettingsPage() {
     console.log('Current permission:', permission)
 
     if (permission !== 'granted') {
-      toast({
-        title: "⚠️ 알림 권한 필요",
-        description: "먼저 알림 권한을 허용해주세요.",
-        variant: "destructive",
-      })
+      showWarning(PERMISSION_MESSAGES.required())
       return
     }
 
@@ -148,18 +139,11 @@ export default function NotificationSettingsPage() {
       console.log('Calling sendTestNotification...')
       await sendTestNotification()
       console.log('sendTestNotification completed')
-      toast({
-        title: "✅ 테스트 알림 전송",
-        description: "테스트 알림이 전송되었습니다!",
-      })
+      showSuccess(PERMISSION_MESSAGES.testSent())
     } catch (error) {
       console.error('Failed to send test notification:', error)
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
-      toast({
-        title: "❌ 전송 실패",
-        description: `테스트 알림 전송 실패: ${errorMessage}`,
-        variant: "destructive",
-      })
+      showError(PERMISSION_MESSAGES.testFailed(errorMessage))
     } finally {
       setIsTesting(false)
     }
@@ -525,7 +509,7 @@ export default function NotificationSettingsPage() {
             </div>
 
             {/* Save Button */}
-            <div className="pt-4 border-t">
+            <div className="pt-4 border-t space-y-3">
               <Button
                 onClick={handleSaveSettings}
                 disabled={isSaving || permission !== 'granted'}
@@ -533,6 +517,19 @@ export default function NotificationSettingsPage() {
               >
                 {isSaving ? '저장 중...' : '설정 저장'}
               </Button>
+
+              {/* Scheduling Limitation Notice */}
+              {settings.enabled && permission === 'granted' && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <p className="text-xs text-blue-900 dark:text-blue-100 flex items-start gap-1">
+                    <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <span className="font-medium">알림 수신 안내:</span> 앱을 백그라운드에서 유지해야 알림을 받을 수 있습니다.
+                      브라우저를 완전히 종료하면 예약된 알림이 작동하지 않습니다.
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -11,6 +11,8 @@ import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 import SubGoalCreateModal from '@/components/SubGoalCreateModal'
 import { suggestActionType } from '@/lib/actionTypes'
 import { Plus } from 'lucide-react'
+import { VALIDATION_MESSAGES, ERROR_MESSAGES } from '@/lib/notificationMessages'
+import { showWarning, showError } from '@/lib/notificationUtils'
 
 export default function MandalartCreatePage() {
   const navigate = useNavigate()
@@ -35,14 +37,12 @@ export default function MandalartCreatePage() {
   // Mobile state
   const [mobileExpandedSection, setMobileExpandedSection] = useState<number | null>(null)
 
-  // Loading & Error
+  // Loading
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // Handle input method selection
   const handleMethodSelect = (method: 'image' | 'text' | 'manual') => {
     setInputMethod(method)
-    setError(null) // Clear error when switching input method
   }
 
   // Handle image processing complete
@@ -118,24 +118,23 @@ export default function MandalartCreatePage() {
   // Handle save to database
   const handleSave = async () => {
     if (!user) {
-      setError('로그인이 필요합니다')
+      showError(ERROR_MESSAGES.authRequired())
       return
     }
 
     if (!title.trim() || !gridData.center_goal.trim()) {
-      setError('제목과 핵심 목표를 입력해주세요')
+      showWarning(VALIDATION_MESSAGES.emptyBothFields())
       return
     }
 
     // Validate sub-goals
     const filledSubGoals = gridData.sub_goals.filter(sg => sg.title.trim())
     if (filledSubGoals.length === 0) {
-      setError('최소 1개의 세부 목표를 입력해주세요')
+      showWarning(VALIDATION_MESSAGES.minSubGoalsRequired())
       return
     }
 
     setIsLoading(true)
-    setError(null)
 
     try {
       // 1. Create mandalart
@@ -215,7 +214,7 @@ export default function MandalartCreatePage() {
       navigate(`/mandalart/${mandalart.id}`)
     } catch (err) {
       console.error('Save error:', err)
-      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다')
+      showError(ERROR_MESSAGES.saveFailed())
     } finally {
       setIsLoading(false)
     }
@@ -287,7 +286,7 @@ export default function MandalartCreatePage() {
   const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   return (
-    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
+    <div className="py-3 md:py-6 px-4 pb-4">
       <div className="max-w-6xl mx-auto space-y-6 pb-20 md:pb-0">
         {/* Header */}
         <div className="text-center md:text-left">
@@ -295,54 +294,22 @@ export default function MandalartCreatePage() {
           <span className="text-muted-foreground ml-3 text-sm">새로운 목표 생성</span>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
-            {error}
-          </div>
-        )}
-
         {/* Input Method Selector */}
         {!inputMethod && (
-          <>
-            <InputMethodSelector
-              onMethodSelect={handleMethodSelect}
-              onImageProcessComplete={handleImageProcessComplete}
-              onTextProcessComplete={handleTextProcessComplete}
-              disabled={isLoading}
-            />
-
-            {/* Back to List Button */}
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setError(null)
-                navigate('/mandalart/list')
-              }}
-            >
-              만다라트 목록으로 돌아가기
-            </Button>
-          </>
+          <InputMethodSelector
+            onMethodSelect={handleMethodSelect}
+            onImageProcessComplete={handleImageProcessComplete}
+            onTextProcessComplete={handleTextProcessComplete}
+            disabled={isLoading}
+          />
         )}
 
-        {/* Empty State Guide */}
-        {inputMethod && !gridData.center_goal && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-900 text-center font-medium">
-              👆 중앙 셀을 클릭하여 만다라트를 시작하세요
-            </p>
-            <p className="text-xs text-blue-700 text-center mt-1">
-              제목과 핵심 목표를 입력할 수 있습니다
-            </p>
-          </div>
-        )}
 
         {/* Desktop: Mandalart Grid */}
         {inputMethod && (
-          <Card className="hidden md:block">
+          <Card className="w-full hidden md:block">
             <CardHeader>
-              <CardTitle>만다라트 그리드</CardTitle>
+              <CardTitle>직접 입력</CardTitle>
               <p className="text-sm text-muted-foreground">
                 셀을 클릭하여 목표와 실천 항목을 입력하세요
               </p>
@@ -361,9 +328,9 @@ export default function MandalartCreatePage() {
 
         {/* Mobile: 3x3 Adaptive View */}
         {inputMethod && (
-          <Card className="md:hidden">
+          <Card className="w-full md:hidden">
             <CardHeader>
-              <CardTitle>만다라트 그리드</CardTitle>
+              <CardTitle>직접 입력</CardTitle>
               <p className="text-sm text-muted-foreground">
                 셀을 탭하여 목표와 실천 항목을 입력하세요
               </p>
@@ -431,7 +398,7 @@ export default function MandalartCreatePage() {
                       size="sm"
                       onClick={() => handleSectionClick(mobileExpandedSection)}
                     >
-                      편집
+                      수정
                     </Button>
                   </div>
 
@@ -447,7 +414,7 @@ export default function MandalartCreatePage() {
                   </div>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    그리드를 탭하거나 "편집" 버튼을 눌러 편집할 수 있습니다
+                    그리드를 탭하거나 "수정" 버튼을 눌러 편집할 수 있습니다
                   </p>
                 </div>
               )}
@@ -466,7 +433,6 @@ export default function MandalartCreatePage() {
                 setTitle('')
                 setGridData({ center_goal: '', sub_goals: [] })
                 setUploadedImageUrl(null)
-                setError(null)
               }}
               disabled={isLoading}
             >

@@ -14,8 +14,8 @@ import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelec
 import ActionListItem from '@/components/ActionListItem'
 import { Plus, Pencil, Check, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { VALIDATION_MESSAGES, ERROR_MESSAGES } from '@/lib/notificationMessages'
-import { showWarning, showError } from '@/lib/notificationUtils'
+import { VALIDATION_MESSAGES, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/notificationMessages'
+import { showWarning, showError, showSuccess } from '@/lib/notificationUtils'
 import {
   DndContext,
   closestCenter,
@@ -187,6 +187,9 @@ export default function SubGoalEditModal({
 
       // Notify parent to refresh (optional, for consistency)
       if (onEdit) onEdit()
+
+      // Show success feedback
+      showSuccess(SUCCESS_MESSAGES.updated())
     } catch (err) {
       console.error('Error updating action title:', err)
       showError(ERROR_MESSAGES.actionUpdateFailed())
@@ -249,6 +252,9 @@ export default function SubGoalEditModal({
       if (error) throw error
 
       if (onEdit) onEdit()
+
+      // Show success feedback
+      showSuccess(SUCCESS_MESSAGES.typeUpdated())
     } catch (err) {
       console.error('Error updating action type:', err)
       showError(ERROR_MESSAGES.typeUpdateFailed())
@@ -258,7 +264,7 @@ export default function SubGoalEditModal({
 
   // Action Delete Handler
   const handleActionDelete = useCallback(async (actionId: string) => {
-    if (!confirm('이 실천항목을 삭제하시겠습니까?')) return
+    if (!confirm('실천항목을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) return
 
     // Optimistic update
     dispatch({ type: 'DELETE_ACTION', payload: actionId })
@@ -393,6 +399,9 @@ export default function SubGoalEditModal({
       if (error) throw error
 
       if (onEdit) onEdit()
+
+      // Show success feedback
+      showSuccess(SUCCESS_MESSAGES.updated())
     } catch (err) {
       console.error('Error saving sub-goal:', err)
       showError(ERROR_MESSAGES.subGoalSaveFailed())
@@ -410,11 +419,11 @@ export default function SubGoalEditModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle>세부목표 수정</DialogTitle>
             <DialogDescription>
-              세부목표와 실천항목을 수정할 수 있습니다.
+              세부목표와 실천항목을 수정할 수 있습니다
             </DialogDescription>
           </DialogHeader>
 
@@ -518,16 +527,6 @@ export default function SubGoalEditModal({
                 </SortableContext>
               </DndContext>
             </div>
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              닫기
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
