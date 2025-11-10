@@ -135,7 +135,9 @@ export default function MandalartGrid({
               forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
             } h-full min-h-full ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-            } bg-blue-50 border border-blue-200`}
+            } bg-blue-50 ${
+              !forDownload ? 'border border-blue-200' : ''
+            }`}
           />
         )
       } else {
@@ -160,7 +162,9 @@ export default function MandalartGrid({
             forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
           } h-full min-h-full ${
             forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-          } bg-blue-50 border border-blue-200`}
+          } bg-blue-50 ${
+            !forDownload ? 'border border-blue-200' : ''
+          }`}
         >
           <p
             className={`${
