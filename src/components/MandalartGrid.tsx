@@ -35,7 +35,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`flex flex-col items-center justify-center h-full min-h-full ${
-              forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } ${
               !forDownload && !readonly
                 ? 'cursor-pointer hover:opacity-90 transition-opacity'
@@ -85,7 +85,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`flex flex-col items-center justify-center h-full min-h-full ${
-              forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 ${
               !forDownload ? 'hover:bg-blue-100 transition-colors' : ''
             }`}
@@ -128,7 +128,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`flex flex-col items-center justify-center h-full min-h-full ${
-              forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 border border-blue-200`}
           />
         )
@@ -137,7 +137,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`flex flex-col items-center justify-center h-full min-h-full ${
-              forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
           />
         )
@@ -149,7 +149,7 @@ export default function MandalartGrid({
       return (
         <div
           className={`flex flex-col items-center justify-center h-full min-h-full ${
-            forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+            forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
           } bg-blue-50 border border-blue-200`}
         >
           <p
@@ -183,7 +183,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`flex flex-col items-center justify-center h-full min-h-full ${
-              forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
           />
         )
@@ -192,7 +192,7 @@ export default function MandalartGrid({
       return (
         <div
           className={`flex flex-col items-center justify-center h-full min-h-full ${
-            forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+            forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
           } bg-white ${
             !forDownload ? 'hover:bg-gray-50 transition-colors' : ''
           }`}
