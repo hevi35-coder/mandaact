@@ -9,6 +9,7 @@ interface MandalartGridProps {
   readonly?: boolean
   forDownload?: boolean
   forMobile?: boolean
+  forCapture?: boolean // html2canvas capture mode
 }
 
 export default function MandalartGrid({
@@ -19,6 +20,7 @@ export default function MandalartGrid({
   readonly = false,
   forDownload = false,
   forMobile = false,
+  forCapture = false,
 }: MandalartGridProps) {
 
   // Get sub-goal by position
@@ -35,7 +37,11 @@ export default function MandalartGrid({
         return (
           <div
             className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              forCapture
+                ? 'flex items-center justify-center'
+                : forDownload
+                ? 'grid place-items-center'
+                : 'flex flex-col items-center justify-center'
             } h-full min-h-full ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } ${
@@ -253,7 +259,7 @@ export default function MandalartGrid({
           grid grid-cols-3 grid-rows-3 ${
             forDownload ? '' : 'gap-px bg-gray-300'
           } rounded
-          ${forDownload ? 'aspect-square' : ''}
+          ${forDownload && !forCapture ? 'aspect-square' : ''}
           ${
             !forDownload && !isCenter && !readonly && onSectionClick
               ? 'cursor-pointer hover:ring-2 hover:ring-primary/50'
@@ -261,7 +267,13 @@ export default function MandalartGrid({
           }
           ${!forDownload ? 'transition-all' : ''}
         `}
-        style={forDownload ? { gap: 0, backgroundColor: 'transparent' } : undefined}
+        style={
+          forDownload
+            ? forCapture
+              ? { gap: 0, backgroundColor: 'transparent', height: '213.33px', width: '213.33px' }
+              : { gap: 0, backgroundColor: 'transparent' }
+            : undefined
+        }
         onClick={
           !forDownload && !readonly && !isCenter && onSectionClick
             ? () => onSectionClick(sectionPos)
@@ -271,7 +283,8 @@ export default function MandalartGrid({
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
           <div
             key={cellPos}
-            className="bg-white aspect-square"
+            className={`bg-white ${forCapture ? '' : 'aspect-square'}`}
+            style={forCapture ? { height: '71.11px', width: '71.11px' } : undefined}
           >
             {renderCell(sectionPos, cellPos)}
           </div>
