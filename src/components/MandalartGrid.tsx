@@ -93,7 +93,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
             } h-full min-h-full ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 ${
@@ -138,7 +138,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
             } h-full min-h-full ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 ${
@@ -151,7 +151,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
             } h-full min-h-full ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
@@ -165,7 +165,7 @@ export default function MandalartGrid({
       return (
         <div
           className={`${
-            forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+            forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
           } h-full min-h-full ${
             forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
           } bg-blue-50 ${
@@ -203,7 +203,7 @@ export default function MandalartGrid({
         return (
           <div
             className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
             } h-full min-h-full ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
@@ -214,7 +214,7 @@ export default function MandalartGrid({
       return (
         <div
           className={`${
-            forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+            forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
           } h-full min-h-full ${
             forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
           } bg-white ${
@@ -259,7 +259,7 @@ export default function MandalartGrid({
           grid grid-cols-3 grid-rows-3 ${
             forDownload ? '' : 'gap-px bg-gray-300'
           } rounded
-          ${forDownload && !forCapture ? 'aspect-square' : ''}
+          ${forDownload ? 'aspect-square' : ''}
           ${
             !forDownload && !isCenter && !readonly && onSectionClick
               ? 'cursor-pointer hover:ring-2 hover:ring-primary/50'
@@ -267,13 +267,7 @@ export default function MandalartGrid({
           }
           ${!forDownload ? 'transition-all' : ''}
         `}
-        style={
-          forDownload
-            ? forCapture
-              ? { gap: 0, backgroundColor: 'transparent', height: '213.33px', width: '213.33px' }
-              : { gap: 0, backgroundColor: 'transparent' }
-            : undefined
-        }
+        style={forDownload ? { gap: 0, backgroundColor: 'transparent' } : undefined}
         onClick={
           !forDownload && !readonly && !isCenter && onSectionClick
             ? () => onSectionClick(sectionPos)
@@ -283,8 +277,7 @@ export default function MandalartGrid({
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
           <div
             key={cellPos}
-            className={`bg-white ${forCapture ? '' : 'aspect-square'}`}
-            style={forCapture ? { height: '71.11px', width: '71.11px' } : undefined}
+            className="bg-white aspect-square"
           >
             {renderCell(sectionPos, cellPos)}
           </div>
