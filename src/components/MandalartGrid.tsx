@@ -223,7 +223,7 @@ export default function MandalartGrid({
         key={sectionPos}
         className={`
           grid grid-cols-3 grid-rows-3 gap-px bg-gray-300 rounded
-          ${forDownload ? 'h-full' : ''}
+          ${forDownload ? 'aspect-square' : ''}
           ${
             !forDownload && !isCenter && !readonly && onSectionClick
               ? 'cursor-pointer hover:ring-2 hover:ring-primary/50'
@@ -240,7 +240,7 @@ export default function MandalartGrid({
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
           <div
             key={cellPos}
-            className={`bg-white ${forDownload ? 'h-full' : 'aspect-square'}`}
+            className="bg-white aspect-square"
           >
             {renderCell(sectionPos, cellPos)}
           </div>
@@ -253,7 +253,7 @@ export default function MandalartGrid({
   const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   return (
-    <div className={`grid grid-cols-3 ${forDownload ? 'gap-2 p-4 h-full' : 'gap-4'}`}>
+    <div className={`grid grid-cols-3 ${forDownload ? 'gap-1' : 'gap-4'}`}>
       {sectionPositions.map((sectionPos) => renderSection(sectionPos))}
     </div>
   )

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
@@ -11,7 +10,7 @@ import InputMethodSelector from '@/components/InputMethodSelector'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 import SubGoalCreateModal from '@/components/SubGoalCreateModal'
 import { suggestActionType } from '@/lib/actionTypes'
-import { Plus, Info } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 export default function MandalartCreatePage() {
   const navigate = useNavigate()

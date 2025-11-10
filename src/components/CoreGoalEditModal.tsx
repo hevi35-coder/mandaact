@@ -39,7 +39,7 @@ export default function CoreGoalEditModal({
 }: CoreGoalEditModalProps) {
   const [title, setTitle] = useState(mode === 'edit' && mandalart ? mandalart.title : initialTitle)
   const [centerGoal, setCenterGoal] = useState(mode === 'edit' && mandalart ? mandalart.center_goal : initialCenterGoal)
-  const [isSaving, setIsSaving] = useState(false)
+  const [_isSaving, setIsSaving] = useState(false) // TODO: Use in UI for button disabled state
 
   // Inline editing states for edit mode
   const [isEditingTitle, setIsEditingTitle] = useState(false)
