@@ -87,8 +87,14 @@ export function formatUnlockCondition(condition: any, hintLevel?: 'full' | 'cryp
 export function getProgressMessage(progress: number, target: number): string {
   const percentage = (progress / target) * 100
 
+  // Already achieved (over 100%)
+  if (percentage >= 100) {
+    return `목표 달성! 🎉`
+  }
+
   if (percentage >= 80) {
-    return `거의 다 왔어요! ${target - progress}번만 더!`
+    const remaining = target - progress
+    return `거의 다 왔어요! ${remaining}번만 더!`
   }
 
   if (percentage >= 50) {
