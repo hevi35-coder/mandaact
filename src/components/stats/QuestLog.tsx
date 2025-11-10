@@ -142,40 +142,35 @@ export function QuestLog() {
           icon: <CheckCircle2 className="h-5 w-5" />,
           label: '완수 중',
           color: 'text-green-500',
-          bgColor: 'bg-green-500/10',
-          borderColor: 'border-green-500/30'
+          borderColor: 'border-l-green-500'
         }
       case 'good':
         return {
           icon: <Target className="h-5 w-5" />,
           label: '순조로움',
           color: 'text-blue-500',
-          bgColor: 'bg-blue-500/10',
-          borderColor: 'border-blue-500/30'
+          borderColor: 'border-l-blue-500'
         }
       case 'progress':
         return {
           icon: <Target className="h-5 w-5" />,
           label: '진행 중',
           color: 'text-yellow-500',
-          bgColor: 'bg-yellow-500/10',
-          borderColor: 'border-yellow-500/30'
+          borderColor: 'border-l-yellow-500'
         }
       case 'struggling':
         return {
           icon: <AlertCircle className="h-5 w-5" />,
           label: '부진',
           color: 'text-orange-500',
-          bgColor: 'bg-orange-500/10',
-          borderColor: 'border-orange-500/30'
+          borderColor: 'border-l-orange-500'
         }
       default:
         return {
           icon: <AlertCircle className="h-5 w-5" />,
           label: '정체',
           color: 'text-red-500',
-          bgColor: 'bg-red-500/10',
-          borderColor: 'border-red-500/30'
+          borderColor: 'border-l-red-500'
         }
     }
   }
@@ -218,7 +213,7 @@ export function QuestLog() {
             className="space-y-3"
           >
             {/* Main Quest (Center Goal) */}
-            <div className="p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg border-2 border-purple-500/30">
+            <div className="p-4 rounded-lg border border-l-4 border-l-purple-500">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -271,8 +266,8 @@ export function QuestLog() {
                     transition={{ delay: mandalartIndex * 0.1 + index * 0.05 }}
                     whileHover={{ scale: 1.02 }}
                     className={`
-                      p-3 rounded-lg border-2 transition-all
-                      ${statusConfig.bgColor} ${statusConfig.borderColor}
+                      p-3 rounded-lg border border-l-4 transition-all
+                      ${statusConfig.borderColor}
                     `}
                   >
                     <div className="flex items-start gap-2 mb-2">

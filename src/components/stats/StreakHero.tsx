@@ -23,8 +23,8 @@ export function StreakHero() {
       const stats = await getStreakStats(user.id)
       setStreakStats(stats)
 
-      // Get 30-day heatmap data
-      const heatmap = await getDailyCompletionData(user.id, 30)
+      // Get 28-day heatmap data (4 weeks)
+      const heatmap = await getDailyCompletionData(user.id, 28)
       setHeatmapData(heatmap)
 
       setLoading(false)
@@ -49,21 +49,23 @@ export function StreakHero() {
   const hoursSinceLastCheck = lastCheck ? (now.getTime() - lastCheck.getTime()) / (1000 * 60 * 60) : 0
   const streakAtRisk = streakStats.current > 0 && hoursSinceLastCheck > 20 && hoursSinceLastCheck < 24
 
-  // Generate last 30 days for heatmap
-  const last30Days = Array.from({ length: 30 }, (_, i) => {
+  // Generate last 28 days for heatmap (4 weeks = 7×4)
+  const last28Days = Array.from({ length: 28 }, (_, i) => {
     const date = new Date()
-    date.setDate(date.getDate() - (29 - i))
+    date.setDate(date.getDate() - (27 - i))
     return date
   })
 
   const heatmapMap = new Map(heatmapData.map(d => [d.date, d]))
 
   return (
-    <Card>
+    <Card className="w-full border-l-4 border-orange-500">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Flame className="h-5 w-5 text-orange-500" />
-          스트릭
+          <Flame className="h-6 w-6 text-orange-500" />
+          <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+            스트릭
+          </span>
         </CardTitle>
         <CardDescription>연속 실천 기록</CardDescription>
       </CardHeader>
@@ -71,25 +73,12 @@ export function StreakHero() {
       <CardContent className="space-y-4">
         {/* Current Streak - Hero Display */}
         <motion.div
-          className="text-center py-8 px-4 bg-gradient-to-br from-orange-500/10 to-red-500/5 rounded-xl border-2 border-orange-500/20"
+          className="text-center py-8 px-4 rounded-xl border border-muted"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         >
-          <motion.div
-            className="inline-block"
-            animate={{
-              rotate: [0, -10, 10, -10, 10, 0],
-              scale: [1, 1.1, 1.1, 1.1, 1.1, 1]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              repeatDelay: 3
-            }}
-          >
-            <Flame className="h-20 w-20 mx-auto text-orange-500 mb-4" />
-          </motion.div>
+          <Flame className="h-16 w-16 mx-auto text-orange-500 mb-4" />
 
           <div className="text-7xl md:text-8xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
             {streakStats.current}
@@ -150,15 +139,15 @@ export function StreakHero() {
           )}
         </div>
 
-        {/* 30-Day Mini Heatmap */}
+        {/* 28-Day Mini Heatmap (4 weeks) */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Calendar className="h-4 w-4" />
-            최근 30일 활동
+            지난 4주 활동
           </div>
 
-          <div className="grid grid-cols-7 md:grid-cols-10 gap-2">
-            {last30Days.map((date, index) => {
+          <div className="grid grid-cols-7 gap-2">
+            {last28Days.map((date, index) => {
               const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
               const data = heatmapMap.get(dateStr)
               const intensity = data
@@ -220,15 +209,15 @@ export function StreakHero() {
 
         {/* Motivational Message */}
         {streakStats.current === 0 ? (
-          <div className="text-center text-sm text-muted-foreground p-4 bg-muted/20 rounded-lg">
+          <div className="text-center text-sm text-muted-foreground p-4 bg-muted/20 rounded-lg border-l-2 border-muted">
             오늘부터 새로운 스트릭을 시작해보세요! 🌱
           </div>
         ) : streakStats.current >= 7 ? (
-          <div className="text-center text-sm font-medium p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg border border-orange-500/20">
+          <div className="text-center text-sm font-medium p-4 bg-orange-500/5 rounded-lg border-l-2 border-orange-500">
             대단해요! 꾸준함이 습관이 되고 있어요 🎉
           </div>
         ) : (
-          <div className="text-center text-sm text-muted-foreground p-4 bg-muted/20 rounded-lg">
+          <div className="text-center text-sm text-muted-foreground p-4 bg-muted/20 rounded-lg border-l-2 border-muted">
             7일 연속까지 {7 - streakStats.current}일 남았어요. 계속 이대로! 💪
           </div>
         )}
