@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { calculateBadgeProgress } from '@/lib/stats'
 import { formatUnlockCondition, getBadgeHint, getProgressMessage } from '@/lib/badgeHints'
 import type { Achievement } from '@/types'
-import { Lock, Zap, Calendar, Trophy } from 'lucide-react'
+import { Lock, Zap, Trophy } from 'lucide-react'
 
 interface BadgeDetailDialogProps {
   badge: Achievement | null
@@ -59,11 +59,11 @@ export function BadgeDetailDialog({
 
   return (
     <Dialog open={!!badge} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="space-y-4">
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogHeader className="space-y-3">
           {/* Badge Icon */}
           <motion.div
-            className="flex justify-center"
+            className="flex justify-center pt-2"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
@@ -77,17 +77,10 @@ export function BadgeDetailDialog({
             </div>
           </motion.div>
 
-          {/* Title & Category */}
+          {/* Title & Badges */}
           <div className="text-center space-y-2">
             <DialogTitle className="text-2xl">{badge.title}</DialogTitle>
             <div className="flex items-center justify-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {badge.category === 'streak' && '스트릭'}
-                {badge.category === 'completion' && '달성'}
-                {badge.category === 'volume' && '횟수'}
-                {badge.category === 'special' && '특별'}
-                {badge.category === 'milestone' && '마일스톤'}
-              </Badge>
               {badge.badge_type === 'monthly' && (
                 <Badge variant="outline" className="text-xs">
                   월간 챌린지
@@ -107,41 +100,38 @@ export function BadgeDetailDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-6 space-y-6">
-          {/* Unlock Status */}
+        <div className="mt-4 space-y-4">
+          {/* Unlock Status with integrated progress */}
           {isUnlocked ? (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-green-500/10 rounded-lg border border-green-500/30"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border-2 border-green-500/30"
             >
               <div className="flex items-start gap-3">
-                <Trophy className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                <Trophy className="h-6 w-6 text-green-600 shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-green-700 dark:text-green-400 mb-1">
-                    뱃지 획득 완료!
+                  <h4 className="font-semibold text-green-700 dark:text-green-400 mb-1 flex items-center gap-2">
+                    🎉 뱃지 획득 완료!
                   </h4>
                   {unlockedAt && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
+                    <div className="text-sm text-muted-foreground">
                       {new Date(unlockedAt).toLocaleDateString('ko-KR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}에 획득
+                      })}
                     </div>
                   )}
                 </div>
               </div>
             </motion.div>
           ) : (
-            <div className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/30">
+            <div className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/30 space-y-3">
               <div className="flex items-start gap-3">
                 <Lock className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-orange-700 dark:text-orange-400 mb-2">
+                  <h4 className="font-semibold text-orange-700 dark:text-orange-400 mb-1">
                     {hintLevel === 'hidden' ? '비밀 뱃지' : '잠금 해제 조건'}
                   </h4>
 
@@ -160,107 +150,53 @@ export function BadgeDetailDialog({
                   )}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Progress Section */}
-          {canShowProgress && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="space-y-3"
-            >
-              <h4 className="font-semibold flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" />
-                현재 진행 상황
-              </h4>
-
-              {loading ? (
-                <div className="text-center py-4 text-sm text-muted-foreground">
-                  진행 상황 로딩 중...
-                </div>
-              ) : progress ? (
-                <>
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">
-                      {getProgressMessage(progress.current, progress.target)}
-                    </span>
-                    <span className="font-mono font-semibold">
-                      {progress.current} / {progress.target}
-                    </span>
-                  </div>
-                  <Progress value={progress.progress} className="h-3" />
-                  <div className="text-xs text-right text-muted-foreground">
-                    {Math.round(progress.progress)}% 완료
-                  </div>
-                </>
-              ) : (
-                <div className="text-sm text-muted-foreground text-center py-2">
-                  이 뱃지는 진행률을 표시할 수 없습니다
-                </div>
+              {/* Progress integrated into unlock condition box */}
+              {canShowProgress && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="space-y-2 pt-2 border-t border-orange-500/20"
+                >
+                  {loading ? (
+                    <div className="text-center py-2 text-sm text-muted-foreground">
+                      진행 상황 로딩 중...
+                    </div>
+                  ) : progress ? (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <Zap className="h-3 w-3" />
+                          {getProgressMessage(progress.current, progress.target)}
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {progress.current} / {progress.target}
+                        </span>
+                      </div>
+                      <Progress value={progress.progress} className="h-2" />
+                    </>
+                  ) : null}
+                </motion.div>
               )}
-            </motion.div>
+            </div>
           )}
 
-          {/* XP Reward */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-background/50 rounded-lg border text-center">
-              <div className="text-2xl font-bold text-primary">
-                +{badge.xp_reward.toLocaleString()}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                XP 보상
-              </div>
+          {/* XP Reward - Simplified single card */}
+          <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Zap className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium text-muted-foreground">획득 보상</span>
             </div>
-
+            <div className="text-4xl font-bold text-primary text-center">
+              +{badge.xp_reward.toLocaleString()} XP
+            </div>
             {badge.is_repeatable && (
-              <div className="p-4 bg-background/50 rounded-lg border text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {Math.round((badge.repeat_xp_multiplier || 0.5) * 100)}%
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  반복 시 보상
-                </div>
+              <div className="text-xs text-primary/70 mt-2 text-center">
+                🔄 매월 반복 획득 가능 ({Math.round((badge.repeat_xp_multiplier || 0.5) * 100)}% 보상)
               </div>
             )}
           </div>
-
-          {/* Badge Details */}
-          <div className="p-4 bg-muted/30 rounded-lg space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">카테고리</span>
-              <span className="font-medium">
-                {badge.category === 'streak' && '스트릭'}
-                {badge.category === 'completion' && '달성'}
-                {badge.category === 'volume' && '횟수'}
-                {badge.category === 'special' && '특별'}
-                {badge.category === 'milestone' && '마일스톤'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">뱃지 타입</span>
-              <span className="font-medium">
-                {badge.badge_type === 'permanent' && '영구'}
-                {badge.badge_type === 'monthly' && '월간'}
-                {badge.badge_type === 'seasonal' && '시즌'}
-                {badge.badge_type === 'event' && '이벤트'}
-              </span>
-            </div>
-            {badge.is_repeatable && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">반복 가능</span>
-                <span className="font-medium text-blue-600">가능</span>
-              </div>
-            )}
-          </div>
-
-          {/* Tip */}
-          {!isUnlocked && hintLevel !== 'hidden' && (
-            <div className="text-xs text-center text-muted-foreground p-4 bg-blue-500/5 rounded-lg border border-blue-500/10">
-              💡 꾸준히 실천하면 언젠가 이 뱃지를 획득할 수 있습니다!
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
