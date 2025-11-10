@@ -261,6 +261,7 @@ export default function MandalartGrid({
           }
           ${!forDownload ? 'transition-all' : ''}
         `}
+        style={forDownload ? { gap: 0, backgroundColor: 'transparent' } : undefined}
         onClick={
           !forDownload && !readonly && !isCenter && onSectionClick
             ? () => onSectionClick(sectionPos)
@@ -283,7 +284,10 @@ export default function MandalartGrid({
   const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   return (
-    <div className={`grid grid-cols-3 ${forDownload ? '' : 'gap-4'}`}>
+    <div
+      className={`grid grid-cols-3 ${forDownload ? '' : 'gap-4'}`}
+      style={forDownload ? { gap: 0 } : undefined}
+    >
       {sectionPositions.map((sectionPos) => renderSection(sectionPos))}
     </div>
   )
