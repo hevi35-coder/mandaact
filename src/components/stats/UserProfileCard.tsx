@@ -9,16 +9,20 @@ import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/store/authStore'
 import { getUserLevel, getXPProgress } from '@/lib/stats'
 import { supabase } from '@/lib/supabase'
+import { evaluateAndUnlockBadges } from '@/lib/badgeEvaluator'
+import { useToast } from '@/hooks/use-toast'
 import type { UserLevel, Achievement } from '@/types'
-import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { BadgeDetailDialog } from './BadgeDetailDialog'
 
 export function UserProfileCard() {
   const { user } = useAuthStore()
+  const { toast } = useToast()
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null)
   const [allBadges, setAllBadges] = useState<Achievement[]>([])
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<Set<string>>(new Set())
   const [unlockedBadgesMap, setUnlockedBadgesMap] = useState<Map<string, string>>(new Map())
+  const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<Set<string>>(new Set())
   const [totalChecks, setTotalChecks] = useState(0)
   const [activeDays, setActiveDays] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -118,7 +122,41 @@ export function UserProfileCard() {
 
       setAllBadges(allAchievements || [])
 
-      // Get user's unlocked achievements
+      // Note: Could track achievements before evaluation if needed for comparison
+
+      // 🎯 AUTO-EVALUATE BADGES
+      try {
+        const evaluationResults = await evaluateAndUnlockBadges(user.id)
+
+        // Show toast notifications for newly unlocked badges
+        for (const result of evaluationResults) {
+          if (result.wasUnlocked) {
+            toast({
+              title: `🎉 새로운 배지 획득!`,
+              description: `${result.badgeTitle} (+${result.xpAwarded} XP)`,
+              duration: 5000,
+            })
+          }
+        }
+
+        // Track newly unlocked badge keys for NEW indicator
+        const newlyUnlocked = new Set(
+          evaluationResults
+            .filter(r => r.wasUnlocked)
+            .map(r => r.badgeKey)
+        )
+        setNewlyUnlockedBadges(newlyUnlocked)
+
+        // Refresh user level if any badges were unlocked (XP changed)
+        if (evaluationResults.some(r => r.wasUnlocked)) {
+          const updatedLevel = await getUserLevel(user.id)
+          setUserLevel(updatedLevel)
+        }
+      } catch (error) {
+        console.error('Error during badge evaluation:', error)
+      }
+
+      // Get user's unlocked achievements AFTER evaluation
       const { data: userAchievements } = await supabase
         .from('user_achievements')
         .select(`
@@ -160,7 +198,7 @@ export function UserProfileCard() {
     }
 
     loadUserProfile()
-  }, [user])
+  }, [user, toast])
 
   if (!user || loading) {
     return (
@@ -254,7 +292,7 @@ export function UserProfileCard() {
                 <li>• 실천 1회: <span className="font-semibold text-foreground">+10 XP</span></li>
                 <li>• 7일+ 연속 시 실천 1회: <span className="font-semibold text-foreground">+15 XP</span> (보너스 +5)</li>
                 <li>• 하루 100% 달성: <span className="font-semibold text-foreground">+50 XP</span></li>
-                <li>• 뱃지 획득 시 추가 XP 보상</li>
+                <li>• 배지 획득 시 추가 XP 보상</li>
               </ul>
             )}
           </div>
@@ -276,7 +314,7 @@ export function UserProfileCard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Target className="h-4 w-4" />
-                뱃지 컬렉션
+                배지 컬렉션
               </div>
               <span className="text-xs text-muted-foreground">
                 {unlockedBadgeIds.size}/{allBadges.length} 획득
@@ -285,6 +323,7 @@ export function UserProfileCard() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {allBadges.map((badge) => {
                 const isUnlocked = unlockedBadgeIds.has(badge.id)
+                const isNew = newlyUnlockedBadges.has(badge.key)
 
                 return (
                   <motion.div
@@ -302,6 +341,19 @@ export function UserProfileCard() {
                       }
                     `}
                   >
+                    {/* NEW Badge Indicator */}
+                    {isNew && (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -12 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 10 }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-0.5"
+                      >
+                        <Sparkles className="h-2.5 w-2.5" />
+                        NEW
+                      </motion.div>
+                    )}
+
                     <div className={`text-3xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
                       {badge.icon}
                     </div>

@@ -162,14 +162,24 @@ export interface Achievement {
   active_from?: string
   active_until?: string
   is_featured?: boolean
+  // Badge System v3 (Advanced)
+  unlocked_metadata?: {
+    unlocked_title?: string
+    unlocked_description?: string
+  }
 }
 
 export interface AchievementUnlockCondition {
-  type: 'streak' | 'perfect_day' | 'perfect_week' | 'perfect_month' | 'total_checks' | 'balanced' | 'time_pattern' | 'weekend_completion' | 'monthly_completion' | 'perfect_week_in_month' | 'monthly_streak'
+  type: 'streak' | 'perfect_day' | 'perfect_week' | 'perfect_month' | 'total_checks' | 'balanced' | 'time_pattern' | 'weekend_completion' | 'monthly_completion' | 'perfect_week_in_month' | 'monthly_streak' | 'perfect_month_count' | 'midnight_checks' | 'balanced_mandalart_week' | 'time_range_checks'
   days?: number
   count?: number
   threshold?: number
   period?: string
+  // New fields for advanced badges
+  min_mandalarts?: number
+  min_days?: number
+  start_hour?: number
+  end_hour?: number
 }
 
 export interface UserAchievement {
