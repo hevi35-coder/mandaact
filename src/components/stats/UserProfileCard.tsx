@@ -11,7 +11,7 @@ import { getUserLevel, getXPProgress } from '@/lib/stats'
 import { supabase } from '@/lib/supabase'
 import type { UserLevel, Achievement } from '@/types'
 import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp } from 'lucide-react'
-import { BadgeBottomSheet } from './BadgeBottomSheet'
+import { BadgeDetailDialog } from './BadgeDetailDialog'
 
 export function UserProfileCard() {
   const { user } = useAuthStore()
@@ -366,9 +366,9 @@ export function UserProfileCard() {
         </DialogContent>
       </Dialog>
 
-      {/* Badge Bottom Sheet */}
+      {/* Badge Detail Dialog */}
       {selectedBadge && (
-        <BadgeBottomSheet
+        <BadgeDetailDialog
           badge={selectedBadge}
           isUnlocked={unlockedBadgeIds.has(selectedBadge.id)}
           unlockedAt={unlockedBadgesMap.get(selectedBadge.id)}

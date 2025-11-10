@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { calculateBadgeProgress } from '@/lib/stats'
@@ -14,7 +14,7 @@ import { formatUnlockCondition, getBadgeHint, getProgressMessage } from '@/lib/b
 import type { Achievement } from '@/types'
 import { Lock, Zap, Calendar, Trophy } from 'lucide-react'
 
-interface BadgeBottomSheetProps {
+interface BadgeDetailDialogProps {
   badge: Achievement | null
   isUnlocked: boolean
   unlockedAt?: string
@@ -22,13 +22,13 @@ interface BadgeBottomSheetProps {
   onClose: () => void
 }
 
-export function BadgeBottomSheet({
+export function BadgeDetailDialog({
   badge,
   isUnlocked,
   unlockedAt,
   userId,
   onClose
-}: BadgeBottomSheetProps) {
+}: BadgeDetailDialogProps) {
   const [progress, setProgress] = useState<{ progress: number; current: number; target: number } | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -58,9 +58,9 @@ export function BadgeBottomSheet({
   const canShowProgress = !isUnlocked && progress && hintLevel !== 'hidden'
 
   return (
-    <Sheet open={!!badge} onOpenChange={() => onClose()}>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-        <SheetHeader className="space-y-4">
+    <Dialog open={!!badge} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-4">
           {/* Badge Icon */}
           <motion.div
             className="flex justify-center"
@@ -79,7 +79,7 @@ export function BadgeBottomSheet({
 
           {/* Title & Category */}
           <div className="text-center space-y-2">
-            <SheetTitle className="text-2xl">{badge.title}</SheetTitle>
+            <DialogTitle className="text-2xl">{badge.title}</DialogTitle>
             <div className="flex items-center justify-center gap-2">
               <Badge variant="secondary" className="text-xs">
                 {badge.category === 'streak' && '스트릭'}
@@ -102,10 +102,10 @@ export function BadgeBottomSheet({
           </div>
 
           {/* Description */}
-          <SheetDescription className="text-center text-base">
+          <DialogDescription className="text-center text-base">
             {badge.description}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="mt-6 space-y-6">
           {/* Unlock Status */}
@@ -262,7 +262,7 @@ export function BadgeBottomSheet({
             </div>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
