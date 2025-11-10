@@ -360,14 +360,8 @@ export default function MandalartDetailPage() {
     try {
       // Use dom-to-image-more for better modern CSS support (Grid, aspect-ratio)
       const dataUrl = await domtoimage.toPng(gridRef.current, {
-        width: 1920,
-        height: 1920,
-        style: {
-          transform: 'scale(2)', // 2x for high resolution
-          transformOrigin: 'top left',
-          width: '1920px',
-          height: '1920px'
-        },
+        width: 1920 * 2, // 3840px for high resolution
+        height: 1920 * 2, // 3840px for high resolution
         quality: 1.0,
         bgcolor: '#ffffff'
       })
