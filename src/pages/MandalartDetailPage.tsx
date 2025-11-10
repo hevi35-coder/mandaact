@@ -456,7 +456,7 @@ export default function MandalartDetailPage() {
               onClick={handleDownloadImage}
             >
               <Download className="w-4 h-4 mr-2" />
-              {isDownloading ? '생성 중...' : '이미지 다운로드'}
+              {isDownloading ? '생성 중...' : '다운로드'}
             </Button>
             <Button
               variant="outline"

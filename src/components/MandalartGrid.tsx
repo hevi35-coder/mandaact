@@ -53,7 +53,7 @@ export default function MandalartGrid({
             {data.center_goal ? (
               <p
                 className={`${
-                  forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-xl'
+                  forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-xl'
                 } font-bold ${
                   !forDownload ? 'line-clamp-4' : ''
                 } text-white text-center`}
@@ -93,7 +93,7 @@ export default function MandalartGrid({
             {subGoal?.title && (
               <p
                 className={`${
-                  forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-lg'
+                  forDownload ? 'text-4xl' : forMobile ? 'text-base' : 'text-lg'
                 } font-medium ${
                   !forDownload ? 'line-clamp-4' : ''
                 } text-center`}
@@ -122,16 +122,26 @@ export default function MandalartGrid({
     // Outer sections (positions 1-8)
     const subGoal = getSubGoalByPosition(sectionPos)
     if (!subGoal || !subGoal.title) {
-      // Empty sub-goal cell
-      return (
-        <div
-          className={`flex flex-col items-center justify-center h-full min-h-full ${
-            forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
-          } bg-gray-50 ${
-            !forDownload ? 'hover:bg-gray-100 transition-colors' : ''
-          }`}
-        />
-      )
+      // Empty sub-goal section: center blue + surrounding white (for handwriting)
+      if (cellPos === 4) {
+        // Center: blue background (same as filled sub-goal center)
+        return (
+          <div
+            className={`flex flex-col items-center justify-center h-full min-h-full ${
+              forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+            } bg-blue-50 border border-blue-200`}
+          />
+        )
+      } else {
+        // Surrounding cells: white background (for handwriting)
+        return (
+          <div
+            className={`flex flex-col items-center justify-center h-full min-h-full ${
+              forDownload ? 'p-3' : forMobile ? 'p-2' : 'p-2.5'
+            } bg-white`}
+          />
+        )
+      }
     }
 
     if (cellPos === 4) {
@@ -144,7 +154,7 @@ export default function MandalartGrid({
         >
           <p
             className={`${
-              forDownload ? 'text-2xl' : forMobile ? 'text-base' : 'text-lg'
+              forDownload ? 'text-4xl' : forMobile ? 'text-base' : 'text-lg'
             } font-semibold ${!forDownload ? 'line-clamp-4' : ''} text-center`}
             style={
               forDownload
@@ -189,7 +199,7 @@ export default function MandalartGrid({
         >
           <p
             className={`${
-              forDownload ? 'text-xl' : forMobile ? 'text-sm' : 'text-base'
+              forDownload ? 'text-3xl' : forMobile ? 'text-sm' : 'text-base'
             } ${forDownload ? '' : 'leading-tight'} ${
               !forDownload ? 'line-clamp-4' : ''
             } text-center`}
