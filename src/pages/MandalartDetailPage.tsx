@@ -9,7 +9,7 @@ import { Repeat, Target, Lightbulb, Download } from 'lucide-react'
 import SubGoalEditModal from '@/components/SubGoalEditModal'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 import MandalartGrid from '@/components/MandalartGrid'
-import html2canvas from 'html2canvas'
+import { domToPng } from 'modern-screenshot'
 import { useToast } from '@/hooks/use-toast'
 
 export default function MandalartDetailPage() {
@@ -27,7 +27,6 @@ export default function MandalartDetailPage() {
   const [mobileExpandedSection, setMobileExpandedSection] = useState<number | null>(null)
   const [coreGoalModalOpen, setCoreGoalModalOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
-  const [isCapturing, setIsCapturing] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -359,46 +358,27 @@ export default function MandalartDetailPage() {
     })
 
     try {
-      // Step 1: Switch to capture mode (html2canvas-compatible styles)
-      setIsCapturing(true)
-
-      // Wait for React to re-render with new styles
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Step 2: Capture with html2canvas
-      const canvas = await html2canvas(gridRef.current, {
+      // Use modern-screenshot for better Modern CSS support
+      const dataUrl = await domToPng(gridRef.current, {
+        scale: 2, // 2x for high resolution
+        backgroundColor: '#ffffff',
         width: 1920,
         height: 1920,
-        scale: 2, // 2x for high resolution (3840x3840 output)
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true,
       })
 
-      // Step 3: Restore normal display mode
-      setIsCapturing(false)
+      // Download
+      const link = document.createElement('a')
+      const fileName = `만다라트_${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
+      link.href = dataUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
 
-      // Step 4: Download
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          throw new Error('Failed to create image')
-        }
-
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        const fileName = `만다라트_${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
-        link.href = url
-        link.download = fileName
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
-
-        toast({
-          title: '다운로드 완료!',
-          description: `고해상도 이미지 (${canvas.width}×${canvas.height}px) • 화면 & 인쇄용`,
-        })
-      }, 'image/png', 0.95)
+      toast({
+        title: '다운로드 완료!',
+        description: '고해상도 이미지 (3840×3840px) • 화면 & 인쇄용',
+      })
     } catch (error) {
       console.error('Download error:', error)
       toast({
@@ -407,7 +387,6 @@ export default function MandalartDetailPage() {
         variant: 'destructive',
       })
     } finally {
-      setIsCapturing(false)
       setIsDownloading(false)
     }
   }
@@ -494,7 +473,6 @@ export default function MandalartDetailPage() {
               data={convertToGridData()}
               readonly
               forDownload
-              forCapture={isCapturing}
             />
           </div>
         </div>
