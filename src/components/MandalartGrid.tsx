@@ -42,7 +42,7 @@ export default function MandalartGrid({
                 : forDownload
                 ? 'grid place-items-center'
                 : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
+            } ${forCapture ? '' : 'h-full min-h-full'} ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } ${
               !forDownload && !readonly
@@ -94,7 +94,7 @@ export default function MandalartGrid({
           <div
             className={`${
               forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
+            } ${forCapture ? '' : 'h-full min-h-full'} ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 ${
               !forDownload ? 'hover:bg-blue-100 transition-colors' : ''
@@ -139,7 +139,7 @@ export default function MandalartGrid({
           <div
             className={`${
               forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
+            } ${forCapture ? '' : 'h-full min-h-full'} ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-blue-50 ${
               !forDownload ? 'border border-blue-200' : ''
@@ -152,7 +152,7 @@ export default function MandalartGrid({
           <div
             className={`${
               forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
+            } ${forCapture ? '' : 'h-full min-h-full'} ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
           />
@@ -166,7 +166,7 @@ export default function MandalartGrid({
         <div
           className={`${
             forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-          } h-full min-h-full ${
+          } ${forCapture ? '' : 'h-full min-h-full'} ${
             forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
           } bg-blue-50 ${
             !forDownload ? 'border border-blue-200' : ''
@@ -204,7 +204,7 @@ export default function MandalartGrid({
           <div
             className={`${
               forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
+            } ${forCapture ? '' : 'h-full min-h-full'} ${
               forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
             } bg-white`}
           />
@@ -215,7 +215,7 @@ export default function MandalartGrid({
         <div
           className={`${
             forDownload && !forCapture ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-          } h-full min-h-full ${
+          } ${forCapture ? '' : 'h-full min-h-full'} ${
             forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
           } bg-white ${
             !forDownload ? 'hover:bg-gray-50 transition-colors' : ''
