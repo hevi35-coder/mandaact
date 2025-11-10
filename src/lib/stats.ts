@@ -509,29 +509,71 @@ export async function calculateTodayXP(userId: string): Promise<XPCalculation> {
  * Calculate total XP from all-time check history
  */
 export async function calculateTotalXP(userId: string): Promise<number> {
-  // Get total check count
-  const { count: totalChecks } = await supabase
-    .from('check_history')
-    .select('*', { count: 'exact', head: true })
+  // Get user level data which includes total_xp
+  const { data: userLevel } = await supabase
+    .from('user_levels')
+    .select('total_xp')
     .eq('user_id', userId)
+    .single()
 
-  // Base XP: 10 per check
-  const baseXP = (totalChecks || 0) * 10
+  return userLevel?.total_xp || 0
+}
 
-  // Get perfect days (100% completion days) for bonus XP
-  const { data: checks } = await supabase
-    .from('check_history')
-    .select('checked_at')
+/**
+ * Check and award Perfect Day XP bonus
+ * Calls RPC function to check if user completed all actions for today
+ * Awards +50 XP if perfect day and not already awarded
+ */
+export async function checkAndAwardPerfectDayXP(
+  userId: string,
+  date?: string
+): Promise<{
+  is_perfect_day: boolean
+  total_actions: number
+  completed_actions: number
+  xp_awarded: number
+  already_awarded: boolean
+  date: string
+}> {
+  const { data, error } = await supabase.rpc('check_and_award_perfect_day_xp', {
+    p_user_id: userId,
+    p_date: date || new Date().toISOString().split('T')[0]
+  })
+
+  if (error) {
+    console.error('Error checking perfect day:', error)
+    return {
+      is_perfect_day: false,
+      total_actions: 0,
+      completed_actions: 0,
+      xp_awarded: 0,
+      already_awarded: false,
+      date: date || new Date().toISOString().split('T')[0]
+    }
+  }
+
+  return data
+}
+
+/**
+ * Get total count of perfect days (days with 100% completion)
+ * Uses last_perfect_day_date to track awarded perfect days
+ */
+export async function getPerfectDaysCount(userId: string): Promise<number> {
+  // Get user level data
+  const { data: userLevel } = await supabase
+    .from('user_levels')
+    .select('last_perfect_day_date, total_xp')
     .eq('user_id', userId)
+    .single()
 
-  if (!checks) return baseXP
+  if (!userLevel) return 0
 
-  // Count perfect days (days with 100% completion)
-  // This is a simplified calculation - in production, you'd want to store this
-  // or calculate it properly by comparing daily checks vs total actions
-  const perfectDayBonus = 0 // TODO: Implement proper perfect day tracking
-
-  return baseXP + perfectDayBonus
+  // Estimate perfect days from total XP
+  // Each perfect day = +50 XP bonus
+  // This is an approximation - for accurate tracking, you'd need a separate table
+  // For now, we'll just check if there was at least one perfect day
+  return userLevel.last_perfect_day_date ? 1 : 0
 }
 
 /**

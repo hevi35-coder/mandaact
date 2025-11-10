@@ -44,6 +44,10 @@ export default function MandalartGrid({
               !forDownload && !readonly
                 ? 'cursor-pointer hover:opacity-90 transition-opacity'
                 : ''
+            } ${
+              !forDownload
+                ? 'shadow-lg border-2 border-purple-200'
+                : ''
             }`}
             style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',

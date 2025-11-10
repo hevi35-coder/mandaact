@@ -14,6 +14,7 @@ import { getTypeIcon } from '@/lib/iconUtils'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
+import { useToast } from '@/hooks/use-toast'
 
 interface ActionWithContext extends Action {
   sub_goal: SubGoal & {
@@ -27,6 +28,7 @@ export default function TodayChecklistPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [searchParams, setSearchParams] = useSearchParams()
+  const { toast } = useToast()
 
   const [actions, setActions] = useState<ActionWithContext[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -238,7 +240,7 @@ export default function TodayChecklistPage() {
         // Update user XP for the new check
         {
           try {
-            const { updateUserXP, getStreakStats, getCompletionStats } = await import('@/lib/stats')
+            const { updateUserXP, getStreakStats, checkAndAwardPerfectDayXP } = await import('@/lib/stats')
 
             // Calculate XP based on streak
             const streakStats = await getStreakStats(user.id)
@@ -252,31 +254,18 @@ export default function TodayChecklistPage() {
             // Wait a bit for the check to be reflected in stats
             setTimeout(async () => {
               try {
-                const completionStats = await getCompletionStats(user.id)
+                const checkDate = format(selectedDate, 'yyyy-MM-dd')
+                const result = await checkAndAwardPerfectDayXP(user.id, checkDate)
 
-                if (completionStats.today.percentage === 100) {
-                  // Check if we already gave the bonus today
-                  const today = new Date().toISOString().split('T')[0]
-                  const { data: userLevel } = await supabase
-                    .from('user_levels')
-                    .select('last_perfect_day_date')
-                    .eq('user_id', user.id)
-                    .single()
-
-                  const lastBonusDate = userLevel?.last_perfect_day_date
-
-                  // Only give bonus once per day
-                  if (lastBonusDate !== today) {
-                    await updateUserXP(user.id, 50) // Perfect day bonus
-
-                    // Update last perfect day date
-                    await supabase
-                      .from('user_levels')
-                      .update({ last_perfect_day_date: today })
-                      .eq('user_id', user.id)
-
-                    console.log('🎉 Perfect day bonus awarded: +50 XP')
-                  }
+                if (result.is_perfect_day && result.xp_awarded > 0) {
+                  // Show success toast
+                  toast({
+                    title: '🎉 완벽한 하루!',
+                    description: `모든 실천을 완료했습니다! (+${result.xp_awarded} XP)`,
+                    variant: 'default',
+                    duration: 5000,
+                  })
+                  console.log('🎉 Perfect day bonus awarded: +' + result.xp_awarded + ' XP')
                 }
               } catch (bonusError) {
                 console.error('Perfect day bonus error:', bonusError)

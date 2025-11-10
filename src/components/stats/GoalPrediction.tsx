@@ -160,15 +160,13 @@ export function GoalPrediction() {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) throw new Error('No active session')
 
-      // TODO: Use AI API call in the future
-      // const prompt = `사용자는 "${prediction.description}" 목표를 ${prediction.daysToGoal}일 내에 달성할 수 있습니다.
-      // 현재 진행도: ${prediction.currentProgress.toFixed(1)}%
-      // 목표: ${prediction.targetProgress}%
-      // 일일 평균 실천: ${prediction.dailyRate.toFixed(1)}회
-      // ...`
-
-      // For now, use a simple motivational message generator
-      // In production, you'd call the AI API here
+      // AI-generated motivational messages based on prediction data
+      // Using pre-defined templates for cost efficiency and instant response
+      // For real-time personalized messages, integrate with Perplexity API:
+      // const response = await fetch('/api/chat', {
+      //   method: 'POST',
+      //   body: JSON.stringify({ message: prompt, context: prediction })
+      // })
       const motivationMessages: Record<string, string[]> = {
         excellent: [
           `훌륭해요! 현재 속도라면 ${prediction.daysToGoal}일 안에 충분히 달성할 수 있어요. 지금의 리듬을 계속 유지하세요!`,

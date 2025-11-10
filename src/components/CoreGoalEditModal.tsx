@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Mandalart } from '@/types'
 import { supabase } from '@/lib/supabase'
-import { Info, Pencil, Check, X } from 'lucide-react'
+import { Info, Pencil, Check, X, Loader2 } from 'lucide-react'
 
 interface CoreGoalEditModalProps {
   open: boolean
@@ -39,11 +39,13 @@ export default function CoreGoalEditModal({
 }: CoreGoalEditModalProps) {
   const [title, setTitle] = useState(mode === 'edit' && mandalart ? mandalart.title : initialTitle)
   const [centerGoal, setCenterGoal] = useState(mode === 'edit' && mandalart ? mandalart.center_goal : initialCenterGoal)
-  const [_isSaving, setIsSaving] = useState(false) // TODO: Use in UI for button disabled state
+  const [isSaving, setIsSaving] = useState(false)
 
   // Inline editing states for edit mode
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isEditingCenterGoal, setIsEditingCenterGoal] = useState(false)
+  const [isSavingTitle, setIsSavingTitle] = useState(false)
+  const [isSavingCenterGoal, setIsSavingCenterGoal] = useState(false)
 
   useEffect(() => {
     if (mode === 'edit' && mandalart) {
@@ -127,8 +129,7 @@ export default function CoreGoalEditModal({
 
     const trimmedTitle = title.trim()
 
-    // Optimistic update
-    setIsEditingTitle(false)
+    setIsSavingTitle(true)
 
     // Background save
     try {
@@ -139,6 +140,7 @@ export default function CoreGoalEditModal({
 
       if (error) throw error
 
+      setIsEditingTitle(false)
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error saving title:', err)
@@ -146,6 +148,8 @@ export default function CoreGoalEditModal({
       // Revert on error
       setTitle(mandalart.title)
       if (onEdit) onEdit()
+    } finally {
+      setIsSavingTitle(false)
     }
   }, [title, mandalart, onEdit])
 
@@ -170,8 +174,7 @@ export default function CoreGoalEditModal({
 
     const trimmedCenterGoal = centerGoal.trim()
 
-    // Optimistic update
-    setIsEditingCenterGoal(false)
+    setIsSavingCenterGoal(true)
 
     // Background save
     try {
@@ -182,6 +185,7 @@ export default function CoreGoalEditModal({
 
       if (error) throw error
 
+      setIsEditingCenterGoal(false)
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error saving center goal:', err)
@@ -189,6 +193,8 @@ export default function CoreGoalEditModal({
       // Revert on error
       setCenterGoal(mandalart.center_goal)
       if (onEdit) onEdit()
+    } finally {
+      setIsSavingCenterGoal(false)
     }
   }, [centerGoal, mandalart, onEdit])
 
@@ -276,14 +282,20 @@ export default function CoreGoalEditModal({
                       size="sm"
                       variant="ghost"
                       onClick={handleTitleSave}
+                      disabled={isSavingTitle}
                     >
-                      <Check className="w-4 h-4 text-green-600" />
+                      {isSavingTitle ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      ) : (
+                        <Check className="w-4 h-4 text-green-600" />
+                      )}
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
                       onClick={handleTitleCancel}
+                      disabled={isSavingTitle}
                     >
                       <X className="w-4 h-4 text-red-600" />
                     </Button>
@@ -325,14 +337,20 @@ export default function CoreGoalEditModal({
                       size="sm"
                       variant="ghost"
                       onClick={handleCenterGoalSave}
+                      disabled={isSavingCenterGoal}
                     >
-                      <Check className="w-4 h-4 text-green-600" />
+                      {isSavingCenterGoal ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      ) : (
+                        <Check className="w-4 h-4 text-green-600" />
+                      )}
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
                       onClick={handleCenterGoalCancel}
+                      disabled={isSavingCenterGoal}
                     >
                       <X className="w-4 h-4 text-red-600" />
                     </Button>
@@ -361,14 +379,23 @@ export default function CoreGoalEditModal({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isSaving}
             >
               취소
             </Button>
             <Button
               type="button"
               onClick={handleSave}
+              disabled={isSaving}
             >
-              저장
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                '저장'
+              )}
             </Button>
           </DialogFooter>
         ) : (
