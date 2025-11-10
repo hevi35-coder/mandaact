@@ -34,6 +34,8 @@ import {
 } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
 import { supabase } from '@/lib/supabase'
+import { VALIDATION_MESSAGES } from '@/lib/notificationMessages'
+import { showWarning } from '@/lib/notificationUtils'
 
 export interface ActionTypeData {
   type: ActionType
@@ -419,7 +421,7 @@ export default function ActionTypeSelector({
                         onBlur={(e) => {
                           const value = Number(e.target.value)
                           if (!value || value < 1 || value > 30) {
-                            alert('1~30 사이의 숫자를 입력해주세요')
+                            showWarning(VALIDATION_MESSAGES.invalidNumber(1, 30))
                             setRoutineCountPerPeriod(1)
                           }
                         }}

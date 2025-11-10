@@ -15,6 +15,8 @@ import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelec
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
 import { useToast } from '@/hooks/use-toast'
+import { ERROR_MESSAGES } from '@/lib/notificationMessages'
+import { showError } from '@/lib/notificationUtils'
 
 interface ActionWithContext extends Action {
   sub_goal: SubGoal & {
@@ -288,7 +290,7 @@ export default function TodayChecklistPage() {
       }
     } catch (err) {
       console.error('Check toggle error:', err)
-      alert('체크 상태 변경 중 오류가 발생했습니다')
+      showError(ERROR_MESSAGES.checkToggleFailed())
       // Rollback by refetching
       fetchTodayActions()
     } finally {
@@ -331,7 +333,7 @@ export default function TodayChecklistPage() {
       await fetchTodayActions()
     } catch (err) {
       console.error('Update error:', err)
-      alert('타입 업데이트 중 오류가 발생했습니다')
+      showError(ERROR_MESSAGES.typeUpdateFailed())
     }
   }
 

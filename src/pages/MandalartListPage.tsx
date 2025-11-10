@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Mandalart } from '@/types'
+import { ERROR_MESSAGES } from '@/lib/notificationMessages'
+import { showError } from '@/lib/notificationUtils'
 
 export default function MandalartListPage() {
   const navigate = useNavigate()
@@ -61,7 +63,7 @@ export default function MandalartListPage() {
       ))
     } catch (err) {
       console.error('Toggle error:', err)
-      alert('활성화 상태 변경 중 오류가 발생했습니다')
+      showError(ERROR_MESSAGES.activateToggleFailed())
     }
   }
 

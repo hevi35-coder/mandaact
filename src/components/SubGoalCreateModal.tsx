@@ -14,6 +14,8 @@ import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelec
 import { getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
 import { Pencil, Trash2, Plus } from 'lucide-react'
+import { VALIDATION_MESSAGES } from '@/lib/notificationMessages'
+import { showWarning } from '@/lib/notificationUtils'
 
 // Simplified action for create mode (no DB operations)
 interface LocalAction {
@@ -116,7 +118,7 @@ export default function SubGoalCreateModal({
 
   const handleActionAdd = () => {
     if (localActions.length >= 8) {
-      alert('실천항목은 최대 8개까지 추가할 수 있습니다.')
+      showWarning(VALIDATION_MESSAGES.maxActionsReached())
       return
     }
 
@@ -139,7 +141,7 @@ export default function SubGoalCreateModal({
 
   const handleSave = () => {
     if (subGoalTitle.trim() === '') {
-      alert('세부목표 제목을 입력해주세요.')
+      showWarning(VALIDATION_MESSAGES.emptySubGoalTitle())
       return
     }
 

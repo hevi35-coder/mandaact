@@ -8,8 +8,11 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+// Toast configuration based on UX best practices
+// - TOAST_LIMIT: Maximum 3 toasts stacked (Material Design guideline)
+// - TOAST_REMOVE_DELAY: 5000ms (5 seconds) default auto-dismiss
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string

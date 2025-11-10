@@ -11,6 +11,8 @@ import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 import MandalartGrid from '@/components/MandalartGrid'
 import { domToPng } from 'modern-screenshot'
 import { useToast } from '@/hooks/use-toast'
+import { ERROR_MESSAGES } from '@/lib/notificationMessages'
+import { showError } from '@/lib/notificationUtils'
 
 export default function MandalartDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -144,7 +146,7 @@ export default function MandalartDetailPage() {
       return { ...data, actions: [] } as SubGoal & { actions: Action[] }
     } catch (err) {
       console.error('Error creating sub-goal:', err)
-      alert('세부목표 생성에 실패했습니다.')
+      showError(ERROR_MESSAGES.subGoalCreateFailed())
       return undefined
     }
   }

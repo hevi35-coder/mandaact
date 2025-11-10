@@ -14,6 +14,8 @@ import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelec
 import ActionListItem from '@/components/ActionListItem'
 import { Plus, Pencil, Check, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { VALIDATION_MESSAGES, ERROR_MESSAGES } from '@/lib/notificationMessages'
+import { showWarning, showError } from '@/lib/notificationUtils'
 import {
   DndContext,
   closestCenter,
@@ -187,7 +189,7 @@ export default function SubGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error updating action title:', err)
-      alert('실천항목 제목 수정에 실패했습니다.')
+      showError(ERROR_MESSAGES.actionUpdateFailed())
       // Revert on error
       if (onEdit) onEdit()
     }
@@ -249,7 +251,7 @@ export default function SubGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error updating action type:', err)
-      alert('타입 수정에 실패했습니다.')
+      showError(ERROR_MESSAGES.typeUpdateFailed())
       if (onEdit) onEdit()
     }
   }, [state.selectedAction, onEdit])
@@ -280,7 +282,7 @@ export default function SubGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error deleting action:', err)
-      alert('실천항목 삭제에 실패했습니다.')
+      showError(ERROR_MESSAGES.actionDeleteFailed())
       if (onEdit) onEdit()
     }
   }, [state.actions, onEdit])
@@ -288,7 +290,7 @@ export default function SubGoalEditModal({
   // Action Add Handler
   const handleActionAdd = useCallback(async () => {
     if (state.actions.length >= 8) {
-      alert('실천항목은 최대 8개까지 추가할 수 있습니다.')
+      showWarning(VALIDATION_MESSAGES.maxActionsReached())
       return
     }
 
@@ -322,7 +324,7 @@ export default function SubGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error adding action:', err)
-      alert('실천항목 추가에 실패했습니다.')
+      showError(ERROR_MESSAGES.actionAddFailed())
     }
   }, [state.actions, subGoal.id, onEdit, handleTitleEdit])
 
@@ -361,7 +363,7 @@ export default function SubGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error reordering positions:', err)
-      alert('순서 재정렬에 실패했습니다.')
+      showError(ERROR_MESSAGES.reorderFailed())
     }
   }
 
@@ -372,7 +374,7 @@ export default function SubGoalEditModal({
 
   const handleSubGoalTitleSave = useCallback(async () => {
     if (subGoalTitle.trim() === '') {
-      alert('세부목표 제목을 입력해주세요.')
+      showWarning(VALIDATION_MESSAGES.emptySubGoalTitle())
       return
     }
 
@@ -393,7 +395,7 @@ export default function SubGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error saving sub-goal:', err)
-      alert('세부목표 제목 저장에 실패했습니다.')
+      showError(ERROR_MESSAGES.subGoalSaveFailed())
       // Revert on error
       setSubGoalTitle(subGoal.title)
       if (onEdit) onEdit()

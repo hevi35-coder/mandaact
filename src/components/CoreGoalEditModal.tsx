@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label'
 import { Mandalart } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { Info, Pencil, Check, X, Loader2 } from 'lucide-react'
+import { VALIDATION_MESSAGES, ERROR_MESSAGES } from '@/lib/notificationMessages'
+import { showWarning, showError } from '@/lib/notificationUtils'
 
 interface CoreGoalEditModalProps {
   open: boolean
@@ -62,13 +64,13 @@ export default function CoreGoalEditModal({
     if (mode === 'create' && hideTitle) {
       // Only validate center goal when title is hidden
       if (centerGoal.trim() === '') {
-        alert('핵심목표를 입력해주세요.')
+        showWarning(VALIDATION_MESSAGES.emptyCenterGoal())
         return
       }
     } else {
       // Validate both when title is shown
       if (title.trim() === '' || centerGoal.trim() === '') {
-        alert('만다라트 제목과 핵심목표를 모두 입력해주세요.')
+        showWarning(VALIDATION_MESSAGES.emptyBothFields())
         return
       }
     }
@@ -87,7 +89,7 @@ export default function CoreGoalEditModal({
 
     // Edit mode: update DB
     if (!mandalart) {
-      alert('만다라트 정보가 없습니다.')
+      showError(VALIDATION_MESSAGES.noData())
       return
     }
 
@@ -108,7 +110,7 @@ export default function CoreGoalEditModal({
       onOpenChange(false)
     } catch (err) {
       console.error('Error saving mandalart:', err)
-      alert('저장에 실패했습니다.')
+      showError(ERROR_MESSAGES.saveFailed())
     } finally {
       setIsSaving(false)
     }
@@ -121,7 +123,7 @@ export default function CoreGoalEditModal({
 
   const handleTitleSave = useCallback(async () => {
     if (title.trim() === '') {
-      alert('만다라트 제목을 입력해주세요.')
+      showWarning(VALIDATION_MESSAGES.emptyTitle())
       return
     }
 
@@ -144,7 +146,7 @@ export default function CoreGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error saving title:', err)
-      alert('제목 저장에 실패했습니다.')
+      showError(ERROR_MESSAGES.titleSaveFailed())
       // Revert on error
       setTitle(mandalart.title)
       if (onEdit) onEdit()
@@ -166,7 +168,7 @@ export default function CoreGoalEditModal({
 
   const handleCenterGoalSave = useCallback(async () => {
     if (centerGoal.trim() === '') {
-      alert('핵심목표를 입력해주세요.')
+      showWarning(VALIDATION_MESSAGES.emptyCenterGoal())
       return
     }
 
@@ -178,7 +180,7 @@ export default function CoreGoalEditModal({
 
     // Background save
     try {
-      const { error } = await supabase
+      const { error} = await supabase
         .from('mandalarts')
         .update({ center_goal: trimmedCenterGoal })
         .eq('id', mandalart.id)
@@ -189,7 +191,7 @@ export default function CoreGoalEditModal({
       if (onEdit) onEdit()
     } catch (err) {
       console.error('Error saving center goal:', err)
-      alert('핵심목표 저장에 실패했습니다.')
+      showError(ERROR_MESSAGES.centerGoalSaveFailed())
       // Revert on error
       setCenterGoal(mandalart.center_goal)
       if (onEdit) onEdit()
