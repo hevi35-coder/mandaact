@@ -253,7 +253,7 @@ export default function MandalartGrid({
         key={sectionPos}
         className={`
           grid grid-cols-3 grid-rows-3 ${
-            forDownload ? 'gap-[0.5px]' : 'gap-px bg-gray-300'
+            forDownload ? '' : 'gap-px bg-gray-300'
           } rounded
           ${forDownload ? 'aspect-square' : ''}
           ${
@@ -263,7 +263,7 @@ export default function MandalartGrid({
           }
           ${!forDownload ? 'transition-all' : ''}
         `}
-        style={forDownload ? { backgroundColor: '#e5e7eb' } : undefined}
+        style={forDownload ? { gap: 0 } : undefined}
         onClick={
           !forDownload && !readonly && !isCenter && onSectionClick
             ? () => onSectionClick(sectionPos)
@@ -273,7 +273,9 @@ export default function MandalartGrid({
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
           <div
             key={cellPos}
-            className="bg-white aspect-square"
+            className={`bg-white aspect-square ${
+              forDownload ? 'border border-gray-300' : ''
+            }`}
           >
             {renderCell(sectionPos, cellPos)}
           </div>
@@ -287,8 +289,8 @@ export default function MandalartGrid({
 
   return (
     <div
-      className={`grid grid-cols-3 ${forDownload ? 'gap-[1px]' : 'gap-4'}`}
-      style={forDownload ? { backgroundColor: '#e5e7eb' } : undefined}
+      className={`grid grid-cols-3 ${forDownload ? '' : 'gap-4'}`}
+      style={forDownload ? { gap: 0 } : undefined}
     >
       {sectionPositions.map((sectionPos) => renderSection(sectionPos))}
     </div>
