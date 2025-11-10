@@ -9,7 +9,7 @@ import { Repeat, Target, Lightbulb, Download } from 'lucide-react'
 import SubGoalEditModal from '@/components/SubGoalEditModal'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 import MandalartGrid from '@/components/MandalartGrid'
-import html2canvas from 'html2canvas'
+import domtoimage from 'dom-to-image-more'
 import { useToast } from '@/hooks/use-toast'
 
 export default function MandalartDetailPage() {
@@ -358,45 +358,33 @@ export default function MandalartDetailPage() {
     })
 
     try {
-      // Capture with exact dimensions to ensure perfect square
-      const size = 2000 // Base size for perfect square
-      const canvas = await html2canvas(gridRef.current, {
-        width: size,
-        height: size,
-        scale: 2, // 2x for high resolution (4000x4000 actual output)
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true,
-        windowWidth: size,
-        windowHeight: size,
+      // Use dom-to-image-more for better modern CSS support (Grid, aspect-ratio)
+      const dataUrl = await domtoimage.toPng(gridRef.current, {
+        width: 1920,
+        height: 1920,
+        style: {
+          transform: 'scale(2)', // 2x for high resolution
+          transformOrigin: 'top left',
+          width: '1920px',
+          height: '1920px'
+        },
+        quality: 1.0,
+        bgcolor: '#ffffff'
       })
 
-      // Verify square output
-      if (canvas.width !== canvas.height) {
-        console.warn(`Canvas not square: ${canvas.width}x${canvas.height}`)
-      }
+      // Download the image directly from dataUrl
+      const link = document.createElement('a')
+      const fileName = `만다라트_${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
+      link.href = dataUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
 
-      // Convert to blob and download
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          throw new Error('Failed to create image')
-        }
-
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        const fileName = `만다라트_${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
-        link.href = url
-        link.download = fileName
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
-
-        toast({
-          title: '다운로드 완료!',
-          description: `고해상도 이미지 (${canvas.width}×${canvas.height}px) • 화면 & 인쇄용`,
-        })
-      }, 'image/png', 0.95) // High quality PNG
+      toast({
+        title: '다운로드 완료!',
+        description: '고해상도 이미지 (3840×3840px) • 화면 & 인쇄용',
+      })
     } catch (error) {
       console.error('Download error:', error)
       toast({
