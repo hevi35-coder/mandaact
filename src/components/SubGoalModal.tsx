@@ -150,7 +150,7 @@ export default function SubGoalModal({
   subGoal,
   onEdit
 }: SubGoalModalProps) {
-  const [isEditingSubGoalTitle, setIsEditingSubGoalTitle] = useState(false)
+  const [isEditingSubGoalTitle, setIsEditingSubGoalTitle] = useState(mode === 'create')
   const [subGoalTitle, setSubGoalTitle] = useState(
     mode === 'edit' && subGoal ? subGoal.title : initialTitle
   )
@@ -198,22 +198,24 @@ export default function SubGoalModal({
     })
   )
 
-  // Update local state when props change
+  // Update local state when props change or modal opens
   useEffect(() => {
     if (mode === 'edit' && subGoal) {
       setSubGoalTitle(subGoal.title)
+      setIsEditingSubGoalTitle(false)
       dispatch({
         type: 'SET_ACTIONS',
         payload: [...subGoal.actions].sort((a, b) => a.position - b.position)
       })
     } else {
       setSubGoalTitle(initialTitle)
+      setIsEditingSubGoalTitle(true) // Auto-enter edit mode for create
       dispatch({
         type: 'SET_ACTIONS',
         payload: getInitialActions()
       })
     }
-  }, [mode, subGoal, initialTitle, initialActions])
+  }, [mode, subGoal, initialTitle, initialActions, open])
 
   // Action Title Handlers
   const handleTitleEdit = useCallback((actionId: string, currentTitle: string) => {
@@ -549,50 +551,44 @@ export default function SubGoalModal({
             {/* Sub-goal Title */}
             <div className="space-y-2">
               <Label>세부목표</Label>
-              {mode === 'create' || isEditingSubGoalTitle ? (
+              {isEditingSubGoalTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
                     value={subGoalTitle}
                     onChange={(e) => setSubGoalTitle(e.target.value)}
                     placeholder="세부목표 제목을 입력하세요"
                     onKeyDown={(e) => {
-                      if (mode === 'edit') {
-                        if (e.key === 'Enter') {
-                          handleSubGoalTitleSave()
-                        } else if (e.key === 'Escape') {
-                          handleSubGoalTitleCancel()
-                        }
+                      if (e.key === 'Enter') {
+                        handleSubGoalTitleSave()
+                      } else if (e.key === 'Escape') {
+                        handleSubGoalTitleCancel()
                       }
                     }}
-                    autoFocus={mode === 'edit' && isEditingSubGoalTitle}
+                    autoFocus
                   />
-                  {mode === 'edit' && (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleSubGoalTitleSave}
-                      >
-                        <Check className="w-4 h-4 text-green-600" />
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleSubGoalTitleCancel}
-                      >
-                        <X className="w-4 h-4 text-red-600" />
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSubGoalTitleSave}
+                  >
+                    <Check className="w-4 h-4 text-green-600" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSubGoalTitleCancel}
+                  >
+                    <X className="w-4 h-4 text-red-600" />
+                  </Button>
                 </div>
               ) : (
                 <div
                   className="flex items-center gap-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer group"
                   onClick={handleSubGoalTitleEdit}
                 >
-                  <span className="flex-1">{subGoalTitle}</span>
+                  <span className="flex-1">{subGoalTitle || '(세부목표를 입력하세요)'}</span>
                   <Pencil className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               )}
