@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -512,29 +511,27 @@ export default function SubGoalModal({
     setIsEditingSubGoalTitle(false)
   }, [mode, subGoal, initialTitle])
 
-  // Final save handler for create mode
-  const handleCreateSave = () => {
-    if (subGoalTitle.trim() === '') {
-      showWarning(VALIDATION_MESSAGES.emptySubGoalTitle())
-      return
+  // Handle modal close - auto-save for create mode
+  const handleModalClose = (open: boolean) => {
+    if (!open && mode === 'create') {
+      // Auto-save when closing in create mode
+      if (subGoalTitle.trim() !== '' && onCreate && position) {
+        onCreate({
+          position,
+          title: subGoalTitle.trim(),
+          actions: state.actions.map(a => ({
+            title: a.title,
+            type: a.type
+          }))
+        })
+      }
     }
-
-    if (mode === 'create' && onCreate && position) {
-      onCreate({
-        position,
-        title: subGoalTitle.trim(),
-        actions: state.actions.map(a => ({
-          title: a.title,
-          type: a.type
-        }))
-      })
-      onOpenChange(false)
-    }
+    onOpenChange(open)
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleModalClose}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle>
@@ -649,24 +646,6 @@ export default function SubGoalModal({
             </div>
           </div>
 
-          {/* Footer only for create mode */}
-          {mode === 'create' && (
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                닫기
-              </Button>
-              <Button
-                type="button"
-                onClick={handleCreateSave}
-              >
-                저장
-              </Button>
-            </DialogFooter>
-          )}
         </DialogContent>
       </Dialog>
 

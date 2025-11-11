@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Action } from '@/types'
 import { getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
-import { Pencil, Trash2, GripVertical } from 'lucide-react'
+import { Trash2, GripVertical, Check, X } from 'lucide-react'
 
 interface ActionListItemProps {
   action: Action
@@ -103,23 +103,30 @@ const ActionListItem = memo(({
             placeholder="실천항목 제목을 입력하세요"
           />
           <Button
+            type="button"
             size="sm"
+            variant="ghost"
             onClick={() => onTitleSave(action.id)}
           >
-            저장
+            <Check className="w-4 h-4 text-green-600" />
           </Button>
           <Button
+            type="button"
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={onTitleCancel}
           >
-            취소
+            <X className="w-4 h-4 text-gray-500" />
           </Button>
         </div>
       ) : (
         // View Mode
         <>
-          <div className="flex-1 min-w-0">
+          {/* Clickable Title */}
+          <div
+            className="flex-1 min-w-0 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 -mx-1"
+            onClick={() => onTitleEdit(action.id, action.title)}
+          >
             <span className="text-sm break-words block">{action.title || '(제목 없음)'}</span>
           </div>
 
@@ -135,19 +142,6 @@ const ActionListItem = memo(({
             {getTypeIcon(action.type)}
             <span>{formatTypeDetails(action) || getActionTypeLabel(action.type)}</span>
           </button>
-
-          {/* Edit Button */}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation()
-              onTitleEdit(action.id, action.title)
-            }}
-            className="p-1.5 h-auto flex-shrink-0"
-          >
-            <Pencil className="w-3 h-3" />
-          </Button>
 
           {/* Delete Button */}
           <Button

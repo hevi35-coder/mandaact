@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,11 +40,10 @@ export default function CoreGoalEditModal({
 }: CoreGoalEditModalProps) {
   const [title, setTitle] = useState(mode === 'edit' && mandalart ? mandalart.title : initialTitle)
   const [centerGoal, setCenterGoal] = useState(mode === 'edit' && mandalart ? mandalart.center_goal : initialCenterGoal)
-  const [isSaving, setIsSaving] = useState(false)
 
-  // Inline editing states for edit mode
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [isEditingCenterGoal, setIsEditingCenterGoal] = useState(false)
+  // Inline editing states (for both create and edit mode)
+  const [isEditingTitle, setIsEditingTitle] = useState(mode === 'create' && !hideTitle)
+  const [isEditingCenterGoal, setIsEditingCenterGoal] = useState(mode === 'create')
   const [isSavingTitle, setIsSavingTitle] = useState(false)
   const [isSavingCenterGoal, setIsSavingCenterGoal] = useState(false)
 
@@ -53,70 +51,17 @@ export default function CoreGoalEditModal({
     if (mode === 'edit' && mandalart) {
       setTitle(mandalart.title)
       setCenterGoal(mandalart.center_goal)
+      setIsEditingTitle(false)
+      setIsEditingCenterGoal(false)
     } else {
       setTitle(initialTitle)
       setCenterGoal(initialCenterGoal)
+      setIsEditingTitle(!hideTitle)
+      setIsEditingCenterGoal(true)
     }
-  }, [mode, mandalart, initialTitle, initialCenterGoal])
+  }, [mode, mandalart, initialTitle, initialCenterGoal, hideTitle, open])
 
-  const handleSave = async () => {
-    // Validation based on hideTitle
-    if (mode === 'create' && hideTitle) {
-      // Only validate center goal when title is hidden
-      if (centerGoal.trim() === '') {
-        showWarning(VALIDATION_MESSAGES.emptyCenterGoal())
-        return
-      }
-    } else {
-      // Validate both when title is shown
-      if (title.trim() === '' || centerGoal.trim() === '') {
-        showWarning(VALIDATION_MESSAGES.emptyBothFields())
-        return
-      }
-    }
-
-    if (mode === 'create') {
-      // Create mode: pass data to parent without DB operation
-      if (onCreate) {
-        onCreate({
-          title: title.trim(),
-          centerGoal: centerGoal.trim()
-        })
-      }
-      onOpenChange(false)
-      return
-    }
-
-    // Edit mode: update DB
-    if (!mandalart) {
-      showError(VALIDATION_MESSAGES.noData())
-      return
-    }
-
-    setIsSaving(true)
-
-    try {
-      const { error } = await supabase
-        .from('mandalarts')
-        .update({
-          title: title.trim(),
-          center_goal: centerGoal.trim()
-        })
-        .eq('id', mandalart.id)
-
-      if (error) throw error
-
-      if (onEdit) onEdit()
-      onOpenChange(false)
-    } catch (err) {
-      console.error('Error saving mandalart:', err)
-      showError(ERROR_MESSAGES.saveFailed())
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  // Inline editing handlers for edit mode
+  // Inline editing handlers
   const handleTitleEdit = useCallback(() => {
     setIsEditingTitle(true)
   }, [])
@@ -207,14 +152,33 @@ export default function CoreGoalEditModal({
   }, [centerGoal, mandalart, onEdit])
 
   const handleCenterGoalCancel = useCallback(() => {
-    if (mandalart) {
+    if (mode === 'edit' && mandalart) {
       setCenterGoal(mandalart.center_goal)
+    } else {
+      setCenterGoal(initialCenterGoal)
     }
     setIsEditingCenterGoal(false)
-  }, [mandalart])
+  }, [mode, mandalart, initialCenterGoal])
+
+  // Handle modal close - auto-save for create mode
+  const handleModalClose = (open: boolean) => {
+    if (!open && mode === 'create') {
+      // Auto-save when closing in create mode
+      const validTitle = hideTitle || title.trim() !== ''
+      const validCenterGoal = centerGoal.trim() !== ''
+
+      if (validTitle && validCenterGoal && onCreate) {
+        onCreate({
+          title: title.trim(),
+          centerGoal: centerGoal.trim()
+        })
+      }
+    }
+    onOpenChange(open)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleModalClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -232,42 +196,8 @@ export default function CoreGoalEditModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {mode === 'create' ? (
-            <>
-              {/* Create mode: Traditional Input fields */}
-              {!hideTitle && (
-                <div className="space-y-2">
-                  <Label htmlFor="mandalart-title">만다라트 제목</Label>
-                  <Input
-                    id="mandalart-title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="예: 2025년 목표"
-                  />
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Info className="h-3 w-3" />
-                    만다라트를 구분할 짧은 이름을 입력하세요
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="core-goal">핵심 목표</Label>
-                <Input
-                  id="core-goal"
-                  value={centerGoal}
-                  onChange={(e) => setCenterGoal(e.target.value)}
-                  placeholder="예: 건강하고 활력 넘치는 삶"
-                />
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Info className="h-3 w-3" />
-                  9x9 그리드 중앙에 표시될 목표를 입력하세요
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Edit mode: Inline editing */}
+          {!hideTitle && (
+            <>{/* Inline editing for title (both modes) */}
               <div className="space-y-2">
                 <Label>만다라트 제목</Label>
                 {isEditingTitle ? (
@@ -278,7 +208,7 @@ export default function CoreGoalEditModal({
                       placeholder="예: 2025년 목표"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          handleTitleSave()
+                          mode === 'edit' ? handleTitleSave() : setIsEditingTitle(false)
                         } else if (e.key === 'Escape') {
                           handleTitleCancel()
                         }
@@ -289,7 +219,7 @@ export default function CoreGoalEditModal({
                       type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={handleTitleSave}
+                      onClick={mode === 'edit' ? handleTitleSave : () => setIsEditingTitle(false)}
                       disabled={isSavingTitle}
                     >
                       {isSavingTitle ? (
@@ -305,7 +235,7 @@ export default function CoreGoalEditModal({
                       onClick={handleTitleCancel}
                       disabled={isSavingTitle}
                     >
-                      <X className="w-4 h-4 text-red-600" />
+                      <X className="w-4 h-4 text-gray-500" />
                     </Button>
                   </div>
                 ) : (
@@ -313,7 +243,7 @@ export default function CoreGoalEditModal({
                     className="flex items-center gap-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer group"
                     onClick={handleTitleEdit}
                   >
-                    <span className="flex-1">{title}</span>
+                    <span className="flex-1">{title || '(만다라트 제목을 입력하세요)'}</span>
                     <Pencil className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 )}
@@ -322,91 +252,66 @@ export default function CoreGoalEditModal({
                   만다라트를 구분할 짧은 이름을 입력하세요
                 </p>
               </div>
-
-              <div className="space-y-2">
-                <Label>핵심 목표</Label>
-                {isEditingCenterGoal ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={centerGoal}
-                      onChange={(e) => setCenterGoal(e.target.value)}
-                      placeholder="예: 건강하고 활력 넘치는 삶"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleCenterGoalSave()
-                        } else if (e.key === 'Escape') {
-                          handleCenterGoalCancel()
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleCenterGoalSave}
-                      disabled={isSavingCenterGoal}
-                    >
-                      {isSavingCenterGoal ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                      ) : (
-                        <Check className="w-4 h-4 text-green-600" />
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleCenterGoalCancel}
-                      disabled={isSavingCenterGoal}
-                    >
-                      <X className="w-4 h-4 text-red-600" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    className="flex items-center gap-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer group"
-                    onClick={handleCenterGoalEdit}
-                  >
-                    <span className="flex-1">{centerGoal}</span>
-                    <Pencil className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Info className="h-3 w-3" />
-                  9x9 그리드 중앙에 표시될 목표를 입력하세요
-                </p>
-              </div>
             </>
           )}
+
+          {/* Inline editing for center goal (both modes) */}
+          <div className="space-y-2">
+            <Label>핵심 목표</Label>
+            {isEditingCenterGoal ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={centerGoal}
+                  onChange={(e) => setCenterGoal(e.target.value)}
+                  placeholder="예: 건강하고 활력 넘치는 삶"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      mode === 'edit' ? handleCenterGoalSave() : setIsEditingCenterGoal(false)
+                    } else if (e.key === 'Escape') {
+                      handleCenterGoalCancel()
+                    }
+                  }}
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={mode === 'edit' ? handleCenterGoalSave : () => setIsEditingCenterGoal(false)}
+                  disabled={isSavingCenterGoal}
+                >
+                  {isSavingCenterGoal ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                  ) : (
+                    <Check className="w-4 h-4 text-green-600" />
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCenterGoalCancel}
+                  disabled={isSavingCenterGoal}
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </Button>
+              </div>
+            ) : (
+              <div
+                className="flex items-center gap-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer group"
+                onClick={handleCenterGoalEdit}
+              >
+                <span className="flex-1">{centerGoal || '(핵심 목표를 입력하세요)'}</span>
+                <Pencil className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              9x9 그리드 중앙에 표시될 목표를 입력하세요
+            </p>
+          </div>
         </div>
 
-        {mode === 'create' ? (
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSaving}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  저장 중...
-                </>
-              ) : (
-                '저장'
-              )}
-            </Button>
-          </DialogFooter>
-        ) : null}
       </DialogContent>
     </Dialog>
   )
