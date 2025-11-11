@@ -11,6 +11,7 @@ export interface AISuggestion {
   confidence: Confidence
   reason: string
   routineFrequency?: RoutineFrequency
+  routineWeekdays?: number[]
   missionCompletionType?: MissionCompletionType
   missionPeriodCycle?: MissionPeriodCycle
 }

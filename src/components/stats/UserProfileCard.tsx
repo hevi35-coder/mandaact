@@ -29,6 +29,8 @@ export function UserProfileCard() {
   const [totalChecks, setTotalChecks] = useState(0)
   const [activeDays, setActiveDays] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [badgesLoading, setBadgesLoading] = useState(false)
+  const [badgesLoaded, setBadgesLoaded] = useState(false)
 
   // Nickname editing state
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -113,100 +115,121 @@ export function UserProfileCard() {
     }
   }
 
+  // Load badges collection (lazy)
+  const loadBadgesCollection = async () => {
+    if (!user || badgesLoaded || badgesLoading) return
+
+    setBadgesLoading(true)
+
+    try {
+      // Get all achievements and user achievements in parallel
+      const [allAchievementsRes, userAchievementsRes] = await Promise.all([
+        supabase
+          .from('achievements')
+          .select('*')
+          .order('display_order', { ascending: true }),
+        supabase
+          .from('user_achievements')
+          .select(`
+            *,
+            achievement:achievements(*)
+          `)
+          .eq('user_id', user.id)
+          .order('unlocked_at', { ascending: false })
+      ])
+
+      setAllBadges(allAchievementsRes.data || [])
+      setUserAchievements(userAchievementsRes.data || [])
+
+      // Track unlocked badge IDs and dates
+      const unlockedIds = new Set(userAchievementsRes.data?.map(ua => ua.achievement_id) || [])
+      const unlockedMap = new Map(userAchievementsRes.data?.map(ua => [ua.achievement_id, ua.unlocked_at]) || [])
+      setUnlockedBadgeIds(unlockedIds)
+      setUnlockedBadgesMap(unlockedMap)
+
+      setBadgesLoaded(true)
+    } catch (error) {
+      console.error('Error loading badges collection:', error)
+    } finally {
+      setBadgesLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!user) return
 
     const loadUserProfile = async () => {
       setLoading(true)
 
-      // Get user level
-      const level = await getUserLevel(user.id)
-      setUserLevel(level)
-
-      // Get all achievements (for gallery)
-      const { data: allAchievements } = await supabase
-        .from('achievements')
-        .select('*')
-        .order('display_order', { ascending: true })
-
-      setAllBadges(allAchievements || [])
-
-      // Note: Could track achievements before evaluation if needed for comparison
-
-      // 🎯 AUTO-EVALUATE BADGES
       try {
-        const evaluationResults = await evaluateAndUnlockBadges(user.id)
+        // 1. Load critical data first (parallel)
+        const [level, statsResults] = await Promise.all([
+          getUserLevel(user.id),
+          Promise.all([
+            supabase
+              .from('check_history')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', user.id),
+            supabase
+              .from('check_history')
+              .select('checked_at')
+              .eq('user_id', user.id)
+          ])
+        ])
 
-        // Show toast notifications for newly unlocked badges
-        for (const result of evaluationResults) {
-          if (result.wasUnlocked) {
-            toast({
-              title: `🎉 새로운 배지 획득!`,
-              description: `${result.badgeTitle} (+${result.xpAwarded} XP)`,
-              duration: 5000,
-            })
-          }
-        }
+        setUserLevel(level)
 
-        // Track newly unlocked badge keys for NEW indicator
-        const newlyUnlocked = new Set(
-          evaluationResults
-            .filter(r => r.wasUnlocked)
-            .map(r => r.badgeKey)
+        // Set stats
+        const [checksResult, checksData] = statsResults
+        setTotalChecks(checksResult.count || 0)
+
+        const uniqueDates = new Set(
+          checksData.data?.map(check => {
+            const date = new Date(check.checked_at)
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+          }) || []
         )
-        setNewlyUnlockedBadges(newlyUnlocked)
+        setActiveDays(uniqueDates.size)
 
-        // Refresh user level if any badges were unlocked (XP changed)
-        if (evaluationResults.some(r => r.wasUnlocked)) {
-          const updatedLevel = await getUserLevel(user.id)
-          setUserLevel(updatedLevel)
-        }
+        setLoading(false)
+
+        // 2. Run badge evaluation in background (non-blocking)
+        evaluateAndUnlockBadges(user.id)
+          .then(evaluationResults => {
+            // Show toast notifications for newly unlocked badges
+            for (const result of evaluationResults) {
+              if (result.wasUnlocked) {
+                toast({
+                  title: `🎉 새로운 배지 획득!`,
+                  description: `${result.badgeTitle} (+${result.xpAwarded} XP)`,
+                  duration: 5000,
+                })
+              }
+            }
+
+            // Track newly unlocked badge keys for NEW indicator
+            const newlyUnlocked = new Set(
+              evaluationResults
+                .filter(r => r.wasUnlocked)
+                .map(r => r.badgeKey)
+            )
+            setNewlyUnlockedBadges(newlyUnlocked)
+
+            // Refresh user level if any badges were unlocked (XP changed)
+            if (evaluationResults.some(r => r.wasUnlocked)) {
+              getUserLevel(user.id).then(updatedLevel => {
+                setUserLevel(updatedLevel)
+              })
+            }
+          })
+          .catch(error => {
+            console.error('Error during badge evaluation:', error)
+          })
+
       } catch (error) {
-        console.error('Error during badge evaluation:', error)
+        console.error('Error loading user profile:', error)
+        setLoading(false)
       }
-
-      // Get user's unlocked achievements AFTER evaluation
-      const { data: userAchievementsData } = await supabase
-        .from('user_achievements')
-        .select(`
-          *,
-          achievement:achievements(*)
-        `)
-        .eq('user_id', user.id)
-        .order('unlocked_at', { ascending: false })
-
-      // Store user achievements in state
-      setUserAchievements(userAchievementsData || [])
-
-      // Track unlocked badge IDs and dates
-      const unlockedIds = new Set(userAchievementsData?.map(ua => ua.achievement_id) || [])
-      const unlockedMap = new Map(userAchievementsData?.map(ua => [ua.achievement_id, ua.unlocked_at]) || [])
-      setUnlockedBadgeIds(unlockedIds)
-      setUnlockedBadgesMap(unlockedMap)
-
-      // Get total checks
-      const { count: checksCount } = await supabase
-        .from('check_history')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-
-      setTotalChecks(checksCount || 0)
-
-      // Get active days (unique check dates)
-      const { data: checks } = await supabase
-        .from('check_history')
-        .select('checked_at')
-        .eq('user_id', user.id)
-
-      const uniqueDates = new Set(
-        checks?.map(check => {
-          const date = new Date(check.checked_at)
-          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-        }) || []
-      )
-      setActiveDays(uniqueDates.size)
-
-      setLoading(false)
     }
 
     loadUserProfile()
@@ -324,7 +347,13 @@ export function UserProfileCard() {
           {/* Badge Collection - Collapsible */}
           <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
             <button
-              onClick={() => setBadgeCollectionOpen(!badgeCollectionOpen)}
+              onClick={() => {
+                const willOpen = !badgeCollectionOpen
+                setBadgeCollectionOpen(willOpen)
+                if (willOpen && !badgesLoaded) {
+                  loadBadgesCollection()
+                }
+              }}
               className="w-full text-xs font-semibold text-primary flex items-center justify-between hover:opacity-80 transition-opacity"
             >
               <span className="flex items-center gap-1">
@@ -332,118 +361,128 @@ export function UserProfileCard() {
                 배지 컬렉션
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground font-normal">
-                  {unlockedBadgeIds.size}/{allBadges.length} 획득
-                </span>
+                {badgesLoaded && (
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    {unlockedBadgeIds.size}/{allBadges.length} 획득
+                  </span>
+                )}
                 {badgeCollectionOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </div>
             </button>
             {badgeCollectionOpen && (
-              <div className="space-y-4 mt-3">
-                {/* Group badges by category */}
-                {(() => {
-                  const badgesByCategory = allBadges.reduce((groups, badge) => {
-                    const category = badge.category || 'one_time'
-                    if (!groups[category]) groups[category] = []
-                    groups[category].push(badge)
-                    return groups
-                  }, {} as Record<string, typeof allBadges>)
+              <>
+                {badgesLoading ? (
+                  <div className="mt-3 text-center text-sm text-muted-foreground py-8">
+                    배지 컬렉션 로딩 중...
+                  </div>
+                ) : badgesLoaded ? (
+                  <div className="space-y-4 mt-3">
+                    {/* Group badges by category */}
+                    {(() => {
+                      const badgesByCategory = allBadges.reduce((groups, badge) => {
+                        const category = badge.category || 'one_time'
+                        if (!groups[category]) groups[category] = []
+                        groups[category].push(badge)
+                        return groups
+                      }, {} as Record<string, typeof allBadges>)
 
-                  const categoryLabels = {
-                    one_time: '일회성 배지',
-                    recurring: '반복 획득',
-                    limited: '한정판',
-                    hidden: '히든',
-                    social: '소셜'
-                  }
+                      const categoryLabels = {
+                        one_time: '일회성 배지',
+                        recurring: '반복 획득',
+                        limited: '한정판',
+                        hidden: '히든',
+                        social: '소셜'
+                      }
 
-                  const categoryIcons = {
-                    one_time: '🏆',
-                    recurring: '🔄',
-                    limited: '⭐',
-                    hidden: '🔮',
-                    social: '👥'
-                  }
+                      const categoryIcons = {
+                        one_time: '🏆',
+                        recurring: '🔄',
+                        limited: '⭐',
+                        hidden: '🔮',
+                        social: '👥'
+                      }
 
-                  return Object.entries(badgesByCategory).map(([category, badges]) => (
-                    <div key={category} className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                        <span>{categoryIcons[category as keyof typeof categoryIcons]}</span>
-                        <span>{categoryLabels[category as keyof typeof categoryLabels]}</span>
-                        <span className="ml-auto text-[10px]">
-                          {badges.filter(b => unlockedBadgeIds.has(b.id)).length}/{badges.length}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {badges.map((badge) => {
-                          const isUnlocked = unlockedBadgeIds.has(badge.id)
-                          const isNew = newlyUnlockedBadges.has(badge.key)
-                          const userBadge = userAchievements?.find(ua => ua.achievement_id === badge.id)
-                          const repeatCount = userBadge?.count || 0
+                      return Object.entries(badgesByCategory).map(([category, badges]) => (
+                        <div key={category} className="space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                            <span>{categoryIcons[category as keyof typeof categoryIcons]}</span>
+                            <span>{categoryLabels[category as keyof typeof categoryLabels]}</span>
+                            <span className="ml-auto text-[10px]">
+                              {badges.filter(b => unlockedBadgeIds.has(b.id)).length}/{badges.length}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {badges.map((badge) => {
+                              const isUnlocked = unlockedBadgeIds.has(badge.id)
+                              const isNew = newlyUnlockedBadges.has(badge.key)
+                              const userBadge = userAchievements?.find(ua => ua.achievement_id === badge.id)
+                              const repeatCount = userBadge?.count || 0
 
-                          // Tier color mapping
-                          const tierColors = {
-                            bronze: 'from-amber-100 to-orange-100 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-300 dark:border-amber-700',
-                            silver: 'from-slate-100 to-gray-100 dark:from-slate-950/30 dark:to-gray-950/30 border-slate-300 dark:border-slate-700',
-                            gold: 'from-yellow-100 to-amber-100 dark:from-yellow-950/30 dark:to-amber-950/30 border-yellow-400 dark:border-yellow-600',
-                            platinum: 'from-cyan-100 to-blue-100 dark:from-cyan-950/30 dark:to-blue-950/30 border-cyan-400 dark:border-cyan-600'
-                          }
+                              // Tier color mapping
+                              const tierColors = {
+                                bronze: 'from-amber-100 to-orange-100 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-300 dark:border-amber-700',
+                                silver: 'from-slate-100 to-gray-100 dark:from-slate-950/30 dark:to-gray-950/30 border-slate-300 dark:border-slate-700',
+                                gold: 'from-yellow-100 to-amber-100 dark:from-yellow-950/30 dark:to-amber-950/30 border-yellow-400 dark:border-yellow-600',
+                                platinum: 'from-cyan-100 to-blue-100 dark:from-cyan-950/30 dark:to-blue-950/30 border-cyan-400 dark:border-cyan-600'
+                              }
 
-                          return (
-                            <motion.div
-                              key={badge.id}
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                              onClick={() => setSelectedBadge(badge)}
-                              className={`
-                                relative p-3 rounded-lg border text-center transition-all cursor-pointer
-                                flex flex-col items-center justify-between min-h-[100px]
-                                ${isUnlocked
-                                  ? `bg-gradient-to-br ${tierColors[badge.tier || 'bronze']} shadow-sm hover:shadow-md`
-                                  : 'bg-muted/30 border-muted-foreground/10 opacity-50 hover:opacity-70'
-                                }
-                              `}
-                            >
-                              {/* NEW Badge Indicator */}
-                              {isNew && (
+                              return (
                                 <motion.div
-                                  initial={{ scale: 0, rotate: -12 }}
-                                  animate={{ scale: 1, rotate: 0 }}
-                                  transition={{ type: 'spring', stiffness: 300, damping: 10 }}
-                                  className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-0.5"
+                                  key={badge.id}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                                  onClick={() => setSelectedBadge(badge)}
+                                  className={`
+                                    relative p-3 rounded-lg border text-center transition-all cursor-pointer
+                                    flex flex-col items-center justify-between min-h-[100px]
+                                    ${isUnlocked
+                                      ? `bg-gradient-to-br ${tierColors[badge.tier || 'bronze']} shadow-sm hover:shadow-md`
+                                      : 'bg-muted/30 border-muted-foreground/10 opacity-50 hover:opacity-70'
+                                    }
+                                  `}
                                 >
-                                  <Sparkles className="h-2.5 w-2.5" />
-                                  NEW
+                                  {/* NEW Badge Indicator */}
+                                  {isNew && (
+                                    <motion.div
+                                      initial={{ scale: 0, rotate: -12 }}
+                                      animate={{ scale: 1, rotate: 0 }}
+                                      transition={{ type: 'spring', stiffness: 300, damping: 10 }}
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-0.5"
+                                    >
+                                      <Sparkles className="h-2.5 w-2.5" />
+                                      NEW
+                                    </motion.div>
+                                  )}
+
+                                  {/* Repeat count for recurring badges */}
+                                  {isUnlocked && category === 'recurring' && repeatCount > 1 && (
+                                    <div className="absolute -top-1.5 -left-1.5 bg-blue-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md">
+                                      {repeatCount}
+                                    </div>
+                                  )}
+
+                                  <div className={`text-3xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
+                                    {category === 'hidden' && !isUnlocked ? '❓' : badge.icon}
+                                  </div>
+                                  <div className={`text-xs font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                    {category === 'hidden' && !isUnlocked ? '???' : badge.title}
+                                  </div>
+                                  {isUnlocked && (
+                                    <div className="text-[10px] text-yellow-600 dark:text-yellow-400 font-semibold mt-1">
+                                      +{badge.xp_reward} XP
+                                    </div>
+                                  )}
                                 </motion.div>
-                              )}
-
-                              {/* Repeat count for recurring badges */}
-                              {isUnlocked && category === 'recurring' && repeatCount > 1 && (
-                                <div className="absolute -top-1.5 -left-1.5 bg-blue-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md">
-                                  {repeatCount}
-                                </div>
-                              )}
-
-                              <div className={`text-3xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
-                                {category === 'hidden' && !isUnlocked ? '❓' : badge.icon}
-                              </div>
-                              <div className={`text-xs font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                {category === 'hidden' && !isUnlocked ? '???' : badge.title}
-                              </div>
-                              {isUnlocked && (
-                                <div className="text-[10px] text-yellow-600 dark:text-yellow-400 font-semibold mt-1">
-                                  +{badge.xp_reward} XP
-                                </div>
-                              )}
-                            </motion.div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))
-                })()}
-              </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))
+                    })()}
+                  </div>
+                ) : null}
+              </>
             )}
           </div>
         </CardContent>
