@@ -324,7 +324,12 @@ export default function SubGoalCreateModal({
           initialData={{
             type: selectedAction.type,
             routine_frequency: selectedAction.routine_frequency,
-            mission_completion_type: selectedAction.mission_completion_type
+            mission_completion_type: selectedAction.mission_completion_type,
+            ai_suggestion: selectedAction.ai_suggestion
+              ? (typeof selectedAction.ai_suggestion === 'string'
+                  ? JSON.parse(selectedAction.ai_suggestion)
+                  : selectedAction.ai_suggestion)
+              : undefined
           }}
           onSave={handleTypeSave}
         />
