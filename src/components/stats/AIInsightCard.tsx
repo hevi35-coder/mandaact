@@ -91,9 +91,9 @@ export function AIInsightCard() {
       const result = await response.json()
       setLatestReport(result.report)
       await loadReports()
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error generating report:', err)
-      setError(err.message || '리포트 생성 중 오류가 발생했습니다.')
+      setError(err instanceof Error ? err.message : '리포트 생성 중 오류가 발생했습니다.')
     } finally {
       setGenerating(false)
     }

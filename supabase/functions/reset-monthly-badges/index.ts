@@ -113,7 +113,7 @@ serve(async (req) => {
     // 3. Process each unlocked monthly badge
     for (const userAchievement of unlockedMonthly) {
       try {
-        const achievement = userAchievement.achievement as any
+        const achievement = userAchievement.achievement as { xp_reward: number; repeat_xp_multiplier?: number }
 
         // Get current repeat count from history
         const { data: historyRecords, error: historyError } = await supabaseAdmin
@@ -137,7 +137,7 @@ serve(async (req) => {
         const nextRepeatCount = currentRepeatCount + 1
 
         // Calculate XP for this repeat (with multiplier)
-        const repeatXP = Math.floor(
+        const _repeatXP = Math.floor(
           achievement.xp_reward * (achievement.repeat_xp_multiplier || 0.5)
         )
 

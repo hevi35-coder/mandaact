@@ -180,6 +180,8 @@ export interface AchievementUnlockCondition {
   min_days?: number
   start_hour?: number
   end_hour?: number
+  // Allow additional properties for extensibility
+  [key: string]: unknown
 }
 
 export interface UserAchievement {

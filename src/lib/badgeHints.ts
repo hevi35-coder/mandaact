@@ -37,10 +37,18 @@ export function getBadgeHint(key: string, hintLevel?: 'full' | 'cryptic' | 'hidd
   return ''
 }
 
+interface UnlockCondition {
+  type: string
+  days?: number
+  count?: number
+  threshold?: number
+  [key: string]: unknown
+}
+
 /**
  * Format unlock condition for display
  */
-export function formatUnlockCondition(condition: any, hintLevel?: 'full' | 'cryptic' | 'hidden'): string {
+export function formatUnlockCondition(condition: UnlockCondition, hintLevel?: 'full' | 'cryptic' | 'hidden'): string {
   if (hintLevel === 'hidden') {
     return '비밀 업적'
   }

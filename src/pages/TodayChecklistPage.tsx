@@ -246,7 +246,7 @@ export default function TodayChecklistPage() {
             const streakStats = await getStreakStats(user.id)
             const baseXP = 10
             const streakBonus = streakStats.current >= 7 ? 5 : 0
-            let totalXP = baseXP + streakBonus
+            const totalXP = baseXP + streakBonus
 
             await updateUserXP(user.id, totalXP)
 

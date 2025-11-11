@@ -11,6 +11,23 @@ interface ReportRequest {
   mandalart_id?: string
 }
 
+interface SupabaseClient {
+  from: (table: string) => any // eslint-disable-line @typescript-eslint/no-explicit-any
+  auth: {
+    getUser: (jwt: string) => Promise<{ data: { user: { id: string } | null }; error: any }> // eslint-disable-line @typescript-eslint/no-explicit-any
+  }
+}
+
+interface CheckRecord {
+  checked_at: string
+  action?: {
+    sub_goal?: {
+      id: string
+      title: string
+    }
+  }
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -102,7 +119,7 @@ serve(async (req) => {
 })
 
 async function collectReportData(
-  supabaseClient: any,
+  supabaseClient: SupabaseClient,
   userId: string,
   reportType: string,
   mandalartId?: string
@@ -172,7 +189,7 @@ async function collectReportData(
   const timePattern: Record<string, number> = { morning: 0, afternoon: 0, evening: 0, night: 0 }
   const subGoalPattern: Record<string, { title: string; count: number }> = {}
 
-  checks.forEach((check: any) => {
+  checks.forEach((check: CheckRecord) => {
     const date = new Date(check.checked_at)
     const day = date.getDay()
     const hour = date.getHours()
@@ -210,7 +227,7 @@ async function collectReportData(
     period: periodLabel,
     mandalarts: mandalarts || [],
     totalChecks: checks.length,
-    uniqueDays: new Set(checks.map((c: any) => new Date(c.checked_at).toDateString())).size,
+    uniqueDays: new Set(checks.map((c: CheckRecord) => new Date(c.checked_at).toDateString())).size,
     bestDay: bestDay ? { day: dayNames[parseInt(bestDay[0])], count: bestDay[1] } : null,
     worstDay: worstDay ? { day: dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
     bestTime: bestTime
@@ -233,7 +250,7 @@ async function collectReportData(
   }
 }
 
-async function generateAIReport(reportType: string, data: any): Promise<string> {
+async function generateAIReport(reportType: string, data: Record<string, unknown>): Promise<string> {
   const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
   if (!perplexityApiKey) {
     throw new Error('PERPLEXITY_API_KEY not configured')

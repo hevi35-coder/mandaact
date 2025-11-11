@@ -46,6 +46,41 @@ export interface MotivationalMessage {
   showAIButton?: boolean
 }
 
+// Type definitions for SubGoal and Action with check history
+interface CheckHistory {
+  checked_at: string
+}
+
+interface Action {
+  id: string
+  check_history?: CheckHistory[]
+}
+
+interface SubGoal {
+  id: string
+  title: string
+  position: number
+  actions?: Action[]
+  mandalart?: {
+    id: string
+    title: string
+  } | {
+    id: string
+    title: string
+    user_id: string
+    is_active: boolean
+  }[]
+}
+
+// Type definition for achievement unlock condition
+export interface UnlockCondition {
+  type: string
+  days?: number
+  threshold?: number
+  count?: number
+  [key: string]: unknown
+}
+
 /**
  * Get total number of actions for a user
  * @param userId - User ID
@@ -233,12 +268,12 @@ export async function getStreakStats(userId: string): Promise<StreakStats> {
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
 
-  let checkDate = new Date(dates[0])
+  const checkDate = new Date(dates[0])
   checkDate.setHours(0, 0, 0, 0)
 
   // Only count current streak if last check was today or yesterday
   if (checkDate.getTime() === today.getTime() || checkDate.getTime() === yesterday.getTime()) {
-    let expectedDate = new Date(checkDate)
+    const expectedDate = new Date(checkDate)
     for (const date of dates) {
       const currentDate = new Date(date)
       currentDate.setHours(0, 0, 0, 0)
@@ -330,32 +365,34 @@ export async function getGoalProgress(userId: string, mandalartId?: string): Pro
   weekStart.setDate(today.getDate() - today.getDay())
   weekStart.setHours(0, 0, 0, 0)
 
-  return subGoals.map((sg: any) => {
+  return subGoals.map((sg: SubGoal) => {
     const totalActions = sg.actions?.length || 0
 
     // Count unique actions checked today
     const checkedToday = new Set(
       sg.actions
-        ?.filter((action: any) =>
-          action.check_history?.some((check: any) => {
+        ?.filter((action: Action) =>
+          action.check_history?.some((check: CheckHistory) => {
             const checkDate = new Date(check.checked_at)
             return checkDate >= today && checkDate < tomorrow
           })
         )
-        .map((action: any) => action.id)
+        .map((action: Action) => action.id)
     ).size
 
     // Count unique actions checked this week
     const checkedThisWeek = new Set(
       sg.actions
-        ?.filter((action: any) =>
-          action.check_history?.some((check: any) => {
+        ?.filter((action: Action) =>
+          action.check_history?.some((check: CheckHistory) => {
             const checkDate = new Date(check.checked_at)
             return checkDate >= weekStart
           })
         )
-        .map((action: any) => action.id)
+        .map((action: Action) => action.id)
     ).size
+
+    const mandalart = Array.isArray(sg.mandalart) ? sg.mandalart[0] : sg.mandalart
 
     return {
       subGoalId: sg.id,
@@ -365,8 +402,8 @@ export async function getGoalProgress(userId: string, mandalartId?: string): Pro
       checkedToday,
       checkedThisWeek,
       weeklyPercentage: totalActions > 0 ? Math.round((checkedThisWeek / (totalActions * 7)) * 100) : 0,
-      mandalartId: sg.mandalart?.id,
-      mandalartTitle: sg.mandalart?.title
+      mandalartId: mandalart?.id,
+      mandalartTitle: mandalart?.title
     }
   })
 }
@@ -696,14 +733,15 @@ export async function updateUserXP(userId: string, xpToAdd: number) {
 export async function checkAchievementUnlock(
   userId: string,
   _achievementKey: string,
-  unlockCondition: any
+  unlockCondition: UnlockCondition
 ): Promise<boolean> {
   const { type } = unlockCondition
 
   switch (type) {
     case 'streak': {
       const streakStats = await getStreakStats(userId)
-      return streakStats.current >= unlockCondition.days || streakStats.longest >= unlockCondition.days
+      const days = unlockCondition.days ?? 0
+      return streakStats.current >= days || streakStats.longest >= days
     }
 
     case 'perfect_day': {
@@ -729,7 +767,8 @@ export async function checkAchievementUnlock(
         .from('check_history')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-      return (count || 0) >= unlockCondition.count
+      const requiredCount = unlockCondition.count ?? 0
+      return (count || 0) >= requiredCount
     }
 
     case 'balanced': {
@@ -918,14 +957,14 @@ export async function checkAndUnlockAchievements(userId: string) {
 export async function calculateBadgeProgress(
   userId: string,
   _achievementKey: string,
-  unlockCondition: any
+  unlockCondition: UnlockCondition
 ): Promise<{ progress: number; current: number; target: number } | null> {
   const { type } = unlockCondition
 
   switch (type) {
     case 'streak': {
       const streakStats = await getStreakStats(userId)
-      const target = unlockCondition.days
+      const target = unlockCondition.days ?? 1
       const current = Math.max(streakStats.current, streakStats.longest)
       return {
         progress: Math.min((current / target) * 100, 100),
@@ -939,7 +978,7 @@ export async function calculateBadgeProgress(
         .from('check_history')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-      const target = unlockCondition.count
+      const target = unlockCondition.count ?? 1
       const current = count || 0
       return {
         progress: Math.min((current / target) * 100, 100),
@@ -953,7 +992,7 @@ export async function calculateBadgeProgress(
       // This is an approximation - would need detailed weekly tracking
       const completionStats = await getCompletionStats(userId)
       const threshold = unlockCondition.threshold || 80
-      const target = unlockCondition.count
+      const target = unlockCondition.count ?? 1
       const current = completionStats.week.percentage >= threshold ? 1 : 0
       return {
         progress: Math.min((current / target) * 100, 100),

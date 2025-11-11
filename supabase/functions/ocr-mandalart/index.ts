@@ -18,6 +18,26 @@ interface MandalartData {
   }[]
 }
 
+interface Vertex {
+  x?: number
+  y?: number
+}
+
+interface BoundingPoly {
+  vertices: Vertex[]
+}
+
+interface TextAnnotation {
+  description: string
+  boundingPoly?: BoundingPoly
+}
+
+interface VisionResponse {
+  responses: [{
+    textAnnotations?: TextAnnotation[]
+  }]
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -102,7 +122,7 @@ serve(async (req) => {
   }
 })
 
-async function callGoogleVisionAPI(imageUrl: string): Promise<any> {
+async function callGoogleVisionAPI(imageUrl: string): Promise<VisionResponse> {
   const gcpProjectId = Deno.env.get('GCP_PROJECT_ID')
   const gcpClientEmail = Deno.env.get('GCP_CLIENT_EMAIL')
   const gcpPrivateKey = Deno.env.get('GCP_PRIVATE_KEY')
@@ -212,9 +232,9 @@ async function createGoogleJWT(clientEmail: string, privateKey: string): Promise
   return tokenData.access_token
 }
 
-function parseOCRText(visionResponse: any): MandalartData {
+function parseOCRText(visionResponse: VisionResponse): MandalartData {
   // Extract text annotations with position information
-  const textAnnotations = visionResponse.textAnnotations || []
+  const textAnnotations = visionResponse.responses[0]?.textAnnotations || []
 
   if (textAnnotations.length === 0) {
     console.warn('No text detected in image')
@@ -240,9 +260,9 @@ function parseOCRText(visionResponse: any): MandalartData {
   let minX = Infinity, maxX = -Infinity
   let minY = Infinity, maxY = -Infinity
 
-  blocks.forEach((block: any) => {
+  blocks.forEach((block: TextAnnotation) => {
     const vertices = block.boundingPoly?.vertices || []
-    vertices.forEach((v: any) => {
+    vertices.forEach((v: Vertex) => {
       minX = Math.min(minX, v.x || 0)
       maxX = Math.max(maxX, v.x || 0)
       minY = Math.min(minY, v.y || 0)
@@ -260,13 +280,13 @@ function parseOCRText(visionResponse: any): MandalartData {
   // Group text by grid cell (9x9)
   const grid: string[][] = Array(9).fill(null).map(() => Array(9).fill(''))
 
-  blocks.forEach((block: any) => {
+  blocks.forEach((block: TextAnnotation) => {
     const vertices = block.boundingPoly?.vertices || []
     if (vertices.length === 0) return
 
     // Calculate center of text block
-    const centerX = vertices.reduce((sum: number, v: any) => sum + (v.x || 0), 0) / vertices.length
-    const centerY = vertices.reduce((sum: number, v: any) => sum + (v.y || 0), 0) / vertices.length
+    const centerX = vertices.reduce((sum: number, v: Vertex) => sum + (v.x || 0), 0) / vertices.length
+    const centerY = vertices.reduce((sum: number, v: Vertex) => sum + (v.y || 0), 0) / vertices.length
 
     // Determine grid position (0-8)
     const col = Math.floor((centerX - minX) / cellWidth)
