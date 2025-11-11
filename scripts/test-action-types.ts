@@ -24,6 +24,12 @@ const testCases = [
   // Scenario 4: 주부 (육아)
   { title: '집안일 효율적으로 처리', expected: 'reference', critical: false },
   { title: '나만의 시간 확보하기', expected: 'reference', critical: false },
+  { title: '주말마다 가족 나들이', expected: 'routine', critical: true }, // Phase 3.2
+
+  // Phase 3 additional tests
+  { title: '팀 회고 진행', expected: 'routine', critical: false }, // Should infer weekly
+  { title: '재정 점검하기', expected: 'routine', critical: false }, // Should infer monthly
+  { title: '평일 아침 운동', expected: 'routine', critical: true }, // Phase 3.2
 
   // Scenario 5: 창업가 (사업)
   { title: 'IR 덱 완성', expected: 'mission', critical: true },
@@ -68,6 +74,19 @@ testCases.forEach(({ title, expected, critical }) => {
   console.log(`${icon} "${title}"`)
   console.log(`   Expected: ${expected} | Got: ${result.type} (${result.confidence})`)
   console.log(`   Reason: ${result.reason}${criticalLabel}`)
+
+  // Show frequency and weekdays for routines
+  if (result.type === 'routine') {
+    if (result.routineFrequency) {
+      console.log(`   Frequency: ${result.routineFrequency}`)
+    }
+    if (result.routineWeekdays && result.routineWeekdays.length > 0) {
+      const weekdayNames = ['일', '월', '화', '수', '목', '금', '토']
+      const days = result.routineWeekdays.map(d => weekdayNames[d]).join(', ')
+      console.log(`   Weekdays: ${days}`)
+    }
+  }
+
   console.log()
 })
 
