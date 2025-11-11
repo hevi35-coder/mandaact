@@ -43,7 +43,7 @@ export default function CoreGoalEditModal({
 
   // Inline editing states (for both create and edit mode)
   const [isEditingTitle, setIsEditingTitle] = useState(mode === 'create' && !hideTitle)
-  const [isEditingCenterGoal, setIsEditingCenterGoal] = useState(mode === 'create')
+  const [isEditingCenterGoal, setIsEditingCenterGoal] = useState(mode === 'create' && hideTitle) // Only auto-edit if title is hidden
   const [isSavingTitle, setIsSavingTitle] = useState(false)
   const [isSavingCenterGoal, setIsSavingCenterGoal] = useState(false)
 
@@ -56,8 +56,8 @@ export default function CoreGoalEditModal({
     } else {
       setTitle(initialTitle)
       setCenterGoal(initialCenterGoal)
-      setIsEditingTitle(!hideTitle)
-      setIsEditingCenterGoal(true)
+      setIsEditingTitle(!hideTitle) // Edit title first if not hidden
+      setIsEditingCenterGoal(hideTitle) // Only edit center goal if title is hidden
     }
   }, [mode, mandalart, initialTitle, initialCenterGoal, hideTitle, open])
 
@@ -72,13 +72,20 @@ export default function CoreGoalEditModal({
       return
     }
 
+    // Create mode: just move to next field
+    if (mode === 'create') {
+      setIsEditingTitle(false)
+      setIsEditingCenterGoal(true)
+      return
+    }
+
+    // Edit mode: save to DB
     if (!mandalart) return
 
     const trimmedTitle = title.trim()
 
     setIsSavingTitle(true)
 
-    // Background save
     try {
       const { error } = await supabase
         .from('mandalarts')
@@ -90,18 +97,16 @@ export default function CoreGoalEditModal({
       setIsEditingTitle(false)
       if (onEdit) onEdit()
 
-      // Show success feedback
       showSuccess(SUCCESS_MESSAGES.updated())
     } catch (err) {
       console.error('Error saving title:', err)
       showError(ERROR_MESSAGES.titleSaveFailed())
-      // Revert on error
       setTitle(mandalart.title)
       if (onEdit) onEdit()
     } finally {
       setIsSavingTitle(false)
     }
-  }, [title, mandalart, onEdit])
+  }, [title, mode, mandalart, onEdit])
 
   const handleTitleCancel = useCallback(() => {
     if (mandalart) {
