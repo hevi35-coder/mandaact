@@ -58,11 +58,14 @@ export function suggestActionType(title: string): AISuggestion {
   const lower = title.toLowerCase()
 
   // Detect patterns first (for complex logic)
-  const hasCompletionKeyword = /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진/.test(lower)
+  const hasCompletionKeyword = /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진|완독|완성|클리어|정복|마스터|도달|이루기/.test(lower)
   const hasGoalKeyword = /목표|도전|성공/.test(lower)
   const hasNumberGoal = /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일)/.test(lower)
-  const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심/.test(lower)
+  const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심|사고방식|관점|시각|인식|깨달음|교훈|지향|지혜/.test(lower)
+  const isNegativeReference = /하지\s*않기|두려워하지|망설이지|포기하지|극복/.test(lower)
+  const hasAbstractGoal = /유지|확보|갖기/.test(lower)
   const hasRoutineVerb = /읽기|공부|운동|명상|기도|쓰기|보기|듣기|하기|걷기|달리기|먹기|마시기|일어나기|자기|정리|청소|체크|확인|검토|복습|예습/.test(lower)
+  const hasRoutineAdverb = /꾸준히|계속|지속적으로|항상|매번|규칙적으로|반복적으로|습관적으로/.test(lower)
 
   // Check if it's a time-based routine (e.g., "30분 운동", "1시간 공부")
   const isTimePlusVerb = /\d+\s*(시간|분)\s*(운동|공부|읽기|쓰기|명상|걷기|달리기)/.test(lower)
@@ -74,11 +77,20 @@ export function suggestActionType(title: string): AISuggestion {
   const hasYearlyKeyword = /매년|연간|년\s*\d+회|yearly/.test(lower)
 
   // Priority 1: Reference/mindset (highest specificity)
-  if (hasReferenceKeyword) {
+  if (hasReferenceKeyword || isNegativeReference) {
     return {
       type: 'reference',
       confidence: 'high',
       reason: '마음가짐이나 원칙 관련 항목으로 보여요'
+    }
+  }
+
+  // Priority 1.5: Abstract goals with lifestyle/mindset context
+  if (hasAbstractGoal && (hasReferenceKeyword || /건강|식습관|생활|태도|효율적/.test(lower))) {
+    return {
+      type: 'reference',
+      confidence: 'high',
+      reason: '마음가짐이나 생활 원칙으로 보여요'
     }
   }
 
@@ -158,6 +170,16 @@ export function suggestActionType(title: string): AISuggestion {
       confidence: 'medium',
       reason: '수치 목표가 있는 것 같아요',
       missionCompletionType: 'once'
+    }
+  }
+
+  // Priority 4.5: Routine adverb + verb (e.g., "꾸준히 공부하기")
+  if (hasRoutineAdverb && hasRoutineVerb) {
+    return {
+      type: 'routine',
+      confidence: 'high',
+      reason: '꾸준한 실천으로 보여요',
+      routineFrequency: 'daily'
     }
   }
 
