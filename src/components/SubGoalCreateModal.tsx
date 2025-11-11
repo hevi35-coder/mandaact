@@ -55,7 +55,7 @@ export default function SubGoalCreateModal({
       return {
         tempId: `temp-${idx}`,
         title: a.title,
-        type: a.type || 'routine',
+        type: a.type || aiSuggestion.type, // Use AI suggestion if no type provided
         ai_suggestion: JSON.stringify(aiSuggestion)
       }
     })
@@ -73,7 +73,7 @@ export default function SubGoalCreateModal({
         return {
           tempId: `temp-${idx}`,
           title: a.title,
-          type: a.type || 'routine',
+          type: a.type || aiSuggestion.type, // Use AI suggestion if no type provided
           ai_suggestion: JSON.stringify(aiSuggestion)
         }
       })
@@ -144,7 +144,7 @@ export default function SubGoalCreateModal({
     const newAction: LocalAction = {
       tempId: newTempId,
       title: newActionTitle,
-      type: 'routine',
+      type: aiSuggestion.type, // Use AI suggested type
       ai_suggestion: JSON.stringify(aiSuggestion)
     }
 
