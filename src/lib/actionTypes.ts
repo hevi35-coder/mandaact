@@ -66,7 +66,7 @@ export function suggestActionType(title: string): AISuggestion {
   const hasAbstractGoal = /유지|확보|갖기/.test(lower)
   const hasAbstractAdverb = /효율적으로|생산적으로|체계적으로|전략적으로/.test(lower)
   const hasAbstractTimeGoal = /시간.*확보|시간.*갖기|여유.*만들기/.test(lower)
-  const hasRoutineVerb = /읽기|공부|운동|명상|기도|쓰기|보기|듣기|하기|걷기|달리기|먹기|마시기|일어나기|자기|정리|청소|체크|확인|검토|복습|예습|회고|미팅|정산|보고|점검|평가|결산/.test(lower)
+  const hasRoutineVerb = /읽기|독서|공부|운동|명상|기도|쓰기|보기|듣기|하기|걷기|달리기|먹기|마시기|일어나기|자기|정리|청소|체크|확인|검토|복습|예습|회고|미팅|정산|보고|점검|평가|결산/.test(lower)
   const hasRoutineAdverb = /꾸준히|계속|지속적으로|항상|매번|규칙적으로|반복적으로|습관적으로/.test(lower)
 
   // Check if it's a time-based routine (e.g., "30분 운동", "1시간 공부")
@@ -258,6 +258,16 @@ export function suggestActionType(title: string): AISuggestion {
 
   // Priority 6: Common action verbs with context-based frequency inference
   if (hasRoutineVerb) {
+    // Exception: "관련 독서", "책 읽기" patterns suggest one-time reading mission
+    if (/관련.*독서|관련.*읽기|.*책.*읽기|도서.*읽기|.*서적/.test(lower)) {
+      return {
+        type: 'mission',
+        confidence: 'medium',
+        reason: '특정 책을 읽는 완료 목표로 보여요',
+        missionCompletionType: 'once'
+      }
+    }
+
     // Infer frequency based on verb context
     let inferredFrequency: RoutineFrequency = 'daily'
 
