@@ -6,6 +6,7 @@ import { getStreakStats, getDailyCompletionData } from '@/lib/stats'
 import type { StreakStats } from '@/lib/stats'
 import { Flame, Trophy, AlertCircle, Calendar } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { HERO_ANIMATION, LIST_ITEM_ANIMATION, STAGGER, getStaggerDelay } from '@/lib/animations'
 
 export function StreakHero() {
   const { user } = useAuthStore()
@@ -72,11 +73,10 @@ export function StreakHero() {
 
       <CardContent className="space-y-4">
         {/* Current Streak - Hero Display */}
+        {/* 🎯 HERO: Main streak display with slower animation for emphasis */}
         <motion.div
           className="text-center py-8 px-4 rounded-xl border border-muted"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+          {...HERO_ANIMATION}
         >
           <Flame className="h-16 w-16 mx-auto text-orange-500 mb-4" />
 
@@ -163,11 +163,14 @@ export function StreakHero() {
               const isToday = dateStr === new Date().toISOString().split('T')[0]
 
               return (
+                // 📝 LIST_ITEM: Heatmap cells with fast stagger
                 <motion.div
                   key={dateStr}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: index * 0.01 }}
+                  {...LIST_ITEM_ANIMATION}
+                  transition={{
+                    ...LIST_ITEM_ANIMATION.transition,
+                    delay: getStaggerDelay(index, STAGGER.FAST)
+                  }}
                   whileHover={{ scale: 1.2 }}
                   className={`
                     aspect-square rounded-sm cursor-help transition-all

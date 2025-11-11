@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import type { GoalProgress } from '@/lib/stats'
 import type { Mandalart } from '@/types'
 import { Scroll, Target, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react'
+import { CARD_ANIMATION, LIST_ITEM_ANIMATION, HOVER_SCALE, STAGGER, getNestedStaggerDelay, getStaggerDelay } from '@/lib/animations'
 
 interface QuestWithMandalart extends GoalProgress {
   mandalartId: string
@@ -205,11 +206,14 @@ export function QuestLog() {
 
       <CardContent className="space-y-4">
         {Object.values(questsByMandalart).map(({ mandalart, quests: mandalartQuests }, mandalartIndex) => (
+          // 📋 CARD: Mandalart group with slow stagger
           <motion.div
             key={mandalart.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: mandalartIndex * 0.1 }}
+            {...CARD_ANIMATION}
+            transition={{
+              ...CARD_ANIMATION.transition,
+              delay: getStaggerDelay(mandalartIndex, STAGGER.SLOW)
+            }}
             className="space-y-3"
           >
             {/* Main Quest (Center Goal) */}
@@ -259,12 +263,15 @@ export function QuestLog() {
                 const statusConfig = getStatusConfig(status)
 
                 return (
+                  // 📝 LIST_ITEM: Quest items with nested stagger and hover
                   <motion.div
                     key={quest.subGoalId}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: mandalartIndex * 0.1 + index * 0.05 }}
-                    whileHover={{ scale: 1.02 }}
+                    {...LIST_ITEM_ANIMATION}
+                    {...HOVER_SCALE}
+                    transition={{
+                      ...LIST_ITEM_ANIMATION.transition,
+                      delay: getNestedStaggerDelay(mandalartIndex, index, STAGGER.SLOW, STAGGER.NORMAL)
+                    }}
                     className={`
                       p-3 rounded-lg border border-l-4 transition-all
                       ${statusConfig.borderColor}

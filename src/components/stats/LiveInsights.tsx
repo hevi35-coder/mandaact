@@ -13,6 +13,7 @@ import {
   Target,
   Zap,
 } from 'lucide-react'
+import { CARD_ANIMATION, STAGGER, getStaggerDelay } from '@/lib/animations'
 
 interface Insight {
   type: 'positive' | 'warning' | 'info'
@@ -210,11 +211,14 @@ export function LiveInsights() {
             const config = getTypeConfig(insight.type)
 
             return (
+              // 📋 CARD: Insight cards with slow stagger
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                {...CARD_ANIMATION}
+                transition={{
+                  ...CARD_ANIMATION.transition,
+                  delay: getStaggerDelay(index, STAGGER.SLOW)
+                }}
                 className={`
                   p-4 rounded-lg border-2 transition-all
                   ${config.bgColor} ${config.borderColor}

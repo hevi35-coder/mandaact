@@ -16,6 +16,7 @@ import { showSuccess } from '@/lib/notificationUtils'
 import type { UserLevel, Achievement, UserAchievement } from '@/types'
 import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { BadgeDetailDialog } from './BadgeDetailDialog'
+import { HERO_ANIMATION, BADGE_ANIMATION, BADGE_NEW_ANIMATION } from '@/lib/animations'
 
 export function UserProfileCard() {
   const { user } = useAuthStore()
@@ -259,11 +260,8 @@ export function UserProfileCard() {
   const xpProgress = getXPProgress(userLevel.total_xp)
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    // 🎯 HERO: Profile card emphasizes user identity with slower (0.5s) animation
+    <motion.div {...HERO_ANIMATION}>
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
@@ -427,11 +425,10 @@ export function UserProfileCard() {
                               }
 
                               return (
+                                // 🏆 BADGE: Spring animation for playful achievement feel
                                 <motion.div
                                   key={badge.id}
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                                  {...BADGE_ANIMATION}
                                   onClick={() => setSelectedBadge(badge)}
                                   className={`
                                     relative p-3 rounded-lg border text-center transition-all cursor-pointer
@@ -444,10 +441,9 @@ export function UserProfileCard() {
                                 >
                                   {/* NEW Badge Indicator */}
                                   {isNew && (
+                                    // ⭐ BADGE_NEW: Stronger spring for newly unlocked badges
                                     <motion.div
-                                      initial={{ scale: 0, rotate: -12 }}
-                                      animate={{ scale: 1, rotate: 0 }}
-                                      transition={{ type: 'spring', stiffness: 300, damping: 10 }}
+                                      {...BADGE_NEW_ANIMATION}
                                       className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-0.5"
                                     >
                                       <Sparkles className="h-2.5 w-2.5" />

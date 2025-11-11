@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore'
 import { getGoalProgress } from '@/lib/stats'
 import type { GoalProgress } from '@/lib/stats'
 import { AlertTriangle, Lightbulb, TrendingDown, ExternalLink, Sparkles } from 'lucide-react'
+import { CARD_ANIMATION, LIST_ITEM_ANIMATION, STAGGER, getStaggerDelay, getNestedStaggerDelay } from '@/lib/animations'
 
 interface StrugglingGoal extends GoalProgress {
   mandalartId: string
@@ -157,11 +158,15 @@ export function StrugglingGoals() {
 
       <CardContent className="space-y-4">
         {strugglingGoals.map((goal, index) => (
+          // 📋 CARD: Struggling goal cards with slow stagger and side entry
           <motion.div
             key={goal.subGoalId}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{
+              ...CARD_ANIMATION.transition,
+              delay: getStaggerDelay(index, STAGGER.SLOW)
+            }}
             className="p-4 bg-orange-500/5 rounded-lg border-l-2 border-orange-500/30"
           >
             {/* Header */}
@@ -195,11 +200,16 @@ export function StrugglingGoals() {
               </div>
               <ul className="space-y-1.5">
                 {goal.suggestions.map((suggestion, idx) => (
+                  // 📝 LIST_ITEM: Suggestion items with nested stagger
                   <motion.li
                     key={idx}
+                    {...LIST_ITEM_ANIMATION}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 + idx * 0.05 }}
+                    transition={{
+                      ...LIST_ITEM_ANIMATION.transition,
+                      delay: getNestedStaggerDelay(index, idx, STAGGER.SLOW, STAGGER.NORMAL)
+                    }}
                     className="flex items-start gap-2 text-sm"
                   >
                     <span className="text-orange-500 shrink-0">•</span>

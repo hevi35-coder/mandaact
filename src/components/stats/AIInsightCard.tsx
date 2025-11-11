@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase'
 import type { AIReport } from '@/types'
 import { Sparkles, Loader2, Calendar, History } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CARD_ANIMATION, SLIDE_OUT_UP, STAGGER, getStaggerDelay } from '@/lib/animations'
 
 export function AIInsightCard() {
   const { user } = useAuthStore()
@@ -225,12 +226,11 @@ export function AIInsightCard() {
             {/* Report Content */}
             <AnimatePresence mode="wait">
               {displayedReport ? (
+                // 📋 CARD: Report card with slide-out-up exit animation
                 <motion.div
                   key={displayedReport.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
+                  {...CARD_ANIMATION}
+                  {...SLIDE_OUT_UP}
                 >
                   <div className="p-6 bg-background rounded-lg border-2 border-purple-500/10 space-y-4">
                     {/* Report Meta */}
@@ -251,11 +251,12 @@ export function AIInsightCard() {
                     {/* Report Text */}
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       {displayedReport.content.split('\n\n').map((paragraph, index) => (
+                        // Paragraph stagger with SLOW interval
                         <motion.p
                           key={index}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.1 }}
+                          transition={{ delay: getStaggerDelay(index, STAGGER.SLOW) }}
                           className="leading-relaxed"
                         >
                           {paragraph}
