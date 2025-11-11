@@ -295,7 +295,6 @@ export default function InputMethodSelector({
         <Card className="w-full">
           <CardHeader className="pb-4">
             <CardTitle>생성 방식 선택</CardTitle>
-            <CardDescription>어떻게 만들까요?</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-0">
             <Button
