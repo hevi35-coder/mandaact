@@ -60,7 +60,13 @@ export function suggestActionType(title: string): AISuggestion {
   // Detect patterns first (for complex logic)
   const hasCompletionKeyword = /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진|완독|완성|클리어|정복|마스터|도달|이루기/.test(lower)
   const hasGoalKeyword = /목표|도전|성공/.test(lower)
-  const hasNumberGoal = /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일)/.test(lower)
+  const hasNumberGoal = /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일|급)/.test(lower)
+
+  // One-time mission keywords (자격증, 시험, 승인, 여행, 시도 등)
+  const hasOnceKeyword = /검진|승인|자격증|시험|급|여행|출장|모임.*시도|도전.*시도/.test(lower)
+
+  // Daily routine pattern: "1일 X" (e.g., "1일 1포스팅")
+  const isDailyPattern = /1\s*일\s+\d*\s*[가-힣]+/.test(lower)
   const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심|사고방식|관점|시각|인식|깨달음|교훈|지향|지혜/.test(lower)
   const isNegativeReference = /하지\s*않기|두려워하지|망설이지|포기하지|극복/.test(lower)
   const hasAbstractGoal = /유지|확보|갖기/.test(lower)
@@ -106,6 +112,16 @@ export function suggestActionType(title: string): AISuggestion {
       type: 'reference',
       confidence: 'medium',
       reason: '실천 방식이나 접근법으로 보여요 (구체적인 실천 방법 추가 권장)'
+    }
+  }
+
+  // Priority 1.65: One-time missions (검진, 승인, 자격증, 여행, 시도)
+  if (hasOnceKeyword) {
+    return {
+      type: 'mission',
+      confidence: 'high',
+      reason: '1회 완료 목표로 보여요',
+      missionCompletionType: 'once'
     }
   }
 
@@ -191,8 +207,18 @@ export function suggestActionType(title: string): AISuggestion {
   }
 
   // Priority 4: Number-based goals without frequency (likely one-time mission)
-  // BUT: Time + verb combinations are routines (e.g., "30분 운동")
+  // BUT: "1일 X" and Time + verb combinations are routines
   if (hasNumberGoal && !hasDailyKeyword && !hasWeeklyKeyword && !hasMonthlyKeyword) {
+    // Exception 1: "1일 1포스팅" pattern
+    if (isDailyPattern) {
+      return {
+        type: 'routine',
+        confidence: 'high',
+        reason: '매일 반복하는 실천으로 보여요',
+        routineFrequency: 'daily'
+      }
+    }
+    // Exception 2: Time + verb (e.g., "30분 운동")
     if (isTimePlusVerb) {
       return {
         type: 'routine',
@@ -241,7 +267,7 @@ export function suggestActionType(title: string): AISuggestion {
   }
 
   // Priority 5: Routines with explicit frequency
-  if (hasDailyKeyword) {
+  if (hasDailyKeyword || isDailyPattern) {
     return {
       type: 'routine',
       confidence: 'high',
