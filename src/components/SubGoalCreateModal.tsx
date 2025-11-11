@@ -50,11 +50,15 @@ export default function SubGoalCreateModal({
 }: SubGoalCreateModalProps) {
   const [subGoalTitle, setSubGoalTitle] = useState(initialTitle)
   const [localActions, setLocalActions] = useState<LocalAction[]>(
-    initialActions.map((a, idx) => ({
-      tempId: `temp-${idx}`,
-      title: a.title,
-      type: a.type || 'routine'
-    }))
+    initialActions.map((a, idx) => {
+      const aiSuggestion = suggestActionType(a.title)
+      return {
+        tempId: `temp-${idx}`,
+        title: a.title,
+        type: a.type || 'routine',
+        ai_suggestion: JSON.stringify(aiSuggestion)
+      }
+    })
   )
   const [editingActionId, setEditingActionId] = useState<string | null>(null)
   const [editingActionTitle, setEditingActionTitle] = useState('')
@@ -64,11 +68,15 @@ export default function SubGoalCreateModal({
   useEffect(() => {
     setSubGoalTitle(initialTitle)
     setLocalActions(
-      initialActions.map((a, idx) => ({
-        tempId: `temp-${idx}`,
-        title: a.title,
-        type: a.type || 'routine'
-      }))
+      initialActions.map((a, idx) => {
+        const aiSuggestion = suggestActionType(a.title)
+        return {
+          tempId: `temp-${idx}`,
+          title: a.title,
+          type: a.type || 'routine',
+          ai_suggestion: JSON.stringify(aiSuggestion)
+        }
+      })
     )
   }, [initialTitle, initialActions])
 
@@ -132,10 +140,12 @@ export default function SubGoalCreateModal({
 
     const newTempId = `temp-${Date.now()}`
     const newActionTitle = '새 실천항목'
+    const aiSuggestion = suggestActionType(newActionTitle)
     const newAction: LocalAction = {
       tempId: newTempId,
       title: newActionTitle,
-      type: 'routine'
+      type: 'routine',
+      ai_suggestion: JSON.stringify(aiSuggestion)
     }
 
     setLocalActions([...localActions, newAction])
