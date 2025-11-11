@@ -149,13 +149,25 @@ export function suggestActionType(title: string): AISuggestion {
     }
   }
 
-  if (hasWeeklyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
+  // "주 X회" pattern: distinguish between routine (habit) and mission (goal)
+  if (hasWeeklyKeyword && (hasCompletionKeyword || hasGoalKeyword)) {
+    // "주 2회 달성", "주 3회 완료" → mission (goal-oriented)
     return {
       type: 'mission',
       confidence: 'high',
       reason: '매주 반복되는 목표로 보여요',
       missionCompletionType: 'periodic',
       missionPeriodCycle: 'weekly'
+    }
+  }
+
+  if (hasWeeklyKeyword && hasNumberGoal) {
+    // "주 2회 운동", "반신욕 주2회" → routine (habit-oriented)
+    return {
+      type: 'routine',
+      confidence: 'high',
+      reason: '매주 반복하는 실천으로 보여요',
+      routineFrequency: 'weekly'
     }
   }
 
