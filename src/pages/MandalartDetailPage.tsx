@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase'
 import { SubGoal, Action, MandalartGridData, MandalartWithDetails } from '@/types'
 import { Repeat, Target, Lightbulb, Download, AlertTriangle, Info } from 'lucide-react'
 import { Label } from '@/components/ui/label'
-import SubGoalEditModal from '@/components/SubGoalEditModal'
+import SubGoalModal from '@/components/SubGoalModal'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
 import MandalartGrid from '@/components/MandalartGrid'
 import { domToPng } from 'modern-screenshot'
@@ -566,9 +566,10 @@ export default function MandalartDetailPage() {
         </Card>
       </div>
 
-      {/* SubGoal Edit Modal */}
+      {/* SubGoal Modal (Edit Mode) */}
       {selectedSubGoal && (
-        <SubGoalEditModal
+        <SubGoalModal
+          mode="edit"
           open={modalOpen}
           onOpenChange={handleModalClose}
           subGoal={selectedSubGoal}

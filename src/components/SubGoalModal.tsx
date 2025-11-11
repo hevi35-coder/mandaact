@@ -1,10 +1,11 @@
-import { useState, useReducer, useCallback } from 'react'
+import { useState, useReducer, useCallback, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +17,7 @@ import { Plus, Pencil, Check, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { VALIDATION_MESSAGES, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/notificationMessages'
 import { showWarning, showError, showSuccess } from '@/lib/notificationUtils'
+import { suggestActionType } from '@/lib/actionTypes'
 import {
   DndContext,
   closestCenter,
@@ -32,32 +34,52 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 
-interface SubGoalEditModalProps {
+// Local action type for create mode (with tempId and optional DB fields)
+type LocalAction = Omit<Action, 'created_at' | 'updated_at'> & {
+  tempId?: string
+  created_at?: string
+  updated_at?: string
+}
+
+interface SubGoalModalProps {
+  mode: 'create' | 'edit'
   open: boolean
   onOpenChange: (open: boolean) => void
-  subGoal: SubGoal & { actions: Action[] }
+
+  // Create mode props
+  position?: number  // 1-8
+  initialTitle?: string
+  initialActions?: Array<{ title: string; type?: 'routine' | 'mission' | 'reference' }>
+  onCreate?: (data: {
+    position: number
+    title: string
+    actions: Array<{ title: string; type?: 'routine' | 'mission' | 'reference' }>
+  }) => void
+
+  // Edit mode props
+  subGoal?: SubGoal & { actions: Action[] }
   onEdit?: () => void
 }
 
 // Reducer for actions state management
 type ActionsState = {
-  actions: Action[]
+  actions: LocalAction[]
   editingId: string | null
   editingTitle: string
-  selectedAction: Action | null
+  selectedAction: LocalAction | null
   typeSelectorOpen: boolean
 }
 
 type ActionsAction =
-  | { type: 'SET_ACTIONS'; payload: Action[] }
-  | { type: 'ADD_ACTION'; payload: Action }
-  | { type: 'UPDATE_ACTION'; payload: { id: string; updates: Partial<Action> } }
+  | { type: 'SET_ACTIONS'; payload: LocalAction[] }
+  | { type: 'ADD_ACTION'; payload: LocalAction }
+  | { type: 'UPDATE_ACTION'; payload: { id: string; updates: Partial<LocalAction> } }
   | { type: 'DELETE_ACTION'; payload: string }
-  | { type: 'REORDER_ACTIONS'; payload: Action[] }
+  | { type: 'REORDER_ACTIONS'; payload: LocalAction[] }
   | { type: 'START_EDIT'; payload: { id: string; title: string } }
   | { type: 'UPDATE_EDIT_TITLE'; payload: string }
   | { type: 'CANCEL_EDIT' }
-  | { type: 'OPEN_TYPE_SELECTOR'; payload: Action }
+  | { type: 'OPEN_TYPE_SELECTOR'; payload: LocalAction }
   | { type: 'CLOSE_TYPE_SELECTOR' }
 
 function actionsReducer(state: ActionsState, action: ActionsAction): ActionsState {
@@ -117,17 +139,47 @@ function actionsReducer(state: ActionsState, action: ActionsAction): ActionsStat
   }
 }
 
-export default function SubGoalEditModal({
+export default function SubGoalModal({
+  mode,
   open,
   onOpenChange,
+  position,
+  initialTitle = '',
+  initialActions = [],
+  onCreate,
   subGoal,
   onEdit
-}: SubGoalEditModalProps) {
+}: SubGoalModalProps) {
   const [isEditingSubGoalTitle, setIsEditingSubGoalTitle] = useState(false)
-  const [subGoalTitle, setSubGoalTitle] = useState(subGoal.title)
+  const [subGoalTitle, setSubGoalTitle] = useState(
+    mode === 'edit' && subGoal ? subGoal.title : initialTitle
+  )
+
+  // Initialize actions based on mode
+  const getInitialActions = (): LocalAction[] => {
+    if (mode === 'edit' && subGoal) {
+      return [...subGoal.actions].sort((a, b) => a.position - b.position)
+    }
+
+    // Create mode: convert initialActions to LocalAction format
+    return initialActions.map((a, idx) => {
+      const aiSuggestion = suggestActionType(a.title)
+      return {
+        id: `temp-${Date.now()}-${idx}`,
+        tempId: `temp-${Date.now()}-${idx}`,
+        title: a.title,
+        type: a.type || aiSuggestion.type,
+        position: idx + 1,
+        ai_suggestion: aiSuggestion,
+        sub_goal_id: '', // Will be set when saved
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as LocalAction
+    })
+  }
 
   const [state, dispatch] = useReducer(actionsReducer, {
-    actions: [...subGoal.actions].sort((a, b) => a.position - b.position),
+    actions: getInitialActions(),
     editingId: null,
     editingTitle: '',
     selectedAction: null,
@@ -146,14 +198,22 @@ export default function SubGoalEditModal({
     })
   )
 
-  // Update local state when subGoal prop changes
-  useState(() => {
-    setSubGoalTitle(subGoal.title)
-    dispatch({
-      type: 'SET_ACTIONS',
-      payload: [...subGoal.actions].sort((a, b) => a.position - b.position)
-    })
-  })
+  // Update local state when props change
+  useEffect(() => {
+    if (mode === 'edit' && subGoal) {
+      setSubGoalTitle(subGoal.title)
+      dispatch({
+        type: 'SET_ACTIONS',
+        payload: [...subGoal.actions].sort((a, b) => a.position - b.position)
+      })
+    } else {
+      setSubGoalTitle(initialTitle)
+      dispatch({
+        type: 'SET_ACTIONS',
+        payload: getInitialActions()
+      })
+    }
+  }, [mode, subGoal, initialTitle, initialActions])
 
   // Action Title Handlers
   const handleTitleEdit = useCallback((actionId: string, currentTitle: string) => {
@@ -168,42 +228,47 @@ export default function SubGoalEditModal({
     if (state.editingTitle.trim() === '') return
 
     const trimmedTitle = state.editingTitle.trim()
+    const aiSuggestion = suggestActionType(trimmedTitle)
 
-    // Optimistic update
+    // Optimistic update (works for both create and edit mode)
     dispatch({
       type: 'UPDATE_ACTION',
-      payload: { id: actionId, updates: { title: trimmedTitle } }
+      payload: {
+        id: actionId,
+        updates: {
+          title: trimmedTitle,
+          ai_suggestion: aiSuggestion
+        }
+      }
     })
     dispatch({ type: 'CANCEL_EDIT' })
 
-    // Background save
-    try {
-      const { error } = await supabase
-        .from('actions')
-        .update({ title: trimmedTitle })
-        .eq('id', actionId)
+    // Only save to DB in edit mode
+    if (mode === 'edit') {
+      try {
+        const { error } = await supabase
+          .from('actions')
+          .update({ title: trimmedTitle })
+          .eq('id', actionId)
 
-      if (error) throw error
+        if (error) throw error
 
-      // Notify parent to refresh (optional, for consistency)
-      if (onEdit) onEdit()
-
-      // Show success feedback
-      showSuccess(SUCCESS_MESSAGES.updated())
-    } catch (err) {
-      console.error('Error updating action title:', err)
-      showError(ERROR_MESSAGES.actionUpdateFailed())
-      // Revert on error
-      if (onEdit) onEdit()
+        if (onEdit) onEdit()
+        showSuccess(SUCCESS_MESSAGES.updated())
+      } catch (err) {
+        console.error('Error updating action title:', err)
+        showError(ERROR_MESSAGES.actionUpdateFailed())
+        if (onEdit) onEdit()
+      }
     }
-  }, [state.editingTitle, onEdit])
+  }, [state.editingTitle, mode, onEdit])
 
   const handleTitleCancel = useCallback(() => {
     dispatch({ type: 'CANCEL_EDIT' })
   }, [])
 
   // Action Type Handlers
-  const handleTypeEdit = useCallback((action: Action) => {
+  const handleTypeEdit = useCallback((action: LocalAction) => {
     dispatch({ type: 'OPEN_TYPE_SELECTOR', payload: action })
   }, [])
 
@@ -232,35 +297,35 @@ export default function SubGoalEditModal({
     })
     dispatch({ type: 'CLOSE_TYPE_SELECTOR' })
 
-    // Background save
-    try {
-      const { error } = await supabase
-        .from('actions')
-        .update({
-          type: typeData.type,
-          routine_frequency: typeData.routine_frequency,
-          routine_weekdays: typeData.routine_weekdays,
-          routine_count_per_period: typeData.routine_count_per_period,
-          mission_completion_type: typeData.mission_completion_type,
-          mission_period_cycle: typeData.mission_period_cycle,
-          mission_current_period_start: typeData.mission_current_period_start,
-          mission_current_period_end: typeData.mission_current_period_end,
-          ai_suggestion: typeData.ai_suggestion ? JSON.stringify(typeData.ai_suggestion) : null
-        })
-        .eq('id', actionId)
+    // Only save to DB in edit mode
+    if (mode === 'edit') {
+      try {
+        const { error } = await supabase
+          .from('actions')
+          .update({
+            type: typeData.type,
+            routine_frequency: typeData.routine_frequency,
+            routine_weekdays: typeData.routine_weekdays,
+            routine_count_per_period: typeData.routine_count_per_period,
+            mission_completion_type: typeData.mission_completion_type,
+            mission_period_cycle: typeData.mission_period_cycle,
+            mission_current_period_start: typeData.mission_current_period_start,
+            mission_current_period_end: typeData.mission_current_period_end,
+            ai_suggestion: typeData.ai_suggestion ? JSON.stringify(typeData.ai_suggestion) : null
+          })
+          .eq('id', actionId)
 
-      if (error) throw error
+        if (error) throw error
 
-      if (onEdit) onEdit()
-
-      // Show success feedback
-      showSuccess(SUCCESS_MESSAGES.typeUpdated())
-    } catch (err) {
-      console.error('Error updating action type:', err)
-      showError(ERROR_MESSAGES.typeUpdateFailed())
-      if (onEdit) onEdit()
+        if (onEdit) onEdit()
+        showSuccess(SUCCESS_MESSAGES.typeUpdated())
+      } catch (err) {
+        console.error('Error updating action type:', err)
+        showError(ERROR_MESSAGES.typeUpdateFailed())
+        if (onEdit) onEdit()
+      }
     }
-  }, [state.selectedAction, onEdit])
+  }, [state.selectedAction, mode, onEdit])
 
   // Action Delete Handler
   const handleActionDelete = useCallback(async (actionId: string) => {
@@ -269,29 +334,31 @@ export default function SubGoalEditModal({
     // Optimistic update
     dispatch({ type: 'DELETE_ACTION', payload: actionId })
 
-    // Background delete
-    try {
-      const { error } = await supabase
-        .from('actions')
-        .delete()
-        .eq('id', actionId)
+    // Only delete from DB in edit mode
+    if (mode === 'edit') {
+      try {
+        const { error } = await supabase
+          .from('actions')
+          .delete()
+          .eq('id', actionId)
 
-      if (error) throw error
+        if (error) throw error
 
-      // Reorder remaining actions
-      const remainingActions = state.actions
-        .filter(a => a.id !== actionId)
-        .sort((a, b) => a.position - b.position)
+        // Reorder remaining actions
+        const remainingActions = state.actions
+          .filter(a => a.id !== actionId)
+          .sort((a, b) => a.position - b.position)
 
-      await reorderPositions(remainingActions)
+        await reorderPositions(remainingActions)
 
-      if (onEdit) onEdit()
-    } catch (err) {
-      console.error('Error deleting action:', err)
-      showError(ERROR_MESSAGES.actionDeleteFailed())
-      if (onEdit) onEdit()
+        if (onEdit) onEdit()
+      } catch (err) {
+        console.error('Error deleting action:', err)
+        showError(ERROR_MESSAGES.actionDeleteFailed())
+        if (onEdit) onEdit()
+      }
     }
-  }, [state.actions, onEdit])
+  }, [state.actions, mode, onEdit])
 
   // Action Add Handler
   const handleActionAdd = useCallback(async () => {
@@ -305,34 +372,56 @@ export default function SubGoalEditModal({
       : 1
     const newTitle = '새 실천항목'
 
-    try {
-      const { data, error } = await supabase
-        .from('actions')
-        .insert({
-          sub_goal_id: subGoal.id,
-          title: newTitle,
-          position: newPosition,
-          type: 'routine'
-        })
-        .select()
-        .single()
+    if (mode === 'edit' && subGoal) {
+      // Edit mode: Create in DB immediately
+      try {
+        const { data, error } = await supabase
+          .from('actions')
+          .insert({
+            sub_goal_id: subGoal.id,
+            title: newTitle,
+            position: newPosition,
+            type: 'routine'
+          })
+          .select()
+          .single()
 
-      if (error) throw error
+        if (error) throw error
 
-      // Add to local state
-      dispatch({ type: 'ADD_ACTION', payload: data })
+        dispatch({ type: 'ADD_ACTION', payload: data })
 
-      // Start editing immediately
+        setTimeout(() => {
+          handleTitleEdit(data.id, newTitle)
+        }, 50)
+
+        if (onEdit) onEdit()
+      } catch (err) {
+        console.error('Error adding action:', err)
+        showError(ERROR_MESSAGES.actionAddFailed())
+      }
+    } else {
+      // Create mode: Add to local state only
+      const aiSuggestion = suggestActionType(newTitle)
+      const tempId = `temp-${Date.now()}`
+      const newAction: LocalAction = {
+        id: tempId,
+        tempId: tempId,
+        title: newTitle,
+        type: aiSuggestion.type,
+        position: newPosition,
+        ai_suggestion: aiSuggestion,
+        sub_goal_id: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      dispatch({ type: 'ADD_ACTION', payload: newAction })
+
       setTimeout(() => {
-        handleTitleEdit(data.id, newTitle)
+        handleTitleEdit(tempId, newTitle)
       }, 50)
-
-      if (onEdit) onEdit()
-    } catch (err) {
-      console.error('Error adding action:', err)
-      showError(ERROR_MESSAGES.actionAddFailed())
     }
-  }, [state.actions, subGoal.id, onEdit, handleTitleEdit])
+  }, [state.actions, mode, subGoal, onEdit, handleTitleEdit])
 
   // Drag and Drop Handler
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
@@ -349,13 +438,15 @@ export default function SubGoalEditModal({
       // Optimistic update
       dispatch({ type: 'REORDER_ACTIONS', payload: reorderedActions })
 
-      // Background save
-      await reorderPositions(reorderedActions)
+      // Only save to DB in edit mode
+      if (mode === 'edit') {
+        await reorderPositions(reorderedActions)
+      }
     }
-  }, [state.actions])
+  }, [state.actions, mode])
 
   // Reorder positions helper
-  const reorderPositions = async (actionsToReorder: Action[]) => {
+  const reorderPositions = async (actionsToReorder: LocalAction[]) => {
     try {
       const updates = actionsToReorder.map((action, idx) =>
         supabase
@@ -389,41 +480,68 @@ export default function SubGoalEditModal({
     // Optimistic update
     setIsEditingSubGoalTitle(false)
 
-    // Background save
-    try {
-      const { error } = await supabase
-        .from('sub_goals')
-        .update({ title: trimmedTitle })
-        .eq('id', subGoal.id)
+    // Only save to DB in edit mode
+    if (mode === 'edit' && subGoal) {
+      try {
+        const { error } = await supabase
+          .from('sub_goals')
+          .update({ title: trimmedTitle })
+          .eq('id', subGoal.id)
 
-      if (error) throw error
+        if (error) throw error
 
-      if (onEdit) onEdit()
-
-      // Show success feedback
-      showSuccess(SUCCESS_MESSAGES.updated())
-    } catch (err) {
-      console.error('Error saving sub-goal:', err)
-      showError(ERROR_MESSAGES.subGoalSaveFailed())
-      // Revert on error
-      setSubGoalTitle(subGoal.title)
-      if (onEdit) onEdit()
+        if (onEdit) onEdit()
+        showSuccess(SUCCESS_MESSAGES.updated())
+      } catch (err) {
+        console.error('Error saving sub-goal:', err)
+        showError(ERROR_MESSAGES.subGoalSaveFailed())
+        setSubGoalTitle(subGoal.title)
+        if (onEdit) onEdit()
+      }
     }
-  }, [subGoalTitle, subGoal.id, subGoal.title, onEdit])
+  }, [subGoalTitle, mode, subGoal, onEdit])
 
   const handleSubGoalTitleCancel = useCallback(() => {
-    setSubGoalTitle(subGoal.title)
+    if (mode === 'edit' && subGoal) {
+      setSubGoalTitle(subGoal.title)
+    } else {
+      setSubGoalTitle(initialTitle)
+    }
     setIsEditingSubGoalTitle(false)
-  }, [subGoal.title])
+  }, [mode, subGoal, initialTitle])
+
+  // Final save handler for create mode
+  const handleCreateSave = () => {
+    if (subGoalTitle.trim() === '') {
+      showWarning(VALIDATION_MESSAGES.emptySubGoalTitle())
+      return
+    }
+
+    if (mode === 'create' && onCreate && position) {
+      onCreate({
+        position,
+        title: subGoalTitle.trim(),
+        actions: state.actions.map(a => ({
+          title: a.title,
+          type: a.type
+        }))
+      })
+      onOpenChange(false)
+    }
+  }
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto mx-4">
           <DialogHeader>
-            <DialogTitle>세부목표 수정</DialogTitle>
+            <DialogTitle>
+              {mode === 'create' ? '세부목표 입력' : '세부목표 수정'}
+            </DialogTitle>
             <DialogDescription>
-              세부목표와 실천항목을 수정할 수 있습니다
+              {mode === 'create'
+                ? '세부목표 제목과 실천항목을 입력하세요.'
+                : '세부목표와 실천항목을 수정할 수 있습니다'}
             </DialogDescription>
           </DialogHeader>
 
@@ -431,37 +549,43 @@ export default function SubGoalEditModal({
             {/* Sub-goal Title */}
             <div className="space-y-2">
               <Label>세부목표</Label>
-              {isEditingSubGoalTitle ? (
+              {mode === 'create' || isEditingSubGoalTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
                     value={subGoalTitle}
                     onChange={(e) => setSubGoalTitle(e.target.value)}
                     placeholder="세부목표 제목을 입력하세요"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSubGoalTitleSave()
-                      } else if (e.key === 'Escape') {
-                        handleSubGoalTitleCancel()
+                      if (mode === 'edit') {
+                        if (e.key === 'Enter') {
+                          handleSubGoalTitleSave()
+                        } else if (e.key === 'Escape') {
+                          handleSubGoalTitleCancel()
+                        }
                       }
                     }}
-                    autoFocus
+                    autoFocus={mode === 'edit' && isEditingSubGoalTitle}
                   />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleSubGoalTitleSave}
-                  >
-                    <Check className="w-4 h-4 text-green-600" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleSubGoalTitleCancel}
-                  >
-                    <X className="w-4 h-4 text-red-600" />
-                  </Button>
+                  {mode === 'edit' && (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleSubGoalTitleSave}
+                      >
+                        <Check className="w-4 h-4 text-green-600" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleSubGoalTitleCancel}
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div
@@ -509,7 +633,7 @@ export default function SubGoalEditModal({
                       state.actions.map((action, idx) => (
                         <ActionListItem
                           key={action.id}
-                          action={action}
+                          action={action as Action}
                           index={idx}
                           isEditing={state.editingId === action.id}
                           editingTitle={state.editingTitle}
@@ -528,6 +652,25 @@ export default function SubGoalEditModal({
               </DndContext>
             </div>
           </div>
+
+          {/* Footer only for create mode */}
+          {mode === 'create' && (
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                닫기
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCreateSave}
+              >
+                저장
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 

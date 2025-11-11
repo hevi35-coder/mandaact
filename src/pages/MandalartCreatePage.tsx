@@ -8,7 +8,7 @@ import { MandalartGridData } from '@/types'
 import MandalartGrid from '@/components/MandalartGrid'
 import InputMethodSelector from '@/components/InputMethodSelector'
 import CoreGoalEditModal from '@/components/CoreGoalEditModal'
-import SubGoalCreateModal from '@/components/SubGoalCreateModal'
+import SubGoalModal from '@/components/SubGoalModal'
 import { suggestActionType } from '@/lib/actionTypes'
 import { Plus } from 'lucide-react'
 import { VALIDATION_MESSAGES, ERROR_MESSAGES } from '@/lib/notificationMessages'
@@ -460,9 +460,10 @@ export default function MandalartCreatePage() {
         hideTitle={false}
       />
 
-      {/* Sub Goal Create Modal */}
+      {/* Sub Goal Modal (Create Mode) */}
       {selectedSubGoalPosition !== null && (
-        <SubGoalCreateModal
+        <SubGoalModal
+          mode="create"
           open={subGoalModalOpen}
           onOpenChange={setSubGoalModalOpen}
           position={selectedSubGoalPosition}
