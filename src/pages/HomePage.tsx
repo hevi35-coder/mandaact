@@ -7,7 +7,6 @@ import { useAuthStore } from '@/store/authStore'
 // Gamification Components
 import { UserProfileCard } from '@/components/stats/UserProfileCard'
 import { StreakHero } from '@/components/stats/StreakHero'
-import { AchievementGallery } from '@/components/stats/AchievementGallery'
 import { QuestLog } from '@/components/stats/QuestLog'
 import { AIInsightCard } from '@/components/stats/AIInsightCard'
 import { LiveInsights } from '@/components/stats/LiveInsights'
@@ -89,10 +88,9 @@ export default function HomePage() {
             <AIInsightCard />
           </TabsContent>
 
-          {/* Tab 2: Quests & Achievements */}
+          {/* Tab 2: Quests */}
           <TabsContent value="quests" className="space-y-6">
             <QuestLog />
-            <AchievementGallery />
           </TabsContent>
 
           {/* Tab 3: Live Insights & Struggling Goals */}

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { calculateBadgeProgress } from '@/lib/stats'
 import { formatUnlockCondition, getBadgeHint, getProgressMessage } from '@/lib/badgeHints'
 import type { Achievement } from '@/types'
-import { Lock, Zap, Trophy } from 'lucide-react'
+import { Lock, Zap, Trophy, Calendar, Repeat } from 'lucide-react'
 
 interface BadgeDetailDialogProps {
   badge: Achievement | null
@@ -20,6 +20,7 @@ interface BadgeDetailDialogProps {
   unlockedAt?: string
   userId: string
   onClose: () => void
+  repeatCount?: number
 }
 
 export function BadgeDetailDialog({
@@ -27,7 +28,8 @@ export function BadgeDetailDialog({
   isUnlocked,
   unlockedAt,
   userId,
-  onClose
+  onClose,
+  repeatCount = 0
 }: BadgeDetailDialogProps) {
   const [progress, setProgress] = useState<{ progress: number; current: number; target: number } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -80,12 +82,49 @@ export function BadgeDetailDialog({
           {/* Title & Badges */}
           <div className="text-center space-y-2">
             <DialogTitle className="text-2xl">{badge.title}</DialogTitle>
-            <div className="flex items-center justify-center gap-2">
-              {badge.badge_type === 'monthly' && (
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {/* Category Badge */}
+              {badge.category === 'one_time' && (
                 <Badge variant="outline" className="text-xs">
-                  월간 챌린지
+                  🏆 일회성
                 </Badge>
               )}
+              {badge.category === 'recurring' && (
+                <Badge variant="outline" className="text-xs">
+                  🔄 반복 획득
+                </Badge>
+              )}
+              {badge.category === 'limited' && (
+                <Badge variant="outline" className="text-xs bg-purple-100 dark:bg-purple-900">
+                  ⭐ 한정판
+                </Badge>
+              )}
+              {badge.category === 'hidden' && (
+                <Badge variant="outline" className="text-xs bg-indigo-100 dark:bg-indigo-900">
+                  🔮 히든
+                </Badge>
+              )}
+              {badge.category === 'social' && (
+                <Badge variant="outline" className="text-xs">
+                  👥 소셜
+                </Badge>
+              )}
+
+              {/* Tier Badge */}
+              {badge.tier === 'platinum' && (
+                <Badge className="text-xs bg-cyan-600">💎 플래티넘</Badge>
+              )}
+              {badge.tier === 'gold' && (
+                <Badge className="text-xs bg-yellow-600">🥇 골드</Badge>
+              )}
+              {badge.tier === 'silver' && (
+                <Badge className="text-xs bg-slate-600">🥈 실버</Badge>
+              )}
+              {badge.tier === 'bronze' && (
+                <Badge className="text-xs bg-amber-700">🥉 브론즈</Badge>
+              )}
+
+              {/* Unlock Status */}
               {isUnlocked && (
                 <Badge className="text-xs bg-green-600">
                   획득 완료
@@ -125,6 +164,21 @@ export function BadgeDetailDialog({
                   )}
                 </div>
               </div>
+
+              {/* Repeat count for recurring badges */}
+              {badge.category === 'recurring' && repeatCount > 1 && (
+                <div className="pt-2 border-t border-green-500/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400">
+                      <Repeat className="h-4 w-4" />
+                      <span>획득 횟수</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {repeatCount}회
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Permanent badge notice */}
               <div className="pt-2 border-t border-green-500/20">
@@ -189,6 +243,28 @@ export function BadgeDetailDialog({
             </div>
           )}
 
+          {/* Limited Edition Info */}
+          {badge.category === 'limited' && badge.valid_from && badge.valid_until && (
+            <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-purple-700 dark:text-purple-400 mb-1">
+                    ⭐ 한정판 배지
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(badge.valid_from).toLocaleDateString('ko-KR')} ~ {new Date(badge.valid_until).toLocaleDateString('ko-KR')}
+                  </p>
+                  {!isUnlocked && new Date() > new Date(badge.valid_until) && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      ⚠️ 획득 기간이 종료되었습니다
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* XP Reward - Simplified single card */}
           <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
             <div className="flex items-center justify-center gap-2 mb-1">
@@ -198,9 +274,9 @@ export function BadgeDetailDialog({
             <div className="text-4xl font-bold text-primary text-center">
               +{badge.xp_reward.toLocaleString()} XP
             </div>
-            {badge.is_repeatable && (
+            {badge.category === 'recurring' && (
               <div className="text-xs text-primary/70 mt-2 text-center">
-                🔄 매월 반복 획득 가능 ({Math.round((badge.repeat_xp_multiplier || 0.5) * 100)}% 보상)
+                🔄 반복 획득 가능 (매회 동일 보상)
               </div>
             )}
           </div>

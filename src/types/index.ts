@@ -149,12 +149,20 @@ export interface Achievement {
   title: string
   description: string
   icon: string
-  category: 'streak' | 'completion' | 'volume' | 'special' | 'milestone'
+  // Badge System v4 - Updated category types
+  category: 'one_time' | 'recurring' | 'limited' | 'hidden' | 'social'
+  tier: 'bronze' | 'silver' | 'gold' | 'platinum'
   xp_reward: number
   unlock_condition: AchievementUnlockCondition
   display_order: number
   created_at: string
-  // Badge System v2
+  // Badge System v4 - New fields
+  is_hidden: boolean
+  valid_from?: string | null
+  valid_until?: string | null
+  anti_cheat_rules?: AntiCheatRules | null
+  max_count: number
+  // Badge System v2 (Legacy - may be deprecated)
   hint_level?: 'full' | 'cryptic' | 'hidden'
   badge_type?: 'permanent' | 'monthly' | 'seasonal' | 'event'
   is_repeatable?: boolean
@@ -167,6 +175,14 @@ export interface Achievement {
     unlocked_title?: string
     unlocked_description?: string
   }
+}
+
+export interface AntiCheatRules {
+  minActionsPerMandalart?: number
+  minCheckInterval?: number
+  maxDailyChecks?: number
+  minActionTextLength?: number
+  duplicateTextThreshold?: number
 }
 
 export interface AchievementUnlockCondition {
@@ -190,6 +206,10 @@ export interface UserAchievement {
   achievement_id: string
   unlocked_at: string
   achievement?: Achievement
+  // Badge System v4 - New fields
+  count: number
+  authenticity_score: number
+  is_verified: boolean
 }
 
 export interface AchievementProgress {
@@ -255,4 +275,15 @@ export interface PatternInsight {
   message: string
   data: Record<string, unknown>
   actionable: boolean
+}
+
+// Badge System v4 - Validation logs
+export interface BadgeValidationLog {
+  id: string
+  user_id: string
+  badge_key: string
+  validation_type: string
+  passed: boolean
+  details?: Record<string, unknown>
+  created_at: string
 }
