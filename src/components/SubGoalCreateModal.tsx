@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
-import { getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
+import { getActionTypeLabel, formatTypeDetails, suggestActionType } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 import { VALIDATION_MESSAGES } from '@/lib/notificationMessages'
@@ -24,6 +24,7 @@ interface LocalAction {
   type: 'routine' | 'mission' | 'reference'
   routine_frequency?: 'daily' | 'weekly' | 'monthly'
   mission_completion_type?: 'once' | 'periodic'
+  ai_suggestion?: string | { type: string; confidence: string; reason: string }
 }
 
 interface SubGoalCreateModalProps {
@@ -79,8 +80,15 @@ export default function SubGoalCreateModal({
   const handleActionTitleSave = (actionId: string) => {
     if (editingActionTitle.trim() === '') return
 
+    const trimmedTitle = editingActionTitle.trim()
+    const aiSuggestion = suggestActionType(trimmedTitle)
+
     setLocalActions(localActions.map(a =>
-      a.tempId === actionId ? { ...a, title: editingActionTitle.trim() } : a
+      a.tempId === actionId ? {
+        ...a,
+        title: trimmedTitle,
+        ai_suggestion: JSON.stringify(aiSuggestion)
+      } : a
     ))
     setEditingActionId(null)
     setEditingActionTitle('')
