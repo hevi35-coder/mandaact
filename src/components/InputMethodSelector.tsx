@@ -245,36 +245,11 @@ export default function InputMethodSelector({
       }
     })
 
-    // Classify all actions in parallel using API
-    const classificationPromises = actionTitles.map(async ({ title }) => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/classify-action-type`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ action_title: title }),
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error('Classification failed')
-        }
-
-        const classification = await response.json()
-        return { type: classification.type }
-      } catch (error) {
-        console.error(`Failed to classify "${title}", using fallback:`, error)
-        // Fallback to rule-based for this action
-        const suggestion = suggestActionType(title)
-        return { type: suggestion.type }
-      }
+    // Classify all actions using rule-based AI suggestion (fast and reliable)
+    const classifications = actionTitles.map(({ title }) => {
+      const suggestion = suggestActionType(title)
+      return { type: suggestion.type }
     })
-
-    const classifications = await Promise.all(classificationPromises)
 
     // Build gridData with classified actions
     let classificationIndex = 0
