@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { MandalartGridData } from '@/types'
@@ -287,7 +287,7 @@ export default function MandalartCreatePage() {
 
   return (
     <div className="py-3 md:py-6 px-4 pb-4">
-      <div className="max-w-6xl mx-auto space-y-6 pb-20 md:pb-0">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center md:text-left">
           <h1 className="text-3xl font-bold inline-block">만다라트 만들기</h1>
@@ -308,13 +308,13 @@ export default function MandalartCreatePage() {
         {/* Desktop: Mandalart Grid */}
         {inputMethod && (
           <Card className="w-full hidden md:block">
-            <CardHeader>
-              <CardTitle>직접 입력</CardTitle>
-              <p className="text-sm text-muted-foreground">
+            <div className="p-6 pb-3">
+              <h3 className="font-semibold leading-none tracking-tight">직접 입력</h3>
+              <p className="text-sm text-muted-foreground mt-1.5">
                 셀을 클릭하여 목표와 실천 항목을 입력하세요
               </p>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="pt-0">
               <MandalartGrid
                 mode="create"
                 data={gridData}
@@ -329,13 +329,13 @@ export default function MandalartCreatePage() {
         {/* Mobile: 3x3 Adaptive View */}
         {inputMethod && (
           <Card className="w-full md:hidden">
-            <CardHeader>
-              <CardTitle>직접 입력</CardTitle>
-              <p className="text-sm text-muted-foreground">
+            <div className="p-4 pb-2">
+              <h3 className="font-semibold leading-none tracking-tight">직접 입력</h3>
+              <p className="text-sm text-muted-foreground mt-1.5">
                 셀을 탭하여 목표와 실천 항목을 입력하세요
               </p>
-            </CardHeader>
-            <CardContent className="p-4">
+            </div>
+            <CardContent className="p-4 pt-0">
               {mobileExpandedSection === null ? (
                 // Collapsed: 3x3 Sub-goals only
                 <div className="grid grid-cols-3 gap-2">
@@ -412,10 +412,6 @@ export default function MandalartCreatePage() {
                       </div>
                     ))}
                   </div>
-
-                  <p className="text-xs text-center text-muted-foreground">
-                    그리드를 탭하거나 "수정" 버튼을 눌러 편집할 수 있습니다
-                  </p>
                 </div>
               )}
             </CardContent>

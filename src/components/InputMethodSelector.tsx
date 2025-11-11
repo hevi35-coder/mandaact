@@ -426,15 +426,14 @@ export default function InputMethodSelector({
           <CardHeader>
             <CardTitle>텍스트 붙여넣기</CardTitle>
             <CardDescription>
-              ChatGPT, Claude 등에서 생성한 만다라트 텍스트를 붙여넣으세요
+              만다라트 텍스트를 붙여넣으면 자동으로 분석합니다
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="pastedText">만다라트 텍스트</Label>
-              <textarea
+            <textarea
                 id="pastedText"
                 className="w-full min-h-[200px] p-3 border rounded-md text-sm font-mono resize-y"
+                aria-label="만다라트 텍스트"
                 placeholder={`(예시) 핵심 목표: 건강한 삶
 
 1. 운동
@@ -458,7 +457,6 @@ export default function InputMethodSelector({
                 onChange={(e) => setPastedText(e.target.value)}
                 disabled={isProcessingText || disabled}
               />
-            </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
