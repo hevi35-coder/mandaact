@@ -64,6 +64,8 @@ export function suggestActionType(title: string): AISuggestion {
   const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심|사고방식|관점|시각|인식|깨달음|교훈|지향|지혜/.test(lower)
   const isNegativeReference = /하지\s*않기|두려워하지|망설이지|포기하지|극복/.test(lower)
   const hasAbstractGoal = /유지|확보|갖기/.test(lower)
+  const hasAbstractAdverb = /효율적으로|생산적으로|체계적으로|전략적으로/.test(lower)
+  const hasAbstractTimeGoal = /시간.*확보|시간.*갖기|여유.*만들기/.test(lower)
   const hasRoutineVerb = /읽기|공부|운동|명상|기도|쓰기|보기|듣기|하기|걷기|달리기|먹기|마시기|일어나기|자기|정리|청소|체크|확인|검토|복습|예습/.test(lower)
   const hasRoutineAdverb = /꾸준히|계속|지속적으로|항상|매번|규칙적으로|반복적으로|습관적으로/.test(lower)
 
@@ -91,6 +93,24 @@ export function suggestActionType(title: string): AISuggestion {
       type: 'reference',
       confidence: 'high',
       reason: '마음가짐이나 생활 원칙으로 보여요'
+    }
+  }
+
+  // Priority 1.6: Abstract adverbs indicating approach/mindset
+  if (hasAbstractAdverb) {
+    return {
+      type: 'reference',
+      confidence: 'medium',
+      reason: '실천 방식이나 접근법으로 보여요 (구체적인 실천 방법 추가 권장)'
+    }
+  }
+
+  // Priority 1.7: Abstract time management goals
+  if (hasAbstractTimeGoal) {
+    return {
+      type: 'reference',
+      confidence: 'medium',
+      reason: '시간 관리 목표로 보여요 (구체적인 실천 방법 추가 권장)'
     }
   }
 
