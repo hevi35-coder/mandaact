@@ -145,11 +145,12 @@
    → "100일 동안 포기하지 않은 당신이 진짜입니다"
    ```
 
-2. **시각적 등급**: 티어별 색상과 애니메이션
-   - Bronze: 🟤 따뜻한 시작
-   - Silver: ⚪ 빛나는 성장
-   - Gold: 🟡 황금빛 성취
-   - Platinum: 🔷 궁극의 경지
+2. **시각적 감정 단계**: 성장 여정 기반 색상과 아이콘
+   - 입문: 🌱 따뜻한 초록 (설렘·호기심)
+   - 형성: 🔥 열정의 주황 (도전·의지)
+   - 성장: ⚡ 몰입의 파랑 (몰입·리듬)
+   - 숙련: 💎 통찰의 보라 (자신감·통찰)
+   - 마스터: ⭐ 초월의 금빛 (초월·예술)
 
 3. **공유 가능한 스토리**: 각 배지마다 SNS 공유용 이미지/문구
 
@@ -223,51 +224,46 @@ Bronze • 50 XP
    - Achievement 타입에 v5.0 필드 추가 (title_en, emotional_message, is_active)
    - **상태**: 구현 완료, GitHub 커밋 (e5768af)
 
+4. **감정 단계 시스템 구현** ✅
+   - 파일: `src/lib/badgeStages.ts`, `src/components/stats/UserProfileCard.tsx`, `src/components/stats/BadgeDetailDialog.tsx`
+   - 티어(Bronze/Silver/Gold/Platinum) 제거
+   - XP 기반 감정 단계 매핑 시스템 구현:
+     - 입문 (30-150 XP): 설렘·호기심 🌱
+     - 형성 (200-600 XP): 도전·의지 🔥
+     - 성장 (800-1800 XP): 몰입·리듬 ⚡
+     - 숙련 (2000-5000 XP): 자신감·통찰 💎
+     - 마스터 (5000-8000 XP): 초월·예술 ⭐
+   - UserProfileCard: XP 보상 아래 감정 단계 표시
+   - BadgeDetailDialog: 티어 배지 대신 감정 단계 배지 표시, title_en 및 emotional_message 섹션 추가
+   - **상태**: 구현 완료, GitHub 커밋 (a77e2a4)
+
 ### 🔄 진행 중인 작업
 
 없음
 
 ### 📋 남은 작업 (우선순위 순)
 
-#### Phase 1: 프론트엔드 UI 업데이트 (선택)
-1. **배지 상세 페이지 개선** (선택)
-   - 위치: 배지 클릭 시 표시되는 BadgeDetailDialog
-   - 작업: 영문 부제(title_en) 표시 추가
-   - 작업: 감정 메시지 섹션 추가
-   - 예시:
-   ```typescript
-   // BadgeDetailDialog.tsx
-   {badge.title_en && (
-     <p className="text-sm text-muted-foreground">{badge.title_en}</p>
-   )}
-   {badge.emotional_message && (
-     <div className="mt-4 p-3 bg-primary/5 rounded-lg">
-       <p className="text-sm italic">{badge.emotional_message}</p>
-     </div>
-   )}
-   ```
+#### Phase 1: 선택적 UI 개선
+1. **배지 애니메이션 강화** (선택)
+   - 감정 단계별 특수 애니메이션 효과
+   - 획득 시 confetti 또는 파티클 효과 (특히 마스터 단계)
 
-#### Phase 2: UX 강화 (선택)
-
-2. **배지 애니메이션 강화**
-   - 티어별 색상 구분 (Bronze/Silver/Gold/Platinum)
-   - 획득 시 특별 효과 (confetti, 파티클)
-
-3. **프로그레스 바 개선**
+2. **프로그레스 바 개선** (선택)
    - 다음 배지까지 진행도 표시
    - "30일의 리듬까지 7일 남음" 등
 
-4. **공유 기능**
+3. **공유 기능** (선택)
    - 배지 획득 이미지 생성
    - SNS 공유 텍스트 자동 생성
 
-#### Phase 3: 데이터 분석 (미래)
+#### Phase 2: 데이터 분석 (미래)
 
-5. **A/B 테스트 계획**
+4. **감정 단계 시스템 효과 측정**
    - 신규 유저 vs 기존 유저 반응 비교
-   - 배지 획득률 변화 모니터링
+   - 배지 획득률 및 사용자 몰입도 변화 모니터링
+   - 티어 제거에 따른 UX 개선 효과 분석
 
-6. **감정 곡선 검증**
+5. **감정 곡선 검증**
    - 각 단계별 사용자 리텐션 분석
    - XP 밸런스 재조정 필요 여부 확인
 
