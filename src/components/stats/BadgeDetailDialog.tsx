@@ -57,7 +57,7 @@ export function BadgeDetailDialog({
 
   const hintLevel = badge.hint_level || 'full'
   const crypticHint = getBadgeHint(badge.key, hintLevel)
-  const formattedCondition = formatUnlockCondition(badge.unlock_condition, hintLevel)
+  const formattedCondition = formatUnlockCondition(badge.unlock_condition, hintLevel, badge.key)
   const canShowProgress = !isUnlocked && progress && hintLevel !== 'hidden'
   const stage = getBadgeStage(badge.xp_reward)
 

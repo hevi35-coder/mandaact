@@ -47,14 +47,30 @@ interface UnlockCondition {
 
 /**
  * Format unlock condition for display
+ * Special handling for badges with badgeKey parameter
  */
-export function formatUnlockCondition(condition: UnlockCondition, hintLevel?: 'full' | 'cryptic' | 'hidden'): string {
+export function formatUnlockCondition(condition: UnlockCondition, hintLevel?: 'full' | 'cryptic' | 'hidden', badgeKey?: string): string {
   if (hintLevel === 'hidden') {
     return '비밀 업적'
   }
 
   if (hintLevel === 'cryptic') {
     return '달성 조건은 비밀입니다'
+  }
+
+  // Special cases for badges with trigger-based unlock conditions
+  if (!condition.type || Object.keys(condition).length === 0) {
+    // Special messages for specific badges
+    switch (badgeKey) {
+      case 'first_mandalart':
+        return '첫 번째 만다라트 생성 (최소 16개 실천 항목 작성)'
+      case 'level_10':
+        return '레벨 10 달성'
+      case 'monthly_champion':
+        return '월간 완벽한 실천 달성'
+      default:
+        return '특정 이벤트 달성 시 자동 획득'
+    }
   }
 
   // Full transparency - format the condition
@@ -85,7 +101,7 @@ export function formatUnlockCondition(condition: UnlockCondition, hintLevel?: 'f
     case 'monthly_streak':
       return `한 달(${condition.days}일) 연속 실천`
     default:
-      return '특별한 조건 달성'
+      return '특정 이벤트 달성 시 자동 획득'
   }
 }
 
