@@ -85,7 +85,7 @@ export function BadgeDetailDialog({
           <div className="text-center space-y-1.5">
             <DialogTitle className="text-2xl">{badge.title}</DialogTitle>
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              {/* Category Badge */}
+              {/* Category Badge - Only show meaningful distinctions */}
               {badge.category === 'one_time' && (
                 <Badge variant="outline" className="text-xs">
                   🏆 일회성
@@ -109,18 +109,6 @@ export function BadgeDetailDialog({
               {badge.category === 'social' && (
                 <Badge variant="outline" className="text-xs">
                   👥 소셜
-                </Badge>
-              )}
-
-              {/* Emotional Stage Badge (v5.0) */}
-              <Badge className={`text-xs ${stage.bgColor} ${stage.textColor} border-0`}>
-                {stage.icon} {stage.label}
-              </Badge>
-
-              {/* Unlock Status */}
-              {isUnlocked && (
-                <Badge className="text-xs bg-green-600">
-                  획득 완료
                 </Badge>
               )}
             </div>
