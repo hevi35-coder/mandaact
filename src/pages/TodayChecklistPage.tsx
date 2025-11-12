@@ -322,6 +322,17 @@ export default function TodayChecklistPage() {
                     console.log('✨ Perfect week bonus activated: 2x XP for 7 days')
                   }
                 }
+
+                // Check and unlock new achievements
+                const { checkAndUnlockAchievements } = await import('@/lib/stats')
+                const newlyUnlocked = await checkAndUnlockAchievements(user.id)
+
+                if (newlyUnlocked && newlyUnlocked.length > 0) {
+                  for (const badge of newlyUnlocked) {
+                    showCelebration(`🏆 새로운 배지 획득: ${badge.title}`)
+                    console.log('🏆 Badge unlocked:', badge.title, '+' + badge.xp_reward + ' XP')
+                  }
+                }
               } catch (bonusError) {
                 console.error('Perfect day bonus error:', bonusError)
               }

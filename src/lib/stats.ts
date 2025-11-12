@@ -803,18 +803,31 @@ export async function updateUserXP(userId: string, xpToAdd: number) {
 // ============================================================================
 
 /**
+ * Stats cache for achievement checking optimization
+ */
+export interface StatsCache {
+  streak?: StreakStats
+  completion?: CompletionStats
+  goalProgress?: GoalProgress[]
+  totalChecks?: number
+  checks?: { checked_at: string }[]
+}
+
+/**
  * Check if user meets criteria for a specific achievement
+ * @param cache Optional pre-computed stats to avoid redundant queries
  */
 export async function checkAchievementUnlock(
   userId: string,
   _achievementKey: string,
-  unlockCondition: UnlockCondition
+  unlockCondition: UnlockCondition,
+  cache?: StatsCache
 ): Promise<boolean> {
   const { type } = unlockCondition
 
   switch (type) {
     case 'streak': {
-      const streakStats = await getStreakStats(userId)
+      const streakStats = cache?.streak ?? await getStreakStats(userId)
       const days = unlockCondition.days ?? 0
       return streakStats.current >= days || streakStats.longest >= days
     }
@@ -823,31 +836,35 @@ export async function checkAchievementUnlock(
       // Count days with 100% completion
       // This requires checking daily completion history
       // For now, simplified check
-      const completionStats = await getCompletionStats(userId)
+      const completionStats = cache?.completion ?? await getCompletionStats(userId)
       return completionStats.today.percentage === 100
     }
 
     case 'perfect_week': {
-      const completionStats = await getCompletionStats(userId)
+      const completionStats = cache?.completion ?? await getCompletionStats(userId)
       return completionStats.week.percentage >= (unlockCondition.threshold || 80)
     }
 
     case 'perfect_month': {
-      const completionStats = await getCompletionStats(userId)
+      const completionStats = cache?.completion ?? await getCompletionStats(userId)
       return completionStats.month.percentage >= (unlockCondition.threshold || 90)
     }
 
     case 'total_checks': {
-      const { count } = await supabase
-        .from('check_history')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
+      let totalChecks = cache?.totalChecks
+      if (totalChecks === undefined) {
+        const { count } = await supabase
+          .from('check_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+        totalChecks = count || 0
+      }
       const requiredCount = unlockCondition.count ?? 0
-      return (count || 0) >= requiredCount
+      return totalChecks >= requiredCount
     }
 
     case 'balanced': {
-      const goalProgress = await getGoalProgress(userId)
+      const goalProgress = cache?.goalProgress ?? await getGoalProgress(userId)
       if (goalProgress.length === 0) return false
       // Check if all sub-goals meet threshold
       const threshold = unlockCondition.threshold || 60
@@ -856,12 +873,16 @@ export async function checkAchievementUnlock(
 
     case 'time_pattern': {
       // Check time-of-day patterns (morning checks)
-      const { data: checks } = await supabase
-        .from('check_history')
-        .select('checked_at')
-        .eq('user_id', userId)
+      let checks = cache?.checks
+      if (!checks) {
+        const { data } = await supabase
+          .from('check_history')
+          .select('checked_at')
+          .eq('user_id', userId)
+        checks = data || []
+      }
 
-      if (!checks || checks.length === 0) return false
+      if (checks.length === 0) return false
 
       const morningChecks = checks.filter(check => {
         const hour = new Date(check.checked_at).getHours()
@@ -874,12 +895,16 @@ export async function checkAchievementUnlock(
 
     case 'weekend_completion': {
       // Compare weekend vs weekday completion
-      const { data: checks } = await supabase
-        .from('check_history')
-        .select('checked_at')
-        .eq('user_id', userId)
+      let checks = cache?.checks
+      if (!checks) {
+        const { data } = await supabase
+          .from('check_history')
+          .select('checked_at')
+          .eq('user_id', userId)
+        checks = data || []
+      }
 
-      if (!checks || checks.length === 0) return false
+      if (checks.length === 0) return false
 
       const weekendChecks = checks.filter(check => {
         const day = new Date(check.checked_at).getDay()
@@ -900,7 +925,7 @@ export async function checkAchievementUnlock(
     }
 
     case 'monthly_completion': {
-      const completionStats = await getCompletionStats(userId)
+      const completionStats = cache?.completion ?? await getCompletionStats(userId)
       return completionStats.month.percentage >= (unlockCondition.threshold || 90)
     }
 
@@ -932,7 +957,7 @@ export async function checkAchievementUnlock(
     }
 
     case 'monthly_streak': {
-      const streakStats = await getStreakStats(userId)
+      const streakStats = cache?.streak ?? await getStreakStats(userId)
       // Check if current streak is at least the required days (30 for monthly)
       return streakStats.current >= (unlockCondition.days || 30)
     }
@@ -969,58 +994,169 @@ async function getCompletionStatsForPeriod(userId: string, start: Date, end: Dat
 }
 
 /**
- * Check all achievements for a user and unlock new ones
+ * Check all achievements for a user and unlock new ones (optimized with parallel execution and caching)
  */
 export async function checkAndUnlockAchievements(userId: string) {
-  // Get all achievements
-  const { data: achievements, error: achievementsError } = await supabase
-    .from('achievements')
-    .select('*')
-    .order('display_order')
+  const startTime = performance.now()
 
-  if (achievementsError || !achievements) {
-    console.error('Error fetching achievements:', achievementsError)
+  // Get all achievements and user achievements in parallel
+  const [achievementsRes, userAchievementsRes] = await Promise.all([
+    supabase
+      .from('achievements')
+      .select('*')
+      .eq('is_active', true)  // ✅ OPTIMIZATION: Filter active badges only
+      .order('display_order'),
+    supabase
+      .from('user_achievements')
+      .select('achievement_id')
+      .eq('user_id', userId)
+  ])
+
+  if (achievementsRes.error || !achievementsRes.data) {
+    console.error('Error fetching achievements:', achievementsRes.error)
     return []
   }
 
-  // Get user's current achievements
-  const { data: userAchievements, error: userAchievementsError } = await supabase
-    .from('user_achievements')
-    .select('achievement_id')
-    .eq('user_id', userId)
-
-  if (userAchievementsError) {
-    console.error('Error fetching user achievements:', userAchievementsError)
+  if (userAchievementsRes.error) {
+    console.error('Error fetching user achievements:', userAchievementsRes.error)
     return []
   }
 
-  const unlockedIds = new Set(userAchievements?.map(ua => ua.achievement_id) || [])
+  const achievements = achievementsRes.data
+  const unlockedIds = new Set(userAchievementsRes.data?.map(ua => ua.achievement_id) || [])
+
+  // Filter out already unlocked badges to reduce work
+  const unlockedAchievements = achievements.filter(a => !unlockedIds.has(a.id))
+  console.log(`🔍 Checking ${unlockedAchievements.length} unlocked badges (${achievements.length - unlockedAchievements.length} already unlocked)`)
+
+  // ✅ OPTIMIZATION: Determine which stats are needed based on active unlocked badges
+  const neededStats = new Set<keyof StatsCache>()
+  unlockedAchievements.forEach(achievement => {
+    const { type } = achievement.unlock_condition
+
+    switch (type) {
+      case 'streak':
+      case 'monthly_streak':
+        neededStats.add('streak')
+        break
+
+      case 'perfect_day':
+      case 'perfect_week':
+      case 'perfect_month':
+      case 'monthly_completion':
+      case 'perfect_week_in_month':
+        neededStats.add('completion')
+        break
+
+      case 'balanced':
+        neededStats.add('goalProgress')
+        break
+
+      case 'total_checks':
+        neededStats.add('totalChecks')
+        break
+
+      case 'time_pattern':
+      case 'weekend_completion':
+        neededStats.add('checks')
+        break
+    }
+  })
+
+  console.log(`📊 Computing conditional stats: [${Array.from(neededStats).join(', ')}]`)
+
+  // ✅ OPTIMIZATION: Build conditional stats cache (only compute what's needed)
+  const cacheStartTime = performance.now()
+  const promises: Promise<any>[] = []
+  const keys: (keyof StatsCache)[] = []
+
+  if (neededStats.has('streak')) {
+    keys.push('streak')
+    promises.push(getStreakStats(userId))
+  }
+
+  if (neededStats.has('completion')) {
+    keys.push('completion')
+    promises.push(getCompletionStats(userId))
+  }
+
+  if (neededStats.has('goalProgress')) {
+    keys.push('goalProgress')
+    promises.push(getGoalProgress(userId))
+  }
+
+  if (neededStats.has('totalChecks')) {
+    keys.push('totalChecks')
+    promises.push(
+      supabase.from('check_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .then(({ count }) => count || 0)
+    )
+  }
+
+  if (neededStats.has('checks')) {
+    keys.push('checks')
+    promises.push(
+      supabase.from('check_history')
+        .select('checked_at')
+        .eq('user_id', userId)
+        .then(({ data }) => data || [])
+    )
+  }
+
+  const results = await Promise.all(promises)
+
+  const statsCache: StatsCache = {}
+  keys.forEach((key, index) => {
+    statsCache[key] = results[index]
+  })
+
+  console.log(`✅ Stats cache ready in ${(performance.now() - cacheStartTime).toFixed(0)}ms`)
+
+  // Check all unlocked achievements in parallel with cache
+  console.log(`🔍 Checking ${unlockedAchievements.length} achievements in parallel...`)
+  const checkStartTime = performance.now()
+
+  const checkResults = await Promise.all(
+    unlockedAchievements.map(async (achievement) => {
+      // Check if criteria met (with cache)
+      const unlocked = await checkAchievementUnlock(
+        userId,
+        achievement.key,
+        achievement.unlock_condition,
+        statsCache
+      )
+
+      return { achievement, unlocked }
+    })
+  )
+
+  console.log(`✅ Checks completed in ${(performance.now() - checkStartTime).toFixed(0)}ms`)
+
+  // Process newly unlocked achievements
   const newlyUnlocked = []
 
-  // Check each achievement
-  for (const achievement of achievements) {
-    // Skip if already unlocked
-    if (unlockedIds.has(achievement.id)) continue
+  for (const { achievement, unlocked } of checkResults) {
+    if (!unlocked) continue
 
-    // Check if criteria met
-    const unlocked = await checkAchievementUnlock(userId, achievement.key, achievement.unlock_condition)
+    // Unlock achievement
+    const { error: insertError } = await supabase
+      .from('user_achievements')
+      .insert({
+        user_id: userId,
+        achievement_id: achievement.id
+      })
 
-    if (unlocked) {
-      // Unlock achievement
-      const { error: insertError } = await supabase
-        .from('user_achievements')
-        .insert({
-          user_id: userId,
-          achievement_id: achievement.id
-        })
-
-      if (!insertError) {
-        // Award XP
-        await updateUserXP(userId, achievement.xp_reward)
-        newlyUnlocked.push(achievement)
-      }
+    if (!insertError) {
+      // Award XP
+      await updateUserXP(userId, achievement.xp_reward)
+      newlyUnlocked.push(achievement)
     }
   }
+
+  const totalTime = (performance.now() - startTime).toFixed(0)
+  console.log(`🏆 Badge check complete in ${totalTime}ms (${newlyUnlocked.length} newly unlocked)`)
 
   return newlyUnlocked
 }

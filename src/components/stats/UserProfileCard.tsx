@@ -123,13 +123,14 @@ export function UserProfileCard() {
     }
   }
 
-  // Load badges collection (lazy)
+  // Load badges collection (lazy) with background badge checking
   const loadBadgesCollection = async () => {
     if (!user || badgesLoaded || badgesLoading) return
 
     setBadgesLoading(true)
 
     try {
+      // ✅ OPTIMIZATION: Load badge collection first (fast, no blocking)
       // Get all achievements and user achievements in parallel
       const [allAchievementsRes, userAchievementsRes] = await Promise.all([
         supabase
@@ -159,24 +160,79 @@ export function UserProfileCard() {
       const unlockedMap = new Map(userAchievementsRes.data?.map(ua => [ua.achievement_id, ua.unlocked_at]) || [])
 
       // Debug: Log badge matching info
+      const unlockedBadge = userAchievementsRes.data?.[0]
+      const matchedBadge = activeBadges.find(b => b.id === unlockedBadge?.achievement_id)
+
       console.log('🔍 Badge Debug Info:', {
         totalBadges: activeBadges.length,
         unlockedCount: unlockedIds.size,
         unlockedBadgeIds: Array.from(unlockedIds),
+        userAchievements: userAchievementsRes.data,
+        firstUnlockedAchievement: unlockedBadge,
+        matchedBadge: matchedBadge,
         streak3Badge: activeBadges.find(b => b.key === 'streak_3'),
-        streak3Unlocked: userAchievementsRes.data?.find(ua =>
-          activeBadges.find(b => b.key === 'streak_3')?.id === ua.achievement_id
-        )
+        allBadgeKeys: activeBadges.map(b => ({ key: b.key, id: b.id, title: b.title }))
       })
 
       setUnlockedBadgeIds(unlockedIds)
       setUnlockedBadgesMap(unlockedMap)
 
       setBadgesLoaded(true)
+
+      // ✅ OPTIMIZATION: Check for new badge unlocks in background (non-blocking)
+      setTimeout(() => {
+        checkBadgesInBackground()
+      }, 0)
     } catch (error) {
       console.error('Error loading badges collection:', error)
     } finally {
       setBadgesLoading(false)
+    }
+  }
+
+  // Background badge checking (non-blocking)
+  const checkBadgesInBackground = async () => {
+    if (!user) return
+
+    try {
+      const { checkAndUnlockAchievements } = await import('@/lib/stats')
+      const newlyUnlocked = await checkAndUnlockAchievements(user.id)
+
+      if (newlyUnlocked && newlyUnlocked.length > 0) {
+        console.log('🏆 Newly unlocked badges:', newlyUnlocked.map(b => b.title))
+
+        // Show toast notification for each new badge
+        for (const badge of newlyUnlocked) {
+          showSuccess(`🏆 새로운 배지 획득: ${badge.title} (+${badge.xp_reward} XP)`)
+        }
+
+        // Refresh badge collection to show newly unlocked badges
+        const { data: updatedUserAchievements } = await supabase
+          .from('user_achievements')
+          .select(`
+            *,
+            achievement:achievements(*)
+          `)
+          .eq('user_id', user.id)
+          .order('unlocked_at', { ascending: false })
+
+        if (updatedUserAchievements) {
+          setUserAchievements(updatedUserAchievements)
+          const updatedUnlockedIds = new Set(updatedUserAchievements.map(ua => ua.achievement_id))
+          const updatedUnlockedMap = new Map(updatedUserAchievements.map(ua => [ua.achievement_id, ua.unlocked_at]))
+          setUnlockedBadgeIds(updatedUnlockedIds)
+          setUnlockedBadgesMap(updatedUnlockedMap)
+        }
+
+        // Refresh user level to reflect XP gain
+        const updatedLevel = await getUserLevel(user.id)
+        if (updatedLevel) {
+          setUserLevel(updatedLevel)
+        }
+      }
+    } catch (error) {
+      console.error('Background badge check error:', error)
+      // Don't show error to user - this is a background operation
     }
   }
 
