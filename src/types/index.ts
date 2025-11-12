@@ -162,6 +162,10 @@ export interface Achievement {
   valid_until?: string | null
   anti_cheat_rules?: AntiCheatRules | null
   max_count: number
+  is_active?: boolean // v4: Control badge visibility
+  // Badge System v5 - New fields
+  title_en?: string // English subtitle
+  emotional_message?: string // Special message on unlock
   // Badge System v2 (Legacy - may be deprecated)
   hint_level?: 'full' | 'cryptic' | 'hidden'
   badge_type?: 'permanent' | 'monthly' | 'seasonal' | 'event'

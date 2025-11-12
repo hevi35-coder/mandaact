@@ -12,6 +12,7 @@ export interface BadgeEvaluationResult {
   wasUnlocked: boolean
   xpAwarded: number
   progress: number
+  emotionalMessage?: string
 }
 
 /**
@@ -86,7 +87,8 @@ export async function evaluateAndUnlockBadges(userId: string): Promise<BadgeEval
             badgeTitle: badge.title,
             wasUnlocked: true,
             xpAwarded: badge.xp_reward,
-            progress: progress.progress
+            progress: progress.progress,
+            emotionalMessage: badge.emotional_message
           })
         }
       }
@@ -151,7 +153,8 @@ export async function evaluateSingleBadge(
         badgeTitle: badge.title,
         wasUnlocked: true,
         xpAwarded: badge.xp_reward,
-        progress: progress.progress
+        progress: progress.progress,
+        emotionalMessage: badge.emotional_message
       }
     }
 

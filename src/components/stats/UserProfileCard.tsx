@@ -214,10 +214,15 @@ export function UserProfileCard() {
             // Show toast notifications for newly unlocked badges
             for (const result of evaluationResults) {
               if (result.wasUnlocked) {
+                // Use emotional message if available, otherwise use default
+                const description = result.emotionalMessage
+                  ? `${result.emotionalMessage}\n\n${result.badgeTitle} (+${result.xpAwarded} XP)`
+                  : `${result.badgeTitle} (+${result.xpAwarded} XP)`
+
                 toast({
                   title: `🎉 새로운 배지 획득!`,
-                  description: `${result.badgeTitle} (+${result.xpAwarded} XP)`,
-                  duration: 5000,
+                  description,
+                  duration: 6000, // Longer duration for emotional messages
                 })
               }
             }
