@@ -549,86 +549,42 @@ export function UserProfileCard() {
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {category.badges.map((badge) => {
                               const isUnlocked = unlockedBadgeIds.has(badge.id)
-                              const isNew = newlyUnlockedBadges.has(badge.key)
-                              const userBadge = userAchievements?.find(ua => ua.achievement_id === badge.id)
-                              const repeatCount = userBadge?.count || 0
 
-                              // Emotional stage based on XP (v5.0)
-                              const stage = getBadgeStage(badge.xp_reward)
-                              const stageColors = {
-                                beginner: 'from-green-100 to-emerald-100 dark:from-green-950/30 dark:to-emerald-950/30 border-green-300 dark:border-green-700',
-                                forming: 'from-orange-100 to-red-100 dark:from-orange-950/30 dark:to-red-950/30 border-orange-300 dark:border-orange-700',
-                                growth: 'from-blue-100 to-cyan-100 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-300 dark:border-blue-700',
-                                mastery: 'from-purple-100 to-pink-100 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-300 dark:border-purple-700',
-                                transcendence: 'from-amber-100 to-yellow-100 dark:from-amber-950/30 dark:to-yellow-950/30 border-amber-400 dark:border-amber-600'
-                              }
-
-                              // v5.0: Stage-specific animation properties
-                              const getStageAnimation = () => {
+                              // Simplified hover animation (no stage-specific complexity)
+                              const getHoverAnimation = () => {
                                 if (!isUnlocked) return {}
-
-                                const animations: Record<string, any> = {
-                                  beginner: {
-                                    whileHover: { scale: 1.05 },
-                                    transition: { type: 'spring', stiffness: 300, damping: 15 }
-                                  },
-                                  forming: {
-                                    whileHover: { scale: 1.05, rotate: [0, -1, 1, 0] },
-                                    transition: { type: 'spring', stiffness: 400, damping: 12 }
-                                  },
-                                  growth: {
-                                    whileHover: { scale: 1.08, boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
-                                    transition: { type: 'spring', stiffness: 350, damping: 10 }
-                                  },
-                                  mastery: {
-                                    whileHover: { scale: 1.1, rotate: [0, 2, -2, 0] },
-                                    transition: { type: 'spring', stiffness: 300, damping: 8 }
-                                  },
-                                  transcendence: {
-                                    whileHover: {
-                                      scale: 1.12,
-                                      rotate: [0, 3, -3, 0],
-                                      boxShadow: '0 0 30px rgba(251, 191, 36, 0.6)'
-                                    },
-                                    transition: { type: 'spring', stiffness: 250, damping: 8 }
-                                  }
+                                return {
+                                  whileHover: { scale: 1.05 },
+                                  transition: { type: 'spring', stiffness: 300, damping: 15 }
                                 }
-                                return animations[stage.stage] || {}
                               }
 
                               return (
-                                // 🏆 BADGE: v5.0 stage-specific animations
+                                // 🏆 BADGE: Simplified design with acquisition type indicator
                                 <motion.div
                                   key={badge.id}
                                   {...BADGE_ANIMATION}
-                                  {...getStageAnimation()}
+                                  {...getHoverAnimation()}
                                   onClick={() => setSelectedBadge(badge)}
                                   className={`
                                     relative p-3 rounded-lg border text-center cursor-pointer
                                     flex flex-col items-center justify-between min-h-[100px]
                                     transition-all duration-300
                                     ${isUnlocked
-                                      ? `bg-gradient-to-br ${stageColors[stage.stage]} shadow-sm`
+                                      ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 shadow-sm'
                                       : 'bg-muted/30 border-muted-foreground/10 opacity-50 hover:opacity-70'
                                     }
                                   `}
                                 >
-                                  {/* NEW Badge Indicator */}
-                                  {isNew && (
-                                    // ⭐ BADGE_NEW: Stronger spring for newly unlocked badges
-                                    <motion.div
-                                      {...BADGE_NEW_ANIMATION}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-0.5"
-                                    >
-                                      <Sparkles className="h-2.5 w-2.5" />
-                                      NEW
-                                    </motion.div>
+                                  {/* Acquisition Type Indicator - Top Right Corner */}
+                                  {badge.category === 'one_time' && (
+                                    <div className="absolute top-1.5 right-1.5 bg-amber-500/20 border border-amber-500/40 rounded px-1 py-0.5 flex items-center justify-center">
+                                      <span className="text-[10px]">🏆</span>
+                                    </div>
                                   )}
-
-                                  {/* Repeat count for recurring badges */}
-                                  {isUnlocked && badge.category === 'recurring' && repeatCount > 1 && (
-                                    <div className="absolute -top-1.5 -left-1.5 bg-blue-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md">
-                                      {repeatCount}
+                                  {badge.category === 'recurring' && (
+                                    <div className="absolute top-1.5 right-1.5 bg-blue-500/20 border border-blue-500/40 rounded px-1 py-0.5 flex items-center justify-center">
+                                      <span className="text-[10px]">🔄</span>
                                     </div>
                                   )}
 

@@ -81,37 +81,9 @@ export function BadgeDetailDialog({
             </div>
           </motion.div>
 
-          {/* Title & Badges */}
-          <div className="text-center space-y-1.5">
+          {/* Title */}
+          <div className="text-center">
             <DialogTitle className="text-2xl">{badge.title}</DialogTitle>
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              {/* Category Badge - Only show meaningful distinctions */}
-              {badge.category === 'one_time' && (
-                <Badge variant="outline" className="text-xs">
-                  🏆 일회성
-                </Badge>
-              )}
-              {badge.category === 'recurring' && (
-                <Badge variant="outline" className="text-xs">
-                  🔄 반복 획득
-                </Badge>
-              )}
-              {badge.category === 'limited' && (
-                <Badge variant="outline" className="text-xs bg-purple-100 dark:bg-purple-900">
-                  ⭐ 한정판
-                </Badge>
-              )}
-              {badge.category === 'hidden' && (
-                <Badge variant="outline" className="text-xs bg-indigo-100 dark:bg-indigo-900">
-                  🔮 히든
-                </Badge>
-              )}
-              {badge.category === 'social' && (
-                <Badge variant="outline" className="text-xs">
-                  👥 소셜
-                </Badge>
-              )}
-            </div>
           </div>
 
           {/* Description */}
