@@ -15,6 +15,7 @@ import { SUCCESS_MESSAGES } from '@/lib/notificationMessages'
 import { showSuccess } from '@/lib/notificationUtils'
 import { getActiveMultipliers, formatMultiplier, getMultiplierColor } from '@/lib/xpMultipliers'
 import { getBadgeStage } from '@/lib/badgeStages'
+import { categorizeBadges } from '@/lib/badgeCategories'
 import type { UserLevel, Achievement, UserAchievement } from '@/types'
 import type { XPMultiplier } from '@/lib/xpMultipliers'
 import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info } from 'lucide-react'
@@ -457,42 +458,28 @@ export function UserProfileCard() {
                   </div>
                 ) : badgesLoaded ? (
                   <div className="space-y-4 mt-3">
-                    {/* Group badges by category */}
-                    {(() => {
-                      const badgesByCategory = allBadges.reduce((groups, badge) => {
-                        const category = badge.category || 'one_time'
-                        if (!groups[category]) groups[category] = []
-                        groups[category].push(badge)
-                        return groups
-                      }, {} as Record<string, typeof allBadges>)
+                    {/* v5.0: Group badges by narrative categories */}
+                    {categorizeBadges(allBadges).map((category) => {
+                      const unlockedCount = category.badges.filter(b => unlockedBadgeIds.has(b.id)).length
+                      const totalCount = category.badges.length
+                      const progressPercentage = (unlockedCount / totalCount) * 100
 
-                      const categoryLabels = {
-                        one_time: '일회성 배지',
-                        recurring: '반복 획득',
-                        limited: '한정판',
-                        hidden: '히든',
-                        social: '소셜'
-                      }
-
-                      const categoryIcons = {
-                        one_time: '🏆',
-                        recurring: '🔄',
-                        limited: '⭐',
-                        hidden: '🔮',
-                        social: '👥'
-                      }
-
-                      return Object.entries(badgesByCategory).map(([category, badges]) => (
-                        <div key={category} className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                            <span>{categoryIcons[category as keyof typeof categoryIcons]}</span>
-                            <span>{categoryLabels[category as keyof typeof categoryLabels]}</span>
-                            <span className="ml-auto text-[10px]">
-                              {badges.filter(b => unlockedBadgeIds.has(b.id)).length}/{badges.length}
+                      return (
+                        <div key={category.key} className="space-y-3">
+                          {/* Category Header with Progress */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{category.icon}</span>
+                            <h3 className="text-sm font-bold text-foreground">
+                              {category.title}
+                            </h3>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {unlockedCount}/{totalCount}
                             </span>
                           </div>
+
+                          {/* Badge Grid */}
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {badges.map((badge) => {
+                            {category.badges.map((badge) => {
                               const isUnlocked = unlockedBadgeIds.has(badge.id)
                               const isNew = newlyUnlockedBadges.has(badge.key)
                               const userBadge = userAchievements?.find(ua => ua.achievement_id === badge.id)
@@ -508,17 +495,52 @@ export function UserProfileCard() {
                                 transcendence: 'from-amber-100 to-yellow-100 dark:from-amber-950/30 dark:to-yellow-950/30 border-amber-400 dark:border-amber-600'
                               }
 
+                              // v5.0: Stage-specific animation properties
+                              const getStageAnimation = () => {
+                                if (!isUnlocked) return {}
+
+                                const animations: Record<string, any> = {
+                                  beginner: {
+                                    whileHover: { scale: 1.05 },
+                                    transition: { type: 'spring', stiffness: 300, damping: 15 }
+                                  },
+                                  forming: {
+                                    whileHover: { scale: 1.05, rotate: [0, -1, 1, 0] },
+                                    transition: { type: 'spring', stiffness: 400, damping: 12 }
+                                  },
+                                  growth: {
+                                    whileHover: { scale: 1.08, boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+                                    transition: { type: 'spring', stiffness: 350, damping: 10 }
+                                  },
+                                  mastery: {
+                                    whileHover: { scale: 1.1, rotate: [0, 2, -2, 0] },
+                                    transition: { type: 'spring', stiffness: 300, damping: 8 }
+                                  },
+                                  transcendence: {
+                                    whileHover: {
+                                      scale: 1.12,
+                                      rotate: [0, 3, -3, 0],
+                                      boxShadow: '0 0 30px rgba(251, 191, 36, 0.6)'
+                                    },
+                                    transition: { type: 'spring', stiffness: 250, damping: 8 }
+                                  }
+                                }
+                                return animations[stage.stage] || {}
+                              }
+
                               return (
-                                // 🏆 BADGE: Spring animation for playful achievement feel
+                                // 🏆 BADGE: v5.0 stage-specific animations
                                 <motion.div
                                   key={badge.id}
                                   {...BADGE_ANIMATION}
+                                  {...getStageAnimation()}
                                   onClick={() => setSelectedBadge(badge)}
                                   className={`
-                                    relative p-3 rounded-lg border text-center transition-all cursor-pointer
+                                    relative p-3 rounded-lg border text-center cursor-pointer
                                     flex flex-col items-center justify-between min-h-[100px]
+                                    transition-all duration-300
                                     ${isUnlocked
-                                      ? `bg-gradient-to-br ${stageColors[stage.stage]} shadow-sm hover:shadow-md`
+                                      ? `bg-gradient-to-br ${stageColors[stage.stage]} shadow-sm`
                                       : 'bg-muted/30 border-muted-foreground/10 opacity-50 hover:opacity-70'
                                     }
                                   `}
@@ -536,17 +558,17 @@ export function UserProfileCard() {
                                   )}
 
                                   {/* Repeat count for recurring badges */}
-                                  {isUnlocked && category === 'recurring' && repeatCount > 1 && (
+                                  {isUnlocked && badge.category === 'recurring' && repeatCount > 1 && (
                                     <div className="absolute -top-1.5 -left-1.5 bg-blue-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md">
                                       {repeatCount}
                                     </div>
                                   )}
 
                                   <div className={`text-3xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
-                                    {category === 'hidden' && !isUnlocked ? '❓' : badge.icon}
+                                    {category.key === 'secret' && !isUnlocked ? '❓' : badge.icon}
                                   </div>
                                   <div className={`text-xs font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                    {category === 'hidden' && !isUnlocked ? '???' : badge.title}
+                                    {category.key === 'secret' && !isUnlocked ? '???' : badge.title}
                                   </div>
                                   {isUnlocked && (
                                     <>
@@ -563,8 +585,8 @@ export function UserProfileCard() {
                             })}
                           </div>
                         </div>
-                      ))
-                    })()}
+                      )
+                    })}
 
                     {/* 배지 획득 정책 안내 */}
                     <div className="mt-4 pt-3 border-t border-primary/10">
