@@ -216,55 +216,58 @@ Bronze • 50 XP
    - 감정 곡선 기반 XP 설계
    - **상태**: GitHub 커밋 완료
 
+3. **감정 메시지 표시 시스템 구현** ✅
+   - 파일: `src/lib/badgeEvaluator.ts`, `src/components/stats/UserProfileCard.tsx`, `src/types/index.ts`
+   - BadgeEvaluationResult에 emotional_message 필드 추가
+   - 배지 획득 시 감정 메시지를 토스트로 표시
+   - Achievement 타입에 v5.0 필드 추가 (title_en, emotional_message, is_active)
+   - **상태**: 구현 완료, GitHub 커밋 (e5768af)
+
 ### 🔄 진행 중인 작업
 
 없음
 
 ### 📋 남은 작업 (우선순위 순)
 
-#### Phase 1: 프론트엔드 UI 업데이트 (필수)
-1. **배지 컬렉션 UI 텍스트 동기화**
-   - 위치: `src/components/stats/UserProfileCard.tsx`
-   - 작업: DB에서 가져온 새 배지명이 자동 반영되므로 추가 작업 불필요
-   - 확인 필요: 개발 서버에서 새 배지명이 올바르게 표시되는지
-
-2. **감정 메시지 표시 시스템 구현** (선택)
-   - 위치: 배지 획득 토스트 메시지
-   - 작업: `emotional_message` 필드를 활용한 특별 메시지 표시
-   - 예시: "100일의 증명" 획득 시 → "100일 동안 포기하지 않은 당신이 진짜입니다"
-   ```typescript
-   // TodayChecklistPage.tsx 또는 배지 획득 로직
-   if (badge.emotional_message) {
-     showSuccess(badge.emotional_message)
-   }
-   ```
-
-3. **배지 상세 페이지 개선** (선택)
+#### Phase 1: 프론트엔드 UI 업데이트 (선택)
+1. **배지 상세 페이지 개선** (선택)
    - 위치: 배지 클릭 시 표시되는 BadgeDetailDialog
    - 작업: 영문 부제(title_en) 표시 추가
    - 작업: 감정 메시지 섹션 추가
+   - 예시:
+   ```typescript
+   // BadgeDetailDialog.tsx
+   {badge.title_en && (
+     <p className="text-sm text-muted-foreground">{badge.title_en}</p>
+   )}
+   {badge.emotional_message && (
+     <div className="mt-4 p-3 bg-primary/5 rounded-lg">
+       <p className="text-sm italic">{badge.emotional_message}</p>
+     </div>
+   )}
+   ```
 
 #### Phase 2: UX 강화 (선택)
 
-4. **배지 애니메이션 강화**
+2. **배지 애니메이션 강화**
    - 티어별 색상 구분 (Bronze/Silver/Gold/Platinum)
    - 획득 시 특별 효과 (confetti, 파티클)
 
-5. **프로그레스 바 개선**
+3. **프로그레스 바 개선**
    - 다음 배지까지 진행도 표시
    - "30일의 리듬까지 7일 남음" 등
 
-6. **공유 기능**
+4. **공유 기능**
    - 배지 획득 이미지 생성
    - SNS 공유 텍스트 자동 생성
 
 #### Phase 3: 데이터 분석 (미래)
 
-7. **A/B 테스트 계획**
+5. **A/B 테스트 계획**
    - 신규 유저 vs 기존 유저 반응 비교
    - 배지 획득률 변화 모니터링
 
-8. **감정 곡선 검증**
+6. **감정 곡선 검증**
    - 각 단계별 사용자 리텐션 분석
    - XP 밸런스 재조정 필요 여부 확인
 
