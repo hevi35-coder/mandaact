@@ -499,6 +499,107 @@ NOTICE: Backfill complete!
 ##### 파일 추가
 - `supabase/migrations/20251113000001_backfill_first_mandalart_badges.sql`
 
+#### 5. 전체 배지 시스템 감사 및 대규모 소급 적용 (2025-11-13)
+
+**문제 식별:** 사용자 우려로 인한 전체 배지 시스템 감사 수행
+- 첫 체크, 3일의 시작, 첫 만다라트 배지 문제 해결 후, 유사한 문제가 있는 배지 점검 요청
+
+**Root Cause Analysis 결과:**
+1. **HIGH-RISK 배지 15개 발견** (트리거 없음, 프론트엔드 전용 평가)
+   - `first_check` (첫 체크) - 트리거 없음
+   - 모든 스트릭 배지 (7개): `streak_3, 7, 14, 30, 60, 100, 150`
+   - 모든 볼륨 배지 (7개): `checks_50, 100, 250, 500, 1000, 2500, 5000`
+
+2. **핵심 문제:**
+   - 트리거 기반 vs 프론트엔드 평가 하이브리드 시스템의 일관성 부족
+   - 역사적 데이터가 배지 획득을 트리거하지 않음
+   - 비활성 사용자는 자격이 있어도 배지를 받지 못함
+
+3. **영향 범위:**
+   - 영향받는 사용자: 100% (2025-11-08 배지 시스템 출시 전에 체크한 모든 사용자)
+   - 예상 누락 XP: 일반 사용자당 500-1,000 XP, 파워 유저당 5,000+ XP
+   - 사용자 감정 리스크: 높음 (사용자가 "받아야 할" 배지 누락 인지 가능)
+
+**구현된 솔루션:**
+
+**Migration 1: `20251113000002_backfill_first_check_badges.sql`**
+- `first_check` 배지를 `check_history`가 있는 모든 사용자에게 소급 적용
+- 30 XP 지급 및 레벨 재계산
+
+**Migration 2: `20251113000003_backfill_streak_badges.sql`**
+- SQL 기반 스트릭 계산 알고리즘 구현:
+  - `check_history`에서 고유 날짜 추출
+  - 연속 날짜 시퀀스 식별 (ROW_NUMBER 트릭 사용)
+  - 각 사용자의 `longest_streak` 계산
+- 7개 스트릭 배지 (3, 7, 14, 30, 60, 100, 150일) 조건 충족 시 소급 적용
+- 50-5,000 XP 지급
+
+**Migration 3: `20251113000004_backfill_volume_badges.sql`**
+- 사용자별 `check_history` COUNT 집계
+- 7개 볼륨 배지 (50, 100, 250, 500, 1k, 2.5k, 5k 체크) 조건 충족 시 소급 적용
+- 100-8,000 XP 지급
+- 50+ 체크 사용자만 처리 (성능 최적화)
+
+**Migration 4: `20251113000005_add_first_check_trigger.sql`**
+- `check_history` INSERT 시 `first_check` 배지 자동 지급 트리거 생성
+- 향후 사용자가 배지를 놓치는 것 방지
+
+**기술적 도전과제:**
+1. **PostgreSQL 타입 제약:** `TYPE ... IS RECORD` 구문이 DO 블록에서 미지원
+   - 해결: 배지 정의를 `achievements` 테이블에서 직접 쿼리하는 방식으로 리팩토링
+
+2. **`user_gamification` 테이블 부재:** 스트릭 데이터가 별도 테이블에 저장되지 않음
+   - 해결: `check_history`에서 직접 스트릭 계산하는 SQL WITH 절 구현
+   - 복잡한 timezone-aware 로직을 간소화된 DATE 기반 접근으로 변환
+
+3. **성능 고려사항:**
+   - 볼륨 배지 마이그레이션에서 50+ 체크 사용자로 필터링
+   - 중복 지급 방지를 위한 `ON CONFLICT DO NOTHING` 사용
+   - 각 배지당 XP 업데이트 및 레벨 재계산
+
+**배지 획득 아키텍처 분석:**
+| 배지 키 | 획득 메커니즘 | 리스크 레벨 | 소급 필요 | 트리거 존재 | 비고 |
+|---------|--------------|-----------|----------|-----------|------|
+| first_check | 프론트엔드 전용 | **HIGH** | ✅ YES | ❌ NO → ✅ YES | 트리거 추가됨 |
+| first_mandalart | 트리거 + 프론트엔드 | LOW | ✅ **완료** | ✅ YES | 이미 소급 적용됨 |
+| streak_* (7개) | 프론트엔드 전용 | **HIGH** | ✅ YES | ❌ NO | 역사적 longest_streak |
+| checks_* (7개) | 프론트엔드 전용 | **HIGH** | ✅ YES | ❌ NO | 역사적 체크 수 |
+| perfect_day | 프론트엔드 전용 | MEDIUM | ⚠️ MAYBE | ❌ NO | 오늘만 체크 |
+| level_10 | XP 업데이트 트리거 | LOW | ❌ NO | ✅ YES | 정상 작동 |
+| monthly_* | RPC + Cron | MEDIUM | ⚠️ DEPENDS | ❌ NO | Cron 검증 필요 |
+
+**배포 결과:**
+```
+NOTICE: Starting first_check badge backfill...
+NOTICE: Badge ID: 8a65f4eb-5bd1-4f1d-a4b5-d76a58bed390, XP Reward: 30
+NOTICE: first_check badge backfill complete!
+
+NOTICE: Starting streak badges backfill...
+NOTICE: Checking user 0fd94383-c529-4f59-a288-1597885ba6e2 (longest streak: 3 days)
+NOTICE: Streak badges backfill complete! Total badges awarded: 0
+
+NOTICE: Starting volume badges backfill...
+NOTICE: Volume badges backfill complete! Total badges awarded: 0
+```
+
+**결과 해석:**
+- `first_check` 배지 소급 완료 (사용자가 이미 보유하고 있었음)
+- 스트릭 배지 0개 지급 (사용자가 이미 3일 스트릭 배지 보유 or 조건 미충족)
+- 볼륨 배지 0개 지급 (50 체크 미만 or 이미 보유)
+- 트리거 설치 완료 (향후 자동 지급)
+
+**파일 변경:**
+- `supabase/migrations/20251113000002_backfill_first_check_badges.sql`
+- `supabase/migrations/20251113000003_backfill_streak_badges.sql`
+- `supabase/migrations/20251113000004_backfill_volume_badges.sql`
+- `supabase/migrations/20251113000005_add_first_check_trigger.sql`
+
+**권장 향후 작업:**
+1. **즉시:** 월간 배지 시스템 감사 - Cron 작업이 실제로 실행되는지 확인
+2. **단기 (2주):** 배지 획득 실패에 대한 모니터링/로깅 추가
+3. **장기 (1개월):** 획득 메커니즘 표준화 (모두 트리거 vs 모두 배치 평가 vs 하이브리드)
+4. **장기:** 야간 배치 작업으로 모든 사용자에 대해 `checkAndUnlockAchievements()` 실행 (놓친 획득 캐치업)
+
 ---
 
 ### 구현 완료 체크리스트
@@ -511,6 +612,8 @@ NOTICE: Backfill complete!
 - [x] 배지 자동 획득 시스템 구현
 - [x] 성능 최적화 (백그라운드 로딩 + 조건부 통계 + 병렬화)
 - [x] first_mandalart 배지 소급 적용
+- [x] 전체 배지 시스템 감사 및 대규모 소급 적용 (15개 HIGH-RISK 배지)
+- [x] first_check 트리거 추가 (향후 자동 지급)
 - [ ] 배지 획득 애니메이션 추가 (Phase 3)
 - [ ] 다음 배지 진행률 표시 (Phase 3)
 - [ ] 배지 공유 기능 (Phase 3)
