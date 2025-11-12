@@ -157,6 +157,18 @@ export function UserProfileCard() {
       // Track unlocked badge IDs and dates
       const unlockedIds = new Set(userAchievementsRes.data?.map(ua => ua.achievement_id) || [])
       const unlockedMap = new Map(userAchievementsRes.data?.map(ua => [ua.achievement_id, ua.unlocked_at]) || [])
+
+      // Debug: Log badge matching info
+      console.log('🔍 Badge Debug Info:', {
+        totalBadges: activeBadges.length,
+        unlockedCount: unlockedIds.size,
+        unlockedBadgeIds: Array.from(unlockedIds),
+        streak3Badge: activeBadges.find(b => b.key === 'streak_3'),
+        streak3Unlocked: userAchievementsRes.data?.find(ua =>
+          activeBadges.find(b => b.key === 'streak_3')?.id === ua.achievement_id
+        )
+      })
+
       setUnlockedBadgeIds(unlockedIds)
       setUnlockedBadgesMap(unlockedMap)
 
@@ -564,22 +576,12 @@ export function UserProfileCard() {
                                     </div>
                                   )}
 
-                                  <div className={`text-3xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
+                                  <div className={`text-3xl mb-2 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
                                     {category.key === 'secret' && !isUnlocked ? '❓' : badge.icon}
                                   </div>
                                   <div className={`text-xs font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
                                     {category.key === 'secret' && !isUnlocked ? '???' : badge.title}
                                   </div>
-                                  {isUnlocked && (
-                                    <>
-                                      <div className="text-[10px] text-yellow-600 dark:text-yellow-400 font-semibold mt-1">
-                                        +{badge.xp_reward} XP
-                                      </div>
-                                      <div className={`text-[9px] ${stage.textColor} font-medium mt-0.5`}>
-                                        {stage.icon} {stage.label}
-                                      </div>
-                                    </>
-                                  )}
                                 </motion.div>
                               )
                             })}
