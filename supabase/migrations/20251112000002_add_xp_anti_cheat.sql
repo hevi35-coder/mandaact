@@ -23,16 +23,34 @@ CREATE INDEX IF NOT EXISTS idx_check_limits_action_date ON check_limits(action_i
 ALTER TABLE check_limits ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own check limits
-CREATE POLICY "Users can view their own check limits"
-  ON check_limits
-  FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'check_limits'
+    AND policyname = 'Users can view their own check limits'
+  ) THEN
+    CREATE POLICY "Users can view their own check limits"
+      ON check_limits
+      FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- System can insert/update check limits (service role)
-CREATE POLICY "Service role can manage check limits"
-  ON check_limits
-  FOR ALL
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'check_limits'
+    AND policyname = 'Service role can manage check limits'
+  ) THEN
+    CREATE POLICY "Service role can manage check limits"
+      ON check_limits
+      FOR ALL
+      USING (true);
+  END IF;
+END $$;
 
 -- Create function to validate and record check with anti-cheat
 CREATE OR REPLACE FUNCTION validate_and_record_check(
