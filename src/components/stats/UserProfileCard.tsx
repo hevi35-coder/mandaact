@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import { SUCCESS_MESSAGES } from '@/lib/notificationMessages'
 import { showSuccess } from '@/lib/notificationUtils'
 import { getActiveMultipliers, formatMultiplier, getMultiplierColor } from '@/lib/xpMultipliers'
+import { getBadgeStage } from '@/lib/badgeStages'
 import type { UserLevel, Achievement, UserAchievement } from '@/types'
 import type { XPMultiplier } from '@/lib/xpMultipliers'
 import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info } from 'lucide-react'
@@ -497,12 +498,14 @@ export function UserProfileCard() {
                               const userBadge = userAchievements?.find(ua => ua.achievement_id === badge.id)
                               const repeatCount = userBadge?.count || 0
 
-                              // Tier color mapping
-                              const tierColors = {
-                                bronze: 'from-amber-100 to-orange-100 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-300 dark:border-amber-700',
-                                silver: 'from-slate-100 to-gray-100 dark:from-slate-950/30 dark:to-gray-950/30 border-slate-300 dark:border-slate-700',
-                                gold: 'from-yellow-100 to-amber-100 dark:from-yellow-950/30 dark:to-amber-950/30 border-yellow-400 dark:border-yellow-600',
-                                platinum: 'from-cyan-100 to-blue-100 dark:from-cyan-950/30 dark:to-blue-950/30 border-cyan-400 dark:border-cyan-600'
+                              // Emotional stage based on XP (v5.0)
+                              const stage = getBadgeStage(badge.xp_reward)
+                              const stageColors = {
+                                beginner: 'from-green-100 to-emerald-100 dark:from-green-950/30 dark:to-emerald-950/30 border-green-300 dark:border-green-700',
+                                forming: 'from-orange-100 to-red-100 dark:from-orange-950/30 dark:to-red-950/30 border-orange-300 dark:border-orange-700',
+                                growth: 'from-blue-100 to-cyan-100 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-300 dark:border-blue-700',
+                                mastery: 'from-purple-100 to-pink-100 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-300 dark:border-purple-700',
+                                transcendence: 'from-amber-100 to-yellow-100 dark:from-amber-950/30 dark:to-yellow-950/30 border-amber-400 dark:border-amber-600'
                               }
 
                               return (
@@ -515,7 +518,7 @@ export function UserProfileCard() {
                                     relative p-3 rounded-lg border text-center transition-all cursor-pointer
                                     flex flex-col items-center justify-between min-h-[100px]
                                     ${isUnlocked
-                                      ? `bg-gradient-to-br ${tierColors[badge.tier || 'bronze']} shadow-sm hover:shadow-md`
+                                      ? `bg-gradient-to-br ${stageColors[stage.stage]} shadow-sm hover:shadow-md`
                                       : 'bg-muted/30 border-muted-foreground/10 opacity-50 hover:opacity-70'
                                     }
                                   `}
@@ -546,9 +549,14 @@ export function UserProfileCard() {
                                     {category === 'hidden' && !isUnlocked ? '???' : badge.title}
                                   </div>
                                   {isUnlocked && (
-                                    <div className="text-[10px] text-yellow-600 dark:text-yellow-400 font-semibold mt-1">
-                                      +{badge.xp_reward} XP
-                                    </div>
+                                    <>
+                                      <div className="text-[10px] text-yellow-600 dark:text-yellow-400 font-semibold mt-1">
+                                        +{badge.xp_reward} XP
+                                      </div>
+                                      <div className={`text-[9px] ${stage.textColor} font-medium mt-0.5`}>
+                                        {stage.icon} {stage.label}
+                                      </div>
+                                    </>
                                   )}
                                 </motion.div>
                               )

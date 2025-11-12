@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { calculateBadgeProgress } from '@/lib/stats'
 import { formatUnlockCondition, getBadgeHint, getProgressMessage } from '@/lib/badgeHints'
+import { getBadgeStage } from '@/lib/badgeStages'
 import type { Achievement } from '@/types'
 import { Lock, Zap, Trophy, Calendar, Repeat } from 'lucide-react'
 
@@ -58,6 +59,7 @@ export function BadgeDetailDialog({
   const crypticHint = getBadgeHint(badge.key, hintLevel)
   const formattedCondition = formatUnlockCondition(badge.unlock_condition, hintLevel)
   const canShowProgress = !isUnlocked && progress && hintLevel !== 'hidden'
+  const stage = getBadgeStage(badge.xp_reward)
 
   return (
     <Dialog open={!!badge} onOpenChange={() => onClose()}>
@@ -110,19 +112,10 @@ export function BadgeDetailDialog({
                 </Badge>
               )}
 
-              {/* Tier Badge */}
-              {badge.tier === 'platinum' && (
-                <Badge className="text-xs bg-cyan-600">💎 플래티넘</Badge>
-              )}
-              {badge.tier === 'gold' && (
-                <Badge className="text-xs bg-yellow-600">🥇 골드</Badge>
-              )}
-              {badge.tier === 'silver' && (
-                <Badge className="text-xs bg-slate-600">🥈 실버</Badge>
-              )}
-              {badge.tier === 'bronze' && (
-                <Badge className="text-xs bg-amber-700">🥉 브론즈</Badge>
-              )}
+              {/* Emotional Stage Badge (v5.0) */}
+              <Badge className={`text-xs ${stage.bgColor} ${stage.textColor} border-0`}>
+                {stage.icon} {stage.label}
+              </Badge>
 
               {/* Unlock Status */}
               {isUnlocked && (
@@ -137,6 +130,13 @@ export function BadgeDetailDialog({
           <DialogDescription className="text-center text-base">
             {badge.description}
           </DialogDescription>
+
+          {/* English Subtitle (v5.0) */}
+          {badge.title_en && (
+            <p className="text-sm text-muted-foreground text-center italic">
+              {badge.title_en}
+            </p>
+          )}
         </DialogHeader>
 
         <div className="mt-4 space-y-4">
@@ -265,6 +265,21 @@ export function BadgeDetailDialog({
             </div>
           )}
 
+          {/* Emotional Message (v5.0) */}
+          {badge.emotional_message && isUnlocked && (
+            <div className="p-4 bg-gradient-to-br from-primary/5 to-purple/5 rounded-lg border-2 border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl shrink-0">💭</div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-primary mb-2 text-sm">감정 메시지</h4>
+                  <p className="text-sm text-foreground italic leading-relaxed">
+                    "{badge.emotional_message}"
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* XP Reward - Simplified single card */}
           <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
             <div className="flex items-center justify-center gap-2 mb-1">
@@ -279,6 +294,10 @@ export function BadgeDetailDialog({
                 🔄 반복 획득 가능 (매회 동일 보상)
               </div>
             )}
+            {/* Emotional Stage Info (v5.0) */}
+            <div className="text-xs text-muted-foreground mt-2 text-center">
+              {stage.icon} {stage.label} · {stage.emotion}
+            </div>
           </div>
         </div>
       </DialogContent>
