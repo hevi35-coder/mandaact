@@ -63,17 +63,17 @@ export function BadgeDetailDialog({
 
   return (
     <Dialog open={!!badge} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-2">
           {/* Badge Icon */}
           <motion.div
-            className="flex justify-center pt-2"
+            className="flex justify-center pt-1"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
           >
             <div
-              className={`text-7xl ${
+              className={`text-6xl ${
                 isUnlocked ? '' : 'grayscale opacity-40'
               }`}
             >
@@ -82,7 +82,7 @@ export function BadgeDetailDialog({
           </motion.div>
 
           {/* Title & Badges */}
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-1.5">
             <DialogTitle className="text-2xl">{badge.title}</DialogTitle>
             <div className="flex items-center justify-center gap-2 flex-wrap">
               {/* Category Badge */}
@@ -130,25 +130,18 @@ export function BadgeDetailDialog({
           <DialogDescription className="text-center text-base">
             {badge.description}
           </DialogDescription>
-
-          {/* English Subtitle (v5.0) */}
-          {badge.title_en && (
-            <p className="text-sm text-muted-foreground text-center italic">
-              {badge.title_en}
-            </p>
-          )}
         </DialogHeader>
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 space-y-3">
           {/* Unlock Status with integrated progress */}
           {isUnlocked ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border-2 border-green-500/30 space-y-3"
+              className="p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border-2 border-green-500/30 space-y-2.5"
             >
-              <div className="flex items-start gap-3">
-                <Trophy className="h-6 w-6 text-green-600 shrink-0" />
+              <div className="flex items-start gap-2.5">
+                <Trophy className="h-5 w-5 text-green-600 shrink-0" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-green-700 dark:text-green-400 mb-1 flex items-center gap-2">
                     🎉 배지 획득 완료!
@@ -179,16 +172,9 @@ export function BadgeDetailDialog({
                   </div>
                 </div>
               )}
-
-              {/* Permanent badge notice */}
-              <div className="pt-2 border-t border-green-500/20">
-                <p className="text-xs text-green-700/80 dark:text-green-400/80">
-                  💎 한번 획득한 배지는 영구적으로 보존됩니다. 만다라트를 삭제하거나 데이터가 변경되어도 배지는 유지됩니다.
-                </p>
-              </div>
             </motion.div>
           ) : (
-            <div className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/30 space-y-3">
+            <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/30 space-y-2.5">
               <div className="flex items-start gap-3">
                 <Lock className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                 <div className="flex-1">
@@ -245,8 +231,8 @@ export function BadgeDetailDialog({
 
           {/* Limited Edition Info */}
           {badge.category === 'limited' && badge.valid_from && badge.valid_until && (
-            <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
-              <div className="flex items-start gap-3">
+            <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+              <div className="flex items-start gap-2.5">
                 <Calendar className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-purple-700 dark:text-purple-400 mb-1">
@@ -267,11 +253,11 @@ export function BadgeDetailDialog({
 
           {/* Emotional Message (v5.0) */}
           {badge.emotional_message && isUnlocked && (
-            <div className="p-4 bg-gradient-to-br from-primary/5 to-purple/5 rounded-lg border-2 border-primary/20">
-              <div className="flex items-start gap-3">
-                <div className="text-2xl shrink-0">💭</div>
+            <div className="p-3 bg-gradient-to-br from-primary/5 to-purple/5 rounded-lg border-2 border-primary/20">
+              <div className="flex items-start gap-2.5">
+                <div className="text-xl shrink-0">💭</div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-primary mb-2 text-sm">감정 메시지</h4>
+                  <h4 className="font-semibold text-primary mb-1.5 text-sm">감정 메시지</h4>
                   <p className="text-sm text-foreground italic leading-relaxed">
                     "{badge.emotional_message}"
                   </p>
@@ -281,7 +267,7 @@ export function BadgeDetailDialog({
           )}
 
           {/* XP Reward - Simplified single card */}
-          <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
+          <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Zap className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">획득 보상</span>
@@ -294,10 +280,6 @@ export function BadgeDetailDialog({
                 🔄 반복 획득 가능 (매회 동일 보상)
               </div>
             )}
-            {/* Emotional Stage Info (v5.0) */}
-            <div className="text-xs text-muted-foreground mt-2 text-center">
-              {stage.icon} {stage.label} · {stage.emotion}
-            </div>
           </div>
         </div>
       </DialogContent>
