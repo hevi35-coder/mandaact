@@ -239,21 +239,6 @@ export function BadgeDetailDialog({
             </div>
           )}
 
-          {/* Emotional Message (v5.0) */}
-          {badge.emotional_message && isUnlocked && (
-            <div className="p-3 bg-gradient-to-br from-primary/5 to-purple/5 rounded-lg border-2 border-primary/20">
-              <div className="flex items-start gap-2.5">
-                <div className="text-xl shrink-0">💭</div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-primary mb-1.5 text-sm">감정 메시지</h4>
-                  <p className="text-sm text-foreground italic leading-relaxed">
-                    "{badge.emotional_message}"
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* XP Reward - Simplified single card */}
           <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
             <div className="flex items-center justify-center gap-2 mb-1">
