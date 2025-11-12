@@ -133,6 +133,7 @@ export function UserProfileCard() {
         supabase
           .from('achievements')
           .select('*')
+          .or('is_active.is.null,is_active.eq.true') // Only active badges (is_active = TRUE or NULL)
           .order('display_order', { ascending: true }),
         supabase
           .from('user_achievements')
@@ -144,7 +145,11 @@ export function UserProfileCard() {
           .order('unlocked_at', { ascending: false })
       ])
 
-      setAllBadges(allAchievementsRes.data || [])
+      // Filter active badges only (is_active = TRUE or NULL)
+      const activeBadges = (allAchievementsRes.data || []).filter(
+        badge => badge.is_active === true || badge.is_active === null
+      )
+      setAllBadges(activeBadges)
       setUserAchievements(userAchievementsRes.data || [])
 
       // Track unlocked badge IDs and dates
