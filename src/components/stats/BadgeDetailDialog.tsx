@@ -132,7 +132,7 @@ export function BadgeDetailDialog({
                 <Trophy className="h-5 w-5 text-green-600 shrink-0" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-green-700 dark:text-green-400 mb-1 flex items-center gap-2">
-                    🎉 배지 획득 완료!
+                    배지 획득 완료!
                   </h4>
                   {unlockedAt && (
                     <div className="text-sm text-muted-foreground">
