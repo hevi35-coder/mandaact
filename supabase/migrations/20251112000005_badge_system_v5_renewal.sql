@@ -3,6 +3,16 @@
 -- Date: 2025-11-12
 
 -- ====================================
+-- STEP 0: Add new columns for v5.0
+-- ====================================
+
+-- Add English title column if not exists
+ALTER TABLE achievements ADD COLUMN IF NOT EXISTS title_en TEXT;
+
+-- Add emotional message column if not exists
+ALTER TABLE achievements ADD COLUMN IF NOT EXISTS emotional_message TEXT;
+
+-- ====================================
 -- STEP 1: Update Streak Badges - "시간의 여정"
 -- ====================================
 
@@ -261,13 +271,10 @@ SET
 WHERE key = 'first_mandalart';
 
 -- ====================================
--- STEP 7: Add Emotional Messages Metadata
+-- STEP 7: Update Emotional Messages for Key Milestones
 -- ====================================
 
--- Add emotional_message column for milestone messages
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS emotional_message TEXT;
-
--- Update emotional messages for key milestones
+-- Update emotional messages for key milestones (column already added in STEP 0)
 UPDATE achievements SET emotional_message = '이제 시작입니다. 3일의 기적이 당신을 기다립니다.' WHERE key = 'streak_3';
 UPDATE achievements SET emotional_message = '100일 동안 포기하지 않은 당신이 진짜입니다.' WHERE key = 'streak_100';
 UPDATE achievements SET emotional_message = '천 번의 선택이 만든 변화, 당신은 이미 다른 사람입니다.' WHERE key = 'checks_1000';
