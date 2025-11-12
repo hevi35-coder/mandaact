@@ -13,8 +13,10 @@ import { evaluateAndUnlockBadges } from '@/lib/badgeEvaluator'
 import { useToast } from '@/hooks/use-toast'
 import { SUCCESS_MESSAGES } from '@/lib/notificationMessages'
 import { showSuccess } from '@/lib/notificationUtils'
+import { getActiveMultipliers, formatMultiplier, getMultiplierColor } from '@/lib/xpMultipliers'
 import type { UserLevel, Achievement, UserAchievement } from '@/types'
-import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import type { XPMultiplier } from '@/lib/xpMultipliers'
+import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info } from 'lucide-react'
 import { BadgeDetailDialog } from './BadgeDetailDialog'
 import { HERO_ANIMATION, BADGE_ANIMATION, BADGE_NEW_ANIMATION } from '@/lib/animations'
 
@@ -41,6 +43,9 @@ export function UserProfileCard() {
 
   // XP info collapsible state (default closed)
   const [xpInfoOpen, setXpInfoOpen] = useState(false)
+
+  // Active XP multipliers
+  const [activeMultipliers, setActiveMultipliers] = useState<XPMultiplier[]>([])
 
   // Badge collection collapsible state (default closed)
   const [badgeCollectionOpen, setBadgeCollectionOpen] = useState(false)
@@ -192,6 +197,10 @@ export function UserProfileCard() {
         )
         setActiveDays(uniqueDates.size)
 
+        // Load active multipliers
+        const multipliers = await getActiveMultipliers(user.id)
+        setActiveMultipliers(multipliers)
+
         setLoading(false)
 
         // 2. Run badge evaluation in background (non-blocking)
@@ -308,6 +317,18 @@ export function UserProfileCard() {
             <Progress value={xpProgress.progressPercentage} className="h-3" />
           </div>
 
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1 text-center p-3 bg-background/50 rounded-lg border">
+              <div className="text-2xl font-bold text-primary">{totalChecks.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">총 실천 횟수</div>
+            </div>
+            <div className="space-y-1 text-center p-3 bg-background/50 rounded-lg border">
+              <div className="text-2xl font-bold text-primary">{activeDays.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">누적 실천일수</div>
+            </div>
+          </div>
+
           {/* XP 획득 방법 안내 - Collapsible */}
           <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
             <button
@@ -321,25 +342,75 @@ export function UserProfileCard() {
               {xpInfoOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
             {xpInfoOpen && (
-              <ul className="text-xs text-muted-foreground space-y-1 mt-2">
-                <li>• 실천 1회: <span className="font-semibold text-foreground">+10 XP</span></li>
-                <li>• 7일+ 연속 시 실천 1회: <span className="font-semibold text-foreground">+15 XP</span> (보너스 +5)</li>
-                <li>• 하루 100% 달성: <span className="font-semibold text-foreground">+50 XP</span></li>
-                <li>• 배지 획득 시 추가 XP 보상</li>
-              </ul>
-            )}
-          </div>
+              <div className="space-y-3 mt-2">
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• 실천 1회: <span className="font-semibold text-foreground">+10 XP</span></li>
+                  <li>• 스트릭 (7일+): <span className="font-semibold text-foreground">+5 XP</span> 추가</li>
+                  <li>• 완벽한 하루 (100%): <span className="font-semibold text-foreground">+50 XP</span></li>
+                  <li>• 완벽한 주 (80%+): <span className="font-semibold text-foreground">+200 XP</span></li>
+                  <li>• 배지 획득: 배지별 상이</li>
+                </ul>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1 text-center p-3 bg-background/50 rounded-lg border">
-              <div className="text-2xl font-bold text-primary">{totalChecks.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">총 실천 횟수</div>
-            </div>
-            <div className="space-y-1 text-center p-3 bg-background/50 rounded-lg border">
-              <div className="text-2xl font-bold text-primary">{activeDays.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">활동 일수</div>
-            </div>
+                {/* XP 배율 안내 - 항상 표시 */}
+                <div className="pt-2 border-t border-primary/10">
+                  <div className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    XP 배율 보너스
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                    <li>• 주말 (토·일): <span className="font-semibold text-blue-500">1.5배</span></li>
+                    <li>• 복귀 환영 (3일 부재 후): <span className="font-semibold text-green-500">1.5배</span> <span className="text-[10px]">(3일간)</span></li>
+                    <li>• 레벨 달성 축하 (5, 10, 15...): <span className="font-semibold text-yellow-500">2배</span> <span className="text-[10px]">(7일간)</span></li>
+                    <li>• 완벽한 주 달성 후: <span className="font-semibold text-purple-500">2배</span> <span className="text-[10px]">(7일간)</span></li>
+                    <li>• 배율은 중복 적용 시 합산됩니다</li>
+                    <li className="ml-3">(예: 1.5배 + 2배 = 3.5배)</li>
+                  </ul>
+                </div>
+
+                {/* 현재 활성 중인 배율 */}
+                {activeMultipliers.length > 0 && (
+                  <div className="pt-2 border-t border-primary/10">
+                    <div className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      현재 활성 중인 배율
+                    </div>
+                    <div className="space-y-1">
+                      {activeMultipliers.map((multiplier, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between text-xs p-1.5 bg-background/50 rounded"
+                        >
+                          <span className="text-muted-foreground">{multiplier.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`font-bold ${getMultiplierColor(multiplier.type)}`}>
+                              {formatMultiplier(multiplier.multiplier)}
+                            </span>
+                            {multiplier.daysRemaining && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {multiplier.daysRemaining}일 남음
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 공정한 XP 정책 안내 */}
+                <div className="pt-2 border-t border-primary/10">
+                  <div className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    공정한 XP 정책
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                    <li>• 각 실천은 하루 3회까지 체크/해제 가능</li>
+                    <li>• 동일 실천은 10초 후 재체크 가능</li>
+                    <li>• 짧은 시간 내 과도한 체크 시 제한</li>
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Badge Collection - Collapsible */}
@@ -476,6 +547,19 @@ export function UserProfileCard() {
                         </div>
                       ))
                     })()}
+
+                    {/* 배지 획득 정책 안내 */}
+                    <div className="mt-4 pt-3 border-t border-primary/10">
+                      <div className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1">
+                        <Info className="h-3 w-3" />
+                        공정한 배지 정책
+                      </div>
+                      <ul className="text-xs text-muted-foreground space-y-0.5">
+                        <li>• 최소 16개 실천 항목 (5자 이상)</li>
+                        <li>• 정상적인 체크 패턴 (자동화 감지)</li>
+                        <li>• 빈 만다라트 생성 불가</li>
+                      </ul>
+                    </div>
                   </div>
                 ) : null}
               </>

@@ -57,13 +57,17 @@ export function StreakHero() {
     return date
   })
 
+  // Get today's date string for comparison
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
   const heatmapMap = new Map(heatmapData.map(d => [d.date, d]))
 
   return (
-    <Card className="w-full border-l-4 border-orange-500">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Flame className="h-6 w-6 text-orange-500" />
+          <Flame className="h-5 w-5 text-orange-500" />
           <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
             스트릭
           </span>
@@ -72,36 +76,6 @@ export function StreakHero() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Current Streak - Hero Display */}
-        {/* 🎯 HERO: Main streak display with slower animation for emphasis */}
-        <motion.div
-          className="text-center py-8 px-4 rounded-xl border border-muted"
-          {...HERO_ANIMATION}
-        >
-          <Flame className="h-16 w-16 mx-auto text-orange-500 mb-4" />
-
-          <div className="text-7xl md:text-8xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
-            {streakStats.current}
-          </div>
-          <div className="text-2xl font-semibold text-muted-foreground">
-            일 연속
-          </div>
-
-          {streakStats.current > 0 && lastCheck && (
-            <div className="mt-4 text-sm text-muted-foreground">
-              마지막 체크: {new Date(lastCheck).toLocaleDateString('ko-KR', {
-                month: 'short',
-                day: 'numeric',
-                weekday: 'short',
-              })} {new Date(lastCheck).toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              })}
-            </div>
-          )}
-        </motion.div>
-
         {/* Streak At Risk Warning */}
         {streakAtRisk && (
           <motion.div
@@ -117,33 +91,88 @@ export function StreakHero() {
           </motion.div>
         )}
 
-        {/* Longest Streak */}
-        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
-          <div className="flex items-center gap-3">
-            <Trophy className="h-8 w-8 text-yellow-500" />
-            <div>
-              <div className="text-sm text-muted-foreground">최장 기록</div>
-              <div className="text-2xl font-bold">{streakStats.longest}일</div>
+        {/* Current Streak & Best Record - Horizontal Layout */}
+        {/* 🎯 HERO: Main streak display with slower animation for emphasis */}
+        <motion.div
+          className="grid grid-cols-2 gap-4"
+          {...HERO_ANIMATION}
+        >
+          {/* Current Streak */}
+          <div className="text-center p-3 rounded-lg border-2 border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-red-500/5">
+            <Flame className="h-8 w-8 mx-auto text-orange-500 mb-2" />
+            <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-1">
+              {streakStats.current}
             </div>
-          </div>
-          {streakStats.current === streakStats.longest && streakStats.current > 0 && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-            >
-              <div className="px-3 py-1 bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 rounded-full text-xs font-bold border border-yellow-500/30">
-                신기록!
+            <div className="text-sm font-semibold text-muted-foreground">
+              일 연속
+            </div>
+            {streakStats.current > 0 && lastCheck && (
+              <div className="mt-2 text-xs text-muted-foreground leading-tight">
+                <div>
+                  {new Date(lastCheck).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                  }).replace(/\. /g, '.').replace(/\.$/, '')}
+                </div>
+                <div>
+                  {new Date(lastCheck).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
+                </div>
               </div>
-            </motion.div>
-          )}
-        </div>
+            )}
+          </div>
+
+          {/* Longest Streak */}
+          <div className="relative text-center p-3 rounded-lg border bg-muted/30">
+            <Trophy className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
+            <div className="text-4xl md:text-5xl font-bold mb-1">
+              {streakStats.longest}
+            </div>
+            <div className="text-sm font-semibold text-muted-foreground">
+              최장 기록
+            </div>
+            {streakStats.longest > 0 && streakStats.longestStreakDate && (
+              <div className="mt-2 text-xs text-muted-foreground leading-tight">
+                <div>
+                  {new Date(streakStats.longestStreakDate).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                  }).replace(/\. /g, '.').replace(/\.$/, '')}
+                </div>
+                <div>
+                  {new Date(streakStats.longestStreakDate).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
+                </div>
+              </div>
+            )}
+            {streakStats.current === streakStats.longest && streakStats.current > 0 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                className="absolute -top-2 -right-2"
+              >
+                <div className="px-2 py-1 bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 rounded-full text-xs font-bold border border-yellow-500/30">
+                  신기록!
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
 
         {/* 28-Day Mini Heatmap (4 weeks) */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Calendar className="h-4 w-4" />
-            지난 4주 활동
+            최근 4주 활동
           </div>
 
           <div className="grid grid-cols-7 gap-2">
@@ -160,7 +189,7 @@ export function StreakHero() {
                   : 'minimal'
                 : 'none'
 
-              const isToday = dateStr === new Date().toISOString().split('T')[0]
+              const isToday = dateStr === todayStr
 
               return (
                 // 📝 LIST_ITEM: Heatmap cells with fast stagger
@@ -197,8 +226,8 @@ export function StreakHero() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground justify-center">
-            <span>적음</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
+            <span>0%</span>
             <div className="flex gap-1">
               <div className="w-3 h-3 bg-muted-foreground/10 dark:bg-muted-foreground/20 rounded-sm" />
               <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm" />
@@ -206,21 +235,21 @@ export function StreakHero() {
               <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm" />
               <div className="w-3 h-3 bg-green-500 dark:bg-green-600 rounded-sm" />
             </div>
-            <span>많음</span>
+            <span>100%</span>
           </div>
         </div>
 
         {/* Motivational Message */}
         {streakStats.current === 0 ? (
-          <div className="text-center text-sm text-muted-foreground p-4 bg-muted/20 rounded-lg border-l-2 border-muted">
+          <div className="text-center text-sm text-muted-foreground px-2 py-2 bg-muted/20 rounded-lg border-l-2 border-muted">
             오늘부터 새로운 스트릭을 시작해보세요! 🌱
           </div>
         ) : streakStats.current >= 7 ? (
-          <div className="text-center text-sm font-medium p-4 bg-orange-500/5 rounded-lg border-l-2 border-orange-500">
+          <div className="text-center text-sm font-medium px-2 py-2 bg-orange-500/5 rounded-lg border-l-2 border-orange-500">
             대단해요! 꾸준함이 습관이 되고 있어요 🎉
           </div>
         ) : (
-          <div className="text-center text-sm text-muted-foreground p-4 bg-muted/20 rounded-lg border-l-2 border-muted">
+          <div className="text-center text-sm text-muted-foreground px-2 py-2 bg-muted/20 rounded-lg border-l-2 border-muted">
             7일 연속까지 {7 - streakStats.current}일 남았어요. 계속 이대로! 💪
           </div>
         )}

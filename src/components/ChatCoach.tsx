@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { ChatMessage, ChatSession } from '@/types'
+import { getCurrentUTC } from '@/lib/timezone'
 
 export default function ChatCoach() {
   const user = useAuthStore((state) => state.user)
@@ -85,7 +86,7 @@ export default function ChatCoach() {
       session_id: currentSession?.id || '',
       role: 'user',
       content: userMessage,
-      created_at: new Date().toISOString(),
+      created_at: getCurrentUTC(),
     }
     setMessages((prev) => [...prev, tempUserMessage])
 
@@ -135,7 +136,7 @@ export default function ChatCoach() {
         session_id: result.session_id,
         role: 'assistant',
         content: result.reply,
-        created_at: new Date().toISOString(),
+        created_at: getCurrentUTC(),
       }
       setMessages((prev) => [...prev, assistantMessage])
 

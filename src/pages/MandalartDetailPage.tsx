@@ -21,6 +21,7 @@ import MandalartGrid from '@/components/MandalartGrid'
 import { domToPng } from 'modern-screenshot'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, DOWNLOAD_MESSAGES } from '@/lib/notificationMessages'
 import { showError, showSuccess, showInfo } from '@/lib/notificationUtils'
+import { getUserToday } from '@/lib/timezone'
 
 export default function MandalartDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -337,9 +338,9 @@ export default function MandalartDetailPage() {
         height: 1920,
       })
 
-      // Download
+      // Download with user's local date
       const link = document.createElement('a')
-      const fileName = `만다라트_${mandalart.title}_${new Date().toISOString().split('T')[0]}.png`
+      const fileName = `만다라트_${mandalart.title}_${getUserToday()}.png`
       link.href = dataUrl
       link.download = fileName
       document.body.appendChild(link)

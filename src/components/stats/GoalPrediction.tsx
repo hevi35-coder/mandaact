@@ -8,6 +8,7 @@ import { getCompletionStats, getGoalProgress } from '@/lib/stats'
 import { supabase } from '@/lib/supabase'
 import { TrendingUp, Target, Calendar, Sparkles, Loader2 } from 'lucide-react'
 import { CARD_ANIMATION, STAGGER, getStaggerDelay } from '@/lib/animations'
+import { utcToUserDate } from '@/lib/timezone'
 
 interface PredictionData {
   goalType: 'weekly_80' | 'monthly_90' | 'all_goals_complete'
@@ -42,15 +43,18 @@ export function GoalPrediction() {
     const completionStats = await getCompletionStats(user.id)
     const goalProgress = await getGoalProgress(user.id)
 
-    // Calculate daily rate (last 7 days)
+    // Calculate daily rate (last 7 days) - using timezone-aware date handling
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
     const { data: last7Days } = await supabase
       .from('check_history')
       .select('checked_at')
       .eq('user_id', user.id)
-      .gte('checked_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('checked_at', sevenDaysAgo.toISOString())
 
     const uniqueDays = new Set(
-      last7Days?.map((check) => new Date(check.checked_at).toDateString()) || []
+      last7Days?.map((check) => utcToUserDate(check.checked_at)) || []
     ).size
 
     const dailyRate = uniqueDays > 0 ? (last7Days?.length || 0) / uniqueDays : 0

@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase'
 import { VALIDATION_MESSAGES, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/notificationMessages'
 import { showWarning, showError, showSuccess } from '@/lib/notificationUtils'
 import { suggestActionType } from '@/lib/actionTypes'
+import { getCurrentUTC } from '@/lib/timezone'
 import {
   DndContext,
   closestCenter,
@@ -171,8 +172,8 @@ export default function SubGoalModal({
         position: idx + 1,
         ai_suggestion: aiSuggestion,
         sub_goal_id: '', // Will be set when saved
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_at: getCurrentUTC(),
+        updated_at: getCurrentUTC()
       } as LocalAction
     })
   }
@@ -412,8 +413,8 @@ export default function SubGoalModal({
         position: newPosition,
         ai_suggestion: aiSuggestion,
         sub_goal_id: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_at: getCurrentUTC(),
+        updated_at: getCurrentUTC()
       }
 
       dispatch({ type: 'ADD_ACTION', payload: newAction })

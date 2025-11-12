@@ -1,6 +1,8 @@
 // Statistics calculation utilities for MandaAct
 
 import { supabase } from './supabase'
+import { utcToUserDate, getUserToday } from './timezone'
+import { getActiveMultipliers, calculateTotalMultiplier, activateLevelMilestoneBonus, type XPMultiplier } from './xpMultipliers'
 
 export interface CompletionStats {
   today: {
@@ -24,6 +26,7 @@ export interface StreakStats {
   current: number
   longest: number
   lastCheckDate: Date | null
+  longestStreakDate: Date | null
 }
 
 export interface GoalProgress {
@@ -233,20 +236,18 @@ export async function getStreakStats(userId: string): Promise<StreakStats> {
     return {
       current: 0,
       longest: 0,
-      lastCheckDate: null
+      lastCheckDate: null,
+      longestStreakDate: null
     }
   }
 
   // Get actual last check time (with full timestamp)
   const lastCheckDate = checks.length > 0 ? new Date(checks[0].checked_at) : null
 
-  // Extract unique dates (convert to YYYY-MM-DD format)
+  // Extract unique dates (convert UTC to user's local date in YYYY-MM-DD format)
   const uniqueDates = Array.from(
     new Set(
-      checks.map((check) => {
-        const date = new Date(check.checked_at)
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-      })
+      checks.map((check) => utcToUserDate(check.checked_at))
     )
   ).sort((a, b) => b.localeCompare(a)) // Sort descending
 
@@ -254,42 +255,43 @@ export async function getStreakStats(userId: string): Promise<StreakStats> {
     return {
       current: 0,
       longest: 0,
-      lastCheckDate: null
+      lastCheckDate: null,
+      longestStreakDate: null
     }
   }
 
   // Parse dates for streak calculation
   const dates = uniqueDates.map((dateStr) => new Date(dateStr))
 
-  // Calculate current streak
+  // Calculate current streak using timezone-aware date comparison
   let currentStreak = 0
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-
-  const checkDate = new Date(dates[0])
-  checkDate.setHours(0, 0, 0, 0)
+  const todayStr = getUserToday()
+  const yesterdayDate = new Date()
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+  const yesterdayStr = utcToUserDate(yesterdayDate.toISOString())
 
   // Only count current streak if last check was today or yesterday
-  if (checkDate.getTime() === today.getTime() || checkDate.getTime() === yesterday.getTime()) {
-    const expectedDate = new Date(checkDate)
-    for (const date of dates) {
-      const currentDate = new Date(date)
-      currentDate.setHours(0, 0, 0, 0)
-
-      if (currentDate.getTime() === expectedDate.getTime()) {
+  const lastCheckDateStr = uniqueDates[0]
+  if (lastCheckDateStr === todayStr || lastCheckDateStr === yesterdayStr) {
+    let expectedDateStr = lastCheckDateStr
+    for (const dateStr of uniqueDates) {
+      if (dateStr === expectedDateStr) {
         currentStreak++
+        // Move expected date one day back
+        const expectedDate = new Date(expectedDateStr)
         expectedDate.setDate(expectedDate.getDate() - 1)
+        expectedDateStr = `${expectedDate.getFullYear()}-${String(expectedDate.getMonth() + 1).padStart(2, '0')}-${String(expectedDate.getDate()).padStart(2, '0')}`
       } else {
         break
       }
     }
   }
 
-  // Calculate longest streak
+  // Calculate longest streak and track the end date
   let longestStreak = 0
   let tempStreak = 1
+  let longestStreakEndIndex = 0  // Track where longest streak ends
+
   for (let i = 0; i < dates.length - 1; i++) {
     const current = new Date(dates[i])
     const next = new Date(dates[i + 1])
@@ -301,16 +303,44 @@ export async function getStreakStats(userId: string): Promise<StreakStats> {
     if (diffDays === 1) {
       tempStreak++
     } else {
-      longestStreak = Math.max(longestStreak, tempStreak)
+      if (tempStreak >= longestStreak) {
+        longestStreak = tempStreak
+        longestStreakEndIndex = i  // Most recent date of the longest streak
+      }
       tempStreak = 1
     }
   }
-  longestStreak = Math.max(longestStreak, tempStreak)
+
+  // Final check for last streak (use >= to update with most recent streak when tied)
+  if (tempStreak >= longestStreak) {
+    longestStreak = tempStreak
+    longestStreakEndIndex = dates.length - 1
+  }
+
+  // Get the timestamp of the last check during the longest streak
+  let longestStreakDate: Date | null = null
+  if (longestStreak > 0) {
+    // If current streak matches or exceeds longest streak, use current streak's date
+    if (currentStreak >= longestStreak) {
+      longestStreakDate = lastCheckDate
+    } else {
+      // Otherwise, find the date from historical longest streak
+      const longestStreakDateStr = uniqueDates[longestStreakEndIndex]
+      // Find the last check on that date (most recent timestamp) using timezone-aware comparison
+      const checksOnThatDay = checks.filter((check) => {
+        return utcToUserDate(check.checked_at) === longestStreakDateStr
+      })
+      if (checksOnThatDay.length > 0) {
+        longestStreakDate = new Date(checksOnThatDay[0].checked_at) // Already sorted desc
+      }
+    }
+  }
 
   return {
     current: currentStreak,
     longest: longestStreak,
-    lastCheckDate
+    lastCheckDate,
+    longestStreakDate
   }
 }
 
@@ -516,10 +546,12 @@ export interface XPCalculation {
   streakBonus: number
   perfectDayBonus: number
   totalXP: number
+  multipliers?: XPMultiplier[]
+  multipliedXP?: number
 }
 
 /**
- * Calculate XP earned from today's activity
+ * Calculate XP earned from today's activity (with multipliers)
  */
 export async function calculateTodayXP(userId: string): Promise<XPCalculation> {
   const completionStats = await getCompletionStats(userId)
@@ -534,11 +566,20 @@ export async function calculateTodayXP(userId: string): Promise<XPCalculation> {
   // Perfect day bonus: +50 XP if 100% completion
   const perfectDayBonus = completionStats.today.percentage === 100 ? 50 : 0
 
+  const subtotalXP = baseXP + streakBonus + perfectDayBonus
+
+  // Apply multipliers
+  const multipliers = await getActiveMultipliers(userId)
+  const totalMultiplier = calculateTotalMultiplier(multipliers)
+  const multipliedXP = Math.floor(subtotalXP * totalMultiplier)
+
   return {
     baseXP,
     streakBonus,
     perfectDayBonus,
-    totalXP: baseXP + streakBonus + perfectDayBonus
+    totalXP: multipliedXP,
+    multipliers,
+    multipliedXP
   }
 }
 
@@ -615,19 +656,47 @@ export async function getPerfectDaysCount(userId: string): Promise<number> {
 
 /**
  * Level calculation from XP
- * Formula: Level = floor(sqrt(totalXP / 100)) + 1
- * Example: 0-99 XP = Level 1, 100-399 = Level 2, 400-899 = Level 3, etc.
+ * Hybrid logarithmic curve for balanced progression:
+ * - Levels 1-2: Fast start (quadratic, same as before)
+ * - Levels 3-5: Medium progression (power 1.7)
+ * - Levels 6+: Smooth growth (logarithmic)
  */
 export function calculateLevelFromXP(totalXP: number): number {
-  return Math.floor(Math.sqrt(totalXP / 100)) + 1
+  if (totalXP < 100) {
+    // Level 1
+    return 1
+  } else if (totalXP < 400) {
+    // Level 2: Keep fast initial progression
+    return 2
+  } else if (totalXP < 2500) {
+    // Levels 3-5: Medium progression (power 1.7)
+    // Adjusted XP = totalXP - 400 (starting from level 3)
+    const adjustedXP = totalXP - 400
+    return Math.floor(Math.pow(adjustedXP / 100, 1 / 1.7)) + 3
+  } else {
+    // Levels 6+: Logarithmic progression for smooth late game
+    // Adjusted XP = totalXP - 2500 (starting from level 6)
+    const adjustedXP = totalXP - 2500
+    return Math.floor(Math.log(adjustedXP / 150 + 1) * 8) + 6
+  }
 }
 
 /**
  * Calculate XP needed for next level
+ * Inverse of the hybrid level formula
  */
 export function getXPForNextLevel(currentLevel: number): number {
-  // Inverse of level formula: XP = (level - 1)^2 * 100
-  return Math.pow(currentLevel, 2) * 100
+  if (currentLevel === 1) {
+    return 100
+  } else if (currentLevel === 2) {
+    return 400
+  } else if (currentLevel <= 5) {
+    // Power 1.7 inverse: XP = (level - 3)^1.7 * 100 + 400
+    return Math.floor(Math.pow(currentLevel - 3, 1.7) * 100) + 400
+  } else {
+    // Logarithmic inverse: XP = (e^((level - 6) / 8) - 1) * 150 + 2500
+    return Math.floor((Math.exp((currentLevel - 6) / 8) - 1) * 150) + 2500
+  }
 }
 
 /**
@@ -641,8 +710,8 @@ export function getXPProgress(totalXP: number): {
   progressPercentage: number
 } {
   const currentLevel = calculateLevelFromXP(totalXP)
-  const currentLevelXP = Math.pow(currentLevel - 1, 2) * 100
-  const nextLevelXP = Math.pow(currentLevel, 2) * 100
+  const currentLevelXP = getXPForNextLevel(currentLevel - 1)
+  const nextLevelXP = getXPForNextLevel(currentLevel)
   const progressXP = totalXP - currentLevelXP
   const neededXP = nextLevelXP - currentLevelXP
   const progressPercentage = Math.round((progressXP / neededXP) * 100)
@@ -714,10 +783,16 @@ export async function updateUserXP(userId: string, xpToAdd: number) {
     return null
   }
 
+  // Check for level milestone bonus activation
+  const leveledUp = newLevel > currentLevel.level
+  if (leveledUp) {
+    await activateLevelMilestoneBonus(userId, newLevel)
+  }
+
   // Return level up status
   return {
     ...data,
-    leveledUp: newLevel > currentLevel.level,
+    leveledUp,
     oldLevel: currentLevel.level,
     xpGained: xpToAdd
   }

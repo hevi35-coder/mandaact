@@ -16,6 +16,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, ACHIEVEMENT_MESSAGES } from '@/lib/notificationMessages'
 import { showError, showSuccess, showCelebration } from '@/lib/notificationUtils'
+import { getDayBoundsUTC, getCurrentUTC } from '@/lib/timezone'
 
 interface ActionWithContext extends Action {
   sub_goal: SubGoal & {
@@ -118,18 +119,16 @@ export default function TodayChecklistPage() {
 
       if (actionsError) throw actionsError
 
-      // Fetch check history for selected date
-      const dayStart = new Date(selectedDate)
-      dayStart.setHours(0, 0, 0, 0)
-      const dayEnd = new Date(dayStart)
-      dayEnd.setDate(dayEnd.getDate() + 1)
+      // Fetch check history for selected date (using timezone-aware bounds)
+      const dateStr = format(selectedDate, 'yyyy-MM-dd')
+      const { start: dayStart, end: dayEnd } = getDayBoundsUTC(dateStr)
 
       const { data: checksData, error: checksError } = await supabase
         .from('check_history')
         .select('*')
         .eq('user_id', user.id)
-        .gte('checked_at', dayStart.toISOString())
-        .lt('checked_at', dayEnd.toISOString())
+        .gte('checked_at', dayStart)
+        .lt('checked_at', dayEnd)
 
       if (checksError) throw checksError
 
@@ -172,19 +171,17 @@ export default function TodayChecklistPage() {
     setCheckingActions(prev => new Set(prev).add(action.id))
 
     try {
-      // Double-check current state before proceeding
-      const dayStart = new Date(selectedDate)
-      dayStart.setHours(0, 0, 0, 0)
-      const dayEnd = new Date(dayStart)
-      dayEnd.setDate(dayEnd.getDate() + 1)
+      // Double-check current state before proceeding (using timezone-aware bounds)
+      const dateStr = format(selectedDate, 'yyyy-MM-dd')
+      const { start: dayStart, end: dayEnd } = getDayBoundsUTC(dateStr)
 
       const { data: existingChecks } = await supabase
         .from('check_history')
         .select('*')
         .eq('action_id', action.id)
         .eq('user_id', user.id)
-        .gte('checked_at', dayStart.toISOString())
-        .lt('checked_at', dayEnd.toISOString())
+        .gte('checked_at', dayStart)
+        .lt('checked_at', dayEnd)
 
       const currentCheck = existingChecks && existingChecks.length > 0 ? existingChecks[0] : null
 
@@ -200,14 +197,20 @@ export default function TodayChecklistPage() {
         // Subtract XP when unchecking
         try {
           const { updateUserXP, getStreakStats } = await import('@/lib/stats')
+          const { getActiveMultipliers, calculateTotalMultiplier } = await import('@/lib/xpMultipliers')
 
           // Calculate XP to subtract (same logic as adding)
           const streakStats = await getStreakStats(user.id)
           const baseXP = 10
           const streakBonus = streakStats.current >= 7 ? 5 : 0
-          const totalXP = baseXP + streakBonus
+          const subtotalXP = baseXP + streakBonus
 
-          await updateUserXP(user.id, -totalXP) // Negative to subtract
+          // Apply multipliers
+          const multipliers = await getActiveMultipliers(user.id)
+          const totalMultiplier = calculateTotalMultiplier(multipliers)
+          const finalXP = Math.floor(subtotalXP * totalMultiplier)
+
+          await updateUserXP(user.id, -finalXP) // Negative to subtract
         } catch (xpError) {
           console.error('XP update error:', xpError)
         }
@@ -221,16 +224,51 @@ export default function TodayChecklistPage() {
           )
         )
       } else {
-        // Check: Insert into check_history with selected date
-        const checkDate = new Date(selectedDate)
-        checkDate.setHours(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds())
+        // Check: Validate with anti-cheat first
+        const { data: validationData, error: validationError } = await supabase
+          .rpc('validate_and_record_check', {
+            p_user_id: user.id,
+            p_action_id: action.id,
+            p_checked_at: getCurrentUTC()
+          })
 
+        if (validationError) {
+          console.error('Validation error:', validationError)
+          throw new Error('체크 검증에 실패했습니다')
+        }
+
+        // Check validation result
+        if (!validationData.allowed) {
+          let errorMessage = '체크할 수 없습니다'
+
+          switch (validationData.reason) {
+            case 'daily_limit_exceeded':
+              errorMessage = '하루 3회까지만 체크/해제가 가능합니다'
+              break
+            case 'too_fast_recheck':
+              errorMessage = '너무 빠르게 다시 체크하셨습니다. 잠시 후 다시 시도해주세요'
+              break
+            case 'rapid_spam_detected':
+              errorMessage = '너무 많은 체크를 시도하셨습니다. 잠시 후 다시 시도해주세요'
+              break
+          }
+
+          showError(errorMessage)
+          setCheckingActions(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(action.id)
+            return newSet
+          })
+          return
+        }
+
+        // Insert into check_history with current UTC timestamp
         const { data: checkData, error: insertError } = await supabase
           .from('check_history')
           .insert({
             action_id: action.id,
             user_id: user.id,
-            checked_at: checkDate.toISOString()
+            checked_at: getCurrentUTC()
           })
           .select()
           .single()
@@ -240,15 +278,28 @@ export default function TodayChecklistPage() {
         // Update user XP for the new check
         {
           try {
-            const { updateUserXP, getStreakStats, checkAndAwardPerfectDayXP } = await import('@/lib/stats')
+            const { updateUserXP, getStreakStats, checkAndAwardPerfectDayXP, getCompletionStats } = await import('@/lib/stats')
+            const { activatePerfectWeekBonus, getActiveMultipliers, calculateTotalMultiplier } = await import('@/lib/xpMultipliers')
 
-            // Calculate XP based on streak
+            // Calculate base XP
             const streakStats = await getStreakStats(user.id)
             const baseXP = 10
             const streakBonus = streakStats.current >= 7 ? 5 : 0
-            const totalXP = baseXP + streakBonus
+            const subtotalXP = baseXP + streakBonus
 
-            await updateUserXP(user.id, totalXP)
+            // Apply multipliers
+            const multipliers = await getActiveMultipliers(user.id)
+            const totalMultiplier = calculateTotalMultiplier(multipliers)
+            const finalXP = Math.floor(subtotalXP * totalMultiplier)
+
+            await updateUserXP(user.id, finalXP)
+
+            // Show XP gained notification
+            if (multipliers.length > 0 && totalMultiplier > 1) {
+              showSuccess(`+${finalXP} XP (×${totalMultiplier.toFixed(1)} 배율 적용!)`)
+            } else {
+              showSuccess(`+${finalXP} XP`)
+            }
 
             // Check for perfect day bonus (100% completion)
             // Wait a bit for the check to be reflected in stats
@@ -261,6 +312,15 @@ export default function TodayChecklistPage() {
                   // Show success toast
                   showCelebration(ACHIEVEMENT_MESSAGES.perfectDay(result.xp_awarded))
                   console.log('🎉 Perfect day bonus awarded: +' + result.xp_awarded + ' XP')
+                }
+
+                // Check for perfect week bonus (80%+ weekly completion)
+                const completionStats = await getCompletionStats(user.id)
+                if (completionStats.week.percentage >= 80) {
+                  const activated = await activatePerfectWeekBonus(user.id)
+                  if (activated) {
+                    console.log('✨ Perfect week bonus activated: 2x XP for 7 days')
+                  }
                 }
               } catch (bonusError) {
                 console.error('Perfect day bonus error:', bonusError)

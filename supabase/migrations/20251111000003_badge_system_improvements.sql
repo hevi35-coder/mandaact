@@ -15,14 +15,28 @@ ADD COLUMN IF NOT EXISTS anti_cheat_rules JSONB,
 ADD COLUMN IF NOT EXISTS max_count INTEGER DEFAULT 1;
 
 -- Add the new category constraint
-ALTER TABLE achievements
-ADD CONSTRAINT achievements_category_check
-CHECK (category IN ('one_time', 'recurring', 'limited', 'hidden', 'social'));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'achievements_category_check'
+  ) THEN
+    ALTER TABLE achievements
+    ADD CONSTRAINT achievements_category_check
+    CHECK (category IN ('one_time', 'recurring', 'limited', 'hidden', 'social'));
+  END IF;
+END $$;
 
 -- Add the tier constraint
-ALTER TABLE achievements
-ADD CONSTRAINT achievements_tier_check
-CHECK (tier IN ('bronze', 'silver', 'gold', 'platinum'));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'achievements_tier_check'
+  ) THEN
+    ALTER TABLE achievements
+    ADD CONSTRAINT achievements_tier_check
+    CHECK (tier IN ('bronze', 'silver', 'gold', 'platinum'));
+  END IF;
+END $$;
 
 -- Add new columns to user_achievements table
 ALTER TABLE user_achievements
@@ -57,15 +71,15 @@ UPDATE achievements SET category = 'recurring', tier = 'gold', max_count = 999 W
 UPDATE achievements SET category = 'recurring', tier = 'platinum', max_count = 999 WHERE key = 'checks_1000';
 
 -- Insert Phase 1 new badges
-INSERT INTO achievements (key, title, description, icon, xp_reward, display_order, category, tier, anti_cheat_rules) VALUES
+INSERT INTO achievements (key, title, description, icon, xp_reward, display_order, category, tier, anti_cheat_rules, unlock_condition) VALUES
 -- First mandalart badge (if not exists)
 ('first_mandalart', '첫 걸음', '첫 번째 만다라트를 생성했습니다', '🌱', 100, 1, 'one_time', 'bronze',
-  '{"minActionsPerMandalart": 16, "minActionTextLength": 5}'::jsonb),
+  '{"minActionsPerMandalart": 16, "minActionTextLength": 5}'::jsonb, '{}'),
 -- Level badges
-('level_10', '성장하는 나무', '레벨 10을 달성했습니다', '📈', 300, 15, 'one_time', 'silver', NULL),
+('level_10', '성장하는 나무', '레벨 10을 달성했습니다', '📈', 300, 15, 'one_time', 'silver', NULL, '{}'),
 -- Monthly champion (recurring)
 ('monthly_champion', '월간 챔피언', '한 달 동안 100% 달성했습니다', '🏅', 1000, 20, 'recurring', 'gold',
-  '{"minActionsPerMandalart": 16, "minCheckInterval": 60, "maxDailyChecks": 50}'::jsonb)
+  '{"minActionsPerMandalart": 16, "minCheckInterval": 60, "maxDailyChecks": 50}'::jsonb, '{}')
 ON CONFLICT (key) DO UPDATE SET
   category = EXCLUDED.category,
   tier = EXCLUDED.tier,
@@ -273,10 +287,24 @@ GRANT UPDATE ON user_achievements TO authenticated;
 -- Add RLS policies for badge_validation_logs
 ALTER TABLE badge_validation_logs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own validation logs"
-  ON badge_validation_logs FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'badge_validation_logs' AND policyname = 'Users can view their own validation logs'
+  ) THEN
+    CREATE POLICY "Users can view their own validation logs"
+      ON badge_validation_logs FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "System can insert validation logs"
-  ON badge_validation_logs FOR INSERT
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'badge_validation_logs' AND policyname = 'System can insert validation logs'
+  ) THEN
+    CREATE POLICY "System can insert validation logs"
+      ON badge_validation_logs FOR INSERT
+      WITH CHECK (true);
+  END IF;
+END $$;
