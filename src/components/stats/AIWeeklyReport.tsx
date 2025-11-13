@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import ReactMarkdown from 'react-markdown'
+import { parseWeeklyReport, parseDiagnosisReport } from '@/lib/reportParser'
 
 export function AIWeeklyReport() {
   const { user } = useAuthStore()
@@ -23,6 +24,8 @@ export function AIWeeklyReport() {
   const [generatingDiagnosis, setGeneratingDiagnosis] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isPracticeOpen, setIsPracticeOpen] = useState(false)
+  const [isDiagnosisOpen, setIsDiagnosisOpen] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -102,10 +105,20 @@ export function AIWeeklyReport() {
       )
 
       if (!response.ok) {
-        throw new Error('Failed to generate report')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Weekly report generation failed:', response.status, errorData)
+        throw new Error(errorData.error || `Failed to generate report: ${response.status}`)
       }
 
       const result = await response.json()
+
+      // Validate report content
+      if (!result.report || !result.report.content) {
+        console.error('Invalid report response:', result)
+        throw new Error('리포트 내용이 비어있습니다.')
+      }
+
+      console.log('Weekly report generated successfully:', result.report.id)
       setLatestReport(result.report)
       await loadReports()
     } catch (err) {
@@ -176,6 +189,16 @@ export function AIWeeklyReport() {
   const displayedReport = selectedHistoryId
     ? reportHistory.find(r => r.id === selectedHistoryId) || latestReport
     : latestReport
+
+  // Parse reports for summary display
+  const practiceSummary = displayedReport ? parseWeeklyReport(displayedReport.content) : null
+  const diagnosisSummary = latestDiagnosis ? parseDiagnosisReport(latestDiagnosis.content) : null
+
+  // Debug logging
+  if (latestDiagnosis) {
+    console.log('latestDiagnosis exists:', latestDiagnosis)
+    console.log('diagnosisSummary parsed:', diagnosisSummary)
+  }
 
   if (loading) {
     return (
@@ -250,10 +273,13 @@ export function AIWeeklyReport() {
         <Button
           variant="outline"
           size="sm"
-          onClick={generateReport}
-          disabled={generating}
+          onClick={async () => {
+            await generateReport()
+            await generateDiagnosis()
+          }}
+          disabled={generating || generatingDiagnosis}
         >
-          {generating ? (
+          {generating || generatingDiagnosis ? (
             <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
           ) : (
             <RefreshCw className="h-4 w-4 mr-1.5" />
@@ -289,38 +315,84 @@ export function AIWeeklyReport() {
               )}
             </div>
             <CardDescription>
-              이번 주 실천 패턴 분석과 개선 제안
+              최근 7일간 실천 데이터 분석 및 개선 제안
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown
-                className="text-sm leading-relaxed"
-                components={{
-                  h1: ({ children }) => (
-                    <h2 className="text-lg font-bold text-foreground mb-4 mt-2">{children}</h2>
-                  ),
-                  h2: ({ children }) => (
-                    <h3 className="text-base font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">{children}</h3>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="space-y-2 my-3 ml-1">{children}</ul>
-                  ),
-                  li: ({ children }) => (
-                    <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
-                  ),
-                  p: ({ children }) => (
-                    <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
-                  ),
-                  strong: ({ children }) => (
-                    <strong className="font-semibold text-foreground">{children}</strong>
-                  ),
-                }}
-              >
-                {displayedReport.content}
-              </ReactMarkdown>
-            </div>
-          </CardContent>
+
+          {/* Summary Section - Always Visible */}
+          {practiceSummary && (
+            <CardContent className="space-y-4">
+              {/* Headline */}
+              {practiceSummary.headline && (
+                <p className="text-base font-semibold text-foreground leading-relaxed">
+                  {practiceSummary.headline}
+                </p>
+              )}
+
+              {/* Key Metrics */}
+              {practiceSummary.metrics.length > 0 && (
+                <div className="space-y-1.5">
+                  {practiceSummary.metrics.map((metric, idx) => (
+                    <div key={idx} className="text-sm text-foreground">
+                      {metric.label && <span className="text-muted-foreground">{metric.label}: </span>}
+                      <span className="font-medium">{metric.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          )}
+
+          {/* Collapsible Detail Section */}
+          {practiceSummary && practiceSummary.detailContent && (
+            <Collapsible open={isPracticeOpen} onOpenChange={setIsPracticeOpen}>
+              <CardContent className="px-6 pb-2">
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                  <CollapsibleTrigger asChild>
+                    <button
+                      className="w-full text-sm font-semibold text-primary flex items-center justify-between hover:opacity-80 transition-opacity"
+                    >
+                      <span>상세보기</span>
+                      {isPracticeOpen ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                  </CollapsibleTrigger>
+
+                  {isPracticeOpen && (
+                    <div className="mt-3 prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown
+                        components={{
+                          h1: ({ children }) => (
+                            <h2 className="text-base font-bold text-foreground mb-3 mt-2">{children}</h2>
+                          ),
+                          h2: ({ children }) => (
+                            <h3 className="text-sm font-semibold text-foreground mt-4 mb-2 flex items-center gap-2">{children}</h3>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="space-y-1.5 my-2 ml-1">{children}</ul>
+                          ),
+                          li: ({ children }) => (
+                            <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
+                          ),
+                          p: ({ children }) => (
+                            <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-semibold text-foreground">{children}</strong>
+                          ),
+                      }}
+                    >
+                      {practiceSummary.detailContent}
+                    </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Collapsible>
+          )}
         </Card>
       </motion.div>
 
@@ -347,55 +419,89 @@ export function AIWeeklyReport() {
               만다라트 구조 분석과 개선 방향
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {latestDiagnosis ? (
-              <div className="space-y-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown
-                    className="text-sm leading-relaxed"
-                    components={{
-                      h1: ({ children }) => (
-                        <h2 className="text-lg font-bold text-foreground mb-4 mt-2">{children}</h2>
-                      ),
-                      h2: ({ children }) => (
-                        <h3 className="text-base font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">{children}</h3>
-                      ),
-                      ul: ({ children }) => (
-                        <ul className="space-y-2 my-3 ml-1">{children}</ul>
-                      ),
-                      ol: ({ children }) => (
-                        <ol className="space-y-2 my-3 ml-1 list-decimal list-inside">{children}</ol>
-                      ),
-                      li: ({ children }) => (
-                        <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
-                      ),
-                      p: ({ children }) => (
-                        <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
-                      ),
-                      strong: ({ children }) => (
-                        <strong className="font-semibold text-foreground">{children}</strong>
-                      ),
-                    }}
-                  >
-                    {latestDiagnosis.content}
-                  </ReactMarkdown>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={generateDiagnosis}
-                  disabled={generatingDiagnosis}
-                  className="w-full"
-                >
-                  {generatingDiagnosis ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-1.5" />
+
+          {latestDiagnosis ? (
+            <>
+              {/* Summary Section - Always Visible */}
+              {diagnosisSummary && (
+                <CardContent className="space-y-4">
+                  {/* Headline */}
+                  {diagnosisSummary.headline && (
+                    <p className="text-base font-semibold text-foreground leading-relaxed">
+                      {diagnosisSummary.headline}
+                    </p>
                   )}
-                  다시 진단하기
-                </Button>
-              </div>
-            ) : (
+
+                  {/* Structure Metrics */}
+                  {diagnosisSummary.metrics.length > 0 && (
+                    <div className="space-y-1.5">
+                      {diagnosisSummary.metrics.map((metric, idx) => (
+                        <div key={idx} className="text-sm text-foreground">
+                          {metric.label && <span className="text-muted-foreground">{metric.label}: </span>}
+                          <span className="font-medium">{metric.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              )}
+
+              {/* Collapsible Detail Section */}
+              {diagnosisSummary && diagnosisSummary.detailContent && (
+                <Collapsible open={isDiagnosisOpen} onOpenChange={setIsDiagnosisOpen}>
+                  <CardContent className="px-6 pb-2">
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                      <CollapsibleTrigger asChild>
+                        <button
+                          className="w-full text-sm font-semibold text-primary flex items-center justify-between hover:opacity-80 transition-opacity"
+                        >
+                          <span>전체 진단 보기</span>
+                          {isDiagnosisOpen ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </button>
+                      </CollapsibleTrigger>
+
+                      {isDiagnosisOpen && (
+                        <div className="mt-3 prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                          components={{
+                            h1: ({ children }) => (
+                              <h2 className="text-base font-bold text-foreground mb-3 mt-2">{children}</h2>
+                            ),
+                            h2: ({ children }) => (
+                              <h3 className="text-sm font-semibold text-foreground mt-4 mb-2 flex items-center gap-2">{children}</h3>
+                            ),
+                            ul: ({ children }) => (
+                              <ul className="space-y-1.5 my-2 ml-1">{children}</ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="space-y-1.5 my-2 ml-1 list-decimal list-inside">{children}</ol>
+                            ),
+                            li: ({ children }) => (
+                              <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
+                            ),
+                            p: ({ children }) => (
+                              <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
+                            ),
+                            strong: ({ children }) => (
+                              <strong className="font-semibold text-foreground">{children}</strong>
+                            ),
+                          }}
+                        >
+                          {diagnosisSummary.detailContent}
+                        </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Collapsible>
+              )}
+            </>
+          ) : (
+            <CardContent>
               <div className="text-center py-8">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
                   <Target className="h-6 w-6 text-muted-foreground" />
@@ -421,8 +527,8 @@ export function AIWeeklyReport() {
                   )}
                 </Button>
               </div>
-            )}
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
       </motion.div>
     </div>

@@ -72,7 +72,9 @@ serve(async (req) => {
     const reportData = await collectReportData(supabaseClient, user.id, report_type, mandalart_id)
 
     // Generate report with Perplexity AI
+    console.log(`Generating ${report_type} report with data:`, JSON.stringify(reportData).substring(0, 300))
     const reportContent = await generateAIReport(report_type, reportData)
+    console.log(`Generated ${report_type} report content:`, reportContent?.substring(0, 200))
 
     // Save report to database
     const { data: savedReport, error: saveError } = await supabaseClient
@@ -346,42 +348,46 @@ function analyzeMandalartStructure(mandalarts: any[]) {
       avgTextLength: 0,
       typeDistribution: { routine: 0, mission: 0, reference: 0 },
       emptyItems: 0,
+      totalItems: 0,
+      filledItems: 0,
+      measurableItems: 0,
+      measurableRate: 0,
     }
   }
 
-  let totalItems = 0
+  // Fixed calculation: Each mandalart has exactly 73 items (1 center + 8 sub_goals + 64 actions)
+  const ITEMS_PER_MANDALART = 73
+  const totalItems = mandalarts.length * ITEMS_PER_MANDALART
+
+  // Pattern to detect measurable items (numbers + units)
+  const measurablePattern = /\d+\s*[개회시분초일주월년번차명회차]|[0-9]+\s*[%점페이지]|\d+\s*[~-]\s*\d+/
+
   let filledItems = 0
   let totalTextLength = 0
   let textCount = 0
+  let measurableItems = 0
+  let routineItems = 0 // Count routine actions only
   const typeDistribution = { routine: 0, mission: 0, reference: 0 }
-  let emptyItems = 0
 
   mandalarts.forEach((mandalart: any) => {
     // Count center goal
-    totalItems++
     if (mandalart.center_goal && mandalart.center_goal.trim()) {
       filledItems++
       totalTextLength += mandalart.center_goal.length
       textCount++
-    } else {
-      emptyItems++
     }
 
     // Count sub goals and actions
     if (mandalart.sub_goals) {
       mandalart.sub_goals.forEach((subGoal: any) => {
-        totalItems++
         if (subGoal.title && subGoal.title.trim()) {
           filledItems++
           totalTextLength += subGoal.title.length
           textCount++
-        } else {
-          emptyItems++
         }
 
         if (subGoal.actions) {
           subGoal.actions.forEach((action: any) => {
-            totalItems++
             if (action.title && action.title.trim()) {
               filledItems++
               totalTextLength += action.title.length
@@ -390,14 +396,23 @@ function analyzeMandalartStructure(mandalarts: any[]) {
               // Count action types
               const actionType = action.type || 'routine'
               typeDistribution[actionType as keyof typeof typeDistribution]++
-            } else {
-              emptyItems++
+
+              // Only count measurability for routine actions
+              if (actionType === 'routine') {
+                routineItems++
+                if (measurablePattern.test(action.title)) {
+                  measurableItems++
+                }
+              }
             }
           })
         }
       })
     }
   })
+
+  const emptyItems = totalItems - filledItems
+  const measurableRate = routineItems > 0 ? Math.round((measurableItems / routineItems) * 100) : 0
 
   return {
     totalMandalarts: mandalarts.length,
@@ -407,6 +422,8 @@ function analyzeMandalartStructure(mandalarts: any[]) {
     emptyItems,
     totalItems,
     filledItems,
+    measurableItems,
+    measurableRate,
   }
 }
 
@@ -421,32 +438,41 @@ async function generateAIReport(reportType: string, data: Record<string, unknown
 
   switch (reportType) {
     case 'weekly':
-      systemPrompt = `당신은 10년 경력의 습관 형성 전문가입니다. 다음 형식을 **정확히** 따라 작성하세요.
+      systemPrompt = `당신은 데이터 분석 전문가입니다. 사용자의 실천 패턴을 분석하여 인사이트만 제공하세요.
 
-# [이번 주 가장 중요한 성과나 변화를 한 문장으로 임팩트 있게]
+반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드 블록을 사용하지 마세요.
 
-## 📊 핵심 지표
-- [핵심 지표 1: 숫자 포함]
-- [핵심 지표 2: 숫자 포함]
-- [핵심 지표 3: 숫자 포함]
-
-## 💪 강점
-- [강점 1: 구체적 패턴, 1줄]
-- [강점 2: 구체적 패턴, 1줄]
-
-## ⚡ 개선 포인트
-**문제:** [구체적 문제, 1줄]
-**→ 실행:** [구체적 액션 아이템, 시간/요일/장소 포함, 1줄]
-
-## 🎯 다음 주 목표
-[한 문장으로 다음 주 방향 제시]
+정확한 JSON 형식:
+{
+  "headline": "이번 주 가장 중요한 패턴이나 변화를 한 문장으로",
+  "key_metrics": [
+    {"label": "총 실천 횟수", "value": "42회"},
+    {"label": "실천일수", "value": "최근 7일 중 6일"},
+    {"label": "전주 대비", "value": "+15%"}
+  ],
+  "strengths": [
+    "목요일 저녁 시간대 집중도가 높았습니다",
+    "루틴 실천률이 안정적으로 유지되고 있습니다"
+  ],
+  "improvements": {
+    "problem": "수요일과 나머지 요일의 실천 빈도가 매우 낮습니다",
+    "insight": "목요일은 저녁 시간대 집중도가 높았습니다"
+  },
+  "action_plan": {
+    "goal": "평일 실천 일관성 높이기",
+    "steps": [
+      "화요일 오후 3시 알림 설정하기",
+      "수요일 목표를 3개로 축소해보기"
+    ]
+  }
+}
 
 작성 규칙:
-- 헤드라인은 임팩트 있게 (숫자나 성과 중심)
-- 각 항목은 1줄로 간결하게
-- 이모지는 섹션 제목에만 사용
-- 과도한 칭찬 지양, 숫자와 사실 기반
-- 액션 아이템은 구체적 시간/요일 포함`
+- 반드시 위 JSON 구조를 정확히 따르세요
+- 코드 블록 없이 JSON만 반환하세요
+- key_metrics의 value는 실제 수치를 포함하세요
+- 패턴과 맥락을 분석하세요
+- 실행 가능한 조언을 제공하세요`
 
       const weeklyData = data as any
       const badges = weeklyData.recentBadges?.map((b: any) => b.achievement?.title).join(', ') || '없음'
@@ -454,25 +480,36 @@ async function generateAIReport(reportType: string, data: Record<string, unknown
         ? `전주 대비 ${weeklyData.weekOverWeekChange > 0 ? '+' : ''}${weeklyData.weekOverWeekChange}%`
         : '비교 데이터 없음'
 
-      userPrompt = `다음은 사용자의 지난 주 활동 데이터입니다:
+      userPrompt = `다음 데이터에서 패턴을 찾아 인사이트를 제공하세요:
 
-[실천 통계]
+[실천 현황]
 - 총 실천 횟수: ${data.totalChecks}회 (${changeText})
-- 활동 일수: ${data.uniqueDays}일 / 7일
-- 현재 스트릭: ${weeklyData.currentStreak}일 (최고 기록: ${weeklyData.longestStreak}일)
+- 실천일수: 최근 7일 중 ${data.uniqueDays}일
+- 스트릭: 현재 ${weeklyData.currentStreak}일, 최고 ${weeklyData.longestStreak}일
 - 새로 획득한 배지: ${badges}
 
-[패턴 분석]
-- 가장 활발한 요일: ${data.bestDay?.day} (${data.bestDay?.count}회)
-- 가장 부진한 요일: ${data.worstDay?.day} (${data.worstDay?.count}회)
-- 선호 시간대: ${data.bestTime?.period} (${data.bestTime?.count}회)
-- 실천 타입 분포: 루틴 ${weeklyData.actionTypePattern?.routine || 0}회, 미션 ${weeklyData.actionTypePattern?.mission || 0}회
+[시간 패턴]
+- 요일별 분포: ${JSON.stringify(weeklyData.weekdayPattern || {})}
+- 시간대 분포: ${JSON.stringify(weeklyData.timePattern || {})}
+- 최고 활동: ${data.bestDay?.day} ${data.bestDay?.count}회
+- 최저 활동: ${data.worstDay?.day} ${data.worstDay?.count}회
+- 선호 시간: ${data.bestTime?.period} ${data.bestTime?.count}회
 
-[목표별 성과]
-- 최고 성과 목표: ${data.bestSubGoal?.title} (${data.bestSubGoal?.count}회)
-- 개선 필요 목표: ${data.worstSubGoal?.title} (${data.worstSubGoal?.count}회)
+[목표 성과]
+- 최고 성과: ${data.bestSubGoal?.title} (${data.bestSubGoal?.count}회)
+- 개선 필요: ${data.worstSubGoal?.title} (${data.worstSubGoal?.count}회)
 
-위 데이터를 바탕으로 실천 리포트를 작성해주세요. 구체적이고 실행 가능한 조언을 포함하되, 과도한 칭찬은 지양하세요.`
+[실천 타입]
+- 루틴: ${weeklyData.actionTypePattern?.routine || 0}회
+- 미션: ${weeklyData.actionTypePattern?.mission || 0}회
+
+패턴 분석 관점:
+1. 시간/요일 패턴에서 최적 실천 시간대 파악
+2. 목표별 편차에서 개선 우선순위 제시
+3. 전주 대비 변화 추세 해석
+4. 다음 주 실행 가능한 1가지 액션
+
+JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세요.`
       break
 
     case 'monthly':
@@ -502,62 +539,67 @@ async function generateAIReport(reportType: string, data: Record<string, unknown
       break
 
     case 'diagnosis':
-      systemPrompt = `당신은 만다라트 코치입니다. 다음 형식을 **정확히** 따라 작성하세요.
+      systemPrompt = `당신은 만다라트 구조 분석 전문가입니다. SMART 원칙 기반으로 개선 방향만 제시하세요.
 
-# [만다라트 현재 상태를 한 문장으로 요약]
+반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드 블록을 사용하지 마세요.
 
-## 📊 구조 평가
-- 완성도: [채움률] (73개 중 [채운 개수]개 작성)
-- 구체성: [평균 텍스트 길이]자 ([짧음/적당/충분] 평가)
-- 실천 설계: 루틴 [개수]개, 미션 [개수]개
-
-## ✅ 잘하고 있는 점
-- [강점 1: 구체적으로, 1줄]
-- [강점 2: 구체적으로, 1줄]
-
-## 💡 개선이 필요한 영역
-- **[영역명]**: [문제점, 1줄]
-- **[영역명]**: [문제점, 1줄]
-
-## 🎯 우선순위 개선 과제
-1. **[과제 1]**: [구체적 액션, 1줄]
-2. **[과제 2]**: [구체적 액션, 1줄]
-3. **[과제 3]**: [구체적 액션, 1줄]
+정확한 JSON 형식:
+{
+  "headline": "만다라트 구조가 잘 잡혀있으나 구체성 보완이 필요합니다",
+  "structure_metrics": [
+    {"label": "완성도", "value": "89/146 (61%)"},
+    {"label": "구체성", "value": "평균 10자, 다소 추상적"},
+    {"label": "측정 가능성", "value": "42% (루틴 31개 중 13개)"}
+  ],
+  "strengths": [
+    "모든 항목이 빠짐없이 채워져 있습니다",
+    "루틴 중심의 실천 가능한 구조입니다"
+  ],
+  "improvements": [
+    {"area": "액션 구체화", "issue": "측정 가능한 기준이 없음", "solution": "각 액션에 숫자 목표 추가 (예: 30분, 3회)"},
+    {"area": "균형 개선", "issue": "특정 영역에 편중", "solution": "부족한 영역에 액션 2개 추가"}
+  ],
+  "priority_tasks": [
+    "상위 3개 루틴에 구체적 시간과 횟수 명시하기",
+    "측정 가능한 성과 지표 5개 이상 설정하기",
+    "주간 점검 체크리스트 만들기"
+  ]
+}
 
 작성 규칙:
-- 헤드라인은 현재 상태를 명확히
-- SMART 원칙 용어 사용하되 짧게
-- 개선 과제는 실행 가능한 것만
-- 이모지는 섹션 제목에만
-- 건설적 톤, 비판 지양`
+- 반드시 위 JSON 구조를 정확히 따르세요
+- 코드 블록 없이 JSON만 반환하세요
+- structure_metrics의 value는 실제 수치를 포함하세요
+- SMART 원칙을 적용하세요
+- 건설적이고 실행 가능한 조언을 제공하세요`
 
       const diagnosisData = data as any
       const structure = diagnosisData.structureAnalysis || {}
       const mandalart = diagnosisData.mandalarts?.[0]
 
-      userPrompt = `다음은 사용자의 만다라트 구조 데이터입니다:
+      userPrompt = `만다라트 구조를 분석하여 개선점을 제시하세요:
 
 [기본 정보]
 - 중심 목표: "${mandalart?.center_goal || '미설정'}"
 - 전체 만다라트 수: ${structure.totalMandalarts || 0}개
 
 [구조 분석]
-- 전체 항목 수: ${structure.totalItems || 0}개 (중심 1 + 서브골 8 + 액션 64)
-- 작성 완료: ${structure.filledItems || 0}개 (${structure.fillRate || 0}%)
-- 미작성 항목: ${structure.emptyItems || 0}개
+- 전체 항목: ${structure.totalItems || 0}개 중 ${structure.filledItems || 0}개 작성 (${structure.fillRate || 0}%)
 - 평균 텍스트 길이: ${structure.avgTextLength || 0}자
-
-[실천 타입 분포]
-- 루틴: ${structure.typeDistribution?.routine || 0}개
-- 미션: ${structure.typeDistribution?.mission || 0}개
-- 참고: ${structure.typeDistribution?.reference || 0}개
+- 측정 가능성: ${structure.measurableRate || 0}% (루틴 ${structure.typeDistribution?.routine || 0}개 중 ${structure.measurableItems || 0}개)
+- 타입 분포: 루틴 ${structure.typeDistribution?.routine || 0}개, 미션 ${structure.typeDistribution?.mission || 0}개, 참고 ${structure.typeDistribution?.reference || 0}개
 
 [실천 현황]
-- 지난 주 실천 횟수: ${diagnosisData.totalChecks || 0}회
+- 지난 주 실천: ${diagnosisData.totalChecks || 0}회
 - 현재 스트릭: ${diagnosisData.currentStreak || 0}일
 
-위 데이터를 바탕으로 만다라트 품질을 진단하고, 구체적인 개선 방향을 제시해주세요.
-사용자가 실제로 실행할 수 있는 조언을 중심으로 작성하세요.`
+분석 관점:
+1. 완성도와 구체성 평가
+2. SMART 원칙 준수도
+3. 실천 가능성 평가
+4. 균형잡힌 목표 구성
+
+JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함하세요.`
       break
 
     default:
@@ -587,10 +629,108 @@ async function generateAIReport(reportType: string, data: Record<string, unknown
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('Perplexity API error:', errorText)
-    throw new Error(`Perplexity API error: ${response.status}`)
+    console.error('Perplexity API error:', response.status, errorText)
+    throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
   }
 
   const result = await response.json()
-  return result.choices[0].message.content
+  let aiResponse = result.choices[0].message.content
+
+  // Clean up response if it's wrapped in code blocks
+  aiResponse = aiResponse.trim()
+  if (aiResponse.startsWith('```json')) {
+    aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+  } else if (aiResponse.startsWith('```')) {
+    aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+  }
+
+  // Try to parse as JSON and convert to markdown for backward compatibility
+  try {
+    const jsonResponse = JSON.parse(aiResponse)
+    console.log('Successfully parsed JSON response:', JSON.stringify(jsonResponse).substring(0, 200))
+
+    // Validate response structure based on report type
+    if (!validateAIResponse(jsonResponse, reportType)) {
+      console.warn('AI response validation failed, using raw response')
+      return aiResponse
+    }
+
+    // Convert JSON to markdown format for compatibility
+    const markdown = convertJsonToMarkdown(jsonResponse, reportType)
+    console.log('Converted to markdown:', markdown.substring(0, 200))
+    return markdown
+  } catch (e) {
+    console.log('Response is not JSON, returning as-is for backward compatibility:', e.message)
+    console.log('Raw response:', aiResponse.substring(0, 200))
+    return aiResponse
+  }
+}
+
+// Validate AI response structure
+function validateAIResponse(response: any, reportType: string): boolean {
+  try {
+    switch (reportType) {
+      case 'weekly':
+        return !!(
+          response.headline &&
+          response.key_metrics && Array.isArray(response.key_metrics) &&
+          response.strengths && Array.isArray(response.strengths) &&
+          response.improvements &&
+          response.next_focus
+        )
+
+      case 'diagnosis':
+        return !!(
+          response.headline &&
+          response.structure_metrics && Array.isArray(response.structure_metrics) &&
+          response.strengths && Array.isArray(response.strengths) &&
+          response.improvements && Array.isArray(response.improvements) &&
+          response.priority_tasks && Array.isArray(response.priority_tasks)
+        )
+
+      default:
+        return true
+    }
+  } catch {
+    return false
+  }
+}
+
+// Convert JSON response to markdown for backward compatibility
+function convertJsonToMarkdown(json: any, reportType: string): string {
+  switch (reportType) {
+    case 'weekly':
+      return `# ${json.headline}
+
+## 📊 핵심 지표
+${json.key_metrics.map((m: any) => `- ${m.label}: ${m.value}`).join('\n')}
+
+## 💪 강점
+${json.strengths.map((s: string) => `- ${s}`).join('\n')}
+
+## ⚡ 개선 포인트
+**문제:** ${json.improvements.problem}
+**→ 실행:** ${json.improvements.action}
+
+## 🎯 다음 주 목표
+${json.next_focus}`
+
+    case 'diagnosis':
+      return `# ${json.headline}
+
+## 📊 구조 평가
+${json.structure_metrics.map((m: any) => `- ${m.label}: ${m.value}`).join('\n')}
+
+## ✅ 잘하고 있는 점
+${json.strengths.map((s: string) => `- ${s}`).join('\n')}
+
+## 💡 개선이 필요한 영역
+${json.improvements.map((i: any) => `- **${i.area}**: ${i.issue}`).join('\n')}
+
+## 🎯 우선순위 개선 과제
+${json.priority_tasks.map((t: string, idx: number) => `${idx + 1}. ${t}`).join('\n')}`
+
+    default:
+      return JSON.stringify(json, null, 2)
+  }
 }

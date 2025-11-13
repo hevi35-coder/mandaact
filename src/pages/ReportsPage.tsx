@@ -29,10 +29,8 @@ export default function ReportsPage() {
       <div className="max-w-3xl mx-auto space-y-4">
         {/* Header */}
         <div className="text-center md:text-left">
-          <h1 className="text-2xl font-bold">AI 리포트</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            실천 데이터를 기반으로 한 맞춤형 분석과 코칭
-          </p>
+          <h1 className="text-3xl font-bold inline-block">리포트</h1>
+          <span className="text-muted-foreground ml-3 text-sm">맞춤형 분석과 코칭</span>
         </div>
 
         {/* AI Weekly Report Card */}
