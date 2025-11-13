@@ -141,7 +141,9 @@ export function AIWeeklyReport() {
       )
 
       if (!response.ok) {
-        throw new Error('Failed to generate diagnosis')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Diagnosis generation failed:', response.status, errorData)
+        throw new Error(errorData.error || `Failed to generate diagnosis: ${response.status}`)
       }
 
       const result = await response.json()

@@ -106,9 +106,11 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in generate-report:', error)
+    console.error('Error stack:', error.stack)
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error.message || 'Unknown error occurred',
+        details: error.stack,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -217,7 +219,21 @@ async function collectReportData(
     .gte('earned_at', startDate.toISOString())
     .order('earned_at', { ascending: false })
 
+  // For diagnosis, we don't need check history (structure analysis is enough)
   if (!checks || checks.length === 0) {
+    if (reportType === 'diagnosis') {
+      // Return structure data even without activity
+      return {
+        period: periodLabel,
+        mandalarts: mandalarts || [],
+        structureAnalysis,
+        totalChecks: 0,
+        currentStreak: streakData?.current_streak || 0,
+        longestStreak: streakData?.longest_streak || 0,
+        recentBadges: recentBadges || [],
+      }
+    }
+
     return {
       period: periodLabel,
       mandalarts: mandalarts || [],
