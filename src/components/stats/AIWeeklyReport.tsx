@@ -409,7 +409,7 @@ export function AIWeeklyReport() {
               )}
             </div>
             <CardDescription>
-              만다라트 구조 분석과 개선 방향
+              만다라트 계획 점검 및 개선 제안
             </CardDescription>
           </CardHeader>
 
@@ -448,7 +448,7 @@ export function AIWeeklyReport() {
                         <button
                           className="w-full text-sm font-semibold text-primary flex items-center justify-between hover:opacity-80 transition-opacity"
                         >
-                          <span>전체 진단 보기</span>
+                          <span>상세보기</span>
                           {isDiagnosisOpen ? (
                             <ChevronUp className="h-4 w-4" />
                           ) : (
