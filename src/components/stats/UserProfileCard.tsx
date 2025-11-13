@@ -55,8 +55,18 @@ export function UserProfileCard() {
   // Badge bottom sheet state
   const [selectedBadge, setSelectedBadge] = useState<Achievement | null>(null)
 
+  // Show default Lv 0 state if userLevel is null
+  const displayLevel = userLevel || {
+    user_id: user?.id || '',
+    level: 0,
+    total_xp: 0,
+    nickname: user?.email?.split('@')[0] || '새 사용자',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+
   const openEditDialog = () => {
-    setNewNickname(userLevel?.nickname || '')
+    setNewNickname(displayLevel.nickname || '')
     setNicknameError('')
     setEditDialogOpen(true)
   }
@@ -69,7 +79,36 @@ export function UserProfileCard() {
   }
 
   const handleSaveNickname = async () => {
-    if (!user || !userLevel) return
+    if (!user) return
+
+    // If no userLevel exists yet, create it first
+    if (!userLevel) {
+      try {
+        const { error } = await supabase
+          .from('user_levels')
+          .insert({
+            user_id: user.id,
+            nickname: newNickname,
+            level: 1,
+            total_xp: 0
+          })
+
+        if (error) throw error
+
+        // Reload user level
+        const level = await getUserLevel(user.id)
+        setUserLevel(level)
+        setEditDialogOpen(false)
+        showSuccess(SUCCESS_MESSAGES.nicknameUpdated())
+        setSaving(false)
+        return
+      } catch (err) {
+        console.error('Failed to create user level:', err)
+        setNicknameError('닉네임 저장 중 오류가 발생했습니다')
+        setSaving(false)
+        return
+      }
+    }
 
     const error = validateNickname(newNickname)
     if (error) {
@@ -331,18 +370,7 @@ export function UserProfileCard() {
     )
   }
 
-  if (!userLevel) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">프로필</CardTitle>
-          <CardDescription>데이터를 불러올 수 없습니다</CardDescription>
-        </CardHeader>
-      </Card>
-    )
-  }
-
-  const xpProgress = getXPProgress(userLevel.total_xp)
+  const xpProgress = getXPProgress(displayLevel.total_xp)
 
   return (
     // 🎯 HERO: Profile card emphasizes user identity with slower (0.5s) animation
@@ -359,7 +387,7 @@ export function UserProfileCard() {
               </div>
               <div className="flex items-center gap-2">
                 <CardDescription className="text-base font-medium">
-                  {userLevel.nickname}
+                  {displayLevel.nickname}
                 </CardDescription>
                 <Button
                   variant="ghost"
@@ -373,7 +401,7 @@ export function UserProfileCard() {
             </div>
             <div className="text-right">
               <div className="text-sm text-muted-foreground">총 XP</div>
-              <div className="text-2xl font-bold text-primary">{userLevel.total_xp.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-primary">{displayLevel.total_xp.toLocaleString()}</div>
             </div>
           </div>
         </CardHeader>

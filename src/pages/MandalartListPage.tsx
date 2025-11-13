@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { Mandalart } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/notificationMessages'
 import { showError } from '@/lib/notificationUtils'
-import { Plus } from 'lucide-react'
+import { Plus, Grid3x3 } from 'lucide-react'
 
 export default function MandalartListPage() {
   const navigate = useNavigate()
@@ -127,8 +127,10 @@ export default function MandalartListPage() {
         {/* Empty State */}
         {!isLoading && mandalarts.length === 0 && (
           <Card>
-            <CardContent className="py-12 text-center space-y-4">
-              <div className="text-6xl">📝</div>
+            <CardContent className="py-8 text-center space-y-3">
+              <div className="w-16 h-16 mx-auto bg-muted/50 rounded-full flex items-center justify-center">
+                <Grid3x3 className="h-8 w-8 text-muted-foreground" />
+              </div>
               <div>
                 <p className="text-lg font-medium">아직 만다라트가 없습니다</p>
                 <p className="text-sm text-muted-foreground mt-1">

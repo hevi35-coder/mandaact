@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown } from 'lucide-react'
+import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'
@@ -665,8 +665,10 @@ export default function TodayChecklistPage() {
         {/* Empty State */}
         {actions.length === 0 && (
           <Card>
-            <CardContent className="py-12 text-center space-y-4">
-              <div className="text-6xl">📝</div>
+            <CardContent className="py-8 text-center space-y-3">
+              <div className="w-16 h-16 mx-auto bg-muted/50 rounded-full flex items-center justify-center">
+                <ListTodo className="h-8 w-8 text-muted-foreground" />
+              </div>
               <div>
                 <p className="text-lg font-medium">실천 항목이 없습니다</p>
                 <p className="text-sm text-muted-foreground mt-1">

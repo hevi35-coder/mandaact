@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import type { AIReport } from '@/types'
-import { Sparkles, Loader2, Calendar, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Sparkles, Loader2, Calendar, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -208,15 +208,17 @@ export function AIWeeklyReport() {
   if (!displayedReport) {
     return (
       <Card>
-        <CardContent className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-            <Calendar className="h-8 w-8 text-muted-foreground" />
+        <CardContent className="text-center py-8 space-y-3">
+          <div className="w-16 h-16 mx-auto bg-muted/50 rounded-full flex items-center justify-center">
+            <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold mb-2">아직 리포트가 없어요</h3>
-          <p className="text-sm text-muted-foreground mb-6">
-            일주일간의 실천 데이터를 분석해<br />
-            맞춤형 인사이트를 제공해드릴게요
-          </p>
+          <div>
+            <p className="text-lg font-medium">아직 리포트가 없어요</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              만다라트를 만들고 실천 데이터를 쌓은 후<br />
+              리포트 생성을 시도해보세요
+            </p>
+          </div>
           <Button onClick={generateReport} disabled={generating}>
             {generating ? (
               <>
