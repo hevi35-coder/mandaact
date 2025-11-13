@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import ProtectedRoute from '@/components/ProtectedRoute'
-import SignUpPage from '@/pages/SignUpPage'
 import LoginPage from '@/pages/LoginPage'
 import HomePage from '@/pages/HomePage'
 import MandalartCreatePage from '@/pages/MandalartCreatePage'
@@ -63,11 +62,8 @@ function LandingPage() {
           <CardContent className="space-y-4">
             {!user ? (
               <div className="flex gap-2">
-                <Link to="/signup" className="flex-1">
-                  <Button className="w-full">회원가입</Button>
-                </Link>
                 <Link to="/login" className="flex-1">
-                  <Button variant="outline" className="w-full">로그인</Button>
+                  <Button className="w-full">시작하기</Button>
                 </Link>
               </div>
             ) : (
@@ -133,7 +129,6 @@ function App() {
         <Navigation />
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
             path="/home"
