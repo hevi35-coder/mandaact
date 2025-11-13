@@ -18,7 +18,7 @@ import { getBadgeStage } from '@/lib/badgeStages'
 import { categorizeBadges } from '@/lib/badgeCategories'
 import type { UserLevel, Achievement, UserAchievement } from '@/types'
 import type { XPMultiplier } from '@/lib/xpMultipliers'
-import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info } from 'lucide-react'
+import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info, Repeat } from 'lucide-react'
 import { BadgeDetailDialog } from './BadgeDetailDialog'
 import { HERO_ANIMATION, BADGE_ANIMATION, BADGE_NEW_ANIMATION } from '@/lib/animations'
 
@@ -136,7 +136,6 @@ export function UserProfileCard() {
         supabase
           .from('achievements')
           .select('*')
-          .or('is_active.is.null,is_active.eq.true') // Only active badges (is_active = TRUE or NULL)
           .order('display_order', { ascending: true }),
         supabase
           .from('user_achievements')
@@ -148,11 +147,8 @@ export function UserProfileCard() {
           .order('unlocked_at', { ascending: false })
       ])
 
-      // Filter active badges only (is_active = TRUE or NULL)
-      const activeBadges = (allAchievementsRes.data || []).filter(
-        badge => badge.is_active === true || badge.is_active === null
-      )
-      setAllBadges(activeBadges)
+      const allBadgesData = allAchievementsRes.data || []
+      setAllBadges(allBadgesData)
       setUserAchievements(userAchievementsRes.data || [])
 
       // Track unlocked badge IDs and dates
@@ -161,17 +157,17 @@ export function UserProfileCard() {
 
       // Debug: Log badge matching info
       const unlockedBadge = userAchievementsRes.data?.[0]
-      const matchedBadge = activeBadges.find(b => b.id === unlockedBadge?.achievement_id)
+      const matchedBadge = allBadgesData.find(b => b.id === unlockedBadge?.achievement_id)
 
       console.log('🔍 Badge Debug Info:', {
-        totalBadges: activeBadges.length,
+        totalBadges: allBadgesData.length,
         unlockedCount: unlockedIds.size,
         unlockedBadgeIds: Array.from(unlockedIds),
         userAchievements: userAchievementsRes.data,
         firstUnlockedAchievement: unlockedBadge,
         matchedBadge: matchedBadge,
-        streak3Badge: activeBadges.find(b => b.key === 'streak_3'),
-        allBadgeKeys: activeBadges.map(b => ({ key: b.key, id: b.id, title: b.title }))
+        streak3Badge: allBadgesData.find(b => b.key === 'streak_3'),
+        allBadgeKeys: allBadgesData.map(b => ({ key: b.key, id: b.id, title: b.title }))
       })
 
       setUnlockedBadgeIds(unlockedIds)
@@ -512,7 +508,7 @@ export function UserProfileCard() {
               <div className="flex items-center gap-2">
                 {badgesLoaded && (
                   <span className="text-[10px] text-muted-foreground font-normal">
-                    {unlockedBadgeIds.size}/{allBadges.length} 획득
+                    {unlockedBadgeIds.size}/{allBadges.length}
                   </span>
                 )}
                 {badgeCollectionOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -568,31 +564,28 @@ export function UserProfileCard() {
                                   onClick={() => setSelectedBadge(badge)}
                                   className={`
                                     relative p-3 rounded-lg border text-center cursor-pointer
-                                    flex flex-col items-center justify-between min-h-[100px]
+                                    flex flex-col items-center justify-center gap-2 min-h-[100px]
                                     transition-all duration-300
                                     ${isUnlocked
-                                      ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 shadow-sm'
+                                      ? 'bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border-yellow-500/20 shadow-sm'
                                       : 'bg-muted/30 border-muted-foreground/10 opacity-50 hover:opacity-70'
                                     }
                                   `}
                                 >
-                                  {/* Acquisition Type Indicator - Top Right Corner */}
-                                  {badge.category === 'one_time' && (
-                                    <div className="absolute top-1.5 right-1.5 bg-amber-500/20 border border-amber-500/40 rounded px-1 py-0.5 flex items-center justify-center">
-                                      <span className="text-[10px]">🏆</span>
-                                    </div>
-                                  )}
-                                  {badge.category === 'recurring' && (
-                                    <div className="absolute top-1.5 right-1.5 bg-blue-500/20 border border-blue-500/40 rounded px-1 py-0.5 flex items-center justify-center">
-                                      <span className="text-[10px]">🔄</span>
-                                    </div>
-                                  )}
-
-                                  <div className={`text-3xl mb-2 ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
-                                    {category.key === 'secret' && !isUnlocked ? '❓' : badge.icon}
+                                  <div className={`text-3xl ${isUnlocked ? '' : 'grayscale opacity-30'}`}>
+                                    {badge.icon}
                                   </div>
                                   <div className={`text-xs font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                    {category.key === 'secret' && !isUnlocked ? '???' : badge.title}
+                                    {category.key === 'secret' && !isUnlocked ? (
+                                      '???'
+                                    ) : (
+                                      <>
+                                        <div>{badge.title}</div>
+                                        {badge.category === 'recurring' && (
+                                          <div className="text-[10px] text-muted-foreground/70">(반복 획득)</div>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </motion.div>
                               )

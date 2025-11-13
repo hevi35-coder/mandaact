@@ -95,7 +95,7 @@ export function formatUnlockCondition(condition: UnlockCondition, hintLevel?: 'f
     case 'weekend_completion':
       return '주말 완료율이 평일보다 높음'
     case 'monthly_completion':
-      return `월간 ${condition.threshold}% 이상 달성`
+      return `현재 달의 달성률(체크 항목 수/총 실천 항목 수)이 ${condition.threshold}% 이상`
     case 'perfect_week_in_month':
       return '한 달 내 완벽한 주(100%) 달성'
     case 'monthly_streak':

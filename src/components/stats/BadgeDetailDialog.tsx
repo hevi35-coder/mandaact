@@ -13,7 +13,7 @@ import { calculateBadgeProgress } from '@/lib/stats'
 import { formatUnlockCondition, getBadgeHint, getProgressMessage } from '@/lib/badgeHints'
 import { getBadgeStage } from '@/lib/badgeStages'
 import type { Achievement } from '@/types'
-import { Lock, Zap, Trophy, Calendar, Repeat } from 'lucide-react'
+import { Lock, Zap, Trophy, Calendar, Repeat, Info } from 'lucide-react'
 
 interface BadgeDetailDialogProps {
   badge: Achievement | null
@@ -98,12 +98,12 @@ export function BadgeDetailDialog({
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border-2 border-green-500/30 space-y-2.5"
+              className="p-3 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-lg border-2 border-yellow-500/30 space-y-2.5"
             >
               <div className="flex items-start gap-2.5">
-                <Trophy className="h-5 w-5 text-green-600 shrink-0" />
+                <Trophy className="h-5 w-5 text-yellow-600 shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-green-700 dark:text-green-400 mb-1 flex items-center gap-2">
+                  <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1 flex items-center gap-2">
                     배지 획득 완료!
                   </h4>
                   {unlockedAt && (
@@ -113,6 +113,9 @@ export function BadgeDetailDialog({
                         month: 'long',
                         day: 'numeric',
                       })}
+                      {badge.category === 'recurring' && repeatCount > 1 && (
+                        <span className="text-xs ml-1">(최초 획득일)</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -120,13 +123,13 @@ export function BadgeDetailDialog({
 
               {/* Repeat count for recurring badges */}
               {badge.category === 'recurring' && repeatCount > 1 && (
-                <div className="pt-2 border-t border-green-500/20">
+                <div className="pt-2 border-t border-yellow-500/20">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400">
+                    <div className="flex items-center gap-2 text-sm font-medium text-yellow-700 dark:text-yellow-400">
                       <Repeat className="h-4 w-4" />
-                      <span>획득 횟수</span>
+                      <span>누적 획득 횟수</span>
                     </div>
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                       {repeatCount}회
                     </div>
                   </div>
@@ -134,11 +137,11 @@ export function BadgeDetailDialog({
               )}
             </motion.div>
           ) : (
-            <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/30 space-y-2.5">
+            <div className="p-3 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 rounded-lg border-2 border-yellow-500/30 space-y-2.5">
               <div className="flex items-start gap-3">
-                <Lock className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+                <Lock className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-orange-700 dark:text-orange-400 mb-1">
+                  <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 mb-1">
                     {hintLevel === 'hidden' ? '비밀 배지' : '잠금 해제 조건'}
                   </h4>
 
@@ -221,8 +224,9 @@ export function BadgeDetailDialog({
               +{badge.xp_reward.toLocaleString()} XP
             </div>
             {badge.category === 'recurring' && (
-              <div className="text-xs text-primary/70 mt-2 text-center">
-                🔄 반복 획득 가능 (매회 동일 보상)
+              <div className="text-xs text-primary/70 mt-2 text-center flex items-center justify-center gap-1">
+                <Info className="h-3 w-3" />
+                <span>반복 획득 가능 (매회 동일 보상)</span>
               </div>
             )}
           </div>
