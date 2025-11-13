@@ -13,6 +13,7 @@ import MandalartListPage from '@/pages/MandalartListPage'
 import MandalartDetailPage from '@/pages/MandalartDetailPage'
 import TodayChecklistPage from '@/pages/TodayChecklistPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
+import ReportsPage from '@/pages/ReportsPage'
 import Navigation from '@/components/Navigation'
 import { Toaster } from '@/components/ui/toaster'
 
@@ -179,6 +180,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NotificationSettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <ReportsPage />
               </ProtectedRoute>
             }
           />

@@ -1,19 +1,13 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
 
 // Gamification Components
 import { UserProfileCard } from '@/components/stats/UserProfileCard'
 import { StreakHero } from '@/components/stats/StreakHero'
-import { QuestLog } from '@/components/stats/QuestLog'
-import { AIInsightCard } from '@/components/stats/AIInsightCard'
-import { LiveInsights } from '@/components/stats/LiveInsights'
-import { GoalPrediction } from '@/components/stats/GoalPrediction'
-import { StrugglingGoals } from '@/components/stats/StrugglingGoals'
 
-import { Sparkles, Scroll, Lightbulb, TrendingUp, LogOut } from 'lucide-react'
+import { LogOut, TrendingUp, Target, FileText } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -42,7 +36,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
+    <div className="container mx-auto py-3 md:py-6 px-4 pb-20 md:pb-4">
       <div className="max-w-5xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
@@ -52,58 +46,50 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* User Profile Card (with logout button) */}
+        {/* User Profile Card (with badges & XP) */}
         <UserProfileCard />
 
         {/* Streak Hero */}
         <StreakHero />
 
-        {/* Tabbed Content */}
-        <Tabs defaultValue="reports" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="reports" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">AI 리포트</span>
-              <span className="sm:hidden">리포트</span>
-            </TabsTrigger>
-            <TabsTrigger value="quests" className="gap-2">
-              <Scroll className="h-4 w-4" />
-              <span className="hidden sm:inline">퀘스트</span>
-              <span className="sm:hidden">퀘스트</span>
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="gap-2">
-              <Lightbulb className="h-4 w-4" />
-              <span className="hidden sm:inline">인사이트</span>
-              <span className="sm:hidden">분석</span>
-            </TabsTrigger>
-            <TabsTrigger value="predictions" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">목표 예측</span>
-              <span className="sm:hidden">예측</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex flex-col gap-2"
+            onClick={() => navigate('/today')}
+          >
+            <Target className="h-5 w-5 text-primary" />
+            <div>
+              <div className="font-medium">오늘의 실천</div>
+              <div className="text-xs text-muted-foreground">체크리스트 확인</div>
+            </div>
+          </Button>
 
-          {/* Tab 1: AI Reports */}
-          <TabsContent value="reports" className="space-y-6">
-            <AIInsightCard />
-          </TabsContent>
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex flex-col gap-2"
+            onClick={() => navigate('/mandalart/list')}
+          >
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <div>
+              <div className="font-medium">만다라트 관리</div>
+              <div className="text-xs text-muted-foreground">목표 편집</div>
+            </div>
+          </Button>
 
-          {/* Tab 2: Quests */}
-          <TabsContent value="quests" className="space-y-6">
-            <QuestLog />
-          </TabsContent>
-
-          {/* Tab 3: Live Insights & Struggling Goals */}
-          <TabsContent value="insights" className="space-y-6">
-            <LiveInsights />
-            <StrugglingGoals />
-          </TabsContent>
-
-          {/* Tab 4: Goal Predictions */}
-          <TabsContent value="predictions" className="space-y-6">
-            <GoalPrediction />
-          </TabsContent>
-        </Tabs>
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex flex-col gap-2"
+            onClick={() => navigate('/reports')}
+          >
+            <FileText className="h-5 w-5 text-primary" />
+            <div>
+              <div className="font-medium">AI 리포트</div>
+              <div className="text-xs text-muted-foreground">주간 분석 확인</div>
+            </div>
+          </Button>
+        </div>
 
         {/* Logout Button */}
         <Button

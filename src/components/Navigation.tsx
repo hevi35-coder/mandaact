@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
-import { CalendarCheck, Home, Grid3x3, Bell } from 'lucide-react'
+import { CalendarCheck, Home, Grid3x3, Bell, FileText } from 'lucide-react'
 
 export default function Navigation() {
   const location = useLocation()
@@ -13,9 +13,10 @@ export default function Navigation() {
   }
 
   const navItems = [
-    { path: '/today', label: '투데이', icon: CalendarCheck },
     { path: '/home', label: '홈', icon: Home },
+    { path: '/today', label: '투데이', icon: CalendarCheck },
     { path: '/mandalart/list', label: '만다라트', icon: Grid3x3 },
+    { path: '/reports', label: '리포트', icon: FileText },
   ]
 
   const isActive = (path: string) => location.pathname === path
@@ -75,7 +76,7 @@ export default function Navigation() {
 
       {/* Mobile Navigation - Bottom */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-white z-50">
-        <div className="grid grid-cols-3 h-16">
+        <div className="grid grid-cols-4 h-16">
           {navItems.map((item) => {
             const Icon = item.icon
             return (
