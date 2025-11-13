@@ -24,7 +24,7 @@ function LandingPage() {
 
   const handleLogout = async () => {
     await useAuthStore.getState().signOut()
-    navigate('/', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   if (loading) {

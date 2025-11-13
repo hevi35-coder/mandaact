@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuthStore } from '@/store/authStore'
-import { Target, Sparkles, TrendingUp, Mail, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Target, Sparkles, TrendingUp, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().email('유효한 이메일 주소를 입력해주세요'),
@@ -18,10 +18,6 @@ const loginSchema = z.object({
 })
 
 const signUpSchema = z.object({
-  nickname: z.string()
-    .min(2, '닉네임은 최소 2자 이상이어야 합니다')
-    .max(12, '닉네임은 최대 12자까지 가능합니다')
-    .regex(/^[가-힣a-zA-Z0-9]+$/, '닉네임은 한글, 영문, 숫자만 사용 가능합니다'),
   email: z.string().email('유효한 이메일 주소를 입력해주세요'),
   password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
   confirmPassword: z.string(),
@@ -58,6 +54,16 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { signIn, signUp } = useAuthStore()
+
+  // Set body background to gradient on mount, restore on unmount
+  useEffect(() => {
+    const originalBackground = document.body.style.background
+    document.body.style.background = 'linear-gradient(to bottom right, rgb(37 99 235), rgb(147 51 234), rgb(219 39 119))'
+
+    return () => {
+      document.body.style.background = originalBackground
+    }
+  }, [])
 
   const [isLoginLoading, setIsLoginLoading] = useState(false)
   const [isSignUpLoading, setIsSignUpLoading] = useState(false)
@@ -97,7 +103,7 @@ export default function LoginPage() {
     setIsSignUpLoading(true)
     setSignUpError(null)
 
-    const { error } = await signUp(data.email, data.password, data.nickname)
+    const { error } = await signUp(data.email, data.password)
 
     if (error) {
       setSignUpError(error.message || '회원가입 중 오류가 발생했습니다')
@@ -141,7 +147,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
+    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600" style={{ minHeight: '100dvh' }}>
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -206,32 +212,38 @@ export default function LoginPage() {
       </motion.div>
 
       {/* Auth Section */}
-      <div className="flex items-center justify-center p-4 lg:p-12 lg:bg-background">
+      <div className="flex flex-col items-center justify-center p-4 py-6 lg:p-12 lg:bg-background gap-4 flex-1">
+        {/* Mobile Logo - Fixed Position */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="lg:hidden text-white text-center"
+        >
+          <h1 className="text-4xl font-bold">
+            MandaAct
+          </h1>
+          <p className="text-sm text-white/90 mt-2">목표를 행동으로, 만다라트로 실천</p>
+        </motion.div>
+
+        {/* Auth Card */}
         <motion.div
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Mobile Logo */}
-          <div className="lg:hidden mb-8 text-white text-center">
-            <h1 className="text-4xl font-bold">
-              MandaAct
-            </h1>
-            <p className="text-sm text-white/90 mt-2">목표를 행동으로, 만다라트로 실천</p>
-          </div>
-
           <Card className="lg:shadow-xl lg:border-2 backdrop-blur-sm lg:backdrop-blur-none bg-white/10 lg:bg-white border-white/20 lg:border-border text-white lg:text-foreground">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-3">
               <CardTitle className="text-xl">시작하기</CardTitle>
               <CardDescription className="text-white/80 lg:text-muted-foreground text-sm">
                 계정을 만들거나 로그인하세요
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 pb-3">
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-3 h-10 bg-white/5 lg:bg-muted p-0.5">
+                <TabsList className="grid w-full grid-cols-2 mb-2 h-10 bg-white/5 lg:bg-muted p-0.5">
                   <TabsTrigger
                     value="login"
                     className="data-[state=active]:bg-white/20 data-[state=active]:text-white lg:data-[state=active]:bg-background lg:data-[state=active]:text-foreground data-[state=inactive]:text-white/50 lg:data-[state=inactive]:text-foreground/50 transition-all text-sm"
@@ -248,14 +260,14 @@ export default function LoginPage() {
 
                 {/* Login Tab */}
                 <TabsContent value="login" className="mt-0">
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-3">
                     {loginError && (
                       <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
                         {loginError}
                       </div>
                     )}
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="login-email" className="text-white lg:text-foreground">이메일</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -273,7 +285,7 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="login-password" className="text-white lg:text-foreground">비밀번호</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -313,32 +325,14 @@ export default function LoginPage() {
 
                 {/* Sign Up Tab */}
                 <TabsContent value="signup" className="mt-0">
-                  <form onSubmit={signUpForm.handleSubmit(onSignUpSubmit)} className="space-y-4">
+                  <form onSubmit={signUpForm.handleSubmit(onSignUpSubmit)} className="space-y-3">
                     {signUpError && (
                       <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
                         {signUpError}
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-nickname" className="text-white lg:text-foreground">닉네임</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-nickname"
-                          type="text"
-                          placeholder="닉네임 (2-12자)"
-                          className="pl-10 bg-white text-foreground"
-                          {...signUpForm.register('nickname')}
-                          disabled={isSignUpLoading}
-                        />
-                      </div>
-                      {signUpForm.formState.errors.nickname && (
-                        <p className="text-sm text-red-600">{signUpForm.formState.errors.nickname.message}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="signup-email" className="text-white lg:text-foreground">이메일</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -356,7 +350,7 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="signup-password" className="text-white lg:text-foreground">비밀번호</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -381,7 +375,7 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="signup-confirm-password" className="text-white lg:text-foreground">비밀번호 확인</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

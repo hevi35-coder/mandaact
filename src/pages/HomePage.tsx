@@ -22,7 +22,7 @@ export default function HomePage() {
 
   const handleLogout = async () => {
     await signOut()
-    navigate('/', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   if (!user) {

@@ -9,7 +9,7 @@ interface AuthState {
   initialized: boolean
   setUser: (user: User | null) => void
   setSession: (session: Session | null) => void
-  signUp: (email: string, password: string, nickname: string) => Promise<{ error: Error | null }>
+  signUp: (email: string, password: string, nickname?: string) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
   initialize: () => Promise<void>
@@ -25,27 +25,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setSession: (session) => set({ session, user: session?.user ?? null }),
 
-  signUp: async (email: string, password: string, nickname: string) => {
+  signUp: async (email: string, password: string, nickname?: string) => {
     try {
-      // First check if nickname is already taken
-      const { data: existingNickname } = await supabase
-        .from('user_levels')
-        .select('nickname')
-        .ilike('nickname', nickname)
-        .single()
+      // Check if nickname is already taken (only if provided)
+      if (nickname) {
+        const { data: existingNickname } = await supabase
+          .from('user_levels')
+          .select('nickname')
+          .ilike('nickname', nickname)
+          .single()
 
-      if (existingNickname) {
-        throw new Error('이미 사용 중인 닉네임입니다')
+        if (existingNickname) {
+          throw new Error('이미 사용 중인 닉네임입니다')
+        }
       }
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
+        options: nickname ? {
           data: {
             nickname: nickname
           }
-        }
+        } : undefined
       })
 
       console.log('Supabase signup response:', { data, error })
@@ -80,14 +82,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           throw new Error('이미 가입된 이메일입니다')
         }
 
-        // Create user_levels record with nickname for new users
+        // Create user_levels record for new users
         // (even though they don't have a session yet)
         if (data.user.id) {
           await supabase
             .from('user_levels')
             .insert({
               user_id: data.user.id,
-              nickname: nickname,
+              nickname: nickname || null,
               level: 1,
               total_xp: 0
             })
@@ -97,13 +99,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (data.session) {
         set({ session: data.session, user: data.user })
 
-        // Create user_levels record with nickname
+        // Create user_levels record
         if (data.user) {
           await supabase
             .from('user_levels')
             .insert({
               user_id: data.user.id,
-              nickname: nickname,
+              nickname: nickname || null,
               level: 1,
               total_xp: 0
             })
