@@ -3,13 +3,15 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import type { AIReport } from '@/types'
-import { Sparkles, Loader2, Calendar, History, RefreshCw, TrendingUp, Target, AlertCircle } from 'lucide-react'
+import { Sparkles, Loader2, Calendar, History, RefreshCw, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import ReactMarkdown from 'react-markdown'
 
 export function AIWeeklyReport() {
   const { user } = useAuthStore()
@@ -292,9 +294,31 @@ export function AIWeeklyReport() {
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+              <ReactMarkdown
+                className="text-sm leading-relaxed"
+                components={{
+                  h1: ({ children }) => (
+                    <h2 className="text-lg font-bold text-foreground mb-4 mt-2">{children}</h2>
+                  ),
+                  h2: ({ children }) => (
+                    <h3 className="text-base font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">{children}</h3>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="space-y-2 my-3 ml-1">{children}</ul>
+                  ),
+                  li: ({ children }) => (
+                    <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
+                  ),
+                  p: ({ children }) => (
+                    <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="font-semibold text-foreground">{children}</strong>
+                  ),
+                }}
+              >
                 {displayedReport.content}
-              </div>
+              </ReactMarkdown>
             </div>
           </CardContent>
         </Card>
@@ -327,9 +351,34 @@ export function AIWeeklyReport() {
             {latestDiagnosis ? (
               <div className="space-y-4">
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                  <ReactMarkdown
+                    className="text-sm leading-relaxed"
+                    components={{
+                      h1: ({ children }) => (
+                        <h2 className="text-lg font-bold text-foreground mb-4 mt-2">{children}</h2>
+                      ),
+                      h2: ({ children }) => (
+                        <h3 className="text-base font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">{children}</h3>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="space-y-2 my-3 ml-1">{children}</ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="space-y-2 my-3 ml-1 list-decimal list-inside">{children}</ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
+                      ),
+                      p: ({ children }) => (
+                        <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-semibold text-foreground">{children}</strong>
+                      ),
+                    }}
+                  >
                     {latestDiagnosis.content}
-                  </div>
+                  </ReactMarkdown>
                 </div>
                 <Button
                   variant="outline"
