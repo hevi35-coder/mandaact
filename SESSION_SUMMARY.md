@@ -1,8 +1,49 @@
-# Session Summary - Badge System & Mandalart Deletion Complete
+# Session Summary - PWA Configuration & Production Fixes
 
-**Date**: 2025-11-10
-**Duration**: ~4 hours
+**Date**: 2025-11-14 (Latest)
+**Previous Session**: 2025-11-10
+**Duration**: ~30 minutes
 **Status**: ✅ All Tasks Complete (100%)
+
+---
+
+## 📱 Latest Session (2025-11-14)
+
+### Mobile Production Issues Fixed ✅
+
+**Issue 1: 404 Error on Mobile Routes**
+- Problem: iPhone Safari shows 404 NOT_FOUND on `/login`
+- Solution: Added `vercel.json` with SPA routing rewrites
+- Commit: `83e4472`
+
+**Issue 2: PWA Logo Replacement**
+- Replaced default Vite logo with MandaAct brand logo
+- Generated 3 icon sizes (logo.png, icon-192.png, icon-512.png)
+- Updated PWA manifest and favicon
+- Commit: `d19685b`
+
+**Issue 3: PWA Auto-Redirect**
+- Added auto-redirect logic in LandingPage component
+- Not logged in → `/login`
+- Logged in → `/home`
+- Commit: `13ecff7`
+
+**Files Modified**:
+- `vercel.json` (new)
+- `public/logo.png`, `icon-192.png`, `icon-512.png` (new)
+- `vite.config.ts` - PWA manifest
+- `index.html` - Favicon
+- `src/App.tsx` - Auto-redirect
+
+**Deployment**: ✅ Live on production (`https://mandaact.vercel.app`)
+
+**See**: `SESSION_2025-11-14.md` for full details
+
+---
+
+## 🎮 Previous Session (2025-11-10)
+
+### Badge System & Mandalart Deletion Complete
 
 ---
 
