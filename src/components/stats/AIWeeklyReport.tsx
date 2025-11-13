@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import type { AIReport } from '@/types'
-import { Sparkles, Loader2, Calendar, History, RefreshCw, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Sparkles, Loader2, Calendar, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -243,41 +243,42 @@ export function AIWeeklyReport() {
   return (
     <div className="space-y-4">
       {/* Controls Bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {reportHistory.length > 1 && (
-            <>
-              <History className="h-4 w-4 text-muted-foreground" />
-              <select
-                value={selectedHistoryId}
-                onChange={(e) => handleHistorySelect(e.target.value)}
-                className="text-sm border rounded-md px-2 py-1 bg-background"
-              >
-                <option value="">최신 리포트</option>
-                {reportHistory.slice(1).map(report => (
-                  <option key={report.id} value={report.id}>
-                    {format(new Date(report.generated_at), 'M월 d일 HH:mm', { locale: ko })}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-        </div>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+        {reportHistory.length > 1 && (
+          <select
+            value={selectedHistoryId}
+            onChange={(e) => handleHistorySelect(e.target.value)}
+            className="text-sm border rounded-md px-3 py-2 bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+          >
+            <option value="">최신 리포트</option>
+            {reportHistory.slice(1).map(report => (
+              <option key={report.id} value={report.id}>
+                {format(new Date(report.generated_at), 'M월 d일 HH:mm', { locale: ko })}
+              </option>
+            ))}
+          </select>
+        )}
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
           onClick={async () => {
             await generateReport()
             await generateDiagnosis()
           }}
           disabled={generating || generatingDiagnosis}
+          className="whitespace-nowrap"
         >
           {generating || generatingDiagnosis ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              생성 중...
+            </>
           ) : (
-            <RefreshCw className="h-4 w-4 mr-1.5" />
+            <>
+              <Sparkles className="h-4 w-4 mr-1.5" />
+              새로 생성
+            </>
           )}
-          새로 생성
         </Button>
       </div>
 
