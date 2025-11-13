@@ -195,6 +195,10 @@ export function AIWeeklyReport() {
   const diagnosisSummary = latestDiagnosis ? parseDiagnosisReport(latestDiagnosis.content) : null
 
   // Debug logging
+  if (displayedReport) {
+    console.log('displayedReport exists:', displayedReport)
+    console.log('practiceSummary parsed:', practiceSummary)
+  }
   if (latestDiagnosis) {
     console.log('latestDiagnosis exists:', latestDiagnosis)
     console.log('diagnosisSummary parsed:', diagnosisSummary)
@@ -372,13 +376,13 @@ export function AIWeeklyReport() {
                             <h3 className="text-sm font-semibold text-foreground mt-4 mb-2 flex items-center gap-2">{children}</h3>
                           ),
                           ul: ({ children }) => (
-                            <ul className="space-y-1.5 my-2 ml-1">{children}</ul>
+                            <ul className="space-y-1 my-1.5 ml-1">{children}</ul>
                           ),
                           li: ({ children }) => (
                             <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
                           ),
                           p: ({ children }) => (
-                            <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
+                            <p className="text-sm text-muted-foreground my-1.5 leading-relaxed">{children}</p>
                           ),
                           strong: ({ children }) => (
                             <strong className="font-semibold text-foreground">{children}</strong>
@@ -475,16 +479,16 @@ export function AIWeeklyReport() {
                               <h3 className="text-sm font-semibold text-foreground mt-4 mb-2 flex items-center gap-2">{children}</h3>
                             ),
                             ul: ({ children }) => (
-                              <ul className="space-y-1.5 my-2 ml-1">{children}</ul>
+                              <ul className="space-y-1 my-1.5 ml-1">{children}</ul>
                             ),
                             ol: ({ children }) => (
-                              <ol className="space-y-1.5 my-2 ml-1 list-decimal list-inside">{children}</ol>
+                              <ol className="space-y-1 my-1.5 ml-1 list-decimal list-inside">{children}</ol>
                             ),
                             li: ({ children }) => (
                               <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
                             ),
                             p: ({ children }) => (
-                              <p className="text-sm text-muted-foreground my-2 leading-relaxed">{children}</p>
+                              <p className="text-sm text-muted-foreground my-1.5 leading-relaxed">{children}</p>
                             ),
                             strong: ({ children }) => (
                               <strong className="font-semibold text-foreground">{children}</strong>

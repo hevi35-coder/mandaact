@@ -623,7 +623,7 @@ JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함�
         },
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 2000, // Increased from 1000 to prevent JSON truncation
     }),
   })
 
@@ -644,10 +644,9 @@ JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함�
     aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
   }
 
-  // Try to parse as JSON and convert to markdown for backward compatibility
+  // Store JSON directly for better data integrity and smaller storage size
   try {
     const jsonResponse = JSON.parse(aiResponse)
-    console.log('Successfully parsed JSON response:', JSON.stringify(jsonResponse).substring(0, 200))
 
     // Validate response structure based on report type
     if (!validateAIResponse(jsonResponse, reportType)) {
@@ -655,13 +654,10 @@ JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함�
       return aiResponse
     }
 
-    // Convert JSON to markdown format for compatibility
-    const markdown = convertJsonToMarkdown(jsonResponse, reportType)
-    console.log('Converted to markdown:', markdown.substring(0, 200))
-    return markdown
+    // Return JSON string directly (no markdown conversion)
+    return JSON.stringify(jsonResponse)
   } catch (e) {
-    console.log('Response is not JSON, returning as-is for backward compatibility:', e.message)
-    console.log('Raw response:', aiResponse.substring(0, 200))
+    console.warn('Response is not valid JSON, returning as-is')
     return aiResponse
   }
 }

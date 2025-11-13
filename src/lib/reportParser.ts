@@ -51,15 +51,12 @@ function fixTruncatedJSON(content: string): string {
 
 /**
  * Parse weekly practice report (JSON or markdown)
- * Tries JSON first, falls back to markdown parsing
+ * New reports are stored as JSON, old reports may be markdown
  */
 export function parseWeeklyReport(content: string): ReportSummary {
-  // Try to fix truncated JSON
-  const jsonContent = fixTruncatedJSON(content)
-
-  // Try JSON parsing first
+  // Try JSON parsing first (new format)
   try {
-    const data = JSON.parse(jsonContent)
+    const data = JSON.parse(content)
 
     if (data.headline && data.key_metrics) {
       // Build detail content from strengths, improvements, and action_plan
@@ -102,10 +99,9 @@ export function parseWeeklyReport(content: string): ReportSummary {
       }
     }
   } catch (e) {
-    // Not JSON, try markdown parsing
+    // Fallback to markdown parsing (for old reports)
   }
 
-  // Fallback to markdown parsing
   return parseWeeklyReportMarkdown(content)
 }
 
@@ -168,41 +164,35 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
 
 /**
  * Parse diagnosis report (JSON or markdown)
- * Tries JSON first, falls back to markdown parsing
+ * New reports are stored as JSON, old reports may be markdown
  */
 export function parseDiagnosisReport(content: string): ReportSummary {
-  console.log('Parsing diagnosis report, content:', content?.substring(0, 200))
-
-  // Try to fix truncated JSON
-  const jsonContent = fixTruncatedJSON(content)
-
-  // Try JSON parsing first
+  // Try JSON parsing first (new format)
   try {
-    const data = JSON.parse(jsonContent)
-    console.log('Parsed diagnosis JSON:', data)
+    const data = JSON.parse(content)
 
     if (data.headline && data.structure_metrics) {
       // Build detail content from strengths and improvements
       let detailContent = ''
 
       if (data.strengths && Array.isArray(data.strengths) && data.strengths.length > 0) {
-        detailContent += '## ✅ 잘하고 있는 점\n\n'
+        detailContent += '## 💪 강점\n\n'
         data.strengths.forEach((strength: string) => {
           detailContent += `• ${strength}\n\n`
         })
       }
 
       if (data.improvements && Array.isArray(data.improvements) && data.improvements.length > 0) {
-        detailContent += '## 🔧 개선이 필요한 부분\n\n'
-        data.improvements.forEach((improvement: string) => {
-          detailContent += `• ${improvement}\n\n`
+        detailContent += '## ⚡ 개선 포인트\n\n'
+        data.improvements.forEach((improvement: any) => {
+          detailContent += `• **${improvement.area}**: ${improvement.issue} → ${improvement.solution}\n\n`
         })
       }
 
-      if (data.next_steps && Array.isArray(data.next_steps) && data.next_steps.length > 0) {
-        detailContent += '## 📌 다음 단계 제안\n\n'
-        data.next_steps.forEach((step: string, index: number) => {
-          detailContent += `${index + 1}. ${step}\n\n`
+      if (data.priority_tasks && Array.isArray(data.priority_tasks) && data.priority_tasks.length > 0) {
+        detailContent += '## 🎯 MandaAct의 제안\n\n'
+        data.priority_tasks.forEach((task: string) => {
+          detailContent += `• ${task}\n\n`
         })
       }
 
@@ -217,12 +207,9 @@ export function parseDiagnosisReport(content: string): ReportSummary {
       }
     }
   } catch (e) {
-    console.log('JSON parsing failed for diagnosis, falling back to markdown:', e)
-    // Not JSON, try markdown parsing
+    // Fallback to markdown parsing (for old reports)
   }
 
-  // Fallback to markdown parsing
-  console.log('Using markdown parsing for diagnosis report')
   return parseDiagnosisReportMarkdown(content)
 }
 
