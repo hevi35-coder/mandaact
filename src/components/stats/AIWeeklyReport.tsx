@@ -293,7 +293,17 @@ export function AIWeeklyReport() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card>
+        <Card className="relative">
+          {/* Loading Overlay */}
+          {generating && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+              <div className="text-center space-y-2">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                <p className="text-sm font-medium">새 리포트 생성 중...</p>
+              </div>
+            </div>
+          )}
+
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -394,7 +404,17 @@ export function AIWeeklyReport() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <Card>
+        <Card className="relative">
+          {/* Loading Overlay */}
+          {generatingDiagnosis && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+              <div className="text-center space-y-2">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                <p className="text-sm font-medium">새 진단 생성 중...</p>
+              </div>
+            </div>
+          )}
+
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

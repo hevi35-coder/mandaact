@@ -512,7 +512,8 @@ export default function TodayChecklistPage() {
           {/* Date Navigation */}
           <div className="flex items-center gap-2 flex-wrap justify-center md:justify-end">
             {/* Quick Navigation Buttons */}
-            <div className="flex items-center gap-1">
+            {/* Date Navigation Button Group */}
+            <div className="inline-flex rounded-md shadow-sm" role="group">
               <Button
                 variant="outline"
                 size="sm"
@@ -521,13 +522,15 @@ export default function TodayChecklistPage() {
                   yesterday.setDate(yesterday.getDate() - 1)
                   handleDateChange(yesterday)
                 }}
+                className="rounded-r-none border-r-0"
               >
-                ← 어제
+                어제
               </Button>
               <Button
                 variant={isToday(selectedDate) ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleDateChange(new Date())}
+                className="rounded-none border-r-0"
               >
                 오늘
               </Button>
@@ -539,13 +542,11 @@ export default function TodayChecklistPage() {
                   tomorrow.setDate(tomorrow.getDate() + 1)
                   handleDateChange(tomorrow)
                 }}
+                className="rounded-l-none"
               >
-                내일 →
+                내일
               </Button>
             </div>
-
-            {/* Divider */}
-            <div className="h-8 w-px bg-gray-300" />
 
             {/* Calendar Picker */}
             <Popover>

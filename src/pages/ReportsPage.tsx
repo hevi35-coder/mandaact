@@ -25,7 +25,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="container mx-auto py-3 md:py-6 px-4 pb-20 md:pb-4">
+    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
       <div className="max-w-3xl mx-auto space-y-4">
         {/* Header */}
         <div className="text-center md:text-left">
