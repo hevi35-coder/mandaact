@@ -118,7 +118,6 @@ export function AIWeeklyReport() {
         throw new Error('리포트 내용이 비어있습니다.')
       }
 
-      console.log('Weekly report generated successfully:', result.report.id)
       setLatestReport(result.report)
       await loadReports()
     } catch (err) {
@@ -193,16 +192,6 @@ export function AIWeeklyReport() {
   // Parse reports for summary display
   const practiceSummary = displayedReport ? parseWeeklyReport(displayedReport.content) : null
   const diagnosisSummary = latestDiagnosis ? parseDiagnosisReport(latestDiagnosis.content) : null
-
-  // Debug logging
-  if (displayedReport) {
-    console.log('displayedReport exists:', displayedReport)
-    console.log('practiceSummary parsed:', practiceSummary)
-  }
-  if (latestDiagnosis) {
-    console.log('latestDiagnosis exists:', latestDiagnosis)
-    console.log('diagnosisSummary parsed:', diagnosisSummary)
-  }
 
   if (loading) {
     return (
