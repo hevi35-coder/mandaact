@@ -27,6 +27,19 @@ function LandingPage() {
     navigate('/login', { replace: true })
   }
 
+  // Auto-redirect logic
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        // Logged in -> go to home
+        navigate('/home', { replace: true })
+      } else {
+        // Not logged in -> go to login
+        navigate('/login', { replace: true })
+      }
+    }
+  }, [loading, user, navigate])
+
   if (loading) {
     return (
       <div className="container mx-auto flex items-center justify-center min-h-screen">
