@@ -259,8 +259,6 @@ export function AIWeeklyReport() {
           </select>
         )}
         <Button
-          variant="default"
-          size="sm"
           onClick={async () => {
             await generateReport()
             await generateDiagnosis()
@@ -276,7 +274,7 @@ export function AIWeeklyReport() {
           ) : (
             <>
               <Sparkles className="h-4 w-4 mr-1.5" />
-              새로 생성
+              새로 생성하기
             </>
           )}
         </Button>

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { Mandalart } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/notificationMessages'
 import { showError } from '@/lib/notificationUtils'
+import { Plus } from 'lucide-react'
 
 export default function MandalartListPage() {
   const navigate = useNavigate()
@@ -111,7 +112,8 @@ export default function MandalartListPage() {
             <span className="text-muted-foreground ml-3 text-sm">목표 관리 • {mandalarts.length}개</span>
           </div>
           <Button onClick={() => navigate('/mandalart/create')} className="w-full md:w-auto">
-            + 새로 만들기
+            <Plus className="h-4 w-4 mr-1.5" />
+            새로 만들기
           </Button>
         </div>
 
