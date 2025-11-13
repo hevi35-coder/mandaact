@@ -686,7 +686,9 @@ export function calculateLevelFromXP(totalXP: number): number {
  * Inverse of the hybrid level formula
  */
 export function getXPForNextLevel(currentLevel: number): number {
-  if (currentLevel === 1) {
+  if (currentLevel <= 0) {
+    return 0 // Level 0 starts at 0 XP
+  } else if (currentLevel === 1) {
     return 100
   } else if (currentLevel === 2) {
     return 400
