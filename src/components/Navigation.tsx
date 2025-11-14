@@ -28,8 +28,8 @@ export default function Navigation() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link to="/home" className="text-xl font-bold">
-              <span className="text-gray-700">Manda</span>
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Act</span>
+              <span className="text-black">Manda</span>
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
             </Link>
             <div className="flex items-center gap-1">
               {navItems.map((item) => {
@@ -62,8 +62,8 @@ export default function Navigation() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             <Link to="/home" className="text-lg font-bold">
-              <span className="text-gray-700">Manda</span>
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Act</span>
+              <span className="text-black">Manda</span>
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
             </Link>
             <Link to="/settings/notifications">
               <Button variant="ghost" size="icon" className="h-9 w-9">
