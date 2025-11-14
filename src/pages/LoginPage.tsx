@@ -170,9 +170,9 @@ export default function LoginPage() {
             className="space-y-6"
           >
             <img
-              src="/logo.png"
+              src="/icon-512.png"
               alt="MandaAct"
-              className="h-16 w-auto"
+              className="h-24 w-auto"
             />
             <p className="text-2xl font-light text-gray-700">목표를 행동으로,<br />만다라트로 실천</p>
           </motion.div>
@@ -225,9 +225,9 @@ export default function LoginPage() {
           className="lg:hidden text-center"
         >
           <img
-            src="/logo.png"
+            src="/icon-512.png"
             alt="MandaAct"
-            className="h-12 w-auto mx-auto mb-3"
+            className="h-20 w-auto mx-auto mb-3"
           />
           <p className="text-sm text-gray-600">목표를 행동으로, 만다라트로 실천</p>
         </motion.div>
