@@ -246,19 +246,19 @@ export default function LoginPage() {
             </CardHeader>
 
             <CardContent className="space-y-4 pb-4">
-              <Tabs defaultValue="login" className="w-full">
+              <Tabs defaultValue="signup" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-4 h-11 bg-gray-100 p-1">
-                  <TabsTrigger
-                    value="login"
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 transition-all"
-                  >
-                    로그인
-                  </TabsTrigger>
                   <TabsTrigger
                     value="signup"
                     className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 transition-all"
                   >
                     회원가입
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="login"
+                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 transition-all"
+                  >
+                    로그인
                   </TabsTrigger>
                 </TabsList>
 
