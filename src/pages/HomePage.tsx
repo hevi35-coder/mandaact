@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useAuthStore } from '@/store/authStore'
-import TutorialPage from '@/pages/TutorialPage'
 
 // Gamification Components
 import { UserProfileCard } from '@/components/stats/UserProfileCard'
@@ -14,7 +12,6 @@ import { LogOut } from 'lucide-react'
 export default function HomePage() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
-  const [tutorialOpen, setTutorialOpen] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -59,7 +56,7 @@ export default function HomePage() {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => setTutorialOpen(true)}
+          onClick={() => navigate('/tutorial')}
         >
           튜토리얼
         </Button>
@@ -74,13 +71,6 @@ export default function HomePage() {
           로그아웃
         </Button>
       </div>
-
-      {/* Tutorial Dialog */}
-      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
-        <DialogContent className="max-w-full h-screen p-0 gap-0 overflow-auto">
-          <TutorialPage />
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
