@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo } from 'lucide-react'
+import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, ArrowRight, CheckCircle2, Grid3x3, Plus } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
@@ -663,35 +664,169 @@ export default function TodayChecklistPage() {
 
         {/* Empty State */}
         {actions.length === 0 && (
-          <Card>
-            <CardContent className="py-8 text-center space-y-3">
-              <div className="w-16 h-16 mx-auto bg-muted/50 rounded-full flex items-center justify-center">
-                <ListTodo className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-lg font-medium">실천 항목이 없습니다</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {totalMandalartCount === 0
-                    ? '먼저 만다라트를 만들어보세요'
-                    : '만다라트를 활성화하거나 새로 만들어보세요'}
-                </p>
-              </div>
-              {totalMandalartCount === 0 ? (
-                <Button onClick={() => navigate('/mandalart/create')}>
-                  만다라트 만들기
-                </Button>
-              ) : (
-                <div className="flex gap-2 justify-center">
-                  <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
-                    만다라트 관리
-                  </Button>
-                  <Button onClick={() => navigate('/mandalart/create')}>
-                    새로 만들기
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="relative">
+            {/* Mock Preview Background - Action Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 0.3, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="pointer-events-none"
+            >
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">2025년 목표 달성</CardTitle>
+                    <span className="text-xs text-muted-foreground">3/8 완료</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 blur-[1px]">
+                    <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/50"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">매일 30분 운동하기</p>
+                      <p className="text-xs text-muted-foreground">루틴 • 매일</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 blur-[1px]">
+                    <div className="w-5 h-5 rounded-full bg-primary/50 flex items-center justify-center">
+                      <CheckCircle2 className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">영어 단어 10개 외우기</p>
+                      <p className="text-xs text-muted-foreground">루틴 • 매일</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Overlay Card with Empty State Message */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="absolute inset-0 flex items-center justify-center p-4"
+            >
+              <Card className="w-full max-w-lg shadow-xl bg-background/95 backdrop-blur-sm border-2">
+                <CardContent className="text-center py-8 space-y-5">
+                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <ListTodo className="h-8 w-8 text-primary" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold">
+                      {totalMandalartCount === 0 ? '아직 실천 항목이 없어요' : '오늘 실천할 항목이 없어요'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {totalMandalartCount === 0 ? (
+                        <>
+                          만다라트를 만들면<br />
+                          매일 실천할 목표를 관리할 수 있어요
+                        </>
+                      ) : (
+                        <>
+                          만다라트를 활성화하거나<br />
+                          새로운 목표를 추가해보세요
+                        </>
+                      )}
+                    </p>
+                  </div>
+
+                  {totalMandalartCount === 0 ? (
+                    <>
+                      {/* Progress Steps for New Users */}
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-left">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          실천을 시작하는 방법
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs text-muted-foreground">1</span>
+                            </div>
+                            <span className="text-muted-foreground">만다라트 만들기</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs text-muted-foreground">2</span>
+                            </div>
+                            <span className="text-muted-foreground">실천 항목 자동 생성됨</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs text-muted-foreground">3</span>
+                            </div>
+                            <span className="text-muted-foreground">매일 체크하며 실천하기</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => navigate('/mandalart/create')}
+                        className="w-full"
+                        size="lg"
+                      >
+                        만다라트 만들기
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {/* Quick Actions for Existing Users */}
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          다음 중 하나를 선택하세요
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <button
+                            onClick={() => navigate('/mandalart/list')}
+                            className="flex items-start gap-3 text-left bg-background/50 p-3 rounded-md hover:bg-background transition-colors"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Grid3x3 className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="text-sm font-medium">기존 목표 활성화</p>
+                              <p className="text-xs text-muted-foreground">만다라트 관리에서 ON/OFF</p>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => navigate('/mandalart/create')}
+                            className="flex items-start gap-3 text-left bg-background/50 p-3 rounded-md hover:bg-background transition-colors"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Plus className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="text-sm font-medium">새 목표 추가</p>
+                              <p className="text-xs text-muted-foreground">만다라트 새로 만들기</p>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate('/mandalart/list')}
+                          className="flex-1"
+                        >
+                          만다라트 관리
+                        </Button>
+                        <Button
+                          onClick={() => navigate('/mandalart/create')}
+                          className="flex-1"
+                        >
+                          새로 만들기
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         )}
 
         {/* Filtered Empty State */}

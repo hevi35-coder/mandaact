@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
@@ -7,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { Mandalart } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/notificationMessages'
 import { showError } from '@/lib/notificationUtils'
-import { Plus, Grid3x3 } from 'lucide-react'
+import { Plus, Grid3x3, ArrowRight, ImagePlus, Edit3 } from 'lucide-react'
 
 export default function MandalartListPage() {
   const navigate = useNavigate()
@@ -126,22 +127,120 @@ export default function MandalartListPage() {
 
         {/* Empty State */}
         {!isLoading && mandalarts.length === 0 && (
-          <Card>
-            <CardContent className="py-8 text-center space-y-3">
-              <div className="w-16 h-16 mx-auto bg-muted/50 rounded-full flex items-center justify-center">
-                <Grid3x3 className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-lg font-medium">아직 만다라트가 없습니다</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  첫 번째 만다라트를 만들어보세요
-                </p>
-              </div>
-              <Button onClick={() => navigate('/mandalart/create')}>
-                만다라트 만들기
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="relative">
+            {/* Mock Preview Background - Mandalart Card Examples */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 0.3, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="pointer-events-none"
+            >
+              <Card className="blur-[2px]">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle>2025년 목표 달성</CardTitle>
+                      <CardDescription className="mt-2">
+                        핵심 목표: 건강한 삶과 커리어 성장
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked className="sr-only peer" readOnly />
+                        <div className="w-11 h-6 bg-primary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                      </label>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 0.3, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="pointer-events-none mt-4"
+            >
+              <Card className="blur-[2px]">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle>영어 실력 향상</CardTitle>
+                      <CardDescription className="mt-2">
+                        핵심 목표: 토익 900점 달성
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" readOnly />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                      </label>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            {/* Overlay Card with Empty State Message */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="absolute inset-0 flex items-center justify-center p-4"
+            >
+              <Card className="w-full max-w-lg shadow-xl bg-background/95 backdrop-blur-sm border-2">
+                <CardContent className="text-center py-8 space-y-5">
+                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <Grid3x3 className="h-8 w-8 text-primary" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold">아직 만다라트가 없어요</p>
+                    <p className="text-sm text-muted-foreground">
+                      만다라트를 만들면<br />
+                      체계적으로 목표를 관리하고 실천할 수 있어요
+                    </p>
+                  </div>
+
+                  {/* Creation Methods */}
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      만다라트 만드는 방법
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-start gap-3 text-left bg-background/50 p-3 rounded-md">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <ImagePlus className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium">이미지로 만들기</p>
+                          <p className="text-xs text-muted-foreground">사진을 업로드하면 자동 입력</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 text-left bg-background/50 p-3 rounded-md">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Edit3 className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium">직접 입력하기</p>
+                          <p className="text-xs text-muted-foreground">목표를 하나씩 작성</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => navigate('/mandalart/create')}
+                    className="w-full"
+                    size="lg"
+                  >
+                    만다라트 만들기
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         )}
 
         {/* Mandalart List */}
