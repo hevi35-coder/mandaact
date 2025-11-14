@@ -55,10 +55,10 @@ export default function LoginPage() {
   const location = useLocation()
   const { signIn, signUp } = useAuthStore()
 
-  // Set body background to gradient on mount, restore on unmount
+  // Set body background to white on mount, restore on unmount
   useEffect(() => {
     const originalBackground = document.body.style.background
-    document.body.style.background = 'linear-gradient(to bottom right, rgb(37 99 235), rgb(147 51 234), rgb(219 39 119))'
+    document.body.style.background = '#ffffff'
 
     return () => {
       document.body.style.background = originalBackground
@@ -119,13 +119,13 @@ export default function LoginPage() {
 
   if (signUpSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="w-full max-w-md text-center">
+          <Card className="w-full max-w-md text-center shadow-lg">
             <CardHeader>
               <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <Sparkles className="h-8 w-8 text-green-600" />
@@ -147,18 +147,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600" style={{ minHeight: '100dvh' }}>
+    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-2 bg-white" style={{ minHeight: '100dvh' }}>
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="hidden lg:flex flex-col justify-center items-center p-12 text-white relative overflow-hidden"
+        className="hidden lg:flex flex-col justify-center items-center p-12 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden"
       >
         {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-200 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-200 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 max-w-md space-y-8">
@@ -167,10 +167,13 @@ export default function LoginPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="space-y-4"
+            className="space-y-6"
           >
-            <h1 className="text-5xl font-bold">MandaAct</h1>
-            <p className="text-2xl font-light">목표를 행동으로,<br />만다라트로 실천</p>
+            <h1 className="text-6xl font-bold">
+              <span className="text-black">Manda</span>
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
+            </h1>
+            <p className="text-2xl font-light text-gray-700">목표를 행동으로,<br />만다라트로 실천</p>
           </motion.div>
 
           {/* Feature Cards */}
@@ -186,14 +189,14 @@ export default function LoginPage() {
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.6 + index * 0.1, duration: 0.5 }}
-                className="flex items-center gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition-all"
+                className="flex items-center gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all"
               >
-                <div className={`p-3 bg-gradient-to-br ${feature.gradient} rounded-lg`}>
+                <div className={`p-3 bg-gradient-to-br ${feature.gradient} rounded-lg shadow-sm`}>
                   <feature.icon className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">{feature.title}</h3>
-                  <p className="text-sm text-white/80">{feature.description}</p>
+                  <h3 className="font-semibold text-lg text-gray-900">{feature.title}</h3>
+                  <p className="text-sm text-gray-600">{feature.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -204,7 +207,7 @@ export default function LoginPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.9, duration: 0.5 }}
-            className="text-center text-white/90"
+            className="text-center text-gray-600"
           >
             <p className="text-sm">많은 사용자들이 MandaAct와 함께<br />목표를 달성하고 있습니다</p>
           </motion.div>
@@ -212,18 +215,19 @@ export default function LoginPage() {
       </motion.div>
 
       {/* Auth Section */}
-      <div className="flex flex-col items-center justify-center p-4 py-6 lg:p-12 lg:bg-background gap-4 flex-1">
+      <div className="flex flex-col items-center justify-center p-4 py-8 lg:p-12 bg-white gap-6 flex-1">
         {/* Mobile Logo - Fixed Position */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="lg:hidden text-white text-center"
+          className="lg:hidden text-center"
         >
-          <h1 className="text-4xl font-bold">
-            MandaAct
+          <h1 className="text-5xl font-bold mb-3">
+            <span className="text-black">Manda</span>
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
           </h1>
-          <p className="text-sm text-white/90 mt-2">목표를 행동으로, 만다라트로 실천</p>
+          <p className="text-sm text-gray-600">목표를 행동으로, 만다라트로 실천</p>
         </motion.div>
 
         {/* Auth Card */}
@@ -233,26 +237,26 @@ export default function LoginPage() {
           transition={{ delay: 0.3, duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <Card className="lg:shadow-xl lg:border-2 backdrop-blur-sm lg:backdrop-blur-none bg-white/10 lg:bg-white border-white/20 lg:border-border text-white lg:text-foreground">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xl">시작하기</CardTitle>
-              <CardDescription className="text-white/80 lg:text-muted-foreground text-sm">
+          <Card className="shadow-xl border-2 border-gray-200 bg-white">
+            <CardHeader className="pb-4 space-y-2">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">시작하기</CardTitle>
+              <CardDescription className="text-gray-600">
                 계정을 만들거나 로그인하세요
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-3 pb-3">
+            <CardContent className="space-y-4 pb-4">
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-2 h-10 bg-white/5 lg:bg-muted p-0.5">
+                <TabsList className="grid w-full grid-cols-2 mb-4 h-11 bg-gray-100 p-1">
                   <TabsTrigger
                     value="login"
-                    className="data-[state=active]:bg-white/20 data-[state=active]:text-white lg:data-[state=active]:bg-background lg:data-[state=active]:text-foreground data-[state=inactive]:text-white/50 lg:data-[state=inactive]:text-foreground/50 transition-all text-sm"
+                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 transition-all"
                   >
                     로그인
                   </TabsTrigger>
                   <TabsTrigger
                     value="signup"
-                    className="data-[state=active]:bg-white/20 data-[state=active]:text-white lg:data-[state=active]:bg-background lg:data-[state=active]:text-foreground data-[state=inactive]:text-white/50 lg:data-[state=inactive]:text-foreground/50 transition-all text-sm"
+                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 transition-all"
                   >
                     회원가입
                   </TabsTrigger>
@@ -260,15 +264,15 @@ export default function LoginPage() {
 
                 {/* Login Tab */}
                 <TabsContent value="login" className="mt-0">
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-3">
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                     {loginError && (
-                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
                         {loginError}
                       </div>
                     )}
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="login-email" className="text-white lg:text-foreground">이메일</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email" className="text-gray-700 font-medium">이메일</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -285,8 +289,8 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="login-password" className="text-white lg:text-foreground">비밀번호</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password" className="text-gray-700 font-medium">비밀번호</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -310,7 +314,7 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoginLoading}>
+                    <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium" disabled={isLoginLoading}>
                       {isLoginLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -325,15 +329,15 @@ export default function LoginPage() {
 
                 {/* Sign Up Tab */}
                 <TabsContent value="signup" className="mt-0">
-                  <form onSubmit={signUpForm.handleSubmit(onSignUpSubmit)} className="space-y-3">
+                  <form onSubmit={signUpForm.handleSubmit(onSignUpSubmit)} className="space-y-4">
                     {signUpError && (
-                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
                         {signUpError}
                       </div>
                     )}
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-email" className="text-white lg:text-foreground">이메일</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email" className="text-gray-700 font-medium">이메일</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -350,8 +354,8 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-password" className="text-white lg:text-foreground">비밀번호</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password" className="text-gray-700 font-medium">비밀번호</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -375,8 +379,8 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-confirm-password" className="text-white lg:text-foreground">비밀번호 확인</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm-password" className="text-gray-700 font-medium">비밀번호 확인</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -400,7 +404,7 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isSignUpLoading}>
+                    <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium" disabled={isSignUpLoading}>
                       {isSignUpLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
