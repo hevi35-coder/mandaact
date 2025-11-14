@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, ArrowRight, CheckCircle2, Grid3x3, Plus } from 'lucide-react'
+import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, ArrowRight, CheckCircle2, Grid3x3, Plus, BookOpen } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
@@ -753,14 +753,25 @@ export default function TodayChecklistPage() {
                         </div>
                       </div>
 
-                      <Button
-                        onClick={() => navigate('/mandalart/create')}
-                        className="w-full"
-                        size="lg"
-                      >
-                        만다라트 만들기
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate('/tutorial')}
+                          className="flex-1"
+                          size="lg"
+                        >
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          튜토리얼 보기
+                        </Button>
+                        <Button
+                          onClick={() => navigate('/mandalart/create')}
+                          className="flex-1"
+                          size="lg"
+                        >
+                          만다라트 만들기
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
                     </>
                   ) : (
                     <>

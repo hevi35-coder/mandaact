@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import { UserProfileCard } from '@/components/stats/UserProfileCard'
 import { StreakHero } from '@/components/stats/StreakHero'
 
-import { LogOut } from 'lucide-react'
+import { LogOut, BookOpen } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -51,6 +51,16 @@ export default function HomePage() {
 
         {/* Streak Hero */}
         <StreakHero />
+
+        {/* Tutorial Button */}
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => navigate('/tutorial')}
+        >
+          <BookOpen className="h-4 w-4 mr-2" />
+          튜토리얼 다시 보기
+        </Button>
 
         {/* Logout Button */}
         <Button
