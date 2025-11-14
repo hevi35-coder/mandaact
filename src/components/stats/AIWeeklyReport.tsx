@@ -28,6 +28,7 @@ export function AIWeeklyReport() {
   const [loading, setLoading] = useState(true)
   const [isPracticeOpen, setIsPracticeOpen] = useState(false)
   const [isDiagnosisOpen, setIsDiagnosisOpen] = useState(false)
+  const [hasMandalarts, setHasMandalarts] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -39,6 +40,15 @@ export function AIWeeklyReport() {
     setLoading(true)
 
     try {
+      // Check if user has any mandalarts
+      const { data: mandalarts } = await supabase
+        .from('mandalarts')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1)
+
+      setHasMandalarts((mandalarts && mandalarts.length > 0) || false)
+
       // Get latest weekly report
       const { data: latest } = await supabase
         .from('ai_reports')
@@ -298,49 +308,94 @@ export function AIWeeklyReport() {
                 <div className="space-y-2">
                   <p className="text-xl font-semibold">아직 리포트가 없어요</p>
                   <p className="text-sm text-muted-foreground">
-                    만다라트를 만들고 실천을 시작하면<br />
-                    일주일 후부터 AI 리포트를 받을 수 있어요
+                    {hasMandalarts ? (
+                      <>
+                        실천 데이터를 분석하여<br />
+                        맞춤형 AI 리포트를 생성해드려요
+                      </>
+                    ) : (
+                      <>
+                        만다라트를 만들고 실천을 시작하면<br />
+                        일주일 후부터 AI 리포트를 받을 수 있어요
+                      </>
+                    )}
                   </p>
                 </div>
 
                 {/* Progress Steps */}
-                <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-left">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    리포트 생성을 위한 단계
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">1</span>
+                {!hasMandalarts && (
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-left">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      리포트 생성을 위한 단계
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs text-muted-foreground">1</span>
+                        </div>
+                        <span className="text-muted-foreground">만다라트 만들기</span>
                       </div>
-                      <span className="text-muted-foreground">만다라트 만들기</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">2</span>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs text-muted-foreground">2</span>
+                        </div>
+                        <span className="text-muted-foreground">매일 실천 기록하기</span>
                       </div>
-                      <span className="text-muted-foreground">매일 실천 기록하기</span>
                     </div>
                   </div>
-                </div>
+                )}
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/tutorial')}
-                    className="flex-[0.4]"
-                    size="lg"
-                  >
-                    튜토리얼
-                  </Button>
-                  <Button
-                    onClick={() => navigate('/mandalart/create')}
-                    className="flex-[0.6]"
-                    size="lg"
-                  >
-                    만다라트 생성
-                  </Button>
-                </div>
+                {hasMandalarts ? (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/today')}
+                      className="flex-[0.4]"
+                      size="lg"
+                    >
+                      실천하기
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        await generateReport()
+                        await generateDiagnosis()
+                      }}
+                      disabled={generating || generatingDiagnosis}
+                      className="flex-[0.6]"
+                      size="lg"
+                    >
+                      {generating || generatingDiagnosis ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                          생성 중...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-1.5" />
+                          리포트 생성
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/tutorial')}
+                      className="flex-[0.4]"
+                      size="lg"
+                    >
+                      튜토리얼
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/mandalart/create')}
+                      className="flex-[0.6]"
+                      size="lg"
+                    >
+                      만다라트 생성
+                    </Button>
+                  </div>
+                )}
 
                 {error && (
                   <Alert variant="destructive" className="mt-4 text-left">
