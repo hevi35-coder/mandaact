@@ -764,11 +764,14 @@ export default function TodayChecklistPage() {
                         </Button>
                         <Button
                           onClick={() => navigate('/mandalart/create')}
-                          className="flex-1"
+                          className="flex-1 flex-col h-auto py-3"
                           size="lg"
                         >
-                          만다라트 만들기
-                          <ArrowRight className="h-4 w-4 ml-2" />
+                          <span>만다라트</span>
+                          <span className="flex items-center gap-1">
+                            만들기
+                            <ArrowRight className="h-4 w-4" />
+                          </span>
                         </Button>
                       </div>
                     </>
@@ -817,10 +820,13 @@ export default function TodayChecklistPage() {
                         </Button>
                         <Button
                           onClick={() => navigate('/mandalart/create')}
-                          className="flex-1"
+                          className="flex-1 flex-col h-auto py-3"
                         >
-                          새로 만들기
-                          <ArrowRight className="h-4 w-4 ml-2" />
+                          <span>만다라트</span>
+                          <span className="flex items-center gap-1">
+                            만들기
+                            <ArrowRight className="h-4 w-4" />
+                          </span>
                         </Button>
                       </div>
                     </>

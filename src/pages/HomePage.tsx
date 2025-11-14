@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useAuthStore } from '@/store/authStore'
+import TutorialPage from '@/pages/TutorialPage'
 
 // Gamification Components
 import { UserProfileCard } from '@/components/stats/UserProfileCard'
@@ -76,12 +77,8 @@ export default function HomePage() {
 
       {/* Tutorial Dialog */}
       <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
-        <DialogContent className="max-w-full h-screen p-0 gap-0">
-          <iframe
-            src="/tutorial"
-            className="w-full h-full border-0"
-            title="튜토리얼"
-          />
+        <DialogContent className="max-w-full h-screen p-0 gap-0 overflow-auto">
+          <TutorialPage />
         </DialogContent>
       </Dialog>
     </div>

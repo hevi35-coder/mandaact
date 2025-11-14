@@ -44,7 +44,7 @@ export default function TutorialPage() {
     {
       id: 1,
       title: '만다라트란?',
-      description: '목표를 체계적으로 달성하는 프레임워크(일명 : 오타니 계획법!)',
+      description: '목표를 체계적으로 달성하는 프레임워크 (야구선수 오타니의 계획법으로 유명)',
       content: (
         <div className="space-y-6">
           <div className="flex justify-center">
@@ -133,18 +133,18 @@ export default function TutorialPage() {
         <div className="space-y-4">
           <div className="grid gap-3">
             {/* Image Upload */}
-            <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <Card className="border-2 border-gray-200">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <ImagePlus className="h-5 w-5 text-primary" />
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <ImagePlus className="h-5 w-5 text-gray-600" />
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className="font-semibold text-sm">이미지 업로드</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       이미 만들어 둔 만다라트 사진을 찍어 업로드하면 AI가 자동으로 텍스트를 추출해요
                     </p>
-                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded text-[10px] font-medium text-primary">
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[10px] font-medium text-gray-700">
                       <Sparkles className="h-3 w-3" />
                       AI OCR 자동 인식
                     </div>
@@ -154,18 +154,18 @@ export default function TutorialPage() {
             </Card>
 
             {/* Text Paste */}
-            <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-transparent">
+            <Card className="border-2 border-gray-200">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <Type className="h-5 w-5 text-blue-600" />
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <Type className="h-5 w-5 text-gray-600" />
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className="font-semibold text-sm">텍스트 붙여넣기</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       GPT나 Claude, Gemini 같은 AI를 이용해서 만들어 둔 텍스트가 있다면 복사해서 붙여넣으세요
                     </p>
-                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 rounded text-[10px] font-medium text-blue-700">
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[10px] font-medium text-gray-700">
                       빠른 입력
                     </div>
                   </div>
@@ -204,7 +204,7 @@ export default function TutorialPage() {
     },
     {
       id: 3,
-      title: '만다라트 만들기',
+      title: '만다라트 직접 입력',
       description: '핵심 목표부터 실천 항목까지 단계별로 입력해요',
       content: (
         <div className="space-y-4">
@@ -287,7 +287,7 @@ export default function TutorialPage() {
     },
     {
       id: 4,
-      title: '실천항목 타입',
+      title: '실천 항목 타입 설정',
       description: 'AI가 자동으로 분류해주지만, 직접 수정할 수도 있어요',
       content: (
         <div className="space-y-4">
