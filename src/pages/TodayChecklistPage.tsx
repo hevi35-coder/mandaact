@@ -7,7 +7,6 @@ import { Calendar } from '@/components/ui/calendar'
 import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
-import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
 import { ActionType, shouldShowToday, getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
@@ -811,11 +810,6 @@ export default function TodayChecklistPage() {
             })}
           </div>
         )}
-
-        {/* Notification Permission Prompt */}
-        <div className="pt-4">
-          <NotificationPermissionPrompt />
-        </div>
       </div>
 
       {/* Action Type Selector Dialog */}
