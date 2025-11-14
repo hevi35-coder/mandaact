@@ -570,101 +570,99 @@ export default function TodayChecklistPage() {
         </div>
 
         {/* Progress Card with Type Filter */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-base">오늘의 달성율</CardTitle>
-                <span className="text-lg font-bold text-primary">{progressPercentage}%</span>
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {checkedCount} / {totalCount}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className="bg-primary h-3 rounded-full transition-all duration-300"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground text-left flex items-center justify-start gap-1">
-              <Info className="h-3 w-3" />
-              오늘과 어제 날짜만 달성(체크) 가능합니다
-            </p>
-
-            {/* Type Filter - Collapsible Section */}
-            {actions.length > 0 && (
-              <>
-                <div className="border-t pt-4">
-                  <button
-                    onClick={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
-                    className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity mb-3"
-                  >
-                    <span className="text-sm font-medium">타입 필터</span>
-                    {typeFilterCollapsed ? (
-                      <ChevronRight className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </button>
-
-                  {!typeFilterCollapsed && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-4 gap-2">
-                        <Button
-                          variant={activeFilters.size === 0 ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={clearAllFilters}
-                          className="w-full"
-                        >
-                          전체
-                        </Button>
-                        <Button
-                          variant={activeFilters.has('routine') ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => toggleFilter('routine')}
-                          className="flex items-center gap-1 w-full justify-center"
-                        >
-                          {getTypeIcon('routine')}
-                          {getActionTypeLabel('routine')}
-                        </Button>
-                        <Button
-                          variant={activeFilters.has('mission') ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => toggleFilter('mission')}
-                          className="flex items-center gap-1 w-full justify-center"
-                        >
-                          {getTypeIcon('mission')}
-                          {getActionTypeLabel('mission')}
-                        </Button>
-                        <Button
-                          variant={activeFilters.has('reference') ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => toggleFilter('reference')}
-                          className="flex items-center gap-1 w-full justify-center"
-                        >
-                          {getTypeIcon('reference')}
-                          {getActionTypeLabel('reference')}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Info className="h-3 w-3" />
-                        참고 타입은 달성율에 포함되지 않습니다
-                      </p>
-                    </div>
-                  )}
+        {actions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-base">오늘의 달성율</CardTitle>
+                  <span className="text-lg font-bold text-primary">{progressPercentage}%</span>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                <span className="text-sm text-muted-foreground">
+                  {checkedCount} / {totalCount}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-primary h-3 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground text-left flex items-center justify-start gap-1">
+                <Info className="h-3 w-3" />
+                오늘과 어제 날짜만 달성(체크) 가능합니다
+              </p>
+
+              {/* Type Filter - Collapsible Section */}
+              <div className="border-t pt-4">
+                <button
+                  onClick={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
+                  className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity mb-3"
+                >
+                  <span className="text-sm font-medium">타입 필터</span>
+                  {typeFilterCollapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+
+                {!typeFilterCollapsed && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-4 gap-2">
+                      <Button
+                        variant={activeFilters.size === 0 ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={clearAllFilters}
+                        className="w-full"
+                      >
+                        전체
+                      </Button>
+                      <Button
+                        variant={activeFilters.has('routine') ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleFilter('routine')}
+                        className="flex items-center gap-1 w-full justify-center"
+                      >
+                        {getTypeIcon('routine')}
+                        {getActionTypeLabel('routine')}
+                      </Button>
+                      <Button
+                        variant={activeFilters.has('mission') ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleFilter('mission')}
+                        className="flex items-center gap-1 w-full justify-center"
+                      >
+                        {getTypeIcon('mission')}
+                        {getActionTypeLabel('mission')}
+                      </Button>
+                      <Button
+                        variant={activeFilters.has('reference') ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleFilter('reference')}
+                        className="flex items-center gap-1 w-full justify-center"
+                      >
+                        {getTypeIcon('reference')}
+                        {getActionTypeLabel('reference')}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Info className="h-3 w-3" />
+                      참고 타입은 달성율에 포함되지 않습니다
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Empty State */}
         {actions.length === 0 && (
-          <div className="relative">
+          <div className="relative min-h-[400px]">
             {/* Mock Preview Background - Action Cards */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -707,7 +705,7 @@ export default function TodayChecklistPage() {
               transition={{ duration: 0.3, delay: 0.3 }}
               className="absolute inset-0 flex items-center justify-center p-4"
             >
-              <Card className="w-full max-w-lg shadow-xl bg-background/95 backdrop-blur-sm border-2">
+              <Card className="w-full max-w-md shadow-xl bg-background/95 backdrop-blur-sm border-2">
                 <CardContent className="text-center py-8 space-y-5">
                   <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
                     <ListTodo className="h-8 w-8 text-primary" />
@@ -749,12 +747,6 @@ export default function TodayChecklistPage() {
                           <div className="flex items-center gap-3 text-sm">
                             <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
                               <span className="text-xs text-muted-foreground">2</span>
-                            </div>
-                            <span className="text-muted-foreground">실천 항목 자동 생성됨</span>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm">
-                            <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs text-muted-foreground">3</span>
                             </div>
                             <span className="text-muted-foreground">매일 체크하며 실천하기</span>
                           </div>

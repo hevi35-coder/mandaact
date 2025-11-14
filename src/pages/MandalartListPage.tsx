@@ -127,7 +127,7 @@ export default function MandalartListPage() {
 
         {/* Empty State */}
         {!isLoading && mandalarts.length === 0 && (
-          <div className="relative">
+          <div className="relative min-h-[500px]">
             {/* Mock Preview Background - Mandalart Card Examples */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -188,7 +188,7 @@ export default function MandalartListPage() {
               transition={{ duration: 0.3, delay: 0.3 }}
               className="absolute inset-0 flex items-center justify-center p-4"
             >
-              <Card className="w-full max-w-lg shadow-xl bg-background/95 backdrop-blur-sm border-2">
+              <Card className="w-full max-w-md shadow-xl bg-background/95 backdrop-blur-sm border-2">
                 <CardContent className="text-center py-8 space-y-5">
                   <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
                     <Grid3x3 className="h-8 w-8 text-primary" />
@@ -198,34 +198,19 @@ export default function MandalartListPage() {
                     <p className="text-xl font-semibold">아직 만다라트가 없어요</p>
                     <p className="text-sm text-muted-foreground">
                       만다라트를 만들면<br />
-                      체계적으로 목표를 관리하고 실천할 수 있어요
+                      체계적으로 목표를 관리할 수 있어요
                     </p>
                   </div>
 
                   {/* Creation Methods */}
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-left">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       만다라트 만드는 방법
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex items-start gap-3 text-left bg-background/50 p-3 rounded-md">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <ImagePlus className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-sm font-medium">이미지로 만들기</p>
-                          <p className="text-xs text-muted-foreground">사진을 업로드하면 자동 입력</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 text-left bg-background/50 p-3 rounded-md">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Edit3 className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-sm font-medium">직접 입력하기</p>
-                          <p className="text-xs text-muted-foreground">목표를 하나씩 작성</p>
-                        </div>
-                      </div>
+                    <div className="space-y-1.5 text-sm text-muted-foreground">
+                      <p>• 이미지 업로드</p>
+                      <p>• 텍스트 붙여넣기</p>
+                      <p>• 직접 입력</p>
                     </div>
                   </div>
 
