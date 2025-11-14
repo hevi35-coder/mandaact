@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { Mandalart } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/notificationMessages'
 import { showError } from '@/lib/notificationUtils'
-import { Plus, Grid3x3, ArrowRight, ImagePlus, Edit3 } from 'lucide-react'
+import { Plus, Grid3x3, ArrowRight, ImagePlus, Edit3, BookOpen } from 'lucide-react'
 
 export default function MandalartListPage() {
   const navigate = useNavigate()
@@ -214,14 +214,23 @@ export default function MandalartListPage() {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={() => navigate('/mandalart/create')}
-                    className="w-full"
-                    size="lg"
-                  >
-                    만다라트 만들기
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/tutorial')}
+                      className="flex-[0.4]"
+                      size="lg"
+                    >
+                      튜토리얼
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/mandalart/create')}
+                      className="flex-[0.6]"
+                      size="lg"
+                    >
+                      만다라트 생성
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>

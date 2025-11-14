@@ -13,6 +13,7 @@ import MandalartDetailPage from '@/pages/MandalartDetailPage'
 import TodayChecklistPage from '@/pages/TodayChecklistPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
 import ReportsPage from '@/pages/ReportsPage'
+import TutorialPage from '@/pages/TutorialPage'
 import Navigation from '@/components/Navigation'
 import { Toaster } from '@/components/ui/toaster'
 
@@ -199,6 +200,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/tutorial" element={<TutorialPage />} />
           {/* More routes will be added in future phases */}
         </Routes>
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, ArrowRight, CheckCircle2, Grid3x3, Plus } from 'lucide-react'
+import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, ArrowRight, CheckCircle2, Grid3x3, Plus, BookOpen } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
@@ -753,14 +753,23 @@ export default function TodayChecklistPage() {
                         </div>
                       </div>
 
-                      <Button
-                        onClick={() => navigate('/mandalart/create')}
-                        className="w-full"
-                        size="lg"
-                      >
-                        만다라트 만들기
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate('/tutorial')}
+                          className="flex-[0.4]"
+                          size="lg"
+                        >
+                          튜토리얼
+                        </Button>
+                        <Button
+                          onClick={() => navigate('/mandalart/create')}
+                          className="flex-[0.6]"
+                          size="lg"
+                        >
+                          만다라트 생성
+                        </Button>
+                      </div>
                     </>
                   ) : (
                     <>
@@ -801,16 +810,15 @@ export default function TodayChecklistPage() {
                         <Button
                           variant="outline"
                           onClick={() => navigate('/mandalart/list')}
-                          className="flex-1"
+                          className="flex-[0.5]"
                         >
                           만다라트 관리
                         </Button>
                         <Button
                           onClick={() => navigate('/mandalart/create')}
-                          className="flex-1"
+                          className="flex-[0.5]"
                         >
-                          새로 만들기
-                          <ArrowRight className="h-4 w-4 ml-2" />
+                          만다라트 생성
                         </Button>
                       </div>
                     </>

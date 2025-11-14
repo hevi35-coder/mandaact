@@ -324,14 +324,23 @@ export function AIWeeklyReport() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={() => navigate('/mandalart/list')}
-                  className="w-full"
-                  size="lg"
-                >
-                  만다라트 관리로 이동
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/tutorial')}
+                    className="flex-[0.4]"
+                    size="lg"
+                  >
+                    튜토리얼
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/mandalart/create')}
+                    className="flex-[0.6]"
+                    size="lg"
+                  >
+                    만다라트 생성
+                  </Button>
+                </div>
 
                 {error && (
                   <Alert variant="destructive" className="mt-4 text-left">
