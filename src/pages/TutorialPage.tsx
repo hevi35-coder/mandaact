@@ -44,7 +44,7 @@ export default function TutorialPage() {
     {
       id: 1,
       title: '만다라트란?',
-      description: '목표를 체계적으로 달성하는 일본식 프레임워크',
+      description: '목표를 체계적으로 달성하는 프레임워크(일명 : 오타니 계획법!)',
       content: (
         <div className="space-y-6">
           <div className="flex justify-center">
@@ -142,7 +142,7 @@ export default function TutorialPage() {
                   <div className="flex-1 space-y-1">
                     <p className="font-semibold text-sm">이미지 업로드</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      손으로 그린 만다라트 사진을 찍어 업로드하면 AI가 자동으로 텍스트를 추출해요
+                      이미 만들어 둔 만다라트 사진을 찍어 업로드하면 AI가 자동으로 텍스트를 추출해요
                     </p>
                     <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded text-[10px] font-medium text-primary">
                       <Sparkles className="h-3 w-3" />
@@ -163,7 +163,7 @@ export default function TutorialPage() {
                   <div className="flex-1 space-y-1">
                     <p className="font-semibold text-sm">텍스트 붙여넣기</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      엑셀이나 노트 앱에 작성한 만다라트를 복사해서 붙여넣으세요
+                      GPT나 Claude, Gemini 같은 AI를 이용해서 만들어 둔 텍스트가 있다면 복사해서 붙여넣으세요
                     </p>
                     <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 rounded text-[10px] font-medium text-blue-700">
                       빠른 입력
@@ -183,7 +183,7 @@ export default function TutorialPage() {
                   <div className="flex-1 space-y-1">
                     <p className="font-semibold text-sm">직접 입력</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      그리드를 클릭하며 하나씩 입력할 수 있어요. 가장 신중하게 만들 때 추천해요
+                      아직 만들어 둔 만다라트가 없다면 그리드를 탭하며 하나씩 직접 입력할 수 있어요.
                     </p>
                     <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[10px] font-medium text-gray-700">
                       세밀한 작성
@@ -396,7 +396,7 @@ export default function TutorialPage() {
     {
       id: 5,
       title: '일일 실천 체크',
-      description: '매일 오늘의 실천 페이지에서 목표를 달성해요',
+      description: '투데이 페이지에서 실천한 항목을 체크해요',
       content: (
         <div className="space-y-4">
           <div className="space-y-3">
@@ -408,7 +408,7 @@ export default function TutorialPage() {
                     <CalendarCheck className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1 space-y-2">
-                    <p className="font-semibold text-sm">오늘의 실천 페이지</p>
+                    <p className="font-semibold text-sm">투데이 페이지</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       활성화된 만다라트의 실천 항목이 자동으로 표시됩니다
                     </p>
@@ -493,8 +493,8 @@ export default function TutorialPage() {
             <div>
               <h3 className="text-xl font-bold mb-2">준비 완료!</h3>
               <p className="text-sm text-muted-foreground">
-                이제 MandaAct으로 목표를 체계적으로 관리하고<br />
-                꾸준히 실천해보세요
+                이제 MandaAct와 함께<br />
+                목표를 관리하고 꾸준히 실천해보세요
               </p>
             </div>
           </div>
@@ -532,7 +532,7 @@ export default function TutorialPage() {
                   4
                 </div>
                 <p className="text-sm text-gray-700 pt-0.5">
-                  매일 <span className="font-semibold">"오늘의 실천"</span>에서 체크하며 실행하세요!
+                  매일 <span className="font-semibold">"투데이"</span>에서 체크하며 실행하세요!
                 </p>
               </div>
             </div>

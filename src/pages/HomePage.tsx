@@ -1,17 +1,19 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useAuthStore } from '@/store/authStore'
 
 // Gamification Components
 import { UserProfileCard } from '@/components/stats/UserProfileCard'
 import { StreakHero } from '@/components/stats/StreakHero'
 
-import { LogOut, BookOpen } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
+  const [tutorialOpen, setTutorialOpen] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -56,10 +58,9 @@ export default function HomePage() {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => navigate('/tutorial')}
+          onClick={() => setTutorialOpen(true)}
         >
-          <BookOpen className="h-4 w-4 mr-2" />
-          튜토리얼 다시 보기
+          튜토리얼
         </Button>
 
         {/* Logout Button */}
@@ -72,6 +73,17 @@ export default function HomePage() {
           로그아웃
         </Button>
       </div>
+
+      {/* Tutorial Dialog */}
+      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
+        <DialogContent className="max-w-full h-screen p-0 gap-0">
+          <iframe
+            src="/tutorial"
+            className="w-full h-full border-0"
+            title="튜토리얼"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

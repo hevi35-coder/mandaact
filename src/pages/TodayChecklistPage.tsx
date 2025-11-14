@@ -760,8 +760,7 @@ export default function TodayChecklistPage() {
                           className="flex-1"
                           size="lg"
                         >
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          튜토리얼 보기
+                          튜토리얼
                         </Button>
                         <Button
                           onClick={() => navigate('/mandalart/create')}

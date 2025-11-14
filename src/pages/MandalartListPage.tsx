@@ -221,8 +221,7 @@ export default function MandalartListPage() {
                       className="flex-1"
                       size="lg"
                     >
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      자세히 알아보기
+                      튜토리얼
                     </Button>
                     <Button
                       onClick={() => navigate('/mandalart/create')}
