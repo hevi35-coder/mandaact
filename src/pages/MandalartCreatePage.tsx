@@ -195,8 +195,8 @@ export default function MandalartCreatePage() {
               position: action.position,
               title: action.title.trim(),
               type: finalType,
-              routine_frequency: action.type === 'routine' ? 'daily' : undefined,
-              mission_completion_type: action.type === 'mission' ? 'once' : undefined,
+              routine_frequency: finalType === 'routine' ? 'daily' : undefined,
+              mission_completion_type: finalType === 'mission' ? 'once' : undefined,
               ai_suggestion: aiSuggestionStr
             }
           })
@@ -214,6 +214,21 @@ export default function MandalartCreatePage() {
       navigate(`/mandalart/${mandalart.id}`)
     } catch (err) {
       console.error('Save error:', err)
+      // Log detailed error information for debugging
+      if (err instanceof Error) {
+        console.error('Error message:', err.message)
+        console.error('Error stack:', err.stack)
+      }
+      // @ts-ignore - Supabase error has details property
+      if (err?.details) {
+        // @ts-ignore
+        console.error('Supabase error details:', err.details)
+      }
+      // @ts-ignore - Supabase error has hint property
+      if (err?.hint) {
+        // @ts-ignore
+        console.error('Supabase error hint:', err.hint)
+      }
       showError(ERROR_MESSAGES.saveFailed())
     } finally {
       setIsLoading(false)
