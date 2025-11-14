@@ -169,11 +169,10 @@ export default function LoginPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="space-y-6"
           >
-            <img
-              src="/icon-512.png"
-              alt="MandaAct"
-              className="h-24 w-auto"
-            />
+            <h1 className="text-6xl font-bold">
+              <span className="text-black">Manda</span>
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
+            </h1>
             <p className="text-2xl font-light text-gray-700">목표를 행동으로,<br />만다라트로 실천</p>
           </motion.div>
 
@@ -224,11 +223,10 @@ export default function LoginPage() {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="lg:hidden text-center"
         >
-          <img
-            src="/icon-512.png"
-            alt="MandaAct"
-            className="h-20 w-auto mx-auto mb-3"
-          />
+          <h1 className="text-5xl font-bold mb-3">
+            <span className="text-black">Manda</span>
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
+          </h1>
           <p className="text-sm text-gray-600">목표를 행동으로, 만다라트로 실천</p>
         </motion.div>
 
