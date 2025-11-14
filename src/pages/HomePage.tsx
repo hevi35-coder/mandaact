@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
+import { supabase } from '@/lib/supabase'
 
 // Gamification Components
 import { UserProfileCard } from '@/components/stats/UserProfileCard'
@@ -12,12 +13,40 @@ import { LogOut } from 'lucide-react'
 export default function HomePage() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
+  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
     if (!user) {
       navigate('/login')
       return
     }
+
+    // Check if first-time user or user without mandalarts
+    const checkAndRedirect = async () => {
+      try {
+        // Check if tutorial has been completed
+        const tutorialCompleted = localStorage.getItem('tutorial_completed')
+
+        // Check if user has any mandalarts
+        const { data: mandalarts } = await supabase
+          .from('mandalarts')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+
+        // If no tutorial completed AND no mandalarts, redirect to tutorial
+        if (tutorialCompleted !== 'true' && (!mandalarts || mandalarts.length === 0)) {
+          navigate('/tutorial', { replace: true })
+          return
+        }
+      } catch (error) {
+        console.error('Error checking first-time user status:', error)
+      } finally {
+        setIsChecking(false)
+      }
+    }
+
+    checkAndRedirect()
   }, [user, navigate])
 
   const handleLogout = async () => {
@@ -25,11 +54,13 @@ export default function HomePage() {
     navigate('/login', { replace: true })
   }
 
-  if (!user) {
+  if (!user || isChecking) {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          <p className="text-center text-muted-foreground">로그인이 필요합니다...</p>
+          <p className="text-center text-muted-foreground">
+            {!user ? '로그인이 필요합니다...' : '로딩 중...'}
+          </p>
         </div>
       </div>
     )

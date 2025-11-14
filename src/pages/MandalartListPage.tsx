@@ -225,11 +225,10 @@ export default function MandalartListPage() {
                     </Button>
                     <Button
                       onClick={() => navigate('/mandalart/create')}
-                      className="flex-[0.6] flex-col h-auto py-3"
+                      className="flex-[0.6]"
                       size="lg"
                     >
-                      <span>만다라트</span>
-                      <span>만들기</span>
+                      만다라트 생성
                     </Button>
                   </div>
                 </CardContent>
