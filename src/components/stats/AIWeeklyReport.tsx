@@ -7,15 +7,17 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import type { AIReport } from '@/types'
-import { Sparkles, Loader2, Calendar, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp, FileText } from 'lucide-react'
+import { Sparkles, Loader2, Calendar, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp, FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import ReactMarkdown from 'react-markdown'
 import { parseWeeklyReport, parseDiagnosisReport } from '@/lib/reportParser'
+import { useNavigate } from 'react-router-dom'
 
 export function AIWeeklyReport() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [latestReport, setLatestReport] = useState<AIReport | null>(null)
   const [latestDiagnosis, setLatestDiagnosis] = useState<AIReport | null>(null)
   const [reportHistory, setReportHistory] = useState<AIReport[]>([])
@@ -207,38 +209,140 @@ export function AIWeeklyReport() {
 
   if (!displayedReport) {
     return (
-      <Card>
-        <CardContent className="text-center py-8 space-y-3">
-          <div className="w-16 h-16 mx-auto bg-muted/50 rounded-full flex items-center justify-center">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <div>
-            <p className="text-lg font-medium">아직 리포트가 없어요</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              만다라트를 만들고 실천 데이터를 쌓은 후<br />
-              리포트 생성을 시도해보세요
-            </p>
-          </div>
-          <Button onClick={generateReport} disabled={generating}>
-            {generating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                생성 중...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                첫 리포트 생성하기
-              </>
-            )}
-          </Button>
-          {error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        {/* Mock Preview Background */}
+        <div className="relative">
+          {/* Practice Report Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 0.3, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="pointer-events-none"
+          >
+            <Card className="blur-[2px]">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <CardTitle>실천 리포트</CardTitle>
+                  </div>
+                  <Badge variant="outline">11월 14일</Badge>
+                </div>
+                <CardDescription>
+                  최근 7일간 실천 데이터 분석 및 개선 제안
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-base font-semibold text-foreground leading-relaxed">
+                  화요일 오후에 집중된 실천 패턴이 관찰되며, 평일 중 실천일수가 적어 일관성 강화가 필요합니다
+                </p>
+                <div className="space-y-1.5">
+                  <div className="text-sm text-foreground">
+                    <span className="text-muted-foreground">총 실천 횟수: </span>
+                    <span className="font-medium">6회</span>
+                  </div>
+                  <div className="text-sm text-foreground">
+                    <span className="text-muted-foreground">실천일수: </span>
+                    <span className="font-medium">최근 7일 중 3일</span>
+                  </div>
+                  <div className="text-sm text-foreground">
+                    <span className="text-muted-foreground">전주 대비: </span>
+                    <span className="font-medium">데이터 없음</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Goal Diagnosis Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 0.3, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="pointer-events-none mt-4"
+          >
+            <Card className="blur-[2px]">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    <CardTitle>목표 진단</CardTitle>
+                  </div>
+                  <Badge variant="outline">11월 14일</Badge>
+                </div>
+                <CardDescription>
+                  만다라트 계획 점검 및 개선 제안
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-base font-semibold text-foreground leading-relaxed">
+                  현재 만다라트 구조가 잘 설계되어 있으며, SMART 원칙을 충족하는 목표들로 구성되어 있습니다
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Overlay Card with Empty State Message */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+            className="absolute inset-0 flex items-center justify-center p-4"
+          >
+            <Card className="w-full max-w-md shadow-xl bg-background/95 backdrop-blur-sm border-2">
+              <CardContent className="text-center py-8 space-y-5">
+                <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                  <FileText className="h-8 w-8 text-primary" />
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xl font-semibold">아직 리포트가 없어요</p>
+                  <p className="text-sm text-muted-foreground">
+                    만다라트를 만들고 실천을 시작하면<br />
+                    일주일 후부터 AI 리포트를 받을 수 있어요
+                  </p>
+                </div>
+
+                {/* Progress Steps */}
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-left">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    리포트 생성을 위한 단계
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs text-muted-foreground">1</span>
+                      </div>
+                      <span className="text-muted-foreground">만다라트 만들기</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs text-muted-foreground">2</span>
+                      </div>
+                      <span className="text-muted-foreground">매일 실천 기록하기</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => navigate('/mandalart/list')}
+                  className="w-full"
+                  size="lg"
+                >
+                  만다라트 관리로 이동
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+
+                {error && (
+                  <Alert variant="destructive" className="mt-4 text-left">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
     )
   }
 
