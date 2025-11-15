@@ -235,9 +235,10 @@ See `src/pages/TodayChecklistPage.tsx` for collapsible sections implementation.
 ## Session Context & Documentation
 
 **Always read these files when resuming work:**
-- `SESSION_SUMMARY.md`: Latest session status, completed work, next steps
-- `IMPROVEMENTS.md`: Feature improvement tracking (20 items total)
-- `PHASE_1A_STATUS.md`: OCR implementation details (if working on OCR)
+- `docs/archive/sessions/SESSION_SUMMARY.md`: Latest session status, completed work, next steps
+- `docs/project/IMPROVEMENTS.md`: Feature improvement tracking
+- `docs/project/ROADMAP.md`: Feature roadmap and priorities
+- `docs/features/`: Latest feature documentation (Badge System v5.0, XP System, etc.)
 
 **Current Progress (as of 2025-11-01):**
 - Phase 1-A: Image OCR ✅ (completed)

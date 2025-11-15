@@ -48,13 +48,43 @@ mandaact/
 │   ├── migrations/       # Database migrations
 │   └── functions/        # Edge functions
 ├── public/               # Static assets
-├── claudedocs/           # Project documentation (PRD, etc.)
-└── docs/                 # Developer documentation
+├── docs/                 # Documentation (organized by category)
+│   ├── project/          # Project roadmap, improvements, PRD
+│   ├── development/      # Setup, deployment, API guides
+│   ├── guidelines/       # UI/UX patterns and best practices
+│   ├── features/         # Feature-specific documentation
+│   ├── troubleshooting/  # Debug guides and solutions
+│   └── archive/          # Completed work and historical docs
+└── claudedocs/           # Claude analysis documents
 ```
+
+## Documentation
+
+### 📘 Essential Guides
+- **[Setup Guide](./docs/development/SETUP_GUIDE.md)** - Getting started with development
+- **[Development Guide](./docs/development/DEVELOPMENT.md)** - Coding standards and best practices
+- **[Deployment Guide](./docs/development/DEPLOYMENT_GUIDE.md)** - Production deployment instructions
+- **[CLAUDE.md](./CLAUDE.md)** - Claude Code AI assistant guide
+
+### 📋 Project Management
+- **[Roadmap](./docs/project/ROADMAP.md)** - Feature roadmap and timeline
+- **[Improvements](./docs/project/IMPROVEMENTS.md)** - Feature improvement tracking
+- **[PRD](./docs/project/PRD_mandaact.md)** - Product requirements document
+
+### ⚙️ Features
+- **[Badge System v5.0](./docs/features/BADGE_SYSTEM_V5_RENEWAL.md)** - Gamification and achievements
+- **[XP System](./docs/features/XP_SYSTEM_PHASE2_COMPLETE.md)** - Experience points and leveling
+- **[Notification System](./docs/features/NOTIFICATION_SYSTEM_PROGRESS.md)** - PWA push notifications
+- **[Action Types](./docs/features/ACTION_TYPE_IMPROVEMENT_V2.md)** - Routine, mission, reference types
+
+### 🔧 Troubleshooting
+- **[Troubleshooting Guide](./docs/troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Signup Debug](./docs/troubleshooting/SIGNUP_DEBUG_GUIDE.md)** - Authentication debugging
+- **[Cron Setup](./docs/troubleshooting/CRON_SETUP_GUIDE.md)** - Scheduled tasks configuration
 
 ## Getting Started
 
-See [SETUP_GUIDE.md](./docs/SETUP_GUIDE.md) for detailed setup instructions.
+See **[Setup Guide](./docs/development/SETUP_GUIDE.md)** for detailed setup instructions.
 
 ### Quick Start
 
@@ -75,7 +105,7 @@ npx supabase start
 
 ## Development
 
-See [DEVELOPMENT.md](./docs/DEVELOPMENT.md) for development guidelines.
+See **[Development Guide](./docs/development/DEVELOPMENT.md)** for coding standards, architecture patterns, and contribution guidelines.
 
 ## License
 
