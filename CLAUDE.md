@@ -4,13 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MandaAct is an AI-powered Mandalart (9x9 goal framework) action tracker with personalized coaching. Users can create mandalarts via image OCR or manual input, track daily actions, and receive AI coaching through Perplexity API.
+MandaAct is an AI-powered Mandalart (9x9 goal framework) action tracker with gamification, AI reports, and comprehensive progress analytics. Users can create mandalarts via 3 input methods (image OCR, text parsing, or manual input), track daily actions with smart type system, earn XP/badges, and receive AI-generated weekly reports.
 
 **Core Tech Stack:**
 - Frontend: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
 - State: Zustand (global), TanStack Query (server)
+- Animation: Framer Motion
 - Backend: Supabase (PostgreSQL, Auth, Storage, Edge Functions in Deno)
-- AI: Google Cloud Vision API (OCR), Perplexity API (coaching)
+- AI: Google Cloud Vision API (OCR), Perplexity API (weekly reports, goal diagnosis)
+- PWA: Vite PWA Plugin, Workbox (service worker, push notifications)
+
+**Key Features (Production):**
+- 📸 3 Input Methods (image OCR, text paste, manual template)
+- 🎮 Gamification (XP/levels, 21 badges, streaks, monthly challenges)
+- 📊 AI Reports (weekly practice report, goal diagnosis via Perplexity)
+- 🎓 Interactive Tutorial (7-step onboarding)
+- 📱 PWA (installable, offline support, push notifications)
+- 📈 Analytics (heatmap, progress tracking, mandalart filters)
 
 ## Development Commands
 
@@ -47,10 +57,16 @@ The 9x9 Mandalart grid is decomposed into a hierarchical structure:
 
 **Database Cascade:**
 ```
-mandalarts (user_id)
+mandalarts (user_id, is_active)
   └─ sub_goals (mandalart_id, position 1-8)
-      └─ actions (sub_goal_id, position 1-8)
+      └─ actions (sub_goal_id, position 1-8, type, frequency)
           └─ check_history (action_id, checked_at)
+
+user_gamification (user_id, total_xp, current_level, current_streak)
+  └─ user_achievements (user_id, achievement_id, unlocked_at)
+      └─ achievement_unlock_history (repeat_count, xp_awarded)
+
+xp_multipliers (user_id, multiplier_type, active_until)
 ```
 
 ### Action Type System
@@ -69,6 +85,43 @@ Actions are classified into 3 types with AI-powered suggestions:
 - Routine: Show based on frequency + weekdays + period count
 - Mission: Show until completion or within period window
 - Reference: Always show (but not checkable)
+
+### Gamification System
+
+**XP System:** `src/lib/xpMultipliers.ts`
+- **Hybrid Log Curve**: Exponential XP requirements with zone-based adjustment
+  - Level 1-2: Linear (100 XP/level)
+  - Level 3-10: Moderate curve
+  - Level 11+: Gentle slope (67% faster than v1.0)
+- **XP Multipliers** (4 types, stackable):
+  - Weekend Bonus (1.5x): Saturday & Sunday
+  - Comeback Bonus (1.5x): 3 days after 3+ day absence
+  - Level Milestone (2x): 7 days after reaching level 5, 10, 15, 20, 25, 30
+  - Perfect Week (2x): 7 days after 80%+ weekly completion
+- **Anti-Cheat**: Daily check limit (3x per action), 10-second cooldown, spam detection
+- **Functions**:
+  - `calculateXPForLevel(level)`: Get XP requirement for level
+  - `getLevelFromXP(xp)`: Get level from total XP
+  - `getActiveMultipliers(userId)`: Get current active multipliers
+  - `calculateXPWithMultipliers(baseXP, multipliers)`: Apply all multipliers
+
+**Badge System:** `src/lib/badgeEvaluator.ts`
+- **21 Achievements** across 7 categories:
+  - Practice: first_check, checks_10, checks_100, checks_1000
+  - Streak: streak_7, streak_30, streak_60, streak_100, streak_150
+  - Consistency: active_7, active_30, active_60, active_100
+  - Monthly: monthly_80, monthly_90, monthly_perfect, monthly_active (repeatable)
+  - Completion: complete_subgoal, complete_mandalart
+  - Special: early_bird, night_owl
+- **Auto-Unlock**: RPC function `unlock_achievement()` + client evaluator
+- **Progress Tracking**: RPC function `evaluate_badge_progress()` returns current/target/progress
+- **Monthly Reset**: Cron job (pg_cron) resets monthly badges on 1st of month
+- **UI Features**: Toast notifications, NEW indicators, sparkle animations
+
+**Streak System:** `src/lib/stats.ts`
+- **KST Timezone**: Accurate date calculation with date-fns-tz
+- **Freeze Feature**: One-day skip protection (limited)
+- **Calculation**: Recursive CTE in database for current streak
 
 ### State Management Pattern
 
@@ -98,17 +151,65 @@ Located in `supabase/functions/`:
 - Output: Structured JSON (`center_goal`, `sub_goals[]`)
 - Auth: JWT token passed directly via `getUser(jwt)` (not just header)
 
-**`chat/`** (v17):
-- Input: `message`, `session_id` (optional)
-- Process: Calls Perplexity API with user context
-- Context building: Recent mandalart data + check history
-- Message format: **Strict user/assistant alternation required**
-  - System prompt embedded in first user message
-  - Removes orphaned user messages to prevent errors
-- Model: `sonar` (fast, optimized for UX)
-- Output: AI reply + session_id
+**`parse-mandalart-text/`**:
+- Input: `text` (tab-separated or structured text from clipboard)
+- Process: Custom parsing logic for various text formats
+  - Tab-separated values (TSV from Excel/Google Sheets)
+  - Structured Korean text with section markers
+- Output: Same structured JSON as OCR
+- Use case: Quick paste from existing documents
 
-**`chat-v2/`**: Backup/experimental version
+**`generate-weekly-report/`**:
+- Input: `user_id`, `week_start` (optional, defaults to last Monday)
+- Process: Perplexity API (sonar model) with user context
+- Context: Last 7 days check history, completion rates, sub-goal progress
+- Output: Markdown-formatted report with insights and suggestions
+- Sections: Summary, What Went Well, Areas to Improve, Next Week Strategy
+
+**`generate-goal-diagnosis/`**:
+- Input: `mandalart_id`
+- Process: Perplexity API analyzes mandalart structure
+- Analysis Framework: SMART criteria
+  - Specific, Measurable, Achievable, Relevant, Time-bound
+- Output: Markdown report with scores and improvement suggestions
+
+**`reset-monthly-badges/`** (backup, primary is SQL cron):
+- Input: None (scheduled)
+- Process: Resets monthly repeatable badges
+- Logic: Move to history with repeat_count++, remove from user_achievements
+- Schedule: 1st day of month at 00:00 UTC
+
+**`chat/`** (v17) - DEPRECATED:
+- Previously used for AI coaching chatbot
+- Removed in favor of report-based approach
+- May be re-implemented in future phases
+
+### Triple Input Methods Architecture
+
+**1. Image OCR** (`MandalartCreatePage.tsx` - Image Upload tab):
+- Upload flow: Image → Supabase Storage → OCR Edge Function → Result preview
+- Supported formats: JPG, PNG, HEIC
+- Max size: 10MB
+- Google Cloud Vision API integration
+- User review/edit before save
+
+**2. Text Parsing** (`MandalartCreatePage.tsx` - Text Paste tab):
+- Paste structured text from clipboard
+- Formats supported:
+  - Tab-separated (TSV from spreadsheets)
+  - Korean structured text with section markers
+- `parse-mandalart-text` Edge Function
+- Instant preview, no file upload needed
+
+**3. Manual Template** (`MandalartCreatePage.tsx` - Manual Input tab):
+- Empty 9x9 grid template
+- Step-by-step guided input:
+  1. Center goal
+  2. 8 sub-goals
+  3. 64 actions (8 per sub-goal)
+- Inline editing with AI type suggestions
+- Progress tracking (X/81 cells)
+- Auto-save drafts to localStorage
 
 ### Navigation & Routing
 
@@ -118,12 +219,16 @@ Located in `supabase/functions/`:
 - Auto-hides on auth pages (/, /login, /signup)
 
 **Main Routes:**
-- `/dashboard`: Overview stats + quick links
-- `/today`: Today's action checklist (grouped by mandalart)
-- `/mandalart/list`: Mandalart management
-- `/mandalart/create`: Dual input (image OCR or manual)
-- `/mandalart/:id`: Detail view (9x9 grid visualization)
-- `/stats`: Progress analytics
+- `/`: Landing page (auto-redirects to /login or /home)
+- `/login`, `/signup`: Authentication
+- `/home`: Dashboard with stats, quick actions, recent activity
+- `/today`: Today's action checklist (grouped by mandalart, type filters)
+- `/mandalart/list`: Mandalart management (activate/deactivate)
+- `/mandalart/create`: Triple input (image/text/manual)
+- `/mandalart/:id`: Detail view (9x9 grid visualization, edit actions)
+- `/stats`: Progress analytics (heatmap, sub-goal progress, mandalart filter)
+- `/reports`: AI-generated weekly reports + goal diagnosis
+- `/tutorial`: Interactive 7-step onboarding tutorial
 - `/settings/notifications`: PWA notification settings
 
 ### OCR Processing Flow
@@ -142,8 +247,9 @@ Located in `supabase/functions/`:
 5. Returns structured data to frontend for user review/edit
 
 **Key Files:**
-- `src/pages/MandalartCreatePage.tsx`: UI + image upload
-- `supabase/functions/ocr-mandalart/index.ts`: Processing logic
+- `src/pages/MandalartCreatePage.tsx`: UI + all 3 input methods
+- `supabase/functions/ocr-mandalart/index.ts`: Image OCR processing
+- `supabase/functions/parse-mandalart-text/index.ts`: Text parsing
 - `supabase/migrations/20251101000002_add_storage_policies.sql`: RLS policies
 
 ## Important Patterns
@@ -156,6 +262,7 @@ Always use Row Level Security (RLS) filters:
 .from('mandalarts')
 .select('*')
 .eq('user_id', user.id)
+.eq('is_active', true)  // Filter active mandalarts
 
 // Actions with nested relations
 .from('actions')
@@ -167,6 +274,7 @@ Always use Row Level Security (RLS) filters:
   )
 `)
 .eq('sub_goal.mandalart.user_id', user.id)
+.eq('sub_goal.mandalart.is_active', true)
 ```
 
 ### Edge Function Authentication
@@ -189,28 +297,27 @@ const { data: { user }, error } = await supabaseClient.auth.getUser(jwt)
 
 ### Perplexity API Message Format
 
-**Strict rules:**
-- NO `system` role (not supported)
-- Messages MUST alternate user/assistant
-- Embed system prompt in first user message
-- Remove orphaned user messages before API call
+**For Reports (NOT chat):**
+- Single user message with full context
+- System instructions embedded in prompt
+- No conversation history
+- Markdown output expected
 
 ```typescript
-// Correct pattern
-const messages = []
-if (!history || history.length === 0) {
-  messages.push({
-    role: 'user',
-    content: `${systemPrompt}\n\n사용자 질문: ${message}`
+const response = await fetch('https://api.perplexity.ai/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'sonar',
+    messages: [{
+      role: 'user',
+      content: `${systemPrompt}\n\n${userContext}\n\n${requestedAnalysis}`
+    }]
   })
-} else {
-  // Handle alternation...
-  const lastMessage = history[history.length - 1]
-  if (lastMessage.role === 'user') {
-    messages.pop() // Remove orphaned user message
-  }
-  messages.push({ role: 'user', content: message })
-}
+})
 ```
 
 ### Component Grouping Pattern
@@ -232,18 +339,74 @@ const actionsByMandalart = actions.reduce((groups, action) => {
 
 See `src/pages/TodayChecklistPage.tsx` for collapsible sections implementation.
 
+### XP Calculation Pattern
+
+When awarding XP for action checks:
+```typescript
+import { getActiveMultipliers, calculateXPWithMultipliers } from '@/lib/xpMultipliers'
+
+// 1. Get active multipliers for user
+const multipliers = await getActiveMultipliers(userId)
+
+// 2. Calculate XP with multipliers
+const baseXP = 10  // Base XP per check
+const finalXP = calculateXPWithMultipliers(baseXP, multipliers)
+
+// 3. Award XP to user_gamification
+await supabase
+  .from('user_gamification')
+  .update({ total_xp: currentXP + finalXP })
+  .eq('user_id', userId)
+
+// 4. Check for level up and badges
+const newLevel = getLevelFromXP(currentXP + finalXP)
+if (newLevel > currentLevel) {
+  // Trigger level milestone multiplier
+  await activateLevelMilestone(userId, newLevel)
+}
+```
+
+### Badge Evaluation Pattern
+
+Auto-evaluate badges after significant actions:
+```typescript
+import { evaluateAndUnlockBadges } from '@/lib/badgeEvaluator'
+
+// After check, level up, or other milestone
+const newlyUnlocked = await evaluateAndUnlockBadges(userId)
+
+// Show toast notifications
+newlyUnlocked.forEach(badge => {
+  toast({
+    title: "🎉 새로운 뱃지 획득!",
+    description: `${badge.title} (+${badge.xp_reward} XP)`
+  })
+})
+```
+
 ## Session Context & Documentation
 
 **Always read these files when resuming work:**
 - `docs/archive/sessions/SESSION_SUMMARY.md`: Latest session status, completed work, next steps
-- `docs/project/IMPROVEMENTS.md`: Feature improvement tracking
-- `docs/project/ROADMAP.md`: Feature roadmap and priorities
-- `docs/features/`: Latest feature documentation (Badge System v5.0, XP System, etc.)
+- `docs/project/IMPROVEMENTS.md`: Feature improvement tracking (20 items)
+- `docs/project/ROADMAP.md`: Feature roadmap v3.0 and priorities
+- `docs/project/PRD_mandaact.md`: Product requirements v2.0 (production status)
+- `docs/features/`: Latest feature documentation
+  - `BADGE_SYSTEM_V5_RENEWAL.md`: Badge system v5.0 design (planned)
+  - `XP_SYSTEM_PHASE2_COMPLETE.md`: XP system implementation details
+  - `ACTION_TYPE_IMPROVEMENT_V2.md`: Action type system v2
+  - `NOTIFICATION_SYSTEM_PROGRESS.md`: PWA notification setup
 
-**Current Progress (as of 2025-11-01):**
+**Current Progress (as of 2025-11-15):**
 - Phase 1-A: Image OCR ✅ (completed)
 - Phase 1: UX improvements ✅ (4/4 completed)
-- Phase 2: Feature expansion (0/4, next priority)
+- Phase 2: Feature expansion ✅ (4/4 completed)
+- Phase 2-B: UX improvements follow-up ✅ (8/8 completed)
+- Phase 3-A: Gamification System ✅ (XP Phase 1 & 2, Badges, Streaks)
+- Phase 3-B: Tutorial System ✅ (7-step onboarding)
+- Phase 3-C: AI Reports ✅ (Weekly practice + Goal diagnosis)
+- PWA Deployment: Production ✅ (Vercel + Supabase)
+- **Next Priority**: Phase 4 - Code quality & stability
 
 ## Testing & Deployment
 
@@ -252,11 +415,13 @@ See `src/pages/TodayChecklistPage.tsx` for collapsible sections implementation.
 # Frontend
 npm run dev  # http://localhost:5173
 
-# Test authentication flow
+# Test key flows:
 # 1. Sign up with test email
-# 2. Create mandalart (manual or image)
-# 3. Check "오늘의 실천" page
-# 4. Test AI chat (bottom-right button)
+# 2. Complete tutorial (7 steps)
+# 3. Create mandalart (try all 3 methods)
+# 4. Check actions in "오늘의 실천"
+# 5. Earn XP and badges
+# 6. Generate weekly report
 ```
 
 **Edge Function Testing:**
@@ -266,11 +431,18 @@ supabase functions logs <name> --tail
 
 # Check deployment status
 supabase functions list
+
+# Test specific functions
+curl -X POST \
+  https://YOUR_PROJECT.supabase.co/functions/v1/ocr-mandalart \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -d '{"image_url": "https://..."}'
 ```
 
 **Deployment:**
-- Frontend: Vercel (auto-deploy on git push)
+- Frontend: Vercel (auto-deploy on git push to main)
 - Backend: Supabase (manual deploy via CLI)
+- PWA: Automatic build with Vite PWA Plugin
 
 **Secrets Management:**
 ```bash
@@ -282,16 +454,36 @@ supabase secrets set GCP_PRIVATE_KEY="$(cat key.json | jq -r .private_key)"
 supabase secrets set PERPLEXITY_API_KEY=pplx-xxx
 ```
 
+**PWA Configuration:**
+- Manifest: `vite.config.ts` (icons, name, theme)
+- Service Worker: Auto-generated by vite-plugin-pwa
+- Push Notifications: Web Push API + Supabase triggers
+
 ## Common Issues & Solutions
 
 **OCR fails with "Failed to get access token":**
 - Check GCP JWT has `scope: 'https://www.googleapis.com/auth/cloud-vision'`
 - Verify private key format: `privateKey.replace(/\\n/g, '\n')`
 
-**Chat returns 400 "Message format error":**
-- Ensure user/assistant alternation
-- Remove system role, embed in first user message
-- Check for orphaned user messages in history
+**Text parsing returns empty result:**
+- Check text format (tab-separated or structured Korean)
+- Ensure at least 9 lines (center + 8 sub-goals)
+- View Edge Function logs for parsing errors
+
+**XP not updating after check:**
+- Verify `user_gamification` record exists for user
+- Check active multipliers in `xp_multipliers` table
+- Ensure RPC functions are deployed (check migrations)
+
+**Badges not auto-unlocking:**
+- Run `evaluate_badge_progress()` RPC manually for debugging
+- Check `achievement_progress` table for current progress
+- Verify RPC functions deployed: `unlock_achievement`, `evaluate_badge_progress`
+
+**Monthly badges not resetting:**
+- Check pg_cron schedule: `SELECT * FROM cron.job`
+- Verify `perform_monthly_badge_reset()` function exists
+- Manually trigger: `SELECT perform_monthly_badge_reset()`
 
 **Navigation shows on auth pages:**
 - Navigation component checks `location.pathname` and `user` state
@@ -302,10 +494,52 @@ supabase secrets set PERPLEXITY_API_KEY=pplx-xxx
 - Verify bucket name: `mandalart-images`
 - User must be authenticated
 
+**PWA not installable:**
+- Check manifest in `vite.config.ts`
+- Verify HTTPS (required for PWA)
+- Check browser DevTools → Application → Manifest
+
 ## Terminology (Korean)
 
-Consistent UI terminology (established in Phase 1):
+Consistent UI terminology (established in Phase 1-2):
 - "만다라트 관리" (not "내 만다라트" or "만다라트 목록")
 - "오늘의 진행상황" (not "진행상황" or "오늘의 진행률")
 - "오늘의 실천" (Today's practice page)
 - "실천하러 가기" (Quick link to today's practice)
+- "이번 주 리포트" (Weekly report)
+- "목표 진단" (Goal diagnosis)
+
+## Performance Considerations
+
+**Current Bundle Size:** ~1.33MB (needs optimization)
+
+**Optimization Opportunities:**
+- Code splitting with React.lazy
+- Tree shaking verification
+- Image optimization (WebP, lazy loading)
+- TanStack Query caching improvements
+- React.memo for expensive components
+
+**Target Metrics:**
+- Lighthouse Performance > 90
+- First Contentful Paint < 1.5s
+- Time to Interactive < 3s
+
+## Security Notes
+
+**RLS Policies:** All tables have user-scoped RLS policies
+- `mandalarts`: user_id check
+- `sub_goals`, `actions`: via mandalart.user_id
+- `check_history`: user_id + action.sub_goal.mandalart.user_id
+- `user_gamification`, `user_achievements`: user_id check
+
+**Edge Function Security:**
+- Always use ANON_KEY (not SERVICE_ROLE) for user-scoped operations
+- JWT validation via `getUser(jwt)` on every request
+- Rate limiting on AI endpoints (prevent abuse)
+
+**Anti-Cheat Measures:**
+- Daily check limit per action (3x)
+- 10-second cooldown between checks
+- Spam detection in XP system
+- Server-side validation for all XP awards
