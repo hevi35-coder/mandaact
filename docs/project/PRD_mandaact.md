@@ -1,24 +1,34 @@
 # Product Requirements Document (PRD)
 # MandaAct - AI-Powered Mandalart Action Tracker
 
-**Version**: 1.1
-**Date**: 2025-10-29
-**Status**: Draft
+**Version**: 2.0
+**Date**: 2025-11-15
+**Status**: Production (MVP Deployed)
 **Author**: Product Team
 
 ---
 
 ## Executive Summary
 
-**MandaAct**는 만다라트(Mandalart) 목표 설정 프레임워크와 AI 기반 코칭을 결합하여 사용자의 실천율을 획기적으로 높이는 개인 목표 관리 서비스입니다.
+**MandaAct**는 만다라트(Mandalart) 목표 설정 프레임워크와 게임화 시스템을 결합하여 사용자의 실천율을 획기적으로 높이는 개인 목표 관리 PWA 서비스입니다.
 
 ### Core Value Proposition
-"목표를 세우는 것은 쉽지만, 실천하는 것은 어렵다" - MandaAct는 AI 코치가 당신의 실천을 도와줍니다.
+"목표를 세우는 것은 쉽지만, 실천하는 것은 어렵다" - MandaAct는 게임화와 AI 리포트로 당신의 실천을 도와줍니다.
 
 ### Key Differentiators
-- 📸 **유연한 입력**: 이미지 인식 또는 템플릿 기반 직접 입력 선택 가능
-- 🤖 **AI 코칭**: 개인화된 동기부여와 실천 전략 제안
-- 📊 **인사이트**: 실천 패턴 분석을 통한 자기 이해 향상
+- 📸 **3가지 입력 방식**: 이미지 OCR, 텍스트 파싱, 템플릿 기반 직접 입력
+- 🎮 **게임화 시스템**: XP/레벨, 배지 21개, 스트릭, 월간 챌린지
+- 📊 **AI 리포트**: 주간 실천 리포트 & 목표 진단 (Perplexity API)
+- 📱 **PWA**: 설치 가능, 오프라인 지원, 푸시 알림
+- 🎓 **인터랙티브 튜토리얼**: 7단계 온보딩 시스템
+
+### Implementation Status (v2.0)
+✅ **Phase 1-2 완료**: 코어 기능 (만다라트 입력, 체크, 통계)
+✅ **Phase 3 완료**: 게임화 시스템 (XP, 배지, 스트릭)
+✅ **리포트 완료**: AI 주간 실천 리포트, 목표 진단
+✅ **튜토리얼 완료**: 인터랙티브 온보딩 (7단계)
+✅ **PWA 배포**: 프로덕션 환경 구축 완료
+⏳ **Next**: 코드 품질 개선, 모니터링 강화
 
 ---
 
@@ -287,66 +297,95 @@ CREATE TABLE check_history (
 
 ---
 
-### Phase 4: AI Coaching (MVP v2.0)
-**목표**: AI 기반 대화형 코칭으로 차별화
-**기간**: 2주
+### Phase 4: Gamification System (v1.5) ✅ **COMPLETED**
+**목표**: XP/배지/스트릭으로 지속적 동기부여 제공
+**기간**: 2주 (2025-11-10 ~ 11-12)
 
-#### F4.1 대화형 AI 코치 챗봇
-**User Story**: 사용자는 실천에 어려움을 느낄 때 AI 코치와 대화하며 해결책을 찾을 수 있어야 한다.
+#### F4.1 XP 시스템 Phase 1 & 2 ✅
+**구현 내용**:
+- **하이브리드 로그 곡선**: 레벨 진행 속도 67% 개선
+  - 레벨 10 도달: 66일 → 22일
+  - 레벨 20 도달: 241일 → 66일
+- **XP 배율 시스템** (4가지):
+  - 주말 보너스 (1.5배)
+  - 복귀 보너스 (1.5배, 3일간)
+  - 레벨 마일스톤 (2배, 7일간)
+  - 완벽한 주 (2배, 7일간)
+- **부정방지**: 하루 3회 제한, 10초 간격, 스팸 감지
 
-**기능 상세**:
-- **Chat Interface**
-  - 우측 하단 플로팅 버튼
-  - 채팅 히스토리 유지 (세션별)
-  - 마크다운 렌더링 지원
+**참고**: `docs/features/XP_SYSTEM_PHASE2_COMPLETE.md`
 
-- **AI Model**: Perplexity API
-  - Context: 사용자의 만다라트 구조 + 최근 체크 이력
-  - 페르소나: "따뜻하고 격려하는 코치"
-  - 응답 길이: 2-3문단 (간결함 유지)
+#### F4.2 배지 시스템 (21개) ✅
+**구현 내용**:
+- **자동 해제 시스템**: RPC 함수 기반 실시간 평가
+- **배지 카테고리**:
+  - 스트릭 배지 (5개): 7일 ~ 150일 연속
+  - 볼륨 배지 (4개): 10회 ~ 1000회 실천
+  - 월간 배지 (4개): 80% ~ 100% 완료 (반복 가능)
+  - 특별 배지 (8개): 활동일수, 완료율 등
+- **토스트 알림**: 배지 획득 시 즉시 알림
+- **NEW 인디케이터**: 새로 획득한 배지 표시
+- **월간 자동 리셋**: Cron 스케줄러 (매월 1일)
 
-- **대화 시나리오 예시**:
-  ```
-  User: 요즘 실천이 잘 안 돼요
-  AI: 지난주 체크율이 30%로 떨어졌네요. 혹시 특정 목표가 부담스러우신가요?
-      [세부목표] 중 어떤 부분이 가장 어려우신지 말씀해주세요.
+**참고**: `docs/features/BADGE_SYSTEM_V5_RENEWAL.md` (v5.0 기획 완료, 미구현)
 
-  User: 운동 관련 항목이 힘들어요
-  AI: 이해합니다. 운동 목표를 더 작고 쉬운 단계로 나눠보는 건 어떨까요?
-      예를 들어 "매일 1시간 운동" 대신 "점심시간 10분 산책"부터 시작해보세요.
-      작은 성공이 쌓이면 자신감도 생길 거예요!
-  ```
+#### F4.3 스트릭 시스템 ✅
+**구현 내용**:
+- **연속 일수 추적**: KST 타임존 기반 정확한 계산
+- **프리즈 기능**: 하루 놓쳐도 스트릭 유지 (제한적)
+- **스트릭 배지**: 7일, 30일, 60일, 100일, 150일
 
-- **프롬프트 엔지니어링**:
-  ```
-  You are a supportive life coach helping users achieve their Mandalart goals.
+---
 
-  User Context:
-  - Center Goal: {center_goal}
-  - Current Week Check Rate: {check_rate}%
-  - Struggling Areas: {low_performance_goals}
+### Phase 5: Tutorial & Onboarding (v1.6) ✅ **COMPLETED**
+**목표**: 신규 사용자 활성화율 향상
+**기간**: 3일 (2025-11-08 ~ 11-10)
 
-  Guidelines:
-  - Be warm, encouraging, and non-judgmental
-  - Ask clarifying questions before giving advice
-  - Suggest small, actionable steps
-  - Reference their progress data when relevant
-  - Keep responses concise (2-3 paragraphs max)
-  ```
+#### F5.1 인터랙티브 튜토리얼 (7단계) ✅
+**구현 내용**:
+- **Step 1**: 환영 메시지
+- **Step 2**: 만다라트 구조 설명
+- **Step 3**: 만다라트 생성 방법
+- **Step 4**: 실천 항목 체크 방법
+- **Step 5**: 배지 시스템 소개
+- **Step 6**: 리포트 활용법
+- **Step 7**: 완료 축하
+- **건너뛰기** 옵션 제공
+- **재시작** 기능 (설정에서)
 
-**Acceptance Criteria**:
-- [ ] 응답 시간 < 3초
-- [ ] 대화 만족도 > 4.0/5.0
-- [ ] 세션당 평균 대화 턴 수 > 3
+**파일**: `src/pages/TutorialPage.tsx`
 
-#### F4.2 AI 생성 인사이트 (주간 리포트)
-**기능 상세**:
-- 매주 일요일 저녁 자동 생성
-- 내용:
+---
+
+### Phase 6: AI Reports (v1.7) ✅ **COMPLETED**
+**목표**: AI 기반 분석으로 인사이트 제공 (대화형 코치 대신 리포트 형식)
+**기간**: 1주 (2025-11-11 ~ 11-13)
+
+#### F6.1 주간 실천 리포트 ✅
+**User Story**: 사용자는 매주 자신의 실천 패턴을 AI 분석으로 리뷰할 수 있어야 한다.
+
+**구현 내용**:
+- **리포트 생성**: Perplexity API (sonar 모델)
+- **분석 항목**:
   - 이번 주 실천 요약
-  - 잘한 점 / 개선 포인트
-  - 다음 주 추천 전략
-- 이메일 + 앱 내 알림으로 전달
+  - 완료율 트렌드 분석
+  - 가장 잘한 점 / 개선 포인트
+  - 다음 주 실천 전략
+- **UI**: 마크다운 렌더링, 이미지 공유 기능
+- **Edge Function**: `generate-weekly-report`
+
+#### F6.2 목표 진단 리포트 ✅
+**구현 내용**:
+- **SMART 기준 분석**: 만다라트 구조 진단
+  - Specific (구체성)
+  - Measurable (측정 가능성)
+  - Achievable (달성 가능성)
+  - Relevant (관련성)
+  - Time-bound (기한 설정)
+- **개선 제안**: AI 기반 구체적 피드백
+- **Edge Function**: `generate-goal-diagnosis`
+
+**참고**: 대화형 AI 코치는 제거됨 (Phase 7에서 재고려)
 
 ---
 
@@ -1027,33 +1066,41 @@ Response: { messages: Message[] }
 |---------|------|--------|---------|
 | 1.0 | 2025-10-29 | Product Team | Initial draft based on discovery session |
 | 1.1 | 2025-10-29 | Product Team | **Major updates**: (1) Added dual input methods (image upload + manual template), (2) Changed Vision AI from Claude to Google Cloud Vision, (3) Updated cost estimates to $10-15/month, (4) Revised onboarding flow with input method selection, (5) Added input_method field to database schema |
+| 2.0 | 2025-11-15 | Product Team | **Production Release Update**: (1) Status changed to "Production (MVP Deployed)", (2) Added Phase 4-6 completion status (Gamification, Tutorial, AI Reports), (3) Updated Key Differentiators with 3 input methods, gamification, PWA, (4) Added Implementation Status section, (5) Documented XP system (Phase 1 & 2), Badge system (21 badges), Tutorial system (7 steps), (6) AI Coaching replaced with AI Reports (weekly practice + goal diagnosis), (7) Updated cost estimates with gamification system overhead, (8) Marked completed phases, (9) Next focus: Code quality & monitoring |
 
 ---
 
 ## Next Steps
 
-### Immediate Actions (Week 0)
-1. **Validation**: Share PRD with 3-5 target users for feedback
-2. **Technical Setup**:
-   - Create GitHub repository
-   - Set up Supabase project
-   - Register Google Cloud Platform account + enable Vision API
-   - Register Perplexity API account
-3. **Design**: Create wireframes for Phase 1 screens (Figma/Excalidraw)
-   - Input method selection screen
-   - Image upload flow
-   - Manual input template
-   - Grid editor component
-4. **Project Management**: Set up Linear/Notion for sprint planning
+### Immediate Actions (Post-Launch Phase)
+1. ✅ **Phase 1-3 완료**: 코어 기능, UX 개선, 게임화 시스템
+2. ✅ **Phase 4-6 완료**: 튜토리얼, AI 리포트, PWA 배포
+3. **Phase 7 (진행 중)**: 코드 품질 & 안정성
+   - TypeScript/ESLint 정리
+   - 성능 최적화 (번들 크기, Lighthouse Score)
+   - 에러 핸들링 개선
+   - 테스트 추가 (Vitest)
+4. **Phase 8 (계획)**: 모니터링 & 운영 강화
+   - 이벤트 추적 설정 (mandalart_created, badge_unlocked 등)
+   - CI/CD 파이프라인 (GitHub Actions)
+   - 백업 & 복구 전략
+5. **사용자 피드백 수집**:
+   - KPI 측정 (DAU/MAU, 온보딩 완료율, 배지 획득률)
+   - 사용자 인터뷰 (N=10)
+   - A/B 테스트 (알림 시간, 배지 메시지)
 
-### Success Criteria for PRD Approval
-- [ ] Stakeholder sign-off (product owner)
-- [ ] Technical feasibility confirmed (lead engineer)
-- [ ] MVP scope clearly defined and achievable in 7 weeks
-- [ ] Budget approved (estimate: **$10-15/month for MVP** - Supabase Free + GCP Free tier + Perplexity)
+### Success Criteria (Post-Launch)
+- ✅ MVP 배포 완료 (Vercel + Supabase)
+- ✅ 핵심 기능 100% 구현
+- ✅ PWA 설치 가능 (모바일 최적화)
+- ✅ 게임화 시스템 구축 (XP, 배지, 스트릭)
+- ✅ AI 리포트 시스템 (주간 실천 + 목표 진단)
+- [ ] DAU/MAU > 30% (측정 중)
+- [ ] 7일 리텐션 > 40% (측정 중)
+- [ ] 배지 획득 평균 > 5개 (측정 중)
 
 ---
 
-**Document Status**: 🟡 Ready for Review
-**Next Review Date**: 2025-11-05
-**Approvers**: Product Owner, Tech Lead, Design Lead
+**Document Status**: 🟢 Production (v2.0)
+**Next Review Date**: 2025-12-01
+**Last Updated**: 2025-11-15
