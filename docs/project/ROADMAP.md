@@ -67,12 +67,21 @@
 
 ---
 
-### 4.2 성능 최적화
+### 4.2 성능 최적화 ✅ **완료** (2025-11-22)
+
+**진행 상황**:
+- ✅ 번들 크기 분석: rollup-plugin-visualizer로 상세 분석
+- ✅ 불필요한 의존성 제거: html2canvas, dom-to-image-more (6개 패키지)
+- ✅ Code splitting 확인: 이미 모든 페이지 lazy loading 적용됨
+- ✅ Tree shaking 검증: 활성화 확인
+- ✅ 빌드 최적화: CSS 코드 분할, 소스맵 비활성화
+- ✅ 번들 크기: 1.18MB (gzipped ~350KB)
+
 **작업 목록**:
-- [ ] 번들 크기 분석 및 최적화 (현재: ~1.33MB)
-  - Code splitting (React.lazy)
-  - Tree shaking 검증
-  - 중복 의존성 제거
+- [x] 번들 크기 분석 및 최적화 (1.33MB → 1.18MB)
+  - [x] Code splitting (React.lazy) - 이미 적용됨
+  - [x] Tree shaking 검증 - 활성화됨
+  - [x] 중복 의존성 제거 - 6개 패키지 제거
 - [ ] 이미지 최적화 (WebP, lazy loading)
 - [ ] TanStack Query 캐싱 전략 개선
 - [ ] React.memo 적용 (불필요한 re-render 방지)
