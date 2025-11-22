@@ -1,10 +1,14 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import {
+  withErrorHandler,
+  createSuccessResponse,
+  createErrorResponse,
+  ErrorCodes,
+  extractJWT,
+  parseRequestBody,
+  corsHeaders,
+} from '../_shared/errorResponse.ts'
 
 interface ParseRequest {
   text: string
@@ -18,88 +22,67 @@ interface MandalartData {
   }[]
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+serve(withErrorHandler('parse-mandalart-text', async (req) => {
+  // Extract JWT
+  const jwt = extractJWT(req)
+
+  // Create Supabase client with auth
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    {
+      global: {
+        headers: { Authorization: `Bearer ${jwt}` },
+      },
+      auth: {
+        persistSession: false,
+      },
+    }
+  )
+
+  // Verify user authentication
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseClient.auth.getUser(jwt)
+
+  if (authError || !user) {
+    return createErrorResponse(
+      ErrorCodes.UNAUTHORIZED,
+      'Authentication failed',
+      { error: authError }
+    )
   }
 
-  try {
-    // Get authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+  // Parse and validate request body
+  const { text } = await parseRequestBody<ParseRequest>(req)
 
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-        auth: {
-          persistSession: false,
-        },
-      }
+  if (!text || text.trim().length === 0) {
+    return createErrorResponse(
+      ErrorCodes.VALIDATION_ERROR,
+      'text is required and cannot be empty'
     )
+  }
 
-    // Verify user authentication
-    const jwt = authHeader.replace('Bearer ', '')
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser(jwt)
+  console.log('Parsing mandalart text, length:', text.length)
 
-    if (authError || !user) {
-      console.error('Auth failed:', authError)
-      return new Response(JSON.stringify({
-        error: 'Unauthorized',
-        message: authError?.message || 'Authentication failed',
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Parse request body
-    const { text }: ParseRequest = await req.json()
-
-    if (!text || text.trim().length === 0) {
-      return new Response(JSON.stringify({ error: 'text is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    console.log('Parsing mandalart text, length:', text.length)
-
+  try {
     // Call Perplexity API to parse the text
     const mandalartData = await parseTextWithAI(text)
 
-    return new Response(
-      JSON.stringify(mandalartData),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+    // Return success response
+    return createSuccessResponse(mandalartData)
   } catch (error) {
-    console.error('Parse function error:', error)
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+    if (error.message?.includes('Perplexity') || error.message?.includes('API')) {
+      return createErrorResponse(
+        ErrorCodes.EXTERNAL_SERVICE_ERROR,
+        'Failed to parse text with AI service',
+        { originalError: error.message }
+      )
+    }
+    throw error  // Let withErrorHandler catch other errors
   }
-})
+}))
 
 async function parseTextWithAI(text: string): Promise<MandalartData> {
   const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')

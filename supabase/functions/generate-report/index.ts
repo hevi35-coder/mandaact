@@ -1,10 +1,14 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import {
+  withErrorHandler,
+  createSuccessResponse,
+  createErrorResponse,
+  ErrorCodes,
+  extractJWT,
+  parseRequestBody,
+  corsHeaders,
+} from '../_shared/errorResponse.ts'
 
 interface ReportRequest {
   report_type: 'weekly' | 'monthly' | 'diagnosis' | 'insight' | 'prediction' | 'struggling'
@@ -29,43 +33,45 @@ interface CheckRecord {
   }
 }
 
-serve(async (req) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
+serve(withErrorHandler('generate-report', async (req) => {
   try {
-    // Get auth token from header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('Missing authorization header')
-    }
+    // Extract JWT
+    const jwt = extractJWT(req)
 
-    // Create Supabase client
+    // Create Supabase client with auth
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: authHeader },
+          headers: { Authorization: `Bearer ${jwt}` },
         },
       }
     )
 
-    // Get user from JWT
-    const jwt = authHeader.replace('Bearer ', '')
+    // Verify user
     const {
       data: { user },
       error: userError,
     } = await supabaseClient.auth.getUser(jwt)
 
     if (userError || !user) {
-      throw new Error('Invalid user token')
+      return createErrorResponse(
+        ErrorCodes.UNAUTHORIZED,
+        'Invalid user token',
+        { error: userError }
+      )
     }
 
-    // Parse request body
-    const { report_type, mandalart_id }: ReportRequest = await req.json()
+    // Parse and validate request body
+    const { report_type, mandalart_id } = await parseRequestBody<ReportRequest>(req)
+
+    if (!report_type) {
+      return createErrorResponse(
+        ErrorCodes.VALIDATION_ERROR,
+        'report_type is required'
+      )
+    }
 
     console.log(`Generating ${report_type} report for user ${user.id}`)
 
@@ -94,34 +100,31 @@ serve(async (req) => {
 
     if (saveError) {
       console.error('Error saving report:', saveError)
-      throw saveError
+      return createErrorResponse(
+        ErrorCodes.DATABASE_ERROR,
+        'Failed to save report',
+        { error: saveError }
+      )
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        report: savedReport,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
+    // Return success response
+    return createSuccessResponse({
+      report: savedReport,
+    })
   } catch (error) {
-    console.error('Error in generate-report:', error)
-    console.error('Error stack:', error.stack)
-    return new Response(
-      JSON.stringify({
-        error: error.message || 'Unknown error occurred',
-        details: error.stack,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    )
+    // Specific error handling
+    if (error.message?.includes('Perplexity')) {
+      return createErrorResponse(
+        ErrorCodes.EXTERNAL_SERVICE_ERROR,
+        'AI service temporarily unavailable',
+        { originalError: error.message }
+      )
+    }
+
+    // Re-throw to be caught by withErrorHandler wrapper
+    throw error
   }
-})
+}))
 
 async function collectReportData(
   supabaseClient: SupabaseClient,
