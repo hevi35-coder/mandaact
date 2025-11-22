@@ -59,7 +59,7 @@ export default defineConfig({
     }),
     visualizer({
       filename: './dist/stats.html',
-      open: false,
+      open: false,  // 자동 열기 비활성화
       gzipSize: true,
       brotliSize: true,
     })
@@ -70,6 +70,9 @@ export default defineConfig({
     }
   },
   build: {
+    // 성능 최적화 추가 설정
+    cssCodeSplit: true,
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
