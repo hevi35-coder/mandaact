@@ -67,8 +67,11 @@ describe('Navigation', () => {
         </BrowserRouter>
       )
 
-      expect(screen.getByText('Manda')).toBeInTheDocument()
-      expect(screen.getByText('Act')).toBeInTheDocument()
+      // Both desktop and mobile navigation should render
+      const mandaElements = screen.getAllByText('Manda')
+      const actElements = screen.getAllByText('Act')
+      expect(mandaElements.length).toBeGreaterThan(0)
+      expect(actElements.length).toBeGreaterThan(0)
     })
   })
 
@@ -85,10 +88,11 @@ describe('Navigation', () => {
         </BrowserRouter>
       )
 
-      expect(screen.getByText('홈')).toBeInTheDocument()
-      expect(screen.getByText('투데이')).toBeInTheDocument()
-      expect(screen.getByText('만다라트')).toBeInTheDocument()
-      expect(screen.getByText('리포트')).toBeInTheDocument()
+      // Each nav item appears twice (desktop + mobile)
+      expect(screen.getAllByText('홈').length).toBe(2)
+      expect(screen.getAllByText('투데이').length).toBe(2)
+      expect(screen.getAllByText('만다라트').length).toBe(2)
+      expect(screen.getAllByText('리포트').length).toBe(2)
     })
 
     it('should have correct links', () => {
@@ -98,10 +102,11 @@ describe('Navigation', () => {
         </BrowserRouter>
       )
 
-      const homeLink = screen.getByText('홈').closest('a')
-      const todayLink = screen.getByText('투데이').closest('a')
-      const mandalartLink = screen.getByText('만다라트').closest('a')
-      const reportLink = screen.getByText('리포트').closest('a')
+      // Get first occurrence (desktop navigation)
+      const homeLink = screen.getAllByText('홈')[0].closest('a')
+      const todayLink = screen.getAllByText('투데이')[0].closest('a')
+      const mandalartLink = screen.getAllByText('만다라트')[0].closest('a')
+      const reportLink = screen.getAllByText('리포트')[0].closest('a')
 
       expect(homeLink).toHaveAttribute('href', '/home')
       expect(todayLink).toHaveAttribute('href', '/today')
@@ -118,8 +123,13 @@ describe('Navigation', () => {
         </BrowserRouter>
       )
 
-      const todayButton = screen.getByText('투데이').closest('button')
-      const homeButton = screen.getByText('홈').closest('button')
+      // Get desktop navigation buttons
+      const todayButtons = screen.getAllByText('투데이')
+      const homeButtons = screen.getAllByText('홈')
+
+      // Check desktop navigation (first occurrence)
+      const todayButton = todayButtons[0].closest('button')
+      const homeButton = homeButtons[0].closest('button')
 
       expect(todayButton).toHaveClass('bg-primary')
       expect(homeButton).not.toHaveClass('bg-primary')
@@ -151,9 +161,14 @@ describe('Navigation', () => {
         </BrowserRouter>
       )
 
-      const mobileNav = container.querySelector('nav.md\\:hidden')
-      expect(mobileNav).toBeInTheDocument()
-      expect(mobileNav).toHaveClass('fixed', 'bottom-0', 'z-50')
+      // Mobile has two nav elements: header (sticky top) and bottom navigation
+      const mobileNavs = container.querySelectorAll('nav.md\\:hidden')
+      expect(mobileNavs.length).toBeGreaterThan(0)
+
+      // Check bottom navigation
+      const bottomNav = Array.from(mobileNavs).find(nav => nav.classList.contains('fixed'))
+      expect(bottomNav).toBeInTheDocument()
+      expect(bottomNav).toHaveClass('bottom-0', 'z-50')
     })
   })
 
@@ -170,13 +185,12 @@ describe('Navigation', () => {
         </BrowserRouter>
       )
 
-      const mandaText = screen.getByText('Manda')
-      const actText = screen.getByText('Act')
+      const mandaTexts = screen.getAllByText('Manda')
+      const actTexts = screen.getAllByText('Act')
 
-      expect(mandaText).toBeInTheDocument()
-      expect(actText).toBeInTheDocument()
-      expect(mandaText).toHaveClass('text-black')
-      expect(actText).toHaveClass('bg-clip-text', 'text-transparent')
+      // Check desktop logo (first occurrence)
+      expect(mandaTexts[0]).toHaveClass('text-black')
+      expect(actTexts[0]).toHaveClass('bg-clip-text', 'text-transparent')
     })
 
     it('should link to home page', () => {
@@ -186,8 +200,9 @@ describe('Navigation', () => {
         </BrowserRouter>
       )
 
-      const mandaText = screen.getByText('Manda')
-      const logoLink = mandaText.closest('a')
+      // Get desktop logo (first occurrence)
+      const mandaTexts = screen.getAllByText('Manda')
+      const logoLink = mandaTexts[0].closest('a')
       expect(logoLink).toHaveAttribute('href', '/home')
     })
   })
