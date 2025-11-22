@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
@@ -8,7 +8,7 @@ import { Flame, Trophy, AlertCircle, Calendar } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { HERO_ANIMATION, LIST_ITEM_ANIMATION, STAGGER, getStaggerDelay } from '@/lib/animations'
 
-export function StreakHero() {
+export const StreakHero = React.memo(function StreakHero() {
   const { user } = useAuthStore()
   const [streakStats, setStreakStats] = useState<StreakStats | null>(null)
   const [heatmapData, setHeatmapData] = useState<Array<{ date: string; count: number; percentage: number }>>([])
@@ -256,4 +256,4 @@ export function StreakHero() {
       </CardContent>
     </Card>
   )
-}
+})

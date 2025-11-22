@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,7 +15,7 @@ import ReactMarkdown from 'react-markdown'
 import { parseWeeklyReport, parseDiagnosisReport } from '@/lib/reportParser'
 import { useNavigate } from 'react-router-dom'
 
-export function AIWeeklyReport() {
+export const AIWeeklyReport = React.memo(function AIWeeklyReport() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [latestReport, setLatestReport] = useState<AIReport | null>(null)
@@ -720,4 +720,4 @@ export function AIWeeklyReport() {
       </motion.div>
     </div>
   )
-}
+})

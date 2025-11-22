@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -21,7 +21,7 @@ import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info } fr
 import { BadgeDetailDialog } from './BadgeDetailDialog'
 import { HERO_ANIMATION, BADGE_ANIMATION } from '@/lib/animations'
 
-export function UserProfileCard() {
+export const UserProfileCard = React.memo(function UserProfileCard() {
   const { user } = useAuthStore()
   const { toast } = useToast()
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null)
@@ -692,4 +692,4 @@ export function UserProfileCard() {
       )}
     </motion.div>
   )
-}
+})

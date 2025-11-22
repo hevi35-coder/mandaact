@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,7 @@ interface AchievementWithStatus extends Achievement {
   progress?: string
 }
 
-export function AchievementGallery({ previewMode = false }: { previewMode?: boolean }) {
+export const AchievementGallery = React.memo(function AchievementGallery({ previewMode = false }: { previewMode?: boolean }) {
   const { user } = useAuthStore()
   const [achievements, setAchievements] = useState<AchievementWithStatus[]>([])
   const [loading, setLoading] = useState(true)
@@ -240,4 +240,4 @@ export function AchievementGallery({ previewMode = false }: { previewMode?: bool
       </CardContent>
     </Card>
   )
-}
+})
