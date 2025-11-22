@@ -1,21 +1,36 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import ProtectedRoute from '@/components/ProtectedRoute'
-import LoginPage from '@/pages/LoginPage'
-import HomePage from '@/pages/HomePage'
-import MandalartCreatePage from '@/pages/MandalartCreatePage'
-import MandalartListPage from '@/pages/MandalartListPage'
-import MandalartDetailPage from '@/pages/MandalartDetailPage'
-import TodayChecklistPage from '@/pages/TodayChecklistPage'
-import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
-import ReportsPage from '@/pages/ReportsPage'
-import TutorialPage from '@/pages/TutorialPage'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import Navigation from '@/components/Navigation'
 import { Toaster } from '@/components/ui/toaster'
+
+// Lazy load pages for code splitting
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const HomePage = lazy(() => import('@/pages/HomePage'))
+const MandalartCreatePage = lazy(() => import('@/pages/MandalartCreatePage'))
+const MandalartListPage = lazy(() => import('@/pages/MandalartListPage'))
+const MandalartDetailPage = lazy(() => import('@/pages/MandalartDetailPage'))
+const TodayChecklistPage = lazy(() => import('@/pages/TodayChecklistPage'))
+const NotificationSettingsPage = lazy(() => import('@/pages/NotificationSettingsPage'))
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
+const TutorialPage = lazy(() => import('@/pages/TutorialPage'))
+
+// Loading component
+function PageLoader() {
+  return (
+    <div className="container mx-auto flex items-center justify-center min-h-screen">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        <p className="text-muted-foreground">페이지 로딩 중...</p>
+      </div>
+    </div>
+  )
+}
 
 // LandingPage component
 function LandingPage() {
@@ -138,78 +153,82 @@ function App() {
   }, [initialize])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/mandalart/create"
-            element={
-              <ProtectedRoute>
-                <MandalartCreatePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/mandalart/list"
-            element={
-              <ProtectedRoute>
-                <MandalartListPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/mandalart/:id"
-            element={
-              <ProtectedRoute>
-                <MandalartDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/today"
-            element={
-              <ProtectedRoute>
-                <TodayChecklistPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationSettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <ReportsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/tutorial" element={<TutorialPage />} />
-          {/* More routes will be added in future phases */}
-        </Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Navigation />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/home"
+                element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mandalart/create"
+                element={
+                  <ProtectedRoute>
+                    <MandalartCreatePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mandalart/list"
+                element={
+                  <ProtectedRoute>
+                    <MandalartListPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mandalart/:id"
+                element={
+                  <ProtectedRoute>
+                    <MandalartDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/today"
+                element={
+                  <ProtectedRoute>
+                    <TodayChecklistPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/notifications"
+                element={
+                  <ProtectedRoute>
+                    <NotificationSettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <ReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/tutorial" element={<TutorialPage />} />
+              {/* More routes will be added in future phases */}
+            </Routes>
+          </Suspense>
 
-        {/* Mobile Bottom Spacer - ensures content isn't hidden behind bottom nav */}
-        <div className="md:hidden h-16" aria-hidden="true" />
+          {/* Mobile Bottom Spacer - ensures content isn't hidden behind bottom nav */}
+          <div className="md:hidden h-16" aria-hidden="true" />
 
-        <Toaster />
-      </Router>
-    </QueryClientProvider>
+          <Toaster />
+        </Router>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 

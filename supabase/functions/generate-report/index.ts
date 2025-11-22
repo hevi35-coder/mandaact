@@ -21,6 +21,7 @@ interface SupabaseClient {
 interface CheckRecord {
   checked_at: string
   action?: {
+    type?: string
     sub_goal?: {
       id: string
       title: string
@@ -127,7 +128,7 @@ async function collectReportData(
   userId: string,
   reportType: string,
   mandalartId?: string
-) {
+): Promise<ReportData> {
   // Determine date range based on report type
   const now = new Date()
   let startDate: Date
@@ -320,16 +321,16 @@ async function collectReportData(
     worstDay: worstDay ? { day: dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
     bestTime: bestTime
       ? {
-          period:
-            bestTime[0] === 'morning'
-              ? '아침'
-              : bestTime[0] === 'afternoon'
+        period:
+          bestTime[0] === 'morning'
+            ? '아침'
+            : bestTime[0] === 'afternoon'
               ? '오후'
               : bestTime[0] === 'evening'
-              ? '저녁'
-              : '밤',
-          count: bestTime[1],
-        }
+                ? '저녁'
+                : '밤',
+        count: bestTime[1],
+      }
       : null,
     bestSubGoal,
     worstSubGoal,
@@ -340,7 +341,22 @@ async function collectReportData(
   }
 }
 
-function analyzeMandalartStructure(mandalarts: any[]) {
+interface Action {
+  title: string
+  type?: string
+}
+
+interface SubGoal {
+  title: string
+  actions: Action[]
+}
+
+interface Mandalart {
+  center_goal: string
+  sub_goals: SubGoal[]
+}
+
+function analyzeMandalartStructure(mandalarts: Mandalart[]) {
   if (!mandalarts || mandalarts.length === 0) {
     return {
       totalMandalarts: 0,
@@ -369,7 +385,7 @@ function analyzeMandalartStructure(mandalarts: any[]) {
   let routineItems = 0 // Count routine actions only
   const typeDistribution = { routine: 0, mission: 0, reference: 0 }
 
-  mandalarts.forEach((mandalart: any) => {
+  mandalarts.forEach((mandalart) => {
     // Count center goal
     if (mandalart.center_goal && mandalart.center_goal.trim()) {
       filledItems++
@@ -379,7 +395,7 @@ function analyzeMandalartStructure(mandalarts: any[]) {
 
     // Count sub goals and actions
     if (mandalart.sub_goals) {
-      mandalart.sub_goals.forEach((subGoal: any) => {
+      mandalart.sub_goals.forEach((subGoal) => {
         if (subGoal.title && subGoal.title.trim()) {
           filledItems++
           totalTextLength += subGoal.title.length
@@ -387,7 +403,7 @@ function analyzeMandalartStructure(mandalarts: any[]) {
         }
 
         if (subGoal.actions) {
-          subGoal.actions.forEach((action: any) => {
+          subGoal.actions.forEach((action) => {
             if (action.title && action.title.trim()) {
               filledItems++
               totalTextLength += action.title.length
@@ -395,7 +411,9 @@ function analyzeMandalartStructure(mandalarts: any[]) {
 
               // Count action types
               const actionType = action.type || 'routine'
-              typeDistribution[actionType as keyof typeof typeDistribution]++
+              if (actionType in typeDistribution) {
+                typeDistribution[actionType as keyof typeof typeDistribution]++
+              }
 
               // Only count measurability for routine actions
               if (actionType === 'routine') {
@@ -427,7 +445,28 @@ function analyzeMandalartStructure(mandalarts: any[]) {
   }
 }
 
-async function generateAIReport(reportType: string, data: Record<string, unknown>): Promise<string> {
+interface ReportData {
+  period: string
+  mandalarts: Mandalart[]
+  structureAnalysis: ReturnType<typeof analyzeMandalartStructure>
+  totalChecks: number
+  uniqueDays?: number
+  currentStreak?: number
+  longestStreak?: number
+  weekOverWeekChange?: number | null
+  bestDay?: { day: string; count: number } | null
+  worstDay?: { day: string; count: number } | null
+  bestTime?: { period: string; count: number } | null
+  bestSubGoal?: { title: string; count: number } | null
+  worstSubGoal?: { title: string; count: number } | null
+  weekdayPattern?: Record<string, number>
+  timePattern?: Record<string, number>
+  actionTypePattern?: Record<string, number>
+  recentBadges?: Array<{ achievement?: { title?: string } }>
+  message?: string
+}
+
+async function generateAIReport(reportType: string, data: ReportData): Promise<string> {
   const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
   if (!perplexityApiKey) {
     throw new Error('PERPLEXITY_API_KEY not configured')
@@ -437,7 +476,7 @@ async function generateAIReport(reportType: string, data: Record<string, unknown
   let userPrompt = ''
 
   switch (reportType) {
-    case 'weekly':
+    case 'weekly': {
       systemPrompt = `당신은 데이터 분석 전문가입니다. 사용자의 실천 패턴을 분석하여 인사이트만 제공하세요.
 
 반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드 블록을 사용하지 마세요.
@@ -474,9 +513,9 @@ async function generateAIReport(reportType: string, data: Record<string, unknown
 - 패턴과 맥락을 분석하세요
 - 실행 가능한 조언을 제공하세요`
 
-      const weeklyData = data as any
-      const badges = weeklyData.recentBadges?.map((b: any) => b.achievement?.title).join(', ') || '없음'
-      const changeText = weeklyData.weekOverWeekChange !== null
+      const weeklyData = data
+      const badges = weeklyData.recentBadges?.map((b: { achievement?: { title?: string } }) => b.achievement?.title).join(', ') || '없음'
+      const changeText = weeklyData.weekOverWeekChange != null
         ? `전주 대비 ${weeklyData.weekOverWeekChange > 0 ? '+' : ''}${weeklyData.weekOverWeekChange}%`
         : '비교 데이터 없음'
 
@@ -511,8 +550,9 @@ async function generateAIReport(reportType: string, data: Record<string, unknown
 
 JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세요.`
       break
+    }
 
-    case 'monthly':
+    case 'monthly': {
       systemPrompt = `당신은 사용자의 장기 목표 달성을 돕는 전문 코치입니다.
 사용자의 월간 활동 데이터를 분석하여 4-5문단의 심도있는 리포트를 작성해주세요.
 
@@ -537,8 +577,9 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 
 위 데이터를 바탕으로 월간 리포트를 작성해주세요.`
       break
+    }
 
-    case 'diagnosis':
+    case 'diagnosis': {
       systemPrompt = `당신은 만다라트 계획 점검 전문가입니다. 구체적이고 실천 가능한 개선 방향을 제시하세요.
 
 반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드 블록을 사용하지 마세요.
@@ -574,7 +615,7 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 - 구체적이고 실천 가능한 조언을 제공하세요
 - 전문 용어 대신 쉬운 표현을 사용하세요`
 
-      const diagnosisData = data as any
+      const diagnosisData = data
       const structure = diagnosisData.structureAnalysis || {}
       const mandalart = diagnosisData.mandalarts?.[0]
 
@@ -602,6 +643,7 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 
 JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함하세요.`
       break
+    }
 
     default:
       systemPrompt = `당신은 목표 달성 코치입니다. 간단하고 유용한 인사이트를 제공하세요.`
@@ -664,7 +706,7 @@ JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함�
 }
 
 // Validate AI response structure
-function validateAIResponse(response: any, reportType: string): boolean {
+function validateAIResponse(response: Record<string, unknown>, reportType: string): boolean {
   try {
     switch (reportType) {
       case 'weekly':
@@ -673,7 +715,7 @@ function validateAIResponse(response: any, reportType: string): boolean {
           response.key_metrics && Array.isArray(response.key_metrics) &&
           response.strengths && Array.isArray(response.strengths) &&
           response.improvements &&
-          response.next_focus
+          response.action_plan
         )
 
       case 'diagnosis':
@@ -690,44 +732,5 @@ function validateAIResponse(response: any, reportType: string): boolean {
     }
   } catch {
     return false
-  }
-}
-
-// Convert JSON response to markdown for backward compatibility
-function convertJsonToMarkdown(json: any, reportType: string): string {
-  switch (reportType) {
-    case 'weekly':
-      return `# ${json.headline}
-
-## 📊 핵심 지표
-${json.key_metrics.map((m: any) => `- ${m.label}: ${m.value}`).join('\n')}
-
-## 💪 강점
-${json.strengths.map((s: string) => `- ${s}`).join('\n')}
-
-## ⚡ 개선 포인트
-**문제:** ${json.improvements.problem}
-**→ 실행:** ${json.improvements.action}
-
-## 🎯 다음 주 목표
-${json.next_focus}`
-
-    case 'diagnosis':
-      return `# ${json.headline}
-
-## 📊 구조 평가
-${json.structure_metrics.map((m: any) => `- ${m.label}: ${m.value}`).join('\n')}
-
-## ✅ 잘하고 있는 점
-${json.strengths.map((s: string) => `- ${s}`).join('\n')}
-
-## 💡 개선이 필요한 영역
-${json.improvements.map((i: any) => `- **${i.area}**: ${i.issue}`).join('\n')}
-
-## 🎯 우선순위 개선 과제
-${json.priority_tasks.map((t: string, idx: number) => `${idx + 1}. ${t}`).join('\n')}`
-
-    default:
-      return JSON.stringify(json, null, 2)
   }
 }

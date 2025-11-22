@@ -212,10 +212,10 @@ export async function getCompletionStats(userId: string, mandalartId?: string): 
       percentage:
         totalActions > 0
           ? Math.round(
-              (monthChecked /
-                (totalActions * new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate())) *
-                100
-            )
+            (monthChecked /
+              (totalActions * new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate())) *
+            100
+          )
           : 0
     }
   }
@@ -1069,7 +1069,7 @@ export async function checkAndUnlockAchievements(userId: string) {
 
   // ✅ OPTIMIZATION: Build conditional stats cache (only compute what's needed)
   const cacheStartTime = performance.now()
-  const promises: Promise<any>[] = []
+  const promises: Promise<unknown>[] = []
   const keys: (keyof StatsCache)[] = []
 
   if (neededStats.has('streak')) {
@@ -1090,28 +1090,33 @@ export async function checkAndUnlockAchievements(userId: string) {
   if (neededStats.has('totalChecks')) {
     keys.push('totalChecks')
     promises.push(
-      supabase.from('check_history')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .then(({ count }) => count || 0)
+      (async () => {
+        const { count } = await supabase.from('check_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+        return count || 0
+      })()
     )
   }
 
   if (neededStats.has('checks')) {
     keys.push('checks')
     promises.push(
-      supabase.from('check_history')
-        .select('checked_at')
-        .eq('user_id', userId)
-        .then(({ data }) => data || [])
+      (async () => {
+        const { data } = await supabase.from('check_history')
+          .select('checked_at')
+          .eq('user_id', userId)
+        return data || []
+      })()
     )
   }
 
   const results = await Promise.all(promises)
 
-  const statsCache: StatsCache = {}
+  const statsCache = {} as StatsCache
   keys.forEach((key, index) => {
-    statsCache[key] = results[index]
+    // Type assertion is safe here because we control the order of promises and keys
+    statsCache[key] = results[index] as never
   })
 
   console.log(`✅ Stats cache ready in ${(performance.now() - cacheStartTime).toFixed(0)}ms`)

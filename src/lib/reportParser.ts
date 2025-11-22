@@ -53,10 +53,39 @@ function fixTruncatedJSON(content: string): string {
  * Parse weekly practice report (JSON or markdown)
  * New reports are stored as JSON, old reports may be markdown
  */
+interface WeeklyReportData {
+  headline: string
+  key_metrics: Array<{ label: string; value: string }>
+  strengths?: string[]
+  improvements?: {
+    problem?: string
+    insight?: string
+  }
+  action_plan?: {
+    steps?: string[]
+  }
+}
+
+interface DiagnosisReportData {
+  headline: string
+  structure_metrics: Array<{ label: string; value: string }>
+  strengths?: string[]
+  improvements?: Array<{
+    area: string
+    issue: string
+    solution: string
+  }>
+  priority_tasks?: string[]
+}
+
+/**
+ * Parse weekly practice report (JSON or markdown)
+ * New reports are stored as JSON, old reports may be markdown
+ */
 export function parseWeeklyReport(content: string): ReportSummary {
   // Try JSON parsing first (new format)
   try {
-    const data = JSON.parse(content)
+    const data = JSON.parse(content) as WeeklyReportData
 
     if (data.headline && data.key_metrics) {
       // Build detail content from strengths, improvements, and action_plan
@@ -90,7 +119,7 @@ export function parseWeeklyReport(content: string): ReportSummary {
 
       return {
         headline: data.headline,
-        metrics: data.key_metrics.map((m: any) => ({
+        metrics: data.key_metrics.map((m) => ({
           label: m.label,
           value: m.value,
           variant: 'default' as const
@@ -138,7 +167,7 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
       continue
     }
 
-    if (currentSection.includes('📊') || currentSection.includes('핵심 지표')) {
+    if (currentSection.includes('📊') || currentSection.includes('핵심 지표') || currentSection.includes('주요 지표')) {
       if (line.startsWith('- ')) {
         metricsLines.push(line.replace('- ', '').trim())
       }
@@ -159,6 +188,10 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
     summary.detailContent = lines.slice(detailStartIndex).join('\n')
   }
 
+  if (!summary.headline) {
+    summary.headline = '리포트를 생성할 수 없습니다'
+  }
+
   return summary
 }
 
@@ -169,7 +202,7 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
 export function parseDiagnosisReport(content: string): ReportSummary {
   // Try JSON parsing first (new format)
   try {
-    const data = JSON.parse(content)
+    const data = JSON.parse(content) as DiagnosisReportData
 
     if (data.headline && data.structure_metrics) {
       // Build detail content from strengths and improvements
@@ -184,7 +217,7 @@ export function parseDiagnosisReport(content: string): ReportSummary {
 
       if (data.improvements && Array.isArray(data.improvements) && data.improvements.length > 0) {
         detailContent += '## ⚡ 개선 포인트\n\n'
-        data.improvements.forEach((improvement: any) => {
+        data.improvements.forEach((improvement) => {
           detailContent += `• **${improvement.area}**: ${improvement.issue} → ${improvement.solution}\n\n`
         })
       }
@@ -198,7 +231,7 @@ export function parseDiagnosisReport(content: string): ReportSummary {
 
       return {
         headline: data.headline,
-        metrics: data.structure_metrics.map((m: any) => ({
+        metrics: data.structure_metrics.map((m) => ({
           label: m.label,
           value: m.value,
           variant: 'default' as const

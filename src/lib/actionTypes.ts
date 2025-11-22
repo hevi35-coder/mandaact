@@ -59,29 +59,30 @@ export function suggestActionType(title: string): AISuggestion {
   const lower = title.toLowerCase()
 
   // Detect patterns first (for complex logic)
-  const hasCompletionKeyword = /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진|완독|완성|클리어|정복|마스터|도달|이루기/.test(lower)
+  // Detect patterns first (for complex logic)
+  const hasCompletionKeyword = /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진|완독|완성|클리어|정복|마스터|도달|이루기|확보|유치/.test(lower)
   const hasGoalKeyword = /목표|도전|성공/.test(lower)
-  const hasNumberGoal = /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일|급)/.test(lower)
+  const hasNumberGoal = /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일|급|억)/.test(lower)
 
   // One-time mission keywords (자격증, 시험, 승인, 여행, 시도 등)
   const hasOnceKeyword = /검진|승인|자격증|시험|급|여행|출장|모임.*시도|도전.*시도/.test(lower)
 
   // Daily routine pattern: "1일 X" (e.g., "1일 1포스팅")
   const isDailyPattern = /1\s*일\s+\d*\s*[가-힣]+/.test(lower)
-  const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심|사고방식|관점|시각|인식|깨달음|교훈|지향|지혜/.test(lower)
+  const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심|사고방식|관점|시각|인식|깨달음|교훈|지향|지혜|습관/.test(lower)
   const isNegativeReference = /하지\s*않기|두려워하지|망설이지|포기하지|극복/.test(lower)
   const hasAbstractGoal = /유지|확보|갖기/.test(lower)
   const hasAbstractAdverb = /효율적으로|생산적으로|체계적으로|전략적으로/.test(lower)
   const hasAbstractTimeGoal = /시간.*확보|시간.*갖기|여유.*만들기/.test(lower)
-  const hasRoutineVerb = /읽기|독서|공부|운동|명상|기도|쓰기|보기|듣기|하기|걷기|달리기|먹기|마시기|일어나기|자기|정리|청소|체크|확인|검토|복습|예습|회고|미팅|정산|보고|점검|평가|결산/.test(lower)
+  const hasRoutineVerb = /읽기|독서|공부|운동|명상|기도|쓰기|보기|듣기|걷기|달리기|먹기|마시기|일어나기|자기|정리|청소|체크|확인|검토|복습|예습|회고|미팅|정산|보고|점검|평가|결산|식사|챙기기|대화|문화생활|네트워킹/.test(lower)
   const hasRoutineAdverb = /꾸준히|계속|지속적으로|항상|매번|규칙적으로|반복적으로|습관적으로/.test(lower)
 
   // Check if it's a time-based routine (e.g., "30분 운동", "1시간 공부")
-  const isTimePlusVerb = /\d+\s*(시간|분)\s*(운동|공부|읽기|쓰기|명상|걷기|달리기)/.test(lower)
+  const isTimePlusVerb = /\d+\s*(시간|분)\s*(운동|공부|읽기|쓰기|명상|걷기|달리기|대화)/.test(lower)
 
   const hasDailyKeyword = /매일|하루|daily|날마다|일일/.test(lower)
   const hasWeeklyKeyword = /매주|주\s*\d+회|주간|weekly/.test(lower)
-  const hasMonthlyKeyword = /매월|월\s*\d+회|월간|monthly/.test(lower)
+  const hasMonthlyKeyword = /매월|월\s*\d+회|월간|monthly|월\s+\d/.test(lower)
   const hasQuarterlyKeyword = /분기|quarter/.test(lower)
   const hasYearlyKeyword = /매년|연간|년\s*\d+회|yearly/.test(lower)
 
@@ -127,7 +128,8 @@ export function suggestActionType(title: string): AISuggestion {
   }
 
   // Priority 1.7: Abstract time management goals
-  if (hasAbstractTimeGoal) {
+  // Exception: "대화 시간 갖기" is likely a routine if "대화" is in routine verbs
+  if (hasAbstractTimeGoal && !hasRoutineVerb) {
     return {
       type: 'reference',
       confidence: 'medium',
@@ -136,7 +138,8 @@ export function suggestActionType(title: string): AISuggestion {
   }
 
   // Priority 2: Periodic missions with explicit cycle
-  if (hasQuarterlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
+  // Exclude if it has a routine verb (e.g., "월 1회 점검")
+  if (hasQuarterlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal) && !hasRoutineVerb) {
     return {
       type: 'mission',
       confidence: 'high',
@@ -146,7 +149,7 @@ export function suggestActionType(title: string): AISuggestion {
     }
   }
 
-  if (hasYearlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
+  if (hasYearlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal) && !hasRoutineVerb) {
     return {
       type: 'mission',
       confidence: 'high',
@@ -156,7 +159,7 @@ export function suggestActionType(title: string): AISuggestion {
     }
   }
 
-  if (hasMonthlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal)) {
+  if (hasMonthlyKeyword && (hasCompletionKeyword || hasGoalKeyword || hasNumberGoal) && !hasRoutineVerb) {
     return {
       type: 'mission',
       confidence: 'high',
@@ -209,7 +212,7 @@ export function suggestActionType(title: string): AISuggestion {
 
   // Priority 4: Number-based goals without frequency (likely one-time mission)
   // BUT: "1일 X" and Time + verb combinations are routines
-  if (hasNumberGoal && !hasDailyKeyword && !hasWeeklyKeyword && !hasMonthlyKeyword) {
+  if (hasNumberGoal && !hasDailyKeyword && !hasWeeklyKeyword && !hasMonthlyKeyword && !hasRoutineVerb) {
     // Exception 1: "1일 1포스팅" pattern
     if (isDailyPattern) {
       return {
@@ -298,10 +301,10 @@ export function suggestActionType(title: string): AISuggestion {
   // Priority 6: Common action verbs with context-based frequency inference
   if (hasRoutineVerb) {
     // Exception: "관련 독서", "책 읽기" patterns suggest one-time reading mission
-    if (/관련.*독서|관련.*읽기|.*책.*읽기|도서.*읽기|.*서적/.test(lower)) {
+    if (/관련.*독서|관련.*읽기|.*책.*읽기|도서.*읽기|.*서적|육아서/.test(lower)) {
       return {
         type: 'mission',
-        confidence: 'medium',
+        confidence: 'high',
         reason: '특정 책을 읽는 완료 목표로 보여요',
         missionCompletionType: 'once'
       }
@@ -545,12 +548,12 @@ export function formatTypeDetails(action: {
 
         // Check for weekdays (Mon-Fri): [1,2,3,4,5]
         const isWeekdays = sortedWeekdays.length === 5 &&
-                          sortedWeekdays.every((day, idx) => day === idx + 1)
+          sortedWeekdays.every((day, idx) => day === idx + 1)
 
         // Check for weekend (Sat-Sun): [0,6]
         const isWeekend = sortedWeekdays.length === 2 &&
-                         sortedWeekdays[0] === 0 &&
-                         sortedWeekdays[1] === 6
+          sortedWeekdays[0] === 0 &&
+          sortedWeekdays[1] === 6
 
         if (isWeekdays) {
           return '평일'

@@ -184,10 +184,10 @@ export default function MandalartCreatePage() {
             const finalType = action.type || aiSuggestion?.type || 'routine'
             const aiSuggestionStr = aiSuggestion
               ? JSON.stringify({
-                  type: aiSuggestion.type,
-                  confidence: aiSuggestion.confidence,
-                  reason: aiSuggestion.reason
-                })
+                type: aiSuggestion.type,
+                confidence: aiSuggestion.confidence,
+                reason: aiSuggestion.reason
+              })
               : undefined
 
             return {
@@ -219,14 +219,14 @@ export default function MandalartCreatePage() {
         console.error('Error message:', err.message)
         console.error('Error stack:', err.stack)
       }
-      // @ts-ignore - Supabase error has details property
+      // @ts-expect-error - Supabase error has details property
       if (err?.details) {
-        // @ts-ignore
+        // @ts-expect-error - Supabase error has details property
         console.error('Supabase error details:', err.details)
       }
-      // @ts-ignore - Supabase error has hint property
+      // @ts-expect-error - Supabase error has hint property
       if (err?.hint) {
-        // @ts-ignore
+        // @ts-expect-error - Supabase error has hint property
         console.error('Supabase error hint:', err.hint)
       }
       showError(ERROR_MESSAGES.saveFailed())

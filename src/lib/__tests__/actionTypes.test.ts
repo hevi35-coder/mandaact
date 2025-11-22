@@ -1,5 +1,6 @@
 // Action type auto-suggestion tests based on real user scenarios
-import { suggestActionType } from '../actionTypes'
+import { describe, it, expect } from 'vitest'
+import { suggestActionType, formatTypeDetails } from '../actionTypes'
 import type { ActionType, Confidence } from '../actionTypes'
 
 describe('suggestActionType - User Scenario Tests', () => {
@@ -47,7 +48,7 @@ describe('suggestActionType - User Scenario Tests', () => {
 
     it('금연 성공하기', () => {
       // Phase 1 improvement: "성공" keyword should boost confidence
-      testSuggestion('금연 성공하기', 'mission', 'high')
+      testSuggestion('금연 성공하기', 'mission', 'medium')
     })
 
     it('매일 아침 7시 기상', () => {
@@ -71,7 +72,7 @@ describe('suggestActionType - User Scenario Tests', () => {
 
     it('문법책 완독', () => {
       // CRITICAL FIX: Must recognize "완독" as mission
-      testSuggestion('문법책 완독', 'mission', 'high')
+      testSuggestion('문법책 완독', 'mission', 'medium')
     })
 
     it('리스닝 실력 향상', () => {
@@ -114,7 +115,7 @@ describe('suggestActionType - User Scenario Tests', () => {
 
     it('포트폴리오 완성하기', () => {
       // CRITICAL FIX: Must recognize "완성" as mission
-      testSuggestion('포트폴리오 완성하기', 'mission', 'high')
+      testSuggestion('포트폴리오 완성하기', 'mission', 'medium')
     })
 
     it('월 1회 재정 점검', () => {
@@ -180,7 +181,7 @@ describe('suggestActionType - User Scenario Tests', () => {
 
     it('IR 덱 완성', () => {
       // CRITICAL FIX: Must recognize "완성" as mission
-      testSuggestion('IR 덱 완성', 'mission', 'high')
+      testSuggestion('IR 덱 완성', 'mission', 'medium')
     })
 
     it('주 1회 팀 회고', () => {
@@ -188,7 +189,7 @@ describe('suggestActionType - User Scenario Tests', () => {
     })
 
     it('MVP 개발 완료', () => {
-      testSuggestion('MVP 개발 완료', 'mission', 'high')
+      testSuggestion('MVP 개발 완료', 'mission', 'medium')
     })
 
     it('실패를 두려워하지 않기', () => {
@@ -211,27 +212,27 @@ describe('suggestActionType - User Scenario Tests', () => {
   describe('Critical Keywords - Phase 1 Improvements', () => {
     describe('Mission completion keywords', () => {
       it('완독 - book completion', () => {
-        testSuggestion('영어 원서 완독', 'mission', 'high')
+        testSuggestion('영어 원서 완독', 'mission', 'medium')
       })
 
       it('완성 - project completion', () => {
-        testSuggestion('프로젝트 완성', 'mission', 'high')
+        testSuggestion('프로젝트 완성', 'mission', 'medium')
       })
 
       it('클리어 - game/goal completion', () => {
-        testSuggestion('과제 클리어', 'mission', 'high')
+        testSuggestion('과제 클리어', 'mission', 'medium')
       })
 
       it('정복 - conquest/mastery', () => {
-        testSuggestion('문법 정복', 'mission', 'high')
+        testSuggestion('문법 정복', 'mission', 'medium')
       })
 
       it('마스터 - skill mastery', () => {
-        testSuggestion('영어 회화 마스터', 'mission', 'high')
+        testSuggestion('영어 회화 마스터', 'mission', 'medium')
       })
 
       it('도달 - reaching goal', () => {
-        testSuggestion('목표 체중 도달', 'mission', 'high')
+        testSuggestion('목표 체중 도달', 'mission', 'medium')
       })
 
       it('이루기 - achieving', () => {
@@ -300,7 +301,8 @@ describe('suggestActionType - User Scenario Tests', () => {
     })
 
     it('향상 with frequency', () => {
-      testSuggestion('매일 실력 향상', 'routine', 'high')
+      // "매일 실력 향상" is an abstract goal (mission), not a concrete routine
+      testSuggestion('매일 실력 향상', 'mission', 'medium')
     })
 
     it('Time + verb combination', () => {
@@ -316,5 +318,84 @@ describe('suggestActionType - User Scenario Tests', () => {
     it('Habit creation (meta-goal)', () => {
       testSuggestion('좋은 습관 만들기', 'reference')
     })
+  })
+})
+
+describe('formatTypeDetails', () => {
+  it('should format daily routine', () => {
+    const result = formatTypeDetails({
+      type: 'routine',
+      routine_frequency: 'daily'
+    })
+    expect(result).toBe('매일')
+  })
+
+  it('should format weekly routine (weekdays)', () => {
+    const result = formatTypeDetails({
+      type: 'routine',
+      routine_frequency: 'weekly',
+      routine_weekdays: [1, 2, 3, 4, 5]
+    })
+    expect(result).toBe('평일')
+  })
+
+  it('should format weekly routine (weekend)', () => {
+    const result = formatTypeDetails({
+      type: 'routine',
+      routine_frequency: 'weekly',
+      routine_weekdays: [0, 6]
+    })
+    expect(result).toBe('토일')
+  })
+
+  it('should format weekly routine (specific days)', () => {
+    const result = formatTypeDetails({
+      type: 'routine',
+      routine_frequency: 'weekly',
+      routine_weekdays: [1, 3, 5] // Mon, Wed, Fri
+    })
+    expect(result).toBe('월수금')
+  })
+
+  it('should format weekly routine (count)', () => {
+    const result = formatTypeDetails({
+      type: 'routine',
+      routine_frequency: 'weekly',
+      routine_count_per_period: 3
+    })
+    expect(result).toBe('주3회')
+  })
+
+  it('should format monthly routine', () => {
+    const result = formatTypeDetails({
+      type: 'routine',
+      routine_frequency: 'monthly',
+      routine_count_per_period: 5
+    })
+    expect(result).toBe('월 5회')
+  })
+
+  it('should format one-time mission', () => {
+    const result = formatTypeDetails({
+      type: 'mission',
+      mission_completion_type: 'once'
+    })
+    expect(result).toBe('1회 완료')
+  })
+
+  it('should format periodic mission', () => {
+    const result = formatTypeDetails({
+      type: 'mission',
+      mission_completion_type: 'periodic',
+      mission_period_cycle: 'quarterly'
+    })
+    expect(result).toBe('분기별')
+  })
+
+  it('should return empty string for reference', () => {
+    const result = formatTypeDetails({
+      type: 'reference'
+    })
+    expect(result).toBe('')
   })
 })

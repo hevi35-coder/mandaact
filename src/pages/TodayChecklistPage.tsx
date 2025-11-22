@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -253,7 +253,10 @@ export default function TodayChecklistPage() {
               break
           }
 
-          showError(errorMessage)
+          showError({
+            title: '체크 실패',
+            description: errorMessage
+          })
           setCheckingActions(prev => {
             const newSet = new Set(prev)
             newSet.delete(action.id)
@@ -296,9 +299,15 @@ export default function TodayChecklistPage() {
 
             // Show XP gained notification
             if (multipliers.length > 0 && totalMultiplier > 1) {
-              showSuccess(`+${finalXP} XP (×${totalMultiplier.toFixed(1)} 배율 적용!)`)
+              showSuccess({
+                title: `+${finalXP} XP`,
+                description: `×${totalMultiplier.toFixed(1)} 배율 적용!`
+              })
             } else {
-              showSuccess(`+${finalXP} XP`)
+              showSuccess({
+                title: `+${finalXP} XP`,
+                description: '실천 완료!'
+              })
             }
 
             // Check for perfect day bonus (100% completion)
@@ -329,7 +338,10 @@ export default function TodayChecklistPage() {
 
                 if (newlyUnlocked && newlyUnlocked.length > 0) {
                   for (const badge of newlyUnlocked) {
-                    showCelebration(`🏆 새로운 배지 획득: ${badge.title}`)
+                    showCelebration({
+                      title: '새로운 배지 획득!',
+                      description: `🏆 ${badge.title}`
+                    })
                     console.log('🏆 Badge unlocked:', badge.title, '+' + badge.xp_reward + ' XP')
                   }
                 }
@@ -405,7 +417,7 @@ export default function TodayChecklistPage() {
   }
 
   // Filter toggle functions
-  const toggleFilter = (type: ActionType) => {
+  const toggleFilter = useCallback((type: ActionType) => {
     setActiveFilters(prev => {
       const newFilters = new Set(prev)
       if (newFilters.has(type)) {
@@ -415,14 +427,14 @@ export default function TodayChecklistPage() {
       }
       return newFilters
     })
-  }
+  }, [])
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setActiveFilters(new Set())
-  }
+  }, [])
 
   // Filter actions based on type and shouldShowToday logic
-  const filteredActions = actions.filter((action) => {
+  const filteredActions = useMemo(() => actions.filter((action) => {
     // Apply shouldShowToday logic
     const shouldShow = shouldShowToday(action)
     if (!shouldShow) return false
@@ -433,10 +445,10 @@ export default function TodayChecklistPage() {
 
     // Show only if action type is in active filters
     return activeFilters.has(action.type)
-  })
+  }), [actions, activeFilters])
 
   // Group actions by mandalart
-  const actionsByMandalart = filteredActions.reduce((groups, action) => {
+  const actionsByMandalart = useMemo(() => filteredActions.reduce((groups, action) => {
     const mandalartId = action.sub_goal.mandalart.id
     if (!groups[mandalartId]) {
       groups[mandalartId] = {
@@ -446,7 +458,7 @@ export default function TodayChecklistPage() {
     }
     groups[mandalartId].actions.push(action)
     return groups
-  }, {} as Record<string, { mandalart: Mandalart; actions: ActionWithContext[] }>)
+  }, {} as Record<string, { mandalart: Mandalart; actions: ActionWithContext[] }>), [filteredActions])
 
   // Section collapse state - default expanded
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
@@ -882,13 +894,12 @@ export default function TodayChecklistPage() {
                       {mandalartActions.map((action) => (
                         <Card
                           key={action.id}
-                          className={`transition-all ${
-                            action.is_checked
-                              ? 'bg-gray-50 border-gray-300'
-                              : action.type === 'reference'
+                          className={`transition-all ${action.is_checked
+                            ? 'bg-gray-50 border-gray-300'
+                            : action.type === 'reference'
                               ? 'bg-gray-50/50 border-gray-200'
                               : 'hover:shadow-md'
-                          }`}
+                            }`}
                         >
                           <div className="p-3">
                             <div className="flex items-center gap-3">
@@ -901,20 +912,18 @@ export default function TodayChecklistPage() {
                                   action.type === 'reference' ||
                                   !isTodayOrYesterday(selectedDate)
                                 }
-                                className={`h-5 w-5 rounded border-gray-300 text-primary flex-shrink-0 ${
-                                  action.type === 'reference' || !isTodayOrYesterday(selectedDate)
-                                    ? 'opacity-50 cursor-not-allowed'
-                                    : 'cursor-pointer focus:ring-primary'
-                                } disabled:cursor-not-allowed`}
+                                className={`h-5 w-5 rounded border-gray-300 text-primary flex-shrink-0 ${action.type === 'reference' || !isTodayOrYesterday(selectedDate)
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : 'cursor-pointer focus:ring-primary'
+                                  } disabled:cursor-not-allowed`}
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span
-                                    className={`text-sm font-medium ${
-                                      action.is_checked
-                                        ? 'line-through text-gray-500'
-                                        : 'text-gray-900'
-                                    }`}
+                                    className={`text-sm font-medium ${action.is_checked
+                                      ? 'line-through text-gray-500'
+                                      : 'text-gray-900'
+                                      }`}
                                   >
                                     {action.title}
                                   </span>
@@ -964,8 +973,8 @@ export default function TodayChecklistPage() {
             mission_current_period_end: selectedAction.mission_current_period_end,
             ai_suggestion: selectedAction.ai_suggestion
               ? (typeof selectedAction.ai_suggestion === 'string'
-                  ? JSON.parse(selectedAction.ai_suggestion)
-                  : selectedAction.ai_suggestion)
+                ? JSON.parse(selectedAction.ai_suggestion)
+                : selectedAction.ai_suggestion)
               : undefined
           }}
           onSave={handleTypeSave}

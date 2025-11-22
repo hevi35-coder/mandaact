@@ -1,3 +1,4 @@
+import React from 'react'
 import { MandalartGridData } from '@/types'
 import { Plus } from 'lucide-react'
 
@@ -9,9 +10,10 @@ interface MandalartGridProps {
   readonly?: boolean
   forDownload?: boolean
   forMobile?: boolean
+  hideCenterGoal?: boolean
 }
 
-export default function MandalartGrid({
+function MandalartGrid({
   mode,
   data,
   onSectionClick,
@@ -19,6 +21,7 @@ export default function MandalartGrid({
   readonly = false,
   forDownload = false,
   forMobile = false,
+  hideCenterGoal = false,
 }: MandalartGridProps) {
 
   // Get sub-goal by position
@@ -34,21 +37,17 @@ export default function MandalartGrid({
         // Center of center: Core goal
         return (
           <div
-            className={`${
-              forDownload
-                ? 'grid place-items-center'
-                : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
-              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-            } ${
-              !forDownload && !readonly
+            className={`${forDownload
+              ? 'grid place-items-center'
+              : 'flex flex-col items-center justify-center'
+              } h-full min-h-full ${forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
+              } ${!forDownload && !readonly
                 ? 'cursor-pointer hover:opacity-90 transition-opacity'
                 : ''
-            } ${
-              !forDownload
+              } ${!forDownload
                 ? 'shadow-lg border-2 border-purple-200'
                 : ''
-            }`}
+              }`}
             style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             }}
@@ -60,22 +59,20 @@ export default function MandalartGrid({
           >
             {data.center_goal ? (
               <p
-                className={`${
-                  forDownload ? 'text-6xl' : forMobile ? 'text-base' : 'text-xl'
-                } font-bold ${
-                  !forDownload ? 'line-clamp-4' : ''
-                } text-white text-center`}
+                className={`${forDownload ? 'text-6xl' : forMobile ? 'text-base' : 'text-xl'
+                  } font-bold ${!forDownload ? 'line-clamp-4' : ''
+                  } text-white text-center`}
                 style={
                   forDownload
                     ? {
-                        margin: 0,
-                        wordBreak: 'keep-all',
-                        overflowWrap: 'break-word',
-                        lineHeight: '1.4',
-                        width: '100%',
-                        display: 'block',
-                        textAlign: 'center',
-                      }
+                      margin: 0,
+                      wordBreak: 'keep-all',
+                      overflowWrap: 'break-word',
+                      lineHeight: '1.4',
+                      width: '100%',
+                      display: 'block',
+                      textAlign: 'center',
+                    }
                     : { textAlign: 'center', margin: 0 }
                 }
               >
@@ -92,32 +89,27 @@ export default function MandalartGrid({
         const subGoal = getSubGoalByPosition(subGoalPosition)
         return (
           <div
-            className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
-              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-            } bg-blue-50 ${
-              !forDownload ? 'hover:bg-blue-100 transition-colors' : ''
-            }`}
+            className={`${forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              } h-full min-h-full ${forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
+              } bg-blue-50 ${!forDownload ? 'hover:bg-blue-100 transition-colors' : ''
+              }`}
           >
             {subGoal?.title && (
               <p
-                className={`${
-                  forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-lg'
-                } font-medium ${
-                  !forDownload ? 'line-clamp-4' : ''
-                } text-center`}
+                className={`${forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-lg'
+                  } font-medium ${!forDownload ? 'line-clamp-4' : ''
+                  } text-center`}
                 style={
                   forDownload
                     ? {
-                        margin: 0,
-                        wordBreak: 'keep-all',
-                        overflowWrap: 'break-word',
-                        lineHeight: '1.4',
-                        width: '100%',
-                        display: 'block',
-                        textAlign: 'center',
-                      }
+                      margin: 0,
+                      wordBreak: 'keep-all',
+                      overflowWrap: 'break-word',
+                      lineHeight: '1.4',
+                      width: '100%',
+                      display: 'block',
+                      textAlign: 'center',
+                    }
                     : { textAlign: 'center', margin: 0 }
                 }
               >
@@ -137,24 +129,19 @@ export default function MandalartGrid({
         // Center: blue background (same as filled sub-goal center)
         return (
           <div
-            className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
-              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-            } bg-blue-50 ${
-              !forDownload ? 'border border-blue-200' : ''
-            }`}
+            className={`${forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              } h-full min-h-full ${forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
+              } bg-blue-50 ${!forDownload ? 'border border-blue-200' : ''
+              }`}
           />
         )
       } else {
         // Surrounding cells: white background (for handwriting)
         return (
           <div
-            className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
-              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-            } bg-white`}
+            className={`${forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              } h-full min-h-full ${forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
+              } bg-white`}
           />
         )
       }
@@ -164,29 +151,25 @@ export default function MandalartGrid({
       // Center of section: Sub-goal title
       return (
         <div
-          className={`${
-            forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-          } h-full min-h-full ${
-            forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-          } bg-blue-50 ${
-            !forDownload ? 'border border-blue-200' : ''
-          }`}
+          className={`${forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+            } h-full min-h-full ${forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
+            } bg-blue-50 ${!forDownload ? 'border border-blue-200' : ''
+            }`}
         >
           <p
-            className={`${
-              forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-lg'
-            } font-semibold ${!forDownload ? 'line-clamp-4' : ''} text-center`}
+            className={`${forDownload ? 'text-5xl' : forMobile ? 'text-base' : 'text-lg'
+              } font-semibold ${!forDownload ? 'line-clamp-4' : ''} text-center`}
             style={
               forDownload
                 ? {
-                    margin: 0,
-                    wordBreak: 'keep-all',
-                    overflowWrap: 'break-word',
-                    lineHeight: '1.4',
-                    width: '100%',
-                    display: 'block',
-                    textAlign: 'center',
-                  }
+                  margin: 0,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
+                  lineHeight: '1.4',
+                  width: '100%',
+                  display: 'block',
+                  textAlign: 'center',
+                }
                 : { textAlign: 'center', margin: 0 }
             }
           >
@@ -202,42 +185,35 @@ export default function MandalartGrid({
       if (!action || !action.title) {
         return (
           <div
-            className={`${
-              forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-            } h-full min-h-full ${
-              forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-            } bg-white`}
+            className={`${forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+              } h-full min-h-full ${forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
+              } bg-white`}
           />
         )
       }
 
       return (
         <div
-          className={`${
-            forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
-          } h-full min-h-full ${
-            forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
-          } bg-white ${
-            !forDownload ? 'hover:bg-gray-50 transition-colors' : ''
-          }`}
+          className={`${forDownload ? 'grid place-items-center' : 'flex flex-col items-center justify-center'
+            } h-full min-h-full ${forDownload ? 'p-2' : forMobile ? 'p-2' : 'p-2.5'
+            } bg-white ${!forDownload ? 'hover:bg-gray-50 transition-colors' : ''
+            }`}
         >
           <p
-            className={`${
-              forDownload ? 'text-4xl' : forMobile ? 'text-sm' : 'text-base'
-            } ${forDownload ? '' : 'leading-tight'} ${
-              !forDownload ? 'line-clamp-4' : ''
-            } text-center`}
+            className={`${forDownload ? 'text-4xl' : forMobile ? 'text-sm' : 'text-base'
+              } ${forDownload ? '' : 'leading-tight'} ${!forDownload ? 'line-clamp-4' : ''
+              } text-center`}
             style={
               forDownload
                 ? {
-                    margin: 0,
-                    wordBreak: 'keep-all',
-                    overflowWrap: 'break-word',
-                    lineHeight: '1.4',
-                    width: '100%',
-                    display: 'block',
-                    textAlign: 'center',
-                  }
+                  margin: 0,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
+                  lineHeight: '1.4',
+                  width: '100%',
+                  display: 'block',
+                  textAlign: 'center',
+                }
                 : { textAlign: 'center', margin: 0 }
             }
           >
@@ -252,18 +228,21 @@ export default function MandalartGrid({
   const renderSection = (sectionPos: number) => {
     const isCenter = sectionPos === 0
 
+    // Hide center section if hideCenterGoal is true
+    if (isCenter && hideCenterGoal) {
+      return <div key={sectionPos} className="invisible" />
+    }
+
     return (
       <div
         key={sectionPos}
         className={`
-          grid grid-cols-3 grid-rows-3 ${
-            forDownload ? '' : 'gap-px bg-gray-300'
+          grid grid-cols-3 grid-rows-3 ${forDownload ? '' : 'gap-px bg-gray-300'
           } rounded
           ${forDownload ? 'aspect-square' : ''}
-          ${
-            !forDownload && !isCenter && !readonly && onSectionClick
-              ? 'cursor-pointer hover:ring-2 hover:ring-primary/50'
-              : ''
+          ${!forDownload && !isCenter && !readonly && onSectionClick
+            ? 'cursor-pointer hover:ring-2 hover:ring-primary/50'
+            : ''
           }
           ${!forDownload ? 'transition-all' : ''}
         `}
@@ -277,9 +256,8 @@ export default function MandalartGrid({
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => (
           <div
             key={cellPos}
-            className={`bg-white aspect-square ${
-              forDownload ? 'border border-gray-300' : ''
-            }`}
+            className={`bg-white aspect-square ${forDownload ? 'border border-gray-300' : ''
+              }`}
           >
             {renderCell(sectionPos, cellPos)}
           </div>
@@ -300,3 +278,4 @@ export default function MandalartGrid({
     </div>
   )
 }
+export default React.memo(MandalartGrid)

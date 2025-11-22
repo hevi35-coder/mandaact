@@ -238,7 +238,10 @@ export function UserProfileCard() {
 
         // Show toast notification for each new badge
         for (const badge of newlyUnlocked) {
-          showSuccess(`🏆 새로운 배지 획득: ${badge.title} (+${badge.xp_reward} XP)`)
+          showSuccess({
+            title: '새로운 배지 획득!',
+            description: `🏆 ${badge.title} (+${badge.xp_reward} XP)`
+          })
         }
 
         // Refresh badge collection to show newly unlocked badges
@@ -324,10 +327,9 @@ export function UserProfileCard() {
                   ? `${result.emotionalMessage}\n\n${result.badgeTitle} (+${result.xpAwarded} XP)`
                   : `${result.badgeTitle} (+${result.xpAwarded} XP)`
 
-                toast({
+                showSuccess({
                   title: `🎉 새로운 배지 획득!`,
-                  description,
-                  duration: 6000, // Longer duration for emotional messages
+                  description
                 })
               }
             }
@@ -579,7 +581,7 @@ export function UserProfileCard() {
                                 if (!isUnlocked) return {}
                                 return {
                                   whileHover: { scale: 1.05 },
-                                  transition: { type: 'spring', stiffness: 300, damping: 15 }
+                                  transition: { type: 'spring' as const, stiffness: 300, damping: 15 }
                                 }
                               }
 

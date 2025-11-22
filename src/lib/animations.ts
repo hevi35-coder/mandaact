@@ -160,7 +160,7 @@ export function getNestedStaggerDelay(
  * @param base - 기본 애니메이션
  * @param override - 오버라이드할 속성
  */
-export function mergeAnimation<T extends Record<string, any>>(
+export function mergeAnimation<T extends Record<string, unknown>>(
   base: T,
   override: Partial<T>
 ): T {
@@ -188,4 +188,4 @@ export const STAGGER = {
 // Re-export for convenience
 // ============================================
 
-export type { Variant, Transition, AnimationControls } from 'framer-motion'
+export type { Variant, Transition } from 'framer-motion'
