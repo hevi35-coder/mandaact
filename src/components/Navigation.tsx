@@ -27,7 +27,7 @@ export default function Navigation() {
       <nav className="hidden md:block border-b bg-white sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/home" className="text-xl font-bold">
+            <Link to="/home" className="text-2xl font-bold">
               <span className="text-black">Manda</span>
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
             </Link>
@@ -61,7 +61,7 @@ export default function Navigation() {
       <nav className="md:hidden sticky top-0 border-b bg-white z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14">
-            <Link to="/home" className="text-lg font-bold">
+            <Link to="/home" className="text-xl font-bold">
               <span className="text-black">Manda</span>
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Act</span>
             </Link>
