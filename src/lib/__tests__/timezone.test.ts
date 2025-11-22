@@ -27,7 +27,7 @@ describe('timezone utilities', () => {
     })
 
     it('should handle date at midnight boundary (00:00)', () => {
-      const { start, end } = getDayBoundsUTC('2025-11-12', 'Asia/Seoul')
+      const { start } = getDayBoundsUTC('2025-11-12', 'Asia/Seoul')
 
       // Check that a UTC timestamp just before midnight KST (14:59 UTC) falls before start
       const beforeMidnight = new Date('2025-11-11T14:59:59.999Z')
@@ -40,7 +40,7 @@ describe('timezone utilities', () => {
     })
 
     it('should handle date at end of day boundary (23:59)', () => {
-      const { start, end } = getDayBoundsUTC('2025-11-12', 'Asia/Seoul')
+      const { end } = getDayBoundsUTC('2025-11-12', 'Asia/Seoul')
 
       // Check that a UTC timestamp just before next midnight (14:59 UTC) falls before end
       const beforeEndOfDay = new Date('2025-11-12T14:59:59.999Z')

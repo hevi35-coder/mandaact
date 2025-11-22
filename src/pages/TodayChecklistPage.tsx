@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, ArrowRight, CheckCircle2, Grid3x3, Plus, BookOpen } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, CheckCircle2, Grid3x3, Plus, Check, X } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
@@ -50,13 +51,11 @@ export default function TodayChecklistPage() {
   const [typeSelectorOpen, setTypeSelectorOpen] = useState(false)
   const [selectedAction, setSelectedAction] = useState<ActionWithContext | null>(null)
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
-    fetchTodayActions()
-  }, [user, navigate, selectedDate])
+  // Action title editor state
+  const [editingActionId, setEditingActionId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const isComposingRef = useRef(false)
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
@@ -89,7 +88,7 @@ export default function TodayChecklistPage() {
     return isToday(date) || isYesterday(date)
   }
 
-  const fetchTodayActions = async () => {
+  const fetchTodayActions = useCallback(async () => {
     if (!user) return
 
     setIsLoading(true)
@@ -161,7 +160,15 @@ export default function TodayChecklistPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [user, selectedDate])
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    fetchTodayActions()
+  }, [user, navigate, selectedDate, fetchTodayActions])
 
   const handleToggleCheck = async (action: ActionWithContext) => {
     if (!user) return
@@ -383,6 +390,63 @@ export default function TodayChecklistPage() {
     setSelectedAction(action)
     setTypeSelectorOpen(true)
   }
+
+  const handleTitleEdit = (actionId: string, currentTitle: string) => {
+    setEditingActionId(actionId)
+    setEditingTitle(currentTitle)
+  }
+
+  const handleTitleSave = async (actionId: string) => {
+    if (!user) return
+
+    const trimmedTitle = editingTitle.trim()
+    if (!trimmedTitle) {
+      showError({ title: '제목 입력 필요', description: '제목을 입력해주세요' })
+      return
+    }
+
+    // Optimistic update
+    setActions(prevActions =>
+      prevActions.map(a =>
+        a.id === actionId ? { ...a, title: trimmedTitle } : a
+      )
+    )
+    setEditingActionId(null)
+
+    // DB update
+    try {
+      const { error: updateError } = await supabase
+        .from('actions')
+        .update({ title: trimmedTitle })
+        .eq('id', actionId)
+
+      if (updateError) throw updateError
+
+      showSuccess(SUCCESS_MESSAGES.updated())
+    } catch (err) {
+      console.error('Title update error:', err)
+      showError(ERROR_MESSAGES.actionUpdateFailed())
+      // Rollback by refetching
+      fetchTodayActions()
+    }
+  }
+
+  const handleTitleCancel = () => {
+    setEditingActionId(null)
+    setEditingTitle('')
+  }
+
+  const handleTitleChange = (title: string) => {
+    setEditingTitle(title)
+  }
+
+  // Auto-focus when entering edit mode
+  useEffect(() => {
+    if (editingActionId && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editingActionId])
 
   const handleTypeSave = async (typeData: ActionTypeData) => {
     if (!selectedAction) return
@@ -917,32 +981,76 @@ export default function TodayChecklistPage() {
                                   : 'cursor-pointer focus:ring-primary'
                                   } disabled:cursor-not-allowed`}
                               />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span
-                                    className={`text-sm font-medium ${action.is_checked
-                                      ? 'line-through text-gray-500'
-                                      : 'text-gray-900'
-                                      }`}
+                              {editingActionId === action.id ? (
+                                // Editing Mode
+                                <div className="flex-1 flex items-center gap-2">
+                                  <Input
+                                    ref={inputRef}
+                                    value={editingTitle}
+                                    onChange={(e) => handleTitleChange(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !isComposingRef.current) {
+                                        handleTitleSave(action.id)
+                                      } else if (e.key === 'Escape') {
+                                        handleTitleCancel()
+                                      }
+                                    }}
+                                    onCompositionStart={() => { isComposingRef.current = true }}
+                                    onCompositionEnd={() => { isComposingRef.current = false }}
+                                    className="flex-1"
+                                    placeholder="실천항목 제목을 입력하세요"
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleTitleSave(action.id)}
+                                    className="p-1.5 h-auto flex-shrink-0"
                                   >
-                                    {action.title}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">·</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {action.sub_goal.title}
-                                  </span>
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleTitleCancel}
+                                    className="p-1.5 h-auto flex-shrink-0"
+                                  >
+                                    <X className="w-4 h-4 text-gray-500" />
+                                  </Button>
                                 </div>
-                              </div>
-                              <button
-                                onClick={(e) => openTypeEditor(action, e)}
-                                className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex-shrink-0"
-                                title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
-                              >
-                                {getTypeIcon(action.type)}
-                                <span>
-                                  {formatTypeDetails(action) || getActionTypeLabel(action.type)}
-                                </span>
-                              </button>
+                              ) : (
+                                // View Mode
+                                <>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span
+                                        onClick={() => handleTitleEdit(action.id, action.title)}
+                                        className={`text-sm font-medium cursor-pointer hover:underline ${action.is_checked
+                                          ? 'line-through text-gray-500'
+                                          : 'text-gray-900'
+                                          }`}
+                                      >
+                                        {action.title}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">·</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {action.sub_goal.title}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={(e) => openTypeEditor(action, e)}
+                                    className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex-shrink-0"
+                                    title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
+                                  >
+                                    {getTypeIcon(action.type)}
+                                    <span>
+                                      {formatTypeDetails(action) || getActionTypeLabel(action.type)}
+                                    </span>
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </Card>

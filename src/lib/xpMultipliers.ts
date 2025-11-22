@@ -9,7 +9,6 @@
  */
 
 import { supabase } from './supabase'
-import { getUserToday } from './timezone'
 
 export interface XPMultiplier {
   type: 'weekend' | 'comeback' | 'level_milestone' | 'perfect_week'
@@ -79,8 +78,6 @@ export function calculateTotalMultiplier(multipliers: XPMultiplier[]): number {
  * Check comeback bonus: 1.5x for 3 days after 3+ day absence
  */
 async function checkComebackBonus(userId: string): Promise<XPMultiplier | null> {
-  const today = getUserToday()
-
   // Check if comeback bonus is already active in user_bonus_xp table
   const { data: bonusData } = await supabase
     .from('user_bonus_xp')
@@ -88,7 +85,7 @@ async function checkComebackBonus(userId: string): Promise<XPMultiplier | null> 
     .eq('user_id', userId)
     .eq('bonus_type', 'comeback')
     .gte('expires_at', new Date().toISOString())
-    .single()
+    .maybeSingle()
 
   if (bonusData) {
     // Calculate days remaining
@@ -159,7 +156,7 @@ async function checkLevelMilestoneBonus(userId: string): Promise<XPMultiplier | 
     .eq('user_id', userId)
     .eq('bonus_type', 'level_milestone')
     .gte('expires_at', new Date().toISOString())
-    .single()
+    .maybeSingle()
 
   if (bonusData) {
     const expiresAt = new Date(bonusData.expires_at)
@@ -230,7 +227,7 @@ async function checkPerfectWeekBonus(userId: string): Promise<XPMultiplier | nul
     .eq('user_id', userId)
     .eq('bonus_type', 'perfect_week')
     .gte('expires_at', new Date().toISOString())
-    .single()
+    .maybeSingle()
 
   if (bonusData) {
     const expiresAt = new Date(bonusData.expires_at)

@@ -15,7 +15,9 @@ export interface ReportSummary {
 
 /**
  * Helper function to fix truncated JSON
+ * Currently unused but may be needed for handling incomplete API responses
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function fixTruncatedJSON(content: string): string {
   if (content.trim().startsWith('{') && !content.trim().endsWith('}')) {
     console.log('JSON appears to be truncated, attempting to fix...')

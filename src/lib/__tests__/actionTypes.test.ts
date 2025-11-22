@@ -311,7 +311,7 @@ describe('suggestActionType - User Scenario Tests', () => {
     })
 
     it('Abstract verb without context', () => {
-      const result = testSuggestion('시간 확보하기', 'reference')
+      testSuggestion('시간 확보하기', 'reference')
       // Should recognize as reference or low confidence routine
     })
 

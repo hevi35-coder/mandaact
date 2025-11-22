@@ -1006,7 +1006,6 @@ export async function checkAndUnlockAchievements(userId: string) {
     supabase
       .from('achievements')
       .select('*')
-      .eq('is_active', true)  // ✅ OPTIMIZATION: Filter active badges only
       .order('display_order'),
     supabase
       .from('user_achievements')

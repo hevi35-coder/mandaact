@@ -49,31 +49,9 @@ describe('ErrorBoundary', () => {
     })
 
     it('resets error state when try again button is clicked', () => {
-        // Create a wrapper component to toggle the error-throwing child
-        const TestWrapper = () => {
-            const [shouldThrow, setShouldThrow] = React.useState(true)
-
-            return (
-                <ErrorBoundary>
-                    {shouldThrow ? (
-                        <ThrowError />
-                    ) : (
-                        <div>Recovered Content</div>
-                    )}
-                    {/* 
-            Note: In a real scenario, the "Try Again" button in ErrorBoundary 
-            calls handleReset which clears the error state. 
-            However, if the child immediately throws again, it will go back to error state.
-            To test recovery, we would need a way to signal the child to stop throwing,
-            which usually happens via external state change or prop change.
-            
-            The ErrorBoundary's handleReset just clears internal state.
-            If we click it, it re-renders children. If children still throw, it catches again.
-          */}
-                </ErrorBoundary>
-            )
-        }
-
+        // Note: ErrorBoundary's "Try Again" button calls handleReset which clears error state.
+        // If the child immediately throws again, it will catch the error again.
+        // This test verifies the button exists and is clickable.
         render(
             <ErrorBoundary>
                 <ThrowError />
@@ -88,5 +66,3 @@ describe('ErrorBoundary', () => {
         expect(screen.getByText('문제가 발생했습니다')).toBeInTheDocument()
     })
 })
-
-import React from 'react'

@@ -156,7 +156,7 @@ export default function SubGoalModal({
   )
 
   // Initialize actions based on mode
-  const getInitialActions = (): LocalAction[] => {
+  const getInitialActions = useCallback((): LocalAction[] => {
     if (mode === 'edit' && subGoal) {
       return [...subGoal.actions].sort((a, b) => a.position - b.position)
     }
@@ -176,7 +176,7 @@ export default function SubGoalModal({
         updated_at: getCurrentUTC()
       } as LocalAction
     })
-  }
+  }, [mode, subGoal, initialActions])
 
   const [state, dispatch] = useReducer(actionsReducer, {
     actions: getInitialActions(),
@@ -198,24 +198,26 @@ export default function SubGoalModal({
     })
   )
 
-  // Update local state when props change or modal opens
+  // Update local state when modal opens
   useEffect(() => {
-    if (mode === 'edit' && subGoal) {
-      setSubGoalTitle(subGoal.title)
-      setIsEditingSubGoalTitle(false)
-      dispatch({
-        type: 'SET_ACTIONS',
-        payload: [...subGoal.actions].sort((a, b) => a.position - b.position)
-      })
-    } else {
-      setSubGoalTitle(initialTitle)
-      setIsEditingSubGoalTitle(true) // Auto-enter edit mode for create
-      dispatch({
-        type: 'SET_ACTIONS',
-        payload: getInitialActions()
-      })
+    if (open) {
+      if (mode === 'edit' && subGoal) {
+        setSubGoalTitle(subGoal.title)
+        setIsEditingSubGoalTitle(false)
+        dispatch({
+          type: 'SET_ACTIONS',
+          payload: [...subGoal.actions].sort((a, b) => a.position - b.position)
+        })
+      } else {
+        setSubGoalTitle(initialTitle)
+        setIsEditingSubGoalTitle(true) // Auto-enter edit mode for create
+        dispatch({
+          type: 'SET_ACTIONS',
+          payload: getInitialActions()
+        })
+      }
     }
-  }, [mode, subGoal, initialTitle, initialActions, open])
+  }, [open]) // Only re-initialize when modal opens
 
   // Action Title Handlers
   const handleTitleEdit = useCallback((actionId: string, currentTitle: string) => {
@@ -329,6 +331,25 @@ export default function SubGoalModal({
     }
   }, [state.selectedAction, mode, onEdit])
 
+  // Reorder positions helper
+  const reorderPositions = useCallback(async (actionsToReorder: LocalAction[]) => {
+    try {
+      const updates = actionsToReorder.map((action, idx) =>
+        supabase
+          .from('actions')
+          .update({ position: idx + 1 })
+          .eq('id', action.id)
+      )
+
+      await Promise.all(updates)
+
+      if (onEdit) onEdit()
+    } catch (err) {
+      console.error('Error reordering positions:', err)
+      showError(ERROR_MESSAGES.reorderFailed())
+    }
+  }, [onEdit])
+
   // Action Delete Handler
   const handleActionDelete = useCallback(async (actionId: string) => {
     if (!confirm('실천항목을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) return
@@ -360,7 +381,7 @@ export default function SubGoalModal({
         if (onEdit) onEdit()
       }
     }
-  }, [state.actions, mode, onEdit])
+  }, [state.actions, mode, onEdit, reorderPositions])
 
   // Action Add Handler
   const handleActionAdd = useCallback(async () => {
@@ -445,26 +466,9 @@ export default function SubGoalModal({
         await reorderPositions(reorderedActions)
       }
     }
-  }, [state.actions, mode])
+  }, [state.actions, mode, reorderPositions])
 
-  // Reorder positions helper
-  const reorderPositions = async (actionsToReorder: LocalAction[]) => {
-    try {
-      const updates = actionsToReorder.map((action, idx) =>
-        supabase
-          .from('actions')
-          .update({ position: idx + 1 })
-          .eq('id', action.id)
-      )
 
-      await Promise.all(updates)
-
-      if (onEdit) onEdit()
-    } catch (err) {
-      console.error('Error reordering positions:', err)
-      showError(ERROR_MESSAGES.reorderFailed())
-    }
-  }
 
   // Sub-goal Title Handlers
   const handleSubGoalTitleEdit = useCallback(() => {
@@ -669,8 +673,8 @@ export default function SubGoalModal({
             mission_current_period_end: state.selectedAction.mission_current_period_end,
             ai_suggestion: state.selectedAction.ai_suggestion
               ? (typeof state.selectedAction.ai_suggestion === 'string'
-                  ? JSON.parse(state.selectedAction.ai_suggestion)
-                  : state.selectedAction.ai_suggestion)
+                ? JSON.parse(state.selectedAction.ai_suggestion)
+                : state.selectedAction.ai_suggestion)
               : undefined
           }}
           onSave={handleTypeSave}

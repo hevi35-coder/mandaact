@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,38 +26,32 @@ export function AIInsightCard() {
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadReports = useCallback(async () => {
     if (!user) return
-    loadReports()
+
+    try {
+      const { data, error } = await supabase
+        .from('ai_reports')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('report_type', activeTab)
+        .order('generated_at', { ascending: false })
+        .limit(10)
+
+      if (error) throw error
+
+      setReportHistory(data || [])
+      setLatestReport(data && data.length > 0 ? data[0] : null)
+    } catch (err) {
+      console.error('Error loading reports:', err)
+    }
   }, [user, activeTab])
 
-  const loadReports = async () => {
-    if (!user) return
+  useEffect(() => {
+    loadReports()
+  }, [loadReports])
 
-    // Get latest report of current type
-    const { data: latest } = await supabase
-      .from('ai_reports')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('report_type', activeTab)
-      .order('generated_at', { ascending: false })
-      .limit(1)
-      .single()
 
-    setLatestReport(latest || null)
-
-    // Get report history (last 5)
-    const { data: history } = await supabase
-      .from('ai_reports')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('report_type', activeTab)
-      .order('generated_at', { ascending: false })
-      .limit(5)
-
-    setReportHistory(history || [])
-    setSelectedHistoryId('')
-  }
 
   const generateReport = async () => {
     if (!user || generating) return

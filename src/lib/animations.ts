@@ -1,3 +1,5 @@
+// Re-exported types for convenience (used at end of file)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Transition, Variant } from 'framer-motion'
 
 // ============================================

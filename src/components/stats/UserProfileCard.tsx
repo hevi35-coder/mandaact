@@ -14,13 +14,12 @@ import { useToast } from '@/hooks/use-toast'
 import { SUCCESS_MESSAGES } from '@/lib/notificationMessages'
 import { showSuccess } from '@/lib/notificationUtils'
 import { getActiveMultipliers, formatMultiplier, getMultiplierColor } from '@/lib/xpMultipliers'
-import { getBadgeStage } from '@/lib/badgeStages'
 import { categorizeBadges } from '@/lib/badgeCategories'
 import type { UserLevel, Achievement, UserAchievement } from '@/types'
 import type { XPMultiplier } from '@/lib/xpMultipliers'
-import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info, Repeat } from 'lucide-react'
+import { Trophy, Zap, Target, Edit2, ChevronDown, ChevronUp, Sparkles, Info } from 'lucide-react'
 import { BadgeDetailDialog } from './BadgeDetailDialog'
-import { HERO_ANIMATION, BADGE_ANIMATION, BADGE_NEW_ANIMATION } from '@/lib/animations'
+import { HERO_ANIMATION, BADGE_ANIMATION } from '@/lib/animations'
 
 export function UserProfileCard() {
   const { user } = useAuthStore()
@@ -30,7 +29,7 @@ export function UserProfileCard() {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<Set<string>>(new Set())
   const [unlockedBadgesMap, setUnlockedBadgesMap] = useState<Map<string, string>>(new Map())
-  const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<Set<string>>(new Set())
+  const [_newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<Set<string>>(new Set())
   const [totalChecks, setTotalChecks] = useState(0)
   const [activeDays, setActiveDays] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -556,7 +555,6 @@ export function UserProfileCard() {
                     {categorizeBadges(allBadges).map((category) => {
                       const unlockedCount = category.badges.filter(b => unlockedBadgeIds.has(b.id)).length
                       const totalCount = category.badges.length
-                      const progressPercentage = (unlockedCount / totalCount) * 100
 
                       return (
                         <div key={category.key} className="space-y-3">

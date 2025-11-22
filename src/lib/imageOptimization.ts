@@ -103,7 +103,7 @@ export async function compressImage(
  */
 export function getOptimizedImageUrl(
     url: string,
-    options?: {
+    _options?: {
         width?: number
         height?: number
         quality?: number

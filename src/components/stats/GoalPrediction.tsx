@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -28,12 +28,7 @@ export function GoalPrediction() {
   const [loadingAI, setLoadingAI] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    calculatePredictions()
-  }, [user])
-
-  const calculatePredictions = async () => {
+  const calculatePredictions = useCallback(async () => {
     if (!user) return
 
     setLoading(true)
@@ -154,7 +149,12 @@ export function GoalPrediction() {
 
     setPredictions(predictionsList)
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    calculatePredictions()
+  }, [user, calculatePredictions])
 
   const generateAIMotivation = async (prediction: PredictionData) => {
     if (!user || loadingAI) return

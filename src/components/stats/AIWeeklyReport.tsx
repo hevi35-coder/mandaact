@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import type { AIReport } from '@/types'
-import { Sparkles, Loader2, Calendar, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp, FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Sparkles, Loader2, TrendingUp, Target, AlertCircle, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -30,12 +30,7 @@ export function AIWeeklyReport() {
   const [isDiagnosisOpen, setIsDiagnosisOpen] = useState(false)
   const [hasMandalarts, setHasMandalarts] = useState(false)
 
-  useEffect(() => {
-    if (!user) return
-    loadReports()
-  }, [user])
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     if (!user) return
     setLoading(true)
 
@@ -88,7 +83,12 @@ export function AIWeeklyReport() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    loadReports()
+  }, [user, loadReports])
 
   const generateReport = async () => {
     if (!user || generating) return

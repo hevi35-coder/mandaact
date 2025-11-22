@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,12 +22,7 @@ export function StrugglingGoals() {
   const [strugglingGoals, setStrugglingGoals] = useState<StrugglingGoal[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    analyzeStrugglingGoals()
-  }, [user])
-
-  const analyzeStrugglingGoals = async () => {
+  const analyzeStrugglingGoals = useCallback(async () => {
     if (!user) return
 
     setLoading(true)
@@ -56,7 +51,12 @@ export function StrugglingGoals() {
 
     setStrugglingGoals(analyzed)
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    analyzeStrugglingGoals()
+  }, [user, analyzeStrugglingGoals])
 
   const generateAnalysis = (goal: GoalProgress): string => {
     const { weeklyPercentage, checkedThisWeek, totalActions } = goal

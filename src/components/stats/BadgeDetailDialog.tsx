@@ -8,10 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
 import { calculateBadgeProgress } from '@/lib/stats'
 import { formatUnlockCondition, getBadgeHint, getProgressMessage } from '@/lib/badgeHints'
-import { getBadgeStage } from '@/lib/badgeStages'
 import type { Achievement } from '@/types'
 import { Lock, Zap, Trophy, Calendar, Repeat, Info } from 'lucide-react'
 
@@ -59,7 +57,6 @@ export function BadgeDetailDialog({
   const crypticHint = getBadgeHint(badge.key, hintLevel)
   const formattedCondition = formatUnlockCondition(badge.unlock_condition, hintLevel, badge.key)
   const canShowProgress = !isUnlocked && progress && hintLevel !== 'hidden'
-  const stage = getBadgeStage(badge.xp_reward)
 
   return (
     <Dialog open={!!badge} onOpenChange={() => onClose()}>

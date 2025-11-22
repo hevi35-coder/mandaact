@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { Mandalart } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/notificationMessages'
 import { showError } from '@/lib/notificationUtils'
-import { Plus, Grid3x3, ArrowRight, ImagePlus, Edit3, BookOpen } from 'lucide-react'
+import { Plus, Grid3x3 } from 'lucide-react'
 
 export default function MandalartListPage() {
   const navigate = useNavigate()
@@ -18,15 +18,7 @@ export default function MandalartListPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
-    fetchMandalarts()
-  }, [user, navigate])
-
-  const fetchMandalarts = async () => {
+  const fetchMandalarts = useCallback(async () => {
     if (!user) return
 
     setIsLoading(true)
@@ -48,7 +40,15 @@ export default function MandalartListPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    fetchMandalarts()
+  }, [user, navigate, fetchMandalarts])
 
   const handleToggleActive = async (id: string, currentIsActive: boolean) => {
     try {

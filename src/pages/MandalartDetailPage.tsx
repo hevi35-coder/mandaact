@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -41,19 +41,7 @@ export default function MandalartDetailPage() {
   const [deleteDialogStep, setDeleteDialogStep] = useState<'choice' | 'confirm'>('choice')
   const [deletionStats, setDeletionStats] = useState({ totalChecks: 0, totalSubGoals: 0, totalActions: 0 })
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
-    if (!id) {
-      navigate('/mandalart/list')
-      return
-    }
-    fetchMandalart()
-  }, [user, id, navigate])
-
-  const fetchMandalart = async () => {
+  const fetchMandalart = useCallback(async () => {
     if (!id) return
 
     setIsLoading(true)
@@ -109,7 +97,19 @@ export default function MandalartDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    if (!id) {
+      navigate('/mandalart/list')
+      return
+    }
+    fetchMandalart()
+  }, [user, id, navigate, fetchMandalart])
 
   const getSubGoalByPosition = (position: number) => {
     return mandalart?.sub_goals.find(sg => sg.position === position)

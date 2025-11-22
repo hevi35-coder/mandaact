@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -29,12 +29,7 @@ export function LiveInsights() {
   const [insights, setInsights] = useState<Insight[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    analyzeInsights()
-  }, [user])
-
-  const analyzeInsights = async () => {
+  const analyzeInsights = useCallback(async () => {
     if (!user) return
 
     setLoading(true)
@@ -152,7 +147,12 @@ export function LiveInsights() {
 
     setInsights(discoveredInsights)
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    analyzeInsights()
+  }, [user, analyzeInsights])
 
   if (!user || loading) {
     return (
