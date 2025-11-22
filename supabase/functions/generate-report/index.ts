@@ -15,10 +15,32 @@ interface ReportRequest {
   mandalart_id?: string
 }
 
+// Supabase query builder types
+interface QueryBuilder {
+  select: (columns?: string) => QueryBuilder
+  eq: (column: string, value: unknown) => QueryBuilder
+  neq: (column: string, value: unknown) => QueryBuilder
+  gte: (column: string, value: unknown) => QueryBuilder
+  lte: (column: string, value: unknown) => QueryBuilder
+  order: (column: string, options?: { ascending?: boolean }) => QueryBuilder
+  limit: (count: number) => QueryBuilder
+  single: () => Promise<{ data: unknown; error: Error | null }>
+  maybeSingle: () => Promise<{ data: unknown; error: Error | null }>
+}
+
+interface SupabaseAuthError {
+  message: string
+  status?: number
+  code?: string
+}
+
 interface SupabaseClient {
-  from: (table: string) => any // eslint-disable-line @typescript-eslint/no-explicit-any
+  from: (table: string) => QueryBuilder
   auth: {
-    getUser: (jwt: string) => Promise<{ data: { user: { id: string } | null }; error: any }> // eslint-disable-line @typescript-eslint/no-explicit-any
+    getUser: (jwt: string) => Promise<{
+      data: { user: { id: string } | null }
+      error: SupabaseAuthError | null
+    }>
   }
 }
 
