@@ -600,15 +600,21 @@ export default function TodayChecklistPage() {
                 }}
                 className="rounded-r-none border-r-0"
               >
-                어제
+                이전
               </Button>
               <Button
-                variant={isToday(selectedDate) ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 onClick={() => handleDateChange(new Date())}
                 className="rounded-none border-r-0"
               >
-                오늘
+                {isToday(selectedDate) ? (
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+                    오늘
+                  </span>
+                ) : (
+                  '오늘'
+                )}
               </Button>
               <Button
                 variant="outline"
@@ -620,7 +626,7 @@ export default function TodayChecklistPage() {
                 }}
                 className="rounded-l-none"
               >
-                내일
+                다음
               </Button>
             </div>
 

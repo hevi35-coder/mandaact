@@ -533,15 +533,6 @@ export default function NotificationSettingsPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Back Button */}
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => navigate('/home')}
-        >
-          홈으로 돌아가기
-        </Button>
       </div>
     </div>
   )

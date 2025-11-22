@@ -112,9 +112,15 @@ export default function MandalartListPage() {
             <h1 className="text-3xl font-bold inline-block">만다라트</h1>
             <span className="text-muted-foreground ml-3 text-sm">목표 관리 • {mandalarts.length}개</span>
           </div>
-          <Button onClick={() => navigate('/mandalart/create')} className="w-full md:w-auto">
-            <Plus className="h-4 w-4 mr-1.5" />
-            새로 만들기
+          <Button
+            variant="outline"
+            onClick={() => navigate('/mandalart/create')}
+            className="w-full md:w-auto bg-white border-gray-300 hover:border-blue-600"
+          >
+            <Plus className="h-4 w-4 mr-1.5 text-blue-600" />
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+              새로 만들기
+            </span>
           </Button>
         </div>
 

@@ -398,12 +398,15 @@ export default function MandalartDetailPage() {
               만다라트 목록
             </Button>
             <Button
-              variant="default"
+              variant="outline"
               disabled={isDownloading}
               onClick={handleDownloadImage}
+              className="bg-white border-gray-300 hover:border-blue-600"
             >
-              <Download className="w-4 h-4 mr-2" />
-              {isDownloading ? '생성 중...' : '다운로드'}
+              <Download className="w-4 h-4 mr-2 text-blue-600" />
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+                {isDownloading ? '생성 중...' : '다운로드'}
+              </span>
             </Button>
             <Button
               variant="outline"

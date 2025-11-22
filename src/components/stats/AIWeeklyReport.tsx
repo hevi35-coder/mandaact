@@ -429,22 +429,27 @@ export function AIWeeklyReport() {
           </select>
         )}
         <Button
+          variant="outline"
           onClick={async () => {
             await generateReport()
             await generateDiagnosis()
           }}
           disabled={generating || generatingDiagnosis}
-          className="whitespace-nowrap"
+          className="whitespace-nowrap bg-white border-gray-300 hover:border-blue-600"
         >
           {generating || generatingDiagnosis ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              생성 중...
+              <Loader2 className="h-4 w-4 animate-spin mr-1.5 text-blue-600" />
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+                생성 중...
+              </span>
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4 mr-1.5" />
-              새로 생성하기
+              <Sparkles className="h-4 w-4 mr-1.5 text-blue-600" />
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+                새로 생성하기
+              </span>
             </>
           )}
         </Button>

@@ -83,24 +83,26 @@ export default function HomePage() {
         {/* Streak Hero */}
         <StreakHero />
 
-        {/* Tutorial Button */}
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => navigate('/tutorial')}
-        >
-          튜토리얼
-        </Button>
-
-        {/* Logout Button */}
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          로그아웃
-        </Button>
+        {/* Tutorial and Logout Buttons */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex-1 bg-white border-gray-300 hover:border-blue-600"
+            onClick={() => navigate('/tutorial')}
+          >
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+              튜토리얼
+            </span>
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            로그아웃
+          </Button>
+        </div>
       </div>
     </div>
   )

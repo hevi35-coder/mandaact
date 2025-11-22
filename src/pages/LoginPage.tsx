@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuthStore } from '@/store/authStore'
 import { Target, Sparkles, TrendingUp, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react'
 
@@ -73,6 +73,7 @@ export default function LoginPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showSignUpPassword, setShowSignUpPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false)
 
   const from = (location.state as { from?: string })?.from || '/'
 
@@ -111,6 +112,7 @@ export default function LoginPage() {
     } else {
       setSignUpSuccess(true)
       setIsSignUpLoading(false)
+      setIsSignUpModalOpen(false)
       setTimeout(() => {
         navigate('/home', { replace: true })
       }, 2000)
@@ -230,7 +232,7 @@ export default function LoginPage() {
           <p className="text-sm text-gray-600">목표를 행동으로, 만다라트로 실천</p>
         </motion.div>
 
-        {/* Auth Card */}
+        {/* Auth Card - Login */}
         <motion.div
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -238,188 +240,184 @@ export default function LoginPage() {
           className="w-full max-w-md"
         >
           <Card className="shadow-xl border-2 border-gray-200 bg-white">
-            <CardHeader className="pb-4 space-y-2">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">시작하기</CardTitle>
-              <CardDescription className="text-gray-600">
-                계정을 만들거나 로그인하세요
-              </CardDescription>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-black">로그인</CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-4 pb-4">
-              <Tabs defaultValue="signup" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4 h-11 bg-gray-100 p-1">
-                  <TabsTrigger
-                    value="signup"
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 transition-all"
+            <CardContent className="space-y-4 pb-6">
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                {loginError && (
+                  <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                    {loginError}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-email" className="text-gray-700 font-medium">이메일</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      className="pl-10 bg-white text-foreground"
+                      {...loginForm.register('email')}
+                      disabled={isLoginLoading}
+                    />
+                  </div>
+                  {loginForm.formState.errors.email && (
+                    <p className="text-sm text-red-600">{loginForm.formState.errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-password" className="text-gray-700 font-medium">비밀번호</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-password"
+                      type={showLoginPassword ? 'text' : 'password'}
+                      placeholder="비밀번호를 입력하세요"
+                      className="pl-10 pr-10 bg-white text-foreground"
+                      {...loginForm.register('password')}
+                      disabled={isLoginLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {loginForm.formState.errors.password && (
+                    <p className="text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
+                  )}
+                </div>
+
+                <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium" disabled={isLoginLoading}>
+                  {isLoginLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      로그인 중...
+                    </>
+                  ) : (
+                    '로그인'
+                  )}
+                </Button>
+              </form>
+
+              {/* Sign Up Link */}
+              <div className="text-center pt-2 border-t">
+                <p className="text-sm text-gray-600">
+                  계정이 없으신가요?{' '}
+                  <button
+                    onClick={() => setIsSignUpModalOpen(true)}
+                    className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all"
                   >
-                    회원가입
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="login"
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 transition-all"
-                  >
-                    로그인
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Login Tab */}
-                <TabsContent value="login" className="mt-0">
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                    {loginError && (
-                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
-                        {loginError}
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email" className="text-gray-700 font-medium">이메일</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="login-email"
-                          type="email"
-                          placeholder="your@email.com"
-                          className="pl-10 bg-white text-foreground"
-                          {...loginForm.register('email')}
-                          disabled={isLoginLoading}
-                        />
-                      </div>
-                      {loginForm.formState.errors.email && (
-                        <p className="text-sm text-red-600">{loginForm.formState.errors.email.message}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password" className="text-gray-700 font-medium">비밀번호</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="login-password"
-                          type={showLoginPassword ? 'text' : 'password'}
-                          placeholder="비밀번호를 입력하세요"
-                          className="pl-10 pr-10 bg-white text-foreground"
-                          {...loginForm.register('password')}
-                          disabled={isLoginLoading}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowLoginPassword(!showLoginPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      {loginForm.formState.errors.password && (
-                        <p className="text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
-                      )}
-                    </div>
-
-                    <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium" disabled={isLoginLoading}>
-                      {isLoginLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          로그인 중...
-                        </>
-                      ) : (
-                        '로그인'
-                      )}
-                    </Button>
-                  </form>
-                </TabsContent>
-
-                {/* Sign Up Tab */}
-                <TabsContent value="signup" className="mt-0">
-                  <form onSubmit={signUpForm.handleSubmit(onSignUpSubmit)} className="space-y-4">
-                    {signUpError && (
-                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
-                        {signUpError}
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email" className="text-gray-700 font-medium">이메일</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="your@email.com"
-                          className="pl-10 bg-white text-foreground"
-                          {...signUpForm.register('email')}
-                          disabled={isSignUpLoading}
-                        />
-                      </div>
-                      {signUpForm.formState.errors.email && (
-                        <p className="text-sm text-red-600">{signUpForm.formState.errors.email.message}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password" className="text-gray-700 font-medium">비밀번호</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-password"
-                          type={showSignUpPassword ? 'text' : 'password'}
-                          placeholder="비밀번호 (6자 이상)"
-                          className="pl-10 pr-10 bg-white text-foreground"
-                          {...signUpForm.register('password')}
-                          disabled={isSignUpLoading}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      {signUpForm.formState.errors.password && (
-                        <p className="text-sm text-red-600">{signUpForm.formState.errors.password.message}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-confirm-password" className="text-gray-700 font-medium">비밀번호 확인</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-confirm-password"
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          placeholder="비밀번호 확인"
-                          className="pl-10 pr-10 bg-white text-foreground"
-                          {...signUpForm.register('confirmPassword')}
-                          disabled={isSignUpLoading}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      {signUpForm.formState.errors.confirmPassword && (
-                        <p className="text-sm text-red-600">{signUpForm.formState.errors.confirmPassword.message}</p>
-                      )}
-                    </div>
-
-                    <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium" disabled={isSignUpLoading}>
-                      {isSignUpLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          가입 중...
-                        </>
-                      ) : (
-                        '회원가입'
-                      )}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
+                    가입하기
+                  </button>
+                </p>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Sign Up Modal */}
+        <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-black">회원가입</DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={signUpForm.handleSubmit(onSignUpSubmit)} className="space-y-4">
+              {signUpError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                  {signUpError}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-email" className="text-gray-700 font-medium">이메일</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    className="pl-10 bg-white text-foreground"
+                    {...signUpForm.register('email')}
+                    disabled={isSignUpLoading}
+                  />
+                </div>
+                {signUpForm.formState.errors.email && (
+                  <p className="text-sm text-red-600">{signUpForm.formState.errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-password" className="text-gray-700 font-medium">비밀번호</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signup-password"
+                    type={showSignUpPassword ? 'text' : 'password'}
+                    placeholder="비밀번호 (6자 이상)"
+                    className="pl-10 pr-10 bg-white text-foreground"
+                    {...signUpForm.register('password')}
+                    disabled={isSignUpLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {signUpForm.formState.errors.password && (
+                  <p className="text-sm text-red-600">{signUpForm.formState.errors.password.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-confirm-password" className="text-gray-700 font-medium">비밀번호 확인</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signup-confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="비밀번호 확인"
+                    className="pl-10 pr-10 bg-white text-foreground"
+                    {...signUpForm.register('confirmPassword')}
+                    disabled={isSignUpLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {signUpForm.formState.errors.confirmPassword && (
+                  <p className="text-sm text-red-600">{signUpForm.formState.errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-medium" disabled={isSignUpLoading}>
+                {isSignUpLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    가입 중...
+                  </>
+                ) : (
+                  '회원가입'
+                )}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
