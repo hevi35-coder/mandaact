@@ -1,13 +1,64 @@
-# Session Summary - PWA Configuration & Production Fixes
+# Session Summary - Action Inline Editing & Code Quality
 
-**Date**: 2025-11-14 (Latest)
-**Previous Session**: 2025-11-10
-**Duration**: ~30 minutes
+**Date**: 2025-11-22 (Latest)
+**Previous Session**: 2025-11-14
+**Duration**: ~90 minutes
 **Status**: ✅ All Tasks Complete (100%)
 
 ---
 
-## 📱 Latest Session (2025-11-14)
+## 🎯 Latest Session (2025-11-22)
+
+### Action Name Inline Editing & Bug Fixes ✅
+
+**Issue 1: Action Name Editing Request**
+- Problem: 투데이 페이지에서 실천항목 이름 수정 불가
+- Solution: ActionListItem 패턴 재사용하여 인라인 편집 UI 구현
+- Features:
+  - 클릭하여 편집 모드 진입
+  - 한글 IME 지원 (isComposingRef)
+  - Enter/Escape 키보드 단축키
+  - 낙관적 업데이트 + DB 동기화
+  - Save/Cancel 아이콘 버튼
+- Commit: `748aabb`
+
+**Issue 2: SubGoalModal Editing Bug**
+- Problem: 세부목표 편집 시 즉시 취소되어 수정 불가
+- Cause: useEffect 의존성 배열에 subGoal 포함 → 부모 리렌더링 시 재초기화
+- Solution: useEffect 의존성을 [open]으로 최적화
+- Result: 정상 작동 확인
+- Commit: `748aabb`
+
+**Issue 3: Database Schema Changes**
+- Problem 1: achievements.is_active 컬럼 삭제 후 쿼리 오류
+  - Fixed: stats.ts에서 .eq('is_active', true) 필터 제거
+- Problem 2: user_bonus_xp 테이블 레코드 없을 때 406 에러
+  - Fixed: xpMultipliers.ts에서 .single() → .maybeSingle() (3곳)
+- Commit: `748aabb`
+
+**Code Quality Improvements**:
+- ✅ TypeScript: 0 errors (완벽)
+- ✅ ESLint: 43 warnings → 7 warnings (84% 감소)
+- ✅ Unused variables 제거
+- ✅ React Hook 의존성 주요 이슈 해결
+- ✅ 빌드 성공
+- ✅ Git push 완료
+
+**Files Modified**:
+- `src/pages/TodayChecklistPage.tsx` - 인라인 편집 기능 추가
+- `src/components/SubGoalModal.tsx` - useEffect 최적화
+- `src/lib/stats.ts` - achievements.is_active 필터 제거
+- `src/lib/xpMultipliers.ts` - .maybeSingle() 적용
+- `src/components/stats/UserProfileCard.tsx` - unused 변수 정리
+- 기타 20개 파일 (타입 및 린트 정리)
+
+**Deployment**: Git push 완료, Vercel 자동 배포 대기 중
+
+**See**: `SESSION_2025-11-22.md` for full details
+
+---
+
+## 📱 Previous Session (2025-11-14)
 
 ### Mobile Production Issues Fixed ✅
 

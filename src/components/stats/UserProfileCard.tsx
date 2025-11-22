@@ -29,7 +29,6 @@ export function UserProfileCard() {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<Set<string>>(new Set())
   const [unlockedBadgesMap, setUnlockedBadgesMap] = useState<Map<string, string>>(new Map())
-  const [_newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<Set<string>>(new Set())
   const [totalChecks, setTotalChecks] = useState(0)
   const [activeDays, setActiveDays] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -332,14 +331,6 @@ export function UserProfileCard() {
                 })
               }
             }
-
-            // Track newly unlocked badge keys for NEW indicator
-            const newlyUnlocked = new Set(
-              evaluationResults
-                .filter(r => r.wasUnlocked)
-                .map(r => r.badgeKey)
-            )
-            setNewlyUnlockedBadges(newlyUnlocked)
 
             // Refresh user level if any badges were unlocked (XP changed)
             if (evaluationResults.some(r => r.wasUnlocked)) {

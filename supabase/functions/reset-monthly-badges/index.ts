@@ -136,11 +136,6 @@ serve(async (req) => {
 
         const nextRepeatCount = currentRepeatCount + 1
 
-        // Calculate XP for this repeat (with multiplier)
-        const _repeatXP = Math.floor(
-          achievement.xp_reward * (achievement.repeat_xp_multiplier || 0.5)
-        )
-
         // 4. Move to unlock history
         const { error: insertHistoryError } = await supabaseAdmin
           .from('achievement_unlock_history')
