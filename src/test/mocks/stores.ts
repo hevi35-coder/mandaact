@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
-// Mock auth store
+// Mock auth store factory
+// Import this in individual test files and use vi.mock('@/store/authStore', ...) there
 export const createMockAuthStore = (overrides = {}) => ({
   user: {
     id: 'test-user-id',
@@ -13,7 +14,4 @@ export const createMockAuthStore = (overrides = {}) => ({
   initialize: vi.fn(),
 })
 
-// Mock auth store module
-vi.mock('@/store/authStore', () => ({
-  useAuthStore: vi.fn(() => createMockAuthStore()),
-}))
+// NOTE: Do NOT call vi.mock() here - let individual test files handle their own mocking

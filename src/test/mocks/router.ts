@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
-// Mock React Router hooks
+// Mock React Router hooks factory
+// Import this in individual test files and use vi.mock('react-router-dom', ...) there
 export const mockNavigate = vi.fn()
 export const mockLocation = {
   pathname: '/',
@@ -10,12 +11,10 @@ export const mockLocation = {
   key: 'default',
 }
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-    useLocation: () => mockLocation,
-    useParams: () => ({}),
-  }
+export const createMockRouter = () => ({
+  useNavigate: () => mockNavigate,
+  useLocation: () => mockLocation,
+  useParams: () => ({}),
 })
+
+// NOTE: Do NOT call vi.mock() here - let individual test files handle their own mocking

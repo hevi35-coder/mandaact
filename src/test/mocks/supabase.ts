@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
-// Mock Supabase client
+// Mock Supabase client factory
+// Import this in individual test files and use vi.mock('@/lib/supabase', ...) there
 export const createMockSupabaseClient = () => {
   const mockFrom = vi.fn(() => ({
     select: vi.fn().mockReturnThis(),
@@ -43,7 +44,4 @@ export const createMockSupabaseClient = () => {
   }
 }
 
-// Mock Supabase module
-vi.mock('@/lib/supabase', () => ({
-  supabase: createMockSupabaseClient(),
-}))
+// NOTE: Do NOT call vi.mock() here - let individual test files handle their own mocking
