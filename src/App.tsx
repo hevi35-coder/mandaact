@@ -139,8 +139,10 @@ function LandingPage() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+      gcTime: 10 * 60 * 1000, // 10 minutes - garbage collection time (renamed from cacheTime in v4+)
       refetchOnWindowFocus: false,
+      retry: 1, // Reduce retry attempts from default 3 to 1
     },
   },
 })
