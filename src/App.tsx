@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
@@ -147,6 +148,88 @@ const queryClient = new QueryClient({
   },
 })
 
+// Wrapper component to use useLocation inside Router
+function AnimatedRoutes() {
+  const location = useLocation()
+
+  return (
+    <>
+      <Navigation />
+      <AnimatePresence mode="wait" initial={false}>
+        <Suspense fallback={<PageLoader />} key={location.pathname}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mandalart/create"
+              element={
+                <ProtectedRoute>
+                  <MandalartCreatePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mandalart/list"
+              element={
+                <ProtectedRoute>
+                  <MandalartListPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mandalart/:id"
+              element={
+                <ProtectedRoute>
+                  <MandalartDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/today"
+              element={
+                <ProtectedRoute>
+                  <TodayChecklistPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/tutorial" element={<TutorialPage />} />
+            {/* More routes will be added in future phases */}
+          </Routes>
+        </Suspense>
+      </AnimatePresence>
+
+      {/* Mobile Bottom Spacer - ensures content isn't hidden behind bottom nav */}
+      <div className="md:hidden h-16" aria-hidden="true" />
+
+      <Toaster />
+    </>
+  )
+}
+
 function App() {
   const initialize = useAuthStore((state) => state.initialize)
 
@@ -158,76 +241,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
-          <Navigation />
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/home"
-                element={
-                  <ProtectedRoute>
-                    <HomePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mandalart/create"
-                element={
-                  <ProtectedRoute>
-                    <MandalartCreatePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mandalart/list"
-                element={
-                  <ProtectedRoute>
-                    <MandalartListPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mandalart/:id"
-                element={
-                  <ProtectedRoute>
-                    <MandalartDetailPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/today"
-                element={
-                  <ProtectedRoute>
-                    <TodayChecklistPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings/notifications"
-                element={
-                  <ProtectedRoute>
-                    <NotificationSettingsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/reports"
-                element={
-                  <ProtectedRoute>
-                    <ReportsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/tutorial" element={<TutorialPage />} />
-              {/* More routes will be added in future phases */}
-            </Routes>
-          </Suspense>
-
-          {/* Mobile Bottom Spacer - ensures content isn't hidden behind bottom nav */}
-          <div className="md:hidden h-16" aria-hidden="true" />
-
-          <Toaster />
+          <AnimatedRoutes />
         </Router>
       </QueryClientProvider>
     </ErrorBoundary>

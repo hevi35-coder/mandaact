@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -18,6 +18,8 @@ import { ko } from 'date-fns/locale/ko'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, ACHIEVEMENT_MESSAGES } from '@/lib/notificationMessages'
 import { showError, showSuccess, showCelebration } from '@/lib/notificationUtils'
 import { getDayBoundsUTC, getCurrentUTC } from '@/lib/timezone'
+import { PAGE_SLIDE, LIST_ITEM_ANIMATION, getStaggerDelay, CARD_ANIMATION, HOVER_LIFT, CHECKBOX_ANIMATION } from '@/lib/animations'
+import { CardSkeleton, ListSkeleton } from '@/components/ui/skeleton'
 
 interface ActionWithContext extends Action {
   sub_goal: SubGoal & {
@@ -550,13 +552,18 @@ export default function TodayChecklistPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">로딩 중...</p>
-          </div>
+      <motion.div
+        className="container mx-auto py-3 md:py-6 px-4 pb-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="max-w-4xl mx-auto space-y-4">
+          <div className="h-10" /> {/* Header spacer */}
+          <CardSkeleton />
+          <ListSkeleton count={5} />
         </div>
-      </div>
+      </motion.div>
     )
   }
 
@@ -576,10 +583,18 @@ export default function TodayChecklistPage() {
   }
 
   return (
-    <div className="container mx-auto py-3 md:py-6 px-4 pb-4">
+    <motion.div
+      className="container mx-auto py-3 md:py-6 px-4 pb-4"
+      {...PAGE_SLIDE}
+    >
       <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+        <motion.div
+          className="flex flex-col md:flex-row items-center justify-between gap-3"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0 }}
+        >
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold inline-block">투데이</h1>
             <span className="text-muted-foreground ml-3 text-sm">오늘의 실천</span>
@@ -649,10 +664,15 @@ export default function TodayChecklistPage() {
               </PopoverContent>
             </Popover>
           </div>
-        </div>
+        </motion.div>
 
         {/* Progress Card with Type Filter */}
         {actions.length > 0 && (
+          <motion.div
+            initial={CARD_ANIMATION.initial}
+            animate={CARD_ANIMATION.animate}
+            transition={{ ...CARD_ANIMATION.transition, delay: getStaggerDelay(1, 0.1) }}
+          >
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -740,6 +760,7 @@ export default function TodayChecklistPage() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Empty State */}
@@ -929,14 +950,20 @@ export default function TodayChecklistPage() {
         {/* Actions List - Grouped by Mandalart */}
         {filteredActions.length > 0 && (
           <div className="space-y-6">
-            {Object.entries(actionsByMandalart).map(([mandalartId, { mandalart, actions: mandalartActions }]) => {
+            {Object.entries(actionsByMandalart).map(([mandalartId, { mandalart, actions: mandalartActions }], groupIndex) => {
               const isCollapsed = collapsedSections.has(mandalartId)
               const mandalartNonRef = mandalartActions.filter(a => a.type !== 'reference')
               const mandalartChecked = mandalartNonRef.filter(a => a.is_checked).length
               const mandalartTotal = mandalartNonRef.length
 
               return (
-                <div key={mandalartId} className="space-y-3">
+                <motion.div
+                  key={mandalartId}
+                  className="space-y-3"
+                  initial={LIST_ITEM_ANIMATION.initial}
+                  animate={LIST_ITEM_ANIMATION.animate}
+                  transition={{ ...LIST_ITEM_ANIMATION.transition, delay: getStaggerDelay(groupIndex + 2, 0.08) }}
+                >
                   {/* Section Header */}
                   <button
                     onClick={() => toggleSection(mandalartId)}
@@ -959,20 +986,37 @@ export default function TodayChecklistPage() {
                   </button>
 
                   {/* Actions in this Mandalart */}
+                  <AnimatePresence>
                   {!isCollapsed && (
-                    <div className="space-y-2 pl-2">
-                      {mandalartActions.map((action) => (
-                        <Card
+                    <motion.div
+                      className="space-y-2 pl-2"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {mandalartActions.map((action, actionIndex) => (
+                        <motion.div
                           key={action.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.2, delay: actionIndex * 0.03 }}
+                          whileHover={action.type !== 'reference' && !action.is_checked ? HOVER_LIFT.whileHover : undefined}
+                        >
+                        <Card
                           className={`transition-all ${action.is_checked
                             ? 'bg-gray-50 border-gray-300'
                             : action.type === 'reference'
                               ? 'bg-gray-50/50 border-gray-200'
-                              : 'hover:shadow-md'
+                              : ''
                             }`}
                         >
                           <div className="p-3">
                             <div className="flex items-center gap-3">
+                              <motion.div
+                                {...CHECKBOX_ANIMATION}
+                                className="flex-shrink-0"
+                              >
                               <input
                                 type="checkbox"
                                 checked={action.is_checked}
@@ -982,11 +1026,12 @@ export default function TodayChecklistPage() {
                                   action.type === 'reference' ||
                                   !isTodayOrYesterday(selectedDate)
                                 }
-                                className={`h-5 w-5 rounded border-gray-300 text-primary flex-shrink-0 ${action.type === 'reference' || !isTodayOrYesterday(selectedDate)
+                                className={`h-5 w-5 rounded border-gray-300 text-primary ${action.type === 'reference' || !isTodayOrYesterday(selectedDate)
                                   ? 'opacity-50 cursor-not-allowed'
                                   : 'cursor-pointer focus:ring-primary'
                                   } disabled:cursor-not-allowed`}
                               />
+                              </motion.div>
                               {editingActionId === action.id ? (
                                 // Editing Mode
                                 <div className="flex-1 flex items-center gap-2">
@@ -1060,10 +1105,12 @@ export default function TodayChecklistPage() {
                             </div>
                           </div>
                         </Card>
+                        </motion.div>
                       ))}
-                    </div>
+                    </motion.div>
                   )}
-                </div>
+                  </AnimatePresence>
+                </motion.div>
               )
             })}
           </div>
@@ -1094,6 +1141,6 @@ export default function TodayChecklistPage() {
           onSave={handleTypeSave}
         />
       )}
-    </div>
+    </motion.div>
   )
 }

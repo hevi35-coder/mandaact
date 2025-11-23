@@ -89,15 +89,43 @@ export const BADGE_NEW_ANIMATION = {
 } as const
 
 /**
- * 👆 HOVER - 호버 상태
+ * 👆 HOVER_SCALE - 호버 상태 (스케일)
  *
- * 사용 대상: 인터랙티브 카드, 버튼
+ * 사용 대상: 인터랙티브 카드
  * 특징: 미세한 스케일 변화
  * 의도: 클릭 가능함을 암시
  */
 export const HOVER_SCALE = {
   whileHover: { scale: 1.02 },
+  whileTap: { scale: 0.98 },
   transition: { duration: 0.2 }
+} as const
+
+/**
+ * 👆 HOVER_LIFT - 호버 상태 (리프트)
+ *
+ * 사용 대상: 카드
+ * 특징: Y축 이동 + 그림자
+ * 의도: 떠오르는 느낌
+ */
+export const HOVER_LIFT = {
+  whileHover: { y: -4, scale: 1.01 },
+  transition: { duration: 0.2 }
+} as const
+
+/**
+ * ✓ CHECKBOX - 체크박스 애니메이션
+ *
+ * 사용 대상: 체크박스
+ * 특징: 스프링 + 스케일
+ */
+export const CHECKBOX_ANIMATION = {
+  whileTap: { scale: 0.9 },
+  transition: {
+    type: 'spring' as const,
+    stiffness: 300,
+    damping: 15
+  }
 } as const
 
 // ============================================
@@ -184,6 +212,39 @@ export const STAGGER = {
   FAST: 0.03,      // 히트맵 셀 등
   NORMAL: 0.05,    // 일반 리스트 항목
   SLOW: 0.1,       // 그룹, 카드
+} as const
+
+// ============================================
+// PAGE TRANSITIONS
+// ============================================
+
+/**
+ * 📄 PAGE_FADE - 페이지 전환 (Fade)
+ *
+ * 사용 대상: 페이지 간 전환
+ * 특징: 부드러운 페이드 효과
+ */
+export const PAGE_FADE = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.2 }
+} as const
+
+/**
+ * 📄 PAGE_SLIDE - 페이지 전환 (Slide)
+ *
+ * 사용 대상: 페이지 간 전환
+ * 특징: 우측에서 슬라이드 인
+ */
+export const PAGE_SLIDE = {
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 },
+  transition: {
+    duration: 0.3,
+    ease: [0.16, 1, 0.3, 1] // easeOutExpo
+  }
 } as const
 
 // ============================================
