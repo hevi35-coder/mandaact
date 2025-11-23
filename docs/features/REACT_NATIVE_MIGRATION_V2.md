@@ -1,9 +1,57 @@
 # React Native Migration Plan v2.0
 
 **Created**: 2025-11-24
-**Status**: Planning
+**Updated**: 2025-11-24
+**Status**: In Progress
 **Previous Attempt**: Failed due to React version mismatch
-**Current Commit**: f6d85f5
+**Base Commit**: f6d85f5
+
+---
+
+## 진행 상황 (Progress)
+
+### ✅ Monorepo 구조 재구성 완료 (2025-11-24)
+
+**문제**: 기존 프로젝트가 root에 웹 앱이 있는 비표준 구조로 인해 workspace 충돌 발생
+
+**해결**: 표준 monorepo 구조로 전면 재구성
+
+**완료 작업**:
+1. ✅ apps/web 디렉토리 생성 및 웹 앱 이동
+   - src/, public/, index.html 이동
+   - 설정 파일 이동 (vite.config.ts, tsconfig.json, tailwind.config.js, postcss.config.js 등)
+2. ✅ package.json 분리
+   - Root: Workspace 관리 전용
+   - apps/web: 웹 앱 dependencies
+   - apps/mobile: React 18.3.1 + React Native 0.76.5
+3. ✅ React 버전 통일 확인
+   - @mandaact/shared: React 18.3.1 ✓
+   - @mandaact/web: React 18.3.1 ✓
+   - mobile: React 18.3.1 ✓
+   - 모든 패키지가 단일 React 인스턴스 공유 (deduped)
+
+**새로운 구조**:
+```
+mandaact/
+├── package.json              # Monorepo root
+├── apps/
+│   ├── web/                 # 웹 앱 (이동 완료)
+│   └── mobile/              # React Native (React 18.3.1)
+└── packages/
+    └── shared/              # 공유 코드 (React 18.3.1 peerDep)
+```
+
+### ✅ Phase 1: Shared Packages 완료
+
+1. ✅ packages/shared 생성 및 설정
+2. ✅ React 18.3.1 peerDependency 설정
+3. ✅ Supabase 초기화 로직 작성
+4. ✅ Auth Store 작성
+5. ✅ TypeScript 빌드 성공
+
+### 🔄 Phase 2: Mobile App 생성 (진행 중)
+
+다음 단계: Shared package 연결 및 기본 앱 구현
 
 ---
 
