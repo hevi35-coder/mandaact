@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -66,7 +66,7 @@ interface ActionTypeSelectorProps {
   onSave: (data: ActionTypeData) => void
 }
 
-export default function ActionTypeSelector({
+function ActionTypeSelector({
   open,
   onOpenChange,
   actionTitle,
@@ -455,3 +455,5 @@ export default function ActionTypeSelector({
     </Dialog>
   )
 }
+
+export default React.memo(ActionTypeSelector)

@@ -1,4 +1,4 @@
-import { useState, useReducer, useCallback, useEffect } from 'react'
+import React, { useState, useReducer, useCallback, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -139,7 +139,7 @@ function actionsReducer(state: ActionsState, action: ActionsAction): ActionsStat
   }
 }
 
-export default function SubGoalModal({
+function SubGoalModal({
   mode,
   open,
   onOpenChange,
@@ -683,3 +683,5 @@ export default function SubGoalModal({
     </>
   )
 }
+
+export default React.memo(SubGoalModal)
