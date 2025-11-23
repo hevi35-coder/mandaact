@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
-import { supabase } from '@/lib/supabase'
-import { Mandalart } from '@/types'
+import { useMandalarts, useToggleMandalartActive } from '@/hooks/useMandalarts'
 import { ERROR_MESSAGES } from '@/lib/notificationMessages'
 import { showError } from '@/lib/notificationUtils'
 import { Plus, Grid3x3 } from 'lucide-react'
@@ -14,55 +13,19 @@ export default function MandalartListPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
 
-  const [mandalarts, setMandalarts] = useState<Mandalart[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchMandalarts = useCallback(async () => {
-    if (!user) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('mandalarts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (fetchError) throw fetchError
-
-      setMandalarts(data || [])
-    } catch (err) {
-      console.error('Fetch error:', err)
-      setError(err instanceof Error ? err.message : '목록을 불러오는 중 오류가 발생했습니다')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user])
+  // TanStack Query hooks
+  const { data: mandalarts = [], isLoading, error } = useMandalarts(user?.id)
+  const toggleActive = useToggleMandalartActive()
 
   useEffect(() => {
     if (!user) {
       navigate('/login')
-      return
     }
-    fetchMandalarts()
-  }, [user, navigate, fetchMandalarts])
+  }, [user, navigate])
 
   const handleToggleActive = async (id: string, currentIsActive: boolean) => {
     try {
-      const { error: updateError } = await supabase
-        .from('mandalarts')
-        .update({ is_active: !currentIsActive })
-        .eq('id', id)
-
-      if (updateError) throw updateError
-
-      // Update local state
-      setMandalarts(mandalarts.map(m =>
-        m.id === id ? { ...m, is_active: !currentIsActive } : m
-      ))
+      await toggleActive.mutateAsync({ id, isActive: !currentIsActive })
     } catch (err) {
       console.error('Toggle error:', err)
       showError(ERROR_MESSAGES.activateToggleFailed())
@@ -127,7 +90,7 @@ export default function MandalartListPage() {
         {/* Error Message */}
         {error && (
           <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
-            {error}
+            {error instanceof Error ? error.message : '목록을 불러오는 중 오류가 발생했습니다'}
           </div>
         )}
 

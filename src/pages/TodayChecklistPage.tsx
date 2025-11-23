@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Calendar as CalendarIcon, Info, ChevronRight, ChevronDown, ListTodo, CheckCircle2, Grid3x3, Plus, Check, X } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
-import { Action, SubGoal, Mandalart, CheckHistory } from '@/types'
+import { useTodayActions, ActionWithContext } from '@/hooks/useActions'
+import { Mandalart } from '@/types'
 import { ActionType, shouldShowToday, getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
 import ActionTypeSelector, { ActionTypeData } from '@/components/ActionTypeSelector'
@@ -21,30 +22,22 @@ import { getDayBoundsUTC, getCurrentUTC } from '@/lib/timezone'
 import { PAGE_SLIDE, LIST_ITEM_ANIMATION, getStaggerDelay, CARD_ANIMATION, HOVER_LIFT, CHECKBOX_ANIMATION } from '@/lib/animations'
 import { CardSkeleton, ListSkeleton } from '@/components/ui/skeleton'
 
-interface ActionWithContext extends Action {
-  sub_goal: SubGoal & {
-    mandalart: Mandalart
-  }
-  is_checked: boolean
-  check_id?: string
-}
-
 export default function TodayChecklistPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [searchParams, setSearchParams] = useSearchParams()
-
-  const [actions, setActions] = useState<ActionWithContext[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
-  const [totalMandalartCount, setTotalMandalartCount] = useState(0)
 
   // Date selection
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const dateParam = searchParams.get('date')
     return dateParam ? new Date(dateParam) : new Date()
   })
+
+  // TanStack Query hook for fetching today's actions
+  const { data: actions = [], isLoading, error, refetch } = useTodayActions(user?.id, selectedDate)
+
+  const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
+  const [totalMandalartCount, setTotalMandalartCount] = useState(0)
 
   // Type filter state - multiple selection using Set
   const [activeFilters, setActiveFilters] = useState<Set<ActionType>>(new Set())
@@ -90,87 +83,26 @@ export default function TodayChecklistPage() {
     return isToday(date) || isYesterday(date)
   }
 
-  const fetchTodayActions = useCallback(async () => {
-    if (!user) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // Fetch total mandalart count (including inactive)
-      const { count: mandalartCount, error: countError } = await supabase
-        .from('mandalarts')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-
-      if (countError) throw countError
-      setTotalMandalartCount(mandalartCount || 0)
-
-      // Fetch all actions with sub_goals and mandalarts
-      const { data: actionsData, error: actionsError } = await supabase
-        .from('actions')
-        .select(`
-          *,
-          sub_goal:sub_goals (
-            *,
-            mandalart:mandalarts (*)
-          )
-        `)
-        .eq('sub_goal.mandalart.user_id', user.id)
-
-      if (actionsError) throw actionsError
-
-      // Fetch check history for selected date (using timezone-aware bounds)
-      const dateStr = format(selectedDate, 'yyyy-MM-dd')
-      const { start: dayStart, end: dayEnd } = getDayBoundsUTC(dateStr)
-
-      const { data: checksData, error: checksError } = await supabase
-        .from('check_history')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('checked_at', dayStart)
-        .lt('checked_at', dayEnd)
-
-      if (checksError) throw checksError
-
-      // Create a map of checked action IDs
-      const checkedActionsMap = new Map<string, string>()
-      checksData?.forEach((check: CheckHistory) => {
-        checkedActionsMap.set(check.action_id, check.id)
-      })
-
-      // Combine data
-      const actionsWithContext: ActionWithContext[] = (actionsData || [])
-        .filter((action): action is typeof action & { sub_goal: { mandalart: Mandalart } } =>
-          action.sub_goal?.mandalart != null
-        )
-        .filter((action) =>
-          // Only show actions from active mandalarts
-          action.sub_goal.mandalart.is_active !== false
-        )
-        .map((action) => ({
-          ...action,
-          sub_goal: action.sub_goal,
-          is_checked: checkedActionsMap.has(action.id),
-          check_id: checkedActionsMap.get(action.id)
-        }))
-
-      setActions(actionsWithContext)
-    } catch (err) {
-      console.error('Fetch error:', err)
-      setError(err instanceof Error ? err.message : '데이터를 불러오는 중 오류가 발생했습니다')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user, selectedDate])
-
+  // Fetch total mandalart count separately (not in useTodayActions)
   useEffect(() => {
     if (!user) {
       navigate('/login')
       return
     }
-    fetchTodayActions()
-  }, [user, navigate, selectedDate, fetchTodayActions])
+
+    const fetchMandalartCount = async () => {
+      const { count, error: countError } = await supabase
+        .from('mandalarts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+
+      if (!countError) {
+        setTotalMandalartCount(count || 0)
+      }
+    }
+
+    fetchMandalartCount()
+  }, [user, navigate])
 
   const handleToggleCheck = async (action: ActionWithContext) => {
     if (!user) return
@@ -224,14 +156,8 @@ export default function TodayChecklistPage() {
           console.error('XP update error:', xpError)
         }
 
-        // Optimistic update
-        setActions(prevActions =>
-          prevActions.map(a =>
-            a.id === action.id
-              ? { ...a, is_checked: false, check_id: undefined }
-              : a
-          )
-        )
+        // Refetch to update UI
+        refetch()
       } else {
         // Check: Validate with anti-cheat first
         const { data: validationData, error: validationError } = await supabase
@@ -364,20 +290,14 @@ export default function TodayChecklistPage() {
           }
         }
 
-        // Optimistic update
-        setActions(prevActions =>
-          prevActions.map(a =>
-            a.id === action.id
-              ? { ...a, is_checked: true, check_id: checkData.id }
-              : a
-          )
-        )
+        // Refetch to update UI
+        refetch()
       }
     } catch (err) {
       console.error('Check toggle error:', err)
       showError(ERROR_MESSAGES.checkToggleFailed())
       // Rollback by refetching
-      fetchTodayActions()
+      refetch()
     } finally {
       setCheckingActions(prev => {
         const newSet = new Set(prev)
@@ -407,12 +327,7 @@ export default function TodayChecklistPage() {
       return
     }
 
-    // Optimistic update
-    setActions(prevActions =>
-      prevActions.map(a =>
-        a.id === actionId ? { ...a, title: trimmedTitle } : a
-      )
-    )
+    // Will refetch after DB update
     setEditingActionId(null)
 
     // DB update
@@ -424,12 +339,14 @@ export default function TodayChecklistPage() {
 
       if (updateError) throw updateError
 
+      // Refetch to update UI
+      refetch()
       showSuccess(SUCCESS_MESSAGES.updated())
     } catch (err) {
       console.error('Title update error:', err)
       showError(ERROR_MESSAGES.actionUpdateFailed())
       // Rollback by refetching
-      fetchTodayActions()
+      refetch()
     }
   }
 
@@ -472,7 +389,7 @@ export default function TodayChecklistPage() {
       if (updateError) throw updateError
 
       // Refresh actions list
-      await fetchTodayActions()
+      await refetch()
 
       // Show success feedback
       showSuccess(SUCCESS_MESSAGES.typeUpdated())
@@ -572,7 +489,7 @@ export default function TodayChecklistPage() {
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-4">
           <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
-            {error}
+            {error instanceof Error ? error.message : '데이터를 불러오는 중 오류가 발생했습니다'}
           </div>
           <Button variant="outline" onClick={() => navigate('/dashboard')}>
             대시보드로 돌아가기

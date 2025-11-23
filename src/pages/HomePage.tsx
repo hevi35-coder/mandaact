@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/authStore'
-import { supabase } from '@/lib/supabase'
+import { useMandalarts } from '@/hooks/useMandalarts'
 import { PAGE_SLIDE, getStaggerDelay, CARD_ANIMATION, HOVER_SCALE } from '@/lib/animations'
 import { ProfileCardSkeleton, CardSkeleton } from '@/components/ui/skeleton'
 
@@ -16,6 +16,9 @@ import { LogOut } from 'lucide-react'
 export default function HomePage() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
+
+  // Use TanStack Query hook for mandalarts
+  const { data: mandalarts = [], isLoading: isLoadingMandalarts } = useMandalarts(user?.id)
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
@@ -23,34 +26,22 @@ export default function HomePage() {
       navigate('/login')
       return
     }
+  }, [user, navigate])
 
-    // Check if first-time user or user without mandalarts
-    const checkAndRedirect = async () => {
-      try {
-        // Check if tutorial has been completed
-        const tutorialCompleted = localStorage.getItem('tutorial_completed')
+  // Check if first-time user or user without mandalarts
+  useEffect(() => {
+    if (!user || isLoadingMandalarts) return
 
-        // Check if user has any mandalarts
-        const { data: mandalarts } = await supabase
-          .from('mandalarts')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1)
+    const tutorialCompleted = localStorage.getItem('tutorial_completed')
 
-        // If no tutorial completed AND no mandalarts, redirect to tutorial
-        if (tutorialCompleted !== 'true' && (!mandalarts || mandalarts.length === 0)) {
-          navigate('/tutorial', { replace: true })
-          return
-        }
-      } catch (error) {
-        console.error('Error checking first-time user status:', error)
-      } finally {
-        setIsChecking(false)
-      }
+    // If no tutorial completed AND no mandalarts, redirect to tutorial
+    if (tutorialCompleted !== 'true' && mandalarts.length === 0) {
+      navigate('/tutorial', { replace: true })
+      return
     }
 
-    checkAndRedirect()
-  }, [user, navigate])
+    setIsChecking(false)
+  }, [user, mandalarts, isLoadingMandalarts, navigate])
 
   const handleLogout = async () => {
     await signOut()
