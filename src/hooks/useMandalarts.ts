@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { Mandalart } from '@/types'
+import { Mandalart, MandalartWithDetails } from '@/types'
 
 /**
  * Query key factory for mandalarts
@@ -60,6 +60,64 @@ export function useMandalart(id: string | undefined) {
   return useQuery({
     queryKey: mandalartKeys.detail(id || ''),
     queryFn: () => fetchMandalart(id!),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+/**
+ * Fetch a single mandalart with sub_goals and actions
+ */
+async function fetchMandalartWithDetails(id: string): Promise<MandalartWithDetails> {
+  // Fetch mandalart
+  const { data: mandalartData, error: mandalartError } = await supabase
+    .from('mandalarts')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (mandalartError) throw mandalartError
+
+  // Fetch sub_goals
+  const { data: subGoalsData, error: subGoalsError } = await supabase
+    .from('sub_goals')
+    .select('*')
+    .eq('mandalart_id', id)
+    .order('position')
+
+  if (subGoalsError) throw subGoalsError
+
+  // Fetch actions for all sub_goals
+  const subGoalIds = subGoalsData?.map(sg => sg.id) || []
+  const { data: actionsData, error: actionsError } = await supabase
+    .from('actions')
+    .select('*')
+    .in('sub_goal_id', subGoalIds)
+    .order('position')
+
+  if (actionsError) throw actionsError
+
+  // Combine data
+  const subGoalsWithActions = (subGoalsData || []).map(sg => ({
+    ...sg,
+    actions: (actionsData || [])
+      .filter(action => action.sub_goal_id === sg.id)
+      .sort((a, b) => a.position - b.position)
+  }))
+
+  return {
+    ...mandalartData,
+    sub_goals: subGoalsWithActions
+  }
+}
+
+/**
+ * Hook to fetch a single mandalart with nested sub_goals and actions
+ */
+export function useMandalartWithDetails(id: string | undefined) {
+  return useQuery({
+    queryKey: mandalartKeys.detail(id || ''),
+    queryFn: () => fetchMandalartWithDetails(id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })

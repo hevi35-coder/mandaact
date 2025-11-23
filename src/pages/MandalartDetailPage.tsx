@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
-import { SubGoal, Action, MandalartGridData, MandalartWithDetails } from '@/types'
+import { useMandalartWithDetails } from '@/hooks/useMandalarts'
+import { SubGoal, Action, MandalartGridData } from '@/types'
 import { Repeat, Target, Lightbulb, Download, AlertTriangle, Info } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import SubGoalModal from '@/components/SubGoalModal'
@@ -29,9 +30,9 @@ export default function MandalartDetailPage() {
   const user = useAuthStore((state) => state.user)
   const gridRef = useRef<HTMLDivElement>(null)
 
-  const [mandalart, setMandalart] = useState<MandalartWithDetails | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // Use TanStack Query hook for mandalart data
+  const { data: mandalart = null, isLoading, error, refetch } = useMandalartWithDetails(id)
+
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedSubGoal, setSelectedSubGoal] = useState<(SubGoal & { actions: Action[] }) | null>(null)
   const [mobileExpandedSection, setMobileExpandedSection] = useState<number | null>(null)
@@ -40,64 +41,6 @@ export default function MandalartDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteDialogStep, setDeleteDialogStep] = useState<'choice' | 'confirm'>('choice')
   const [deletionStats, setDeletionStats] = useState({ totalChecks: 0, totalSubGoals: 0, totalActions: 0 })
-
-  const fetchMandalart = useCallback(async () => {
-    if (!id) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // Fetch mandalart with sub_goals and actions
-      const { data: mandalartData, error: mandalartError } = await supabase
-        .from('mandalarts')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (mandalartError) throw mandalartError
-
-      // Fetch sub_goals
-      const { data: subGoalsData, error: subGoalsError } = await supabase
-        .from('sub_goals')
-        .select('*')
-        .eq('mandalart_id', id)
-        .order('position')
-
-      if (subGoalsError) throw subGoalsError
-
-      // Fetch actions for all sub_goals
-      const subGoalIds = subGoalsData?.map(sg => sg.id) || []
-      const { data: actionsData, error: actionsError } = await supabase
-        .from('actions')
-        .select('*')
-        .in('sub_goal_id', subGoalIds)
-        .order('position')
-
-      if (actionsError) throw actionsError
-
-      // Combine data
-      const subGoalsWithActions = (subGoalsData || []).map(sg => ({
-        ...sg,
-        actions: (actionsData || [])
-          .filter(action => action.sub_goal_id === sg.id)
-          .sort((a, b) => a.position - b.position)
-      }))
-
-      const newMandalart = {
-        ...mandalartData,
-        sub_goals: subGoalsWithActions
-      }
-
-      setMandalart(newMandalart)
-      return newMandalart // Return the fresh data
-    } catch (err) {
-      console.error('Fetch error:', err)
-      setError(err instanceof Error ? err.message : '만다라트를 불러오는 중 오류가 발생했습니다')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [id])
 
   useEffect(() => {
     if (!user) {
@@ -108,8 +51,8 @@ export default function MandalartDetailPage() {
       navigate('/mandalart/list')
       return
     }
-    fetchMandalart()
-  }, [user, id, navigate, fetchMandalart])
+    refetch()
+  }, [user, id, navigate, refetch])
 
   const getSubGoalByPosition = (position: number) => {
     return mandalart?.sub_goals.find(sg => sg.position === position)
@@ -171,7 +114,7 @@ export default function MandalartDetailPage() {
       if (!newSubGoal) return
 
       // Refresh data to update UI
-      await fetchMandalart()
+      await refetch()
 
       // Get the refreshed sub-goal
       subGoal = getSubGoalByPosition(sectionPos)
@@ -192,7 +135,7 @@ export default function MandalartDetailPage() {
     if (!selectedSubGoal) return
 
     const position = selectedSubGoal.position
-    const freshData = await fetchMandalart()
+    const { data: freshData } = await refetch()
 
     // Update selectedSubGoal with fresh data
     if (freshData) {
@@ -374,7 +317,7 @@ export default function MandalartDetailPage() {
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
-            {error || '만다라트를 찾을 수 없습니다'}
+            {error instanceof Error ? error.message : '만다라트를 찾을 수 없습니다'}
           </div>
           <Button variant="outline" onClick={() => navigate('/mandalart/list')}>
             목록으로 돌아가기
@@ -588,7 +531,7 @@ export default function MandalartDetailPage() {
           onOpenChange={setCoreGoalModalOpen}
           mode="edit"
           mandalart={mandalart}
-          onEdit={fetchMandalart}
+          onEdit={refetch}
         />
       )}
 
