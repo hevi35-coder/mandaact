@@ -37,3 +37,21 @@ export {
   fetchMandalartWithDetails,
   toggleMandalartActive
 } from './lib/mandalarts'
+
+// Gamification utilities
+export type {
+  UserLevel,
+  Achievement,
+  UserAchievement,
+  XPMultiplier
+} from './lib/gamification'
+export {
+  getUserLevel,
+  calculateLevelFromXP,
+  calculateXPForLevel,
+  getXPProgress,
+  getAchievements,
+  getUserAchievements,
+  getActiveMultipliers,
+  getCurrentStreak
+} from './lib/gamification'
