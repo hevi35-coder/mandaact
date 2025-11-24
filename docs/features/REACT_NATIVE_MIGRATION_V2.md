@@ -108,13 +108,29 @@ packages/shared: React 18.3.1 (peerDep, deduped) ✓
    - Type 배지 (루틴/미션/참고)
    - 체크 시 취소선 처리
 
-### 🔄 Phase 6: 추가 화면 데이터 연동 (다음 단계)
+### ✅ Phase 6: MandalartScreen 데이터 연동 완료 (2025-11-24)
+
+1. ✅ Shared package에 Mandalart 관련 함수 추가
+   - fetchMandalarts(userId) - 사용자 만다라트 목록 조회
+   - fetchMandalartWithDetails(id) - 단일 만다라트 상세 조회
+   - toggleMandalartActive(id, isActive) - 활성화 토글
+   - MandalartWithDetails 타입 추가
+2. ✅ MandalartScreen 데이터 연동 구현
+   - fetchMandalarts()로 실제 데이터 로드
+   - 만다라트 카드 목록 표시
+   - 활성화/비활성화 토글 스위치
+   - Pull-to-refresh 기능
+   - Empty state UI
+   - Loading states
+   - 카드 클릭 핸들러 (상세 화면 준비)
+
+### 🔄 Phase 7: StatsScreen 데이터 연동 (다음 단계)
 
 다음 작업:
 - Expo 앱 실행 테스트 (iOS/Android)
 - 실제 로그인/로그아웃 기능 테스트
 - TodayScreen 실제 동작 테스트
-- MandalartScreen 데이터 연동 (Mandalart 목록)
+- MandalartScreen 실제 동작 테스트
 - StatsScreen 데이터 연동 (통계 및 XP/Badge)
 
 ---

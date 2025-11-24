@@ -70,3 +70,12 @@ export interface ActionWithContext extends Action {
   is_checked: boolean
   check_id?: string
 }
+
+/**
+ * Mandalart with nested sub_goals and actions
+ */
+export interface MandalartWithDetails extends Mandalart {
+  sub_goals: (SubGoal & {
+    actions: Action[]
+  })[]
+}
