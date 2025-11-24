@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@mandaact/shared';
 
 import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
+import TabNavigator from './TabNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,7 +36,7 @@ function AuthNavigator() {
       {!user ? (
         <Stack.Screen name="Login" component={LoginScreen} />
       ) : (
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Main" component={TabNavigator} />
       )}
     </Stack.Navigator>
   );

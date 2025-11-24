@@ -79,13 +79,27 @@ packages/shared: React 18.3.1 (peerDep, deduped) ✓
 5. ✅ App.tsx에 RootNavigator 연결
 6. ✅ useAuthStore hooks 연동 테스트 준비 완료
 
-### 🔄 Phase 4: 기능 구현 (다음 단계)
+### ✅ Phase 4: 기본 UI 구조 완료 (2025-11-24)
+
+1. ✅ Bottom Tab Navigation 추가 (@react-navigation/bottom-tabs: 7.8.6)
+2. ✅ TabNavigator 구현 (5개 탭)
+3. ✅ 주요 화면 기본 구조 생성
+   - HomeScreen: 대시보드 (기존)
+   - TodayScreen: 오늘의 실천
+   - MandalartScreen: 만다라트 목록/상세
+   - StatsScreen: 통계 및 진행률
+   - SettingsScreen: 설정 및 계정 정보
+4. ✅ Navigation 구조 업데이트 (Login → Tab Navigator)
+5. ✅ 이모지 아이콘 기반 탭 바 UI
+
+### 🔄 Phase 5: 데이터 연동 및 기능 구현 (다음 단계)
 
 다음 작업:
 - Expo 앱 실행 테스트 (iOS/Android)
-- 실제 로그인 기능 테스트
-- 오늘의 실천 화면 구현
-- 만다라트 목록/상세 화면 구현
+- 실제 로그인/로그아웃 기능 테스트
+- TodayScreen 데이터 연동 (Action 목록)
+- MandalartScreen 데이터 연동 (Mandalart 목록)
+- StatsScreen 데이터 연동 (통계 및 XP/Badge)
 
 ---
 
