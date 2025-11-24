@@ -158,13 +158,24 @@ packages/shared: React 18.3.1 (peerDep, deduped) ✓
   - StatsScreen (레벨, XP, 연속, 뱃지, 부스터)
   - SettingsScreen (로그아웃)
 
-### 🔄 다음 단계 (Phase 8+)
+### ✅ Phase 8: HomeScreen 대시보드 완료 (2025-11-24)
+
+1. ✅ HomeScreen 완전 재구성
+   - 사용자 프로필 카드 (닉네임, 레벨, 총 XP, 진행률 바)
+   - 오늘의 진행률 카드 (체크한 항목/전체 항목, 퍼센트)
+   - 연속 실천 카드 (현재 연속 일수)
+   - 빠른 실행 버튼 (실천하러 가기, 만다라트 관리, 통계 보기)
+   - 동기부여 메시지 (진행률에 따라 다른 메시지)
+   - Pull-to-refresh 기능
+   - Loading states
+   - Navigation 연동 (탭 이동)
+
+### 🔄 다음 단계 (Phase 9+)
 
 다음 작업:
 - Expo 앱 실행 테스트 (iOS/Android 실기기)
 - 실제 로그인/로그아웃 기능 테스트
 - 모든 화면 실제 동작 테스트
-- HomeScreen 대시보드 구현 (통계 요약, 퀵 액션)
 - Mandalart 상세 화면 구현 (9x9 그리드 뷰)
 - Action 수정/삭제 기능
 - Push notification 연동
