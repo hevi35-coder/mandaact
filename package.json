@@ -10,6 +10,12 @@
     "web": "npm run dev --workspace=apps/web",
     "mobile": "npm run start --workspace=apps/mobile"
   },
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.0"
+  },
   "devDependencies": {
     "typescript": "^5.5.4"
   }

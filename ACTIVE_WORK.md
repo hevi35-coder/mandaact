@@ -1,59 +1,71 @@
 # 🚀 현재 진행 중인 작업 (ACTIVE WORK)
 
-**마지막 업데이트**: 2025-11-24
-**현재 작업**: React Native 이관 - Phase 2 (Mobile App 수정)
-**상태**: 🔴 CRITICAL - React 버전 충돌 해결 필요
+**마지막 업데이트**: 2025-11-24 (전략 변경)
+**현재 작업**: React Native 이관 - Phase 2 (React 19 통일)
+**상태**: 🟡 진행 중 - React 19로 전체 업그레이드
 
 ---
 
-## ⚠️ CRITICAL ISSUE
+## ✅ 전략 변경 (IMPORTANT!)
 
-### 문제: React 버전 불일치
+### 결정: React 19로 전체 통일
+**이유**: Expo Go 앱이 React 19 이상만 지원
+
+### 현재 상태
 ```
-apps/web:      React 18.3.1 ✓
-apps/mobile:   React 19.1.0 ⚠️ (← 문제!)
-packages/shared: React 18.3.1 peer ⚠️ (← 충돌!)
+apps/web:      React 18.3.1 → 19.1.0 업그레이드 필요
+apps/mobile:   React 19.1.0 ✓ (이미 완료!)
+packages/shared: React 18.3.1 peer → 19.1.0 변경 필요
 ```
 
-**영향**:
-- Hooks 에러 발생 예정
-- Shared package 사용 불가
-- 앱 실행 실패
-
-**해결책**:
-1. Mobile을 React 18.3.1로 다운그레이드
-2. React Native를 0.76.5로 변경
-3. React 버전 통일 검증
+**작업 방향**:
+1. ✅ Mobile은 이미 React 19 (유지)
+2. 🔄 Web을 React 19로 업그레이드
+3. 🔄 Shared를 React 19 peer로 변경
+4. ✅ 전체 React 버전 통일 달성
 
 ---
 
 ## 📝 오늘 해야 할 일 (TODO)
 
-### 🔴 긴급 (CRITICAL)
-- [ ] **Mobile React 버전 다운그레이드**
-  - `apps/mobile/package.json` 수정
-  - `react: 19.1.0` → `react: 18.3.1`
-  - `react-native: 0.81.5` → `react-native: 0.76.5`
-  - `@types/react: ~19.1.0` → `@types/react: ~18.3.0`
+### 🔴 긴급 (HIGH PRIORITY)
+- [ ] **Web app React 19 업그레이드**
+  - `apps/web/package.json` 수정
+  - `react: ^18.3.1` → `react: ^19.1.0`
+  - `react-dom: ^18.3.1` → `react-dom: ^19.1.0`
+  - `@types/react: ^18.3.5` → `@types/react: ^19.1.0`
+  - `@types/react-dom: ^18.3.0` → `@types/react-dom: ^19.1.0`
+
+- [ ] **Shared package React 19 peerDependency 변경**
+  - `packages/shared/package.json` 수정
+  - `"react": "^18.3.1"` → `"react": "^19.1.0"`
 
 - [ ] **의존성 재설치 및 검증**
-  - `rm -rf node_modules package-lock.json`
+  - `rm -rf node_modules package-lock.json` (root)
   - `npm install` (root에서)
-  - `npm ls react` (모든 패키지 확인)
+  - `npm ls react` (전체 확인 - 모두 19.1.0이어야 함)
 
-### 🟡 중요 (HIGH)
-- [ ] **Shared package 연결 테스트**
+### 🟡 중요 (MEDIUM)
+- [ ] **Web app 빌드 테스트 (React 19)**
+  - `cd apps/web && npm run build`
+  - TypeScript 에러 확인
+  - React 19 Breaking Changes 대응
+
+- [ ] **Shared package 빌드 및 연결 테스트**
+  - `cd packages/shared && npm run build`
   - Mobile에서 import 테스트
   - Supabase 초기화 확인
 
-- [ ] **기본 앱 실행 확인**
+- [ ] **Mobile app 실행 테스트**
   - `npm run mobile`
-  - Expo 앱 로드 확인
-  - Metro bundler 에러 없는지 확인
+  - Expo Go 앱에서 로드 확인
+  - Hooks 에러 없는지 검증
+  - Metro bundler 정상 작동 확인
 
-### 🟢 일반 (NORMAL)
+### 🟢 일반 (NORMAL - 다음 Phase)
 - [ ] Navigation 구현 시작
 - [ ] 로그인 화면 기본 UI
+- [ ] React 19 마이그레이션 문서 작성
 
 ---
 
@@ -62,7 +74,10 @@ packages/shared: React 18.3.1 peer ⚠️ (← 충돌!)
 ### Phase 2 완료 조건
 - [x] Monorepo 구조 완성
 - [x] Shared package 생성
-- [ ] **React 버전 통일** ← 현재 여기
+- [x] Mobile app React 19 설정 완료
+- [ ] **Web app React 19 업그레이드** ← 현재 여기
+- [ ] **Shared React 19 peerDep 변경**
+- [ ] React 버전 통일 검증 (전체 19.1.0)
 - [ ] Mobile app 기본 실행
 - [ ] Shared package 연동 확인
 
@@ -106,20 +121,22 @@ packages/shared: React 18.3.1 peer ⚠️ (← 충돌!)
 ## ⚡ 빠른 명령어
 
 ```bash
-# React 버전 확인
+# React 버전 확인 (전체 19.1.0이어야 함!)
 npm ls react
 
-# Mobile 의존성 재설치
-cd apps/mobile
+# 전체 의존성 재설치 (React 19 업그레이드 후)
 rm -rf node_modules package-lock.json
-cd ../..
 npm install
+
+# Web 앱 실행
+npm run web
+
+# Web 빌드 테스트 (React 19 호환성)
+cd apps/web
+npm run build
 
 # Mobile 앱 실행
 npm run mobile
-
-# Web 앱 실행 (비교용)
-npm run web
 
 # TypeScript 빌드 (Shared)
 cd packages/shared
@@ -130,21 +147,39 @@ npm run build
 
 ## 🐛 알려진 문제
 
-### 1. React 버전 충돌 (현재)
-- **상태**: 🔴 진행 중
+### 1. ⚠️ CRITICAL: React 19 타입 호환성 문제 (발생!)
+- **상태**: 🔴 차단됨
 - **발생일**: 2025-11-24
-- **문제**: Mobile React 19, Shared React 18
-- **해결**: 다운그레이드 필요
+- **문제**: 라이브러리들이 React 19 완전 지원 안 함
+  - react-router-dom: ReactNode 타입 불일치
+  - lucide-react: ForwardRef 타입 불일치
+  - @radix-ui/*: ReactElement 타입 불일치
+- **영향**: TypeScript 컴파일 실패 (100+ 에러)
+- **원인**: React 19의 ReactNode 타입 정의 변경
+
+### 2. React 19.2.0 혼재 문제
+- **상태**: 🟡 진행 중
+- **문제**: 19.1.0 요구하는데 19.2.0이 설치됨
+- **시도**: overrides 추가했으나 완전히 적용 안 됨
+- **근본 원인**: 일부 라이브러리가 ^19.0.0 범위 요구
+
+### 3. Expo Go + React 19 호환성 재확인 필요
+- **상태**: 🟡 검증 필요
+- **의문**: Expo Go가 정말 React 19만 지원하는가?
+- **확인 필요**: React Native 0.81.5가 React 19를 공식 지원하는가?
 
 ---
 
 ## 📖 학습 내용 (Lessons Learned)
 
 ### 이번 세션
-1. **문제**: React 버전 불일치를 놓쳤음
+1. **문제**: React 버전 불일치 발견
 2. **원인**: 커밋 메시지만 믿고 실제 package.json 확인 안 함
-3. **해결**: 항상 `npm ls react`로 실제 버전 검증 필요
-4. **예방**: 이 문서로 작업 추적 시스템화
+3. **전략 변경**: Expo Go 호환성으로 React 19 통일 결정
+4. **교훈**:
+   - 항상 `npm ls react`로 실제 버전 검증 필요
+   - 플랫폼 제약사항(Expo Go) 먼저 확인 필요
+   - 문서로 작업 추적 시스템화 중요
 
 ---
 
