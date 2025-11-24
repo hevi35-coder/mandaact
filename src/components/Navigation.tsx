@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
 import { CalendarCheck, Home, Grid3x3, Bell, FileText } from 'lucide-react'
 
-export default function Navigation() {
+const Navigation = memo(function Navigation() {
   const location = useLocation()
   const user = useAuthStore((state) => state.user)
 
@@ -98,4 +99,6 @@ export default function Navigation() {
       </nav>
     </>
   )
-}
+})
+
+export default Navigation

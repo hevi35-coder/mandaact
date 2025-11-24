@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import { createTestQueryClient } from '@/test/utils'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { QueryClientProvider } from '@tanstack/react-query'
 import MandalartDetailPage from '../MandalartDetailPage'
 
 // Mock Supabase
@@ -130,18 +132,23 @@ vi.mock('@/lib/timezone', () => ({
 }))
 
 describe('MandalartDetailPage', () => {
+  const queryClient = createTestQueryClient()
+
   const renderWithRouter = () => {
     return render(
-      <MemoryRouter initialEntries={['/mandalart/test-mandalart-id']}>
-        <Routes>
-          <Route path="/mandalart/:id" element={<MandalartDetailPage />} />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/mandalart/test-mandalart-id']}>
+          <Routes>
+            <Route path="/mandalart/:id" element={<MandalartDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     )
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
+    queryClient.clear()
   })
 
   it('should show loading state initially', () => {
