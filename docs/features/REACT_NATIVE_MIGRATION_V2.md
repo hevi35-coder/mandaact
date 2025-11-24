@@ -92,12 +92,28 @@ packages/shared: React 18.3.1 (peerDep, deduped) ✓
 4. ✅ Navigation 구조 업데이트 (Login → Tab Navigator)
 5. ✅ 이모지 아이콘 기반 탭 바 UI
 
-### 🔄 Phase 5: 데이터 연동 및 기능 구현 (다음 단계)
+### ✅ Phase 5: 데이터 연동 완료 (TodayScreen) (2025-11-24)
+
+1. ✅ Shared package utilities 추가
+   - Timezone utilities (getDayBoundsUTC, getCurrentUTC, formatDateString)
+   - Action fetching (fetchTodayActions, checkAction, uncheckAction)
+   - Types (Mandalart, SubGoal, Action, CheckHistory, ActionWithContext)
+2. ✅ TodayScreen 데이터 연동 구현
+   - fetchTodayActions()로 실제 데이터 로드
+   - 만다라트별 Action 목록 그룹화
+   - 체크/언체크 기능 구현
+   - 진행률 표시 (X/Y 완료, % 바)
+   - Pull-to-refresh 기능
+   - Empty state UI
+   - Type 배지 (루틴/미션/참고)
+   - 체크 시 취소선 처리
+
+### 🔄 Phase 6: 추가 화면 데이터 연동 (다음 단계)
 
 다음 작업:
 - Expo 앱 실행 테스트 (iOS/Android)
 - 실제 로그인/로그아웃 기능 테스트
-- TodayScreen 데이터 연동 (Action 목록)
+- TodayScreen 실제 동작 테스트
 - MandalartScreen 데이터 연동 (Mandalart 목록)
 - StatsScreen 데이터 연동 (통계 및 XP/Badge)
 
