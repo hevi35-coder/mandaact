@@ -28,7 +28,8 @@ export {
 export {
   fetchTodayActions,
   checkAction,
-  uncheckAction
+  uncheckAction,
+  updateAction
 } from './lib/actions'
 
 // Mandalart utilities

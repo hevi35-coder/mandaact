@@ -8,13 +8,17 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  Alert,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import {
   useAuthStore,
   fetchMandalartWithDetails,
+  updateAction,
   MandalartWithDetails,
+  Action,
 } from '@mandaact/shared';
 
 type RootStackParamList = {
@@ -33,6 +37,13 @@ export default function MandalartDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedSubGoalId, setExpandedSubGoalId] = useState<string | null>(null);
+
+  // Edit modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingAction, setEditingAction] = useState<Action | null>(null);
+  const [editType, setEditType] = useState<string>('routine');
+  const [editFrequency, setEditFrequency] = useState<string>('daily');
+  const [saving, setSaving] = useState(false);
 
   // Load mandalart details
   const loadData = async () => {
@@ -60,6 +71,43 @@ export default function MandalartDetailScreen() {
 
   const toggleSubGoal = (subGoalId: string) => {
     setExpandedSubGoalId((prev) => (prev === subGoalId ? null : subGoalId));
+  };
+
+  const openEditModal = (action: Action) => {
+    setEditingAction(action);
+    setEditType(action.type || 'routine');
+    setEditFrequency(action.frequency || 'daily');
+    setEditModalVisible(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalVisible(false);
+    setEditingAction(null);
+  };
+
+  const handleSaveAction = async () => {
+    if (!editingAction) return;
+
+    setSaving(true);
+    try {
+      const result = await updateAction(editingAction.id, {
+        type: editType,
+        frequency: editFrequency,
+      });
+
+      if (result.success) {
+        Alert.alert('성공', '실천 항목이 수정되었습니다');
+        closeEditModal();
+        await loadData(); // Reload data
+      } else {
+        Alert.alert('오류', result.error || '수정 중 오류가 발생했습니다');
+      }
+    } catch (error) {
+      console.error('Failed to update action:', error);
+      Alert.alert('오류', '수정 중 오류가 발생했습니다');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -155,7 +203,12 @@ export default function MandalartDetailScreen() {
                       ) : (
                         <View style={styles.actionsList}>
                           {sortedActions.map((action) => (
-                            <View key={action.id} style={styles.actionItem}>
+                            <TouchableOpacity
+                              key={action.id}
+                              style={styles.actionItem}
+                              onPress={() => openEditModal(action)}
+                              activeOpacity={0.7}
+                            >
                               <View style={styles.actionHeader}>
                                 <Text style={styles.actionPosition}>{action.position}</Text>
                                 <Text style={styles.actionTitle}>{action.title}</Text>
@@ -171,8 +224,9 @@ export default function MandalartDetailScreen() {
                                     {getFrequencyLabel(action.frequency)}
                                   </Text>
                                 )}
+                                <Text style={styles.editHint}>탭하여 수정</Text>
                               </View>
-                            </View>
+                            </TouchableOpacity>
                           ))}
                         </View>
                       )}
@@ -203,6 +257,113 @@ export default function MandalartDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Edit Action Modal */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={closeEditModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>실천 항목 수정</Text>
+              <TouchableOpacity onPress={closeEditModal}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {editingAction && (
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>실천 항목</Text>
+                  <Text style={styles.actionTitleDisplay}>{editingAction.title}</Text>
+                </View>
+
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>타입</Text>
+                  <View style={styles.optionsGrid}>
+                    {['routine', 'mission', 'reference'].map((type) => (
+                      <TouchableOpacity
+                        key={type}
+                        style={[
+                          styles.optionButton,
+                          editType === type && styles.optionButtonSelected,
+                          getTypeBadgeStyle(type),
+                        ]}
+                        onPress={() => setEditType(type)}
+                      >
+                        <Text
+                          style={[
+                            styles.optionButtonText,
+                            editType === type && styles.optionButtonTextSelected,
+                            getTypeBadgeTextStyle(type),
+                          ]}
+                        >
+                          {getTypeLabel(type)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <Text style={styles.helpText}>
+                    {editType === 'routine' && '매일, 주간, 월간 등 반복되는 습관'}
+                    {editType === 'mission' && '한 번 또는 주기적으로 완료할 목표'}
+                    {editType === 'reference' && '참고사항 (체크 불가)'}
+                  </Text>
+                </View>
+
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>빈도</Text>
+                  <View style={styles.optionsGrid}>
+                    {['daily', 'weekly', 'monthly'].map((freq) => (
+                      <TouchableOpacity
+                        key={freq}
+                        style={[
+                          styles.optionButton,
+                          styles.frequencyButton,
+                          editFrequency === freq && styles.optionButtonSelected,
+                        ]}
+                        onPress={() => setEditFrequency(freq)}
+                      >
+                        <Text
+                          style={[
+                            styles.optionButtonText,
+                            editFrequency === freq && styles.optionButtonTextSelected,
+                          ]}
+                        >
+                          {getFrequencyLabel(freq)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </ScrollView>
+            )}
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={closeEditModal}
+                disabled={saving}
+              >
+                <Text style={styles.modalButtonTextCancel}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={handleSaveAction}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.modalButtonTextSave}>저장</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -461,6 +622,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6b7280',
   },
+  editHint: {
+    fontSize: 10,
+    color: '#9ca3af',
+    marginLeft: 'auto',
+  },
   summaryCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -492,5 +658,111 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 14,
     color: '#6b7280',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  modalClose: {
+    fontSize: 24,
+    color: '#6b7280',
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalSection: {
+    marginBottom: 24,
+  },
+  modalSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  actionTitleDisplay: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+  },
+  optionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  optionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  optionButtonSelected: {
+    borderWidth: 3,
+  },
+  optionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  optionButtonTextSelected: {
+    fontWeight: 'bold',
+  },
+  frequencyButton: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#d1d5db',
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: '#f3f4f6',
+  },
+  modalButtonSave: {
+    backgroundColor: '#3b82f6',
+  },
+  modalButtonTextCancel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  modalButtonTextSave: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });

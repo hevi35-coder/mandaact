@@ -189,14 +189,33 @@ packages/shared: React 18.3.1 (peerDep, deduped) ✓
    - MandalartScreen에서 카드 클릭 시 상세 화면 이동
    - HomeScreen의 "만다라트 관리" 버튼 네비게이션 수정
 
-### 🔄 다음 단계 (Phase 10+)
+### ✅ Phase 10: Action 수정 기능 완료 (2025-11-24)
+
+1. ✅ Shared package에 updateAction 함수 추가
+   - packages/shared/src/lib/actions.ts에 updateAction() 구현
+   - 지원 항목: type, frequency, weekdays, period_count, note
+   - 성공/실패 응답 처리
+   - packages/shared/src/index.ts에 export 추가
+2. ✅ MandalartDetailScreen에 수정 기능 추가
+   - Modal 기반 편집 UI 구현
+   - Type 선택 (루틴/미션/참고) with color-coded buttons
+   - Frequency 선택 (매일/주간/월간)
+   - 각 Type에 대한 설명 텍스트
+   - Action item 터치로 Modal 열기
+   - "탭하여 수정" 힌트 텍스트
+   - Cancel/Save 버튼
+   - Loading state (저장 중)
+   - Success/Error Alert
+   - 저장 후 데이터 자동 새로고침
+
+### 🔄 다음 단계 (Phase 11+)
 
 다음 작업:
 - Expo 앱 실행 테스트 (iOS/Android 실기기)
 - 실제 로그인/로그아웃 기능 테스트
 - 모든 화면 실제 동작 테스트
-- Action 수정/삭제 기능
 - 에러 처리 및 Toast 알림
+- 오프라인 모드 처리
 - Push notification 연동
 - 앱 아이콘 및 스플래시 스크린
 

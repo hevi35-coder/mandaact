@@ -109,3 +109,30 @@ export async function uncheckAction(
 
   return { success: true }
 }
+
+/**
+ * Update action properties (type, frequency, note, etc.)
+ */
+export async function updateAction(
+  actionId: string,
+  updates: {
+    type?: string
+    frequency?: string
+    weekdays?: number[]
+    period_count?: number
+    note?: string
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = getSupabase()
+
+  const { error } = await supabase
+    .from('actions')
+    .update(updates)
+    .eq('id', actionId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
