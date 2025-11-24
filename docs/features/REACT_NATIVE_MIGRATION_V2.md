@@ -170,14 +170,33 @@ packages/shared: React 18.3.1 (peerDep, deduped) ✓
    - Loading states
    - Navigation 연동 (탭 이동)
 
-### 🔄 다음 단계 (Phase 9+)
+### ✅ Phase 9: MandalartDetailScreen 구현 완료 (2025-11-24)
+
+1. ✅ MandalartDetailScreen 생성
+   - fetchMandalartWithDetails()로 데이터 로드
+   - 핵심 목표 카드 (center_goal)
+   - 세부 목표 목록 (position으로 정렬)
+   - 세부 목표 펼침/접기 기능
+   - 실천 항목 목록 (position으로 정렬)
+   - Type 배지 (루틴/미션/참고) with color coding
+   - Frequency 표시 (매일/주간/월간)
+   - 전체 요약 카드 (세부목표 수, 실천 항목 수)
+   - Pull-to-refresh 기능
+   - Back navigation
+2. ✅ Navigation 구조 업데이트
+   - MandalartTab에 Stack Navigator 추가
+   - MandalartList → MandalartDetail 네비게이션
+   - MandalartScreen에서 카드 클릭 시 상세 화면 이동
+   - HomeScreen의 "만다라트 관리" 버튼 네비게이션 수정
+
+### 🔄 다음 단계 (Phase 10+)
 
 다음 작업:
 - Expo 앱 실행 테스트 (iOS/Android 실기기)
 - 실제 로그인/로그아웃 기능 테스트
 - 모든 화면 실제 동작 테스트
-- Mandalart 상세 화면 구현 (9x9 그리드 뷰)
 - Action 수정/삭제 기능
+- 에러 처리 및 Toast 알림
 - Push notification 연동
 - 앱 아이콘 및 스플래시 스크린
 

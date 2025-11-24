@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Switch,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
 import {
   useAuthStore,
   fetchMandalarts,
@@ -17,7 +19,12 @@ import {
   Mandalart,
 } from '@mandaact/shared';
 
+type MandalartStackParamList = {
+  MandalartDetail: { id: string };
+};
+
 export default function MandalartScreen() {
+  const navigation = useNavigation<NavigationProp<MandalartStackParamList>>();
   const user = useAuthStore((state) => state.user);
   const [mandalarts, setMandalarts] = useState<Mandalart[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,10 +119,7 @@ export default function MandalartScreen() {
                   styles.mandalartCard,
                   !mandalart.is_active && styles.mandalartCardInactive,
                 ]}
-                onPress={() => {
-                  // TODO: Navigate to detail screen
-                  console.log('Navigate to detail:', mandalart.id);
-                }}
+                onPress={() => navigation.navigate('MandalartDetail', { id: mandalart.id })}
                 activeOpacity={0.7}
               >
                 <View style={styles.cardContent}>

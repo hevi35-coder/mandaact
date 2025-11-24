@@ -1,14 +1,27 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import TodayScreen from '../screens/TodayScreen';
 import MandalartScreen from '../screens/MandalartScreen';
+import MandalartDetailScreen from '../screens/MandalartDetailScreen';
 import StatsScreen from '../screens/StatsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
+const MandalartStack = createNativeStackNavigator();
+
+// Mandalart Stack Navigator (List + Detail)
+function MandalartStackNavigator() {
+  return (
+    <MandalartStack.Navigator screenOptions={{ headerShown: false }}>
+      <MandalartStack.Screen name="MandalartList" component={MandalartScreen} />
+      <MandalartStack.Screen name="MandalartDetail" component={MandalartDetailScreen} />
+    </MandalartStack.Navigator>
+  );
+}
 
 export default function TabNavigator() {
   return (
@@ -53,7 +66,7 @@ export default function TabNavigator() {
       />
       <Tab.Screen
         name="MandalartTab"
-        component={MandalartScreen}
+        component={MandalartStackNavigator}
         options={{
           tabBarLabel: '만다라트',
           tabBarIcon: ({ color, size }) => (

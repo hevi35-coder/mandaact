@@ -22,9 +22,9 @@ import {
 } from '@mandaact/shared';
 
 type RootStackParamList = {
-  Today: undefined;
-  Mandalart: undefined;
-  Stats: undefined;
+  TodayTab: undefined;
+  MandalartTab: undefined;
+  StatsTab: undefined;
 };
 
 export default function HomeScreen() {
@@ -171,7 +171,7 @@ export default function HomeScreen() {
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.quickActionButton}
-              onPress={() => navigation.navigate('Today')}
+              onPress={() => navigation.navigate('TodayTab')}
             >
               <Text style={styles.quickActionIcon}>✅</Text>
               <Text style={styles.quickActionText}>실천하러 가기</Text>
@@ -179,7 +179,7 @@ export default function HomeScreen() {
 
             <TouchableOpacity
               style={styles.quickActionButton}
-              onPress={() => navigation.navigate('Mandalart')}
+              onPress={() => navigation.navigate('MandalartTab')}
             >
               <Text style={styles.quickActionIcon}>🎯</Text>
               <Text style={styles.quickActionText}>만다라트 관리</Text>
@@ -187,7 +187,7 @@ export default function HomeScreen() {
 
             <TouchableOpacity
               style={styles.quickActionButton}
-              onPress={() => navigation.navigate('Stats')}
+              onPress={() => navigation.navigate('StatsTab')}
             >
               <Text style={styles.quickActionIcon}>📊</Text>
               <Text style={styles.quickActionText}>통계 보기</Text>
