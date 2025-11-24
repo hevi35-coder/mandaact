@@ -22,36 +22,56 @@
    - 설정 파일 이동 (vite.config.ts, tsconfig.json, tailwind.config.js, postcss.config.js 등)
 2. ✅ package.json 분리
    - Root: Workspace 관리 전용
-   - apps/web: 웹 앱 dependencies
-   - apps/mobile: React 18.3.1 + React Native 0.76.5
+   - apps/web: 웹 앱 dependencies (React 18.3.1)
+   - apps/mobile: React 18.3.1 + React Native 0.76.5 + Expo SDK 52
 3. ✅ React 버전 통일 확인
    - @mandaact/shared: React 18.3.1 ✓
    - @mandaact/web: React 18.3.1 ✓
-   - mobile: React 18.3.1 ✓
-   - 모든 패키지가 단일 React 인스턴스 공유 (deduped)
+   - @mandaact/mobile: React 18.3.1 ✓
+   - 모든 패키지가 단일 React 인스턴스 공유 (deduped) ✓
 
 **새로운 구조**:
 ```
 mandaact/
 ├── package.json              # Monorepo root
 ├── apps/
-│   ├── web/                 # 웹 앱 (이동 완료)
-│   └── mobile/              # React Native (React 18.3.1)
+│   ├── web/                 # 웹 앱 (React 18.3.1)
+│   └── mobile/              # React Native (React 18.3.1 + Expo SDK 52)
 └── packages/
     └── shared/              # 공유 코드 (React 18.3.1 peerDep)
+```
+
+**실제 설치된 버전 (2025-11-24 검증 완료)**:
+```
+apps/web:     React 18.3.1 ✓
+apps/mobile:  React 18.3.1 + React Native 0.76.5 + Expo SDK 52.0.47 ✓
+packages/shared: React 18.3.1 (peerDep, deduped) ✓
 ```
 
 ### ✅ Phase 1: Shared Packages 완료
 
 1. ✅ packages/shared 생성 및 설정
 2. ✅ React 18.3.1 peerDependency 설정
-3. ✅ Supabase 초기화 로직 작성
-4. ✅ Auth Store 작성
+3. ✅ Supabase 초기화 로직 작성 (`src/lib/supabase.ts`)
+4. ✅ Auth Store 작성 (`src/stores/authStore.ts`)
 5. ✅ TypeScript 빌드 성공
+6. ✅ React 버전 통일 검증 완료
 
-### 🔄 Phase 2: Mobile App 생성 (진행 중)
+### ✅ Phase 2: Mobile App 기본 구성 완료 (2025-11-24)
 
-다음 단계: Shared package 연결 및 기본 앱 구현
+1. ✅ Expo 프로젝트 생성 (SDK 52)
+2. ✅ React 18.3.1 + React Native 0.76.5 설정
+3. ✅ @mandaact/shared 패키지 연결
+4. ✅ Supabase 초기화 코드 작성 (`src/lib/supabase-init.ts`)
+5. ✅ 기본 App.tsx 구현
+6. ✅ 의존성 설치 및 React 버전 검증
+
+### 🔄 Phase 3: Navigation 추가 (다음 단계)
+
+다음 작업:
+- React Navigation v7 설치
+- Auth/Main navigation 구조 설정
+- 로그인/홈 화면 기본 구현
 
 ---
 
@@ -293,10 +313,10 @@ cd mobile
 
 #### 2.2 React 버전 명시적 설정
 
-**⚠️ 중요**: 즉시 React 버전을 18.3.1로 고정
+**⚠️ 중요**: 즉시 React 버전을 18.3.1로 고정 + Expo SDK 52 사용
 
 ```bash
-npm install react@18.3.1 react-native@0.76.5
+npm install react@18.3.1 react-native@0.76.5 expo@~52.0.0
 ```
 
 **package.json 확인**
@@ -305,10 +325,16 @@ npm install react@18.3.1 react-native@0.76.5
   "dependencies": {
     "react": "18.3.1",
     "react-native": "0.76.5",
-    "expo": "~54.0.0"
+    "expo": "~52.0.0",
+    "expo-status-bar": "~2.0.0"
   }
 }
 ```
+
+**배경 설명**:
+- Expo SDK 54는 React 19를 기본으로 사용하여 버전 충돌 발생
+- Expo SDK 52는 React 18.2.0/18.3.1과 호환되어 안정적
+- React Native 0.76.5는 Expo SDK 52와 완벽 호환
 
 **✅ 검증 단계**:
 ```bash
@@ -564,13 +590,16 @@ export default function LoginScreen() {
 ## 검증 체크리스트
 
 ### ✅ Phase 1 완료 조건
-- [ ] Shared package 빌드 성공
-- [ ] React가 peerDependency로만 설정됨
-- [ ] TypeScript 컴파일 에러 없음
+- [x] Shared package 빌드 성공
+- [x] React가 peerDependency로만 설정됨
+- [x] TypeScript 컴파일 에러 없음
 
 ### ✅ Phase 2 완료 조건
-- [ ] Mobile app React 18.3.1 확인
-- [ ] Expo 기본 앱 실행 성공
+- [x] Mobile app React 18.3.1 확인 (검증 완료: 2025-11-24)
+- [x] Expo SDK 52 설치 확인 (검증 완료: 52.0.47)
+- [x] React Native 0.76.5 설치 확인
+- [x] 모든 패키지가 React 18.3.1 deduped (단일 인스턴스 공유)
+- [ ] Expo 기본 앱 실행 성공 (다음 단계)
 - [ ] Metro bundler 에러 없음
 - [ ] Shared package import 성공
 

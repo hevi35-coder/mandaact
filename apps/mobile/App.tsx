@@ -8,8 +8,9 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>MandaAct Mobile</Text>
-      <Text style={styles.subtitle}>React 19.1.0 + RN 0.81.5</Text>
-      <Text style={styles.success}>✅ React 19 Migration Complete</Text>
+      <Text style={styles.subtitle}>React 18.3.1 + RN 0.76.5</Text>
+      <Text style={styles.info}>Expo SDK 52</Text>
+      <Text style={styles.success}>✅ React 18 Migration Complete</Text>
       <StatusBar style="auto" />
     </View>
   );
