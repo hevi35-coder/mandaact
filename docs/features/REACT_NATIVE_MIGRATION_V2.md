@@ -66,12 +66,26 @@ packages/shared: React 18.3.1 (peerDep, deduped) ✓
 5. ✅ 기본 App.tsx 구현
 6. ✅ 의존성 설치 및 React 버전 검증
 
-### 🔄 Phase 3: Navigation 추가 (다음 단계)
+### ✅ Phase 3: Navigation 추가 완료 (2025-11-24)
+
+1. ✅ React Navigation v7 설치
+   - @react-navigation/native: 7.1.21
+   - @react-navigation/native-stack: 7.7.0
+   - react-native-screens: 4.18.0
+   - react-native-safe-area-context: 5.6.2
+2. ✅ Auth/Main navigation 구조 구현 (`src/navigation/RootNavigator.tsx`)
+3. ✅ 로그인 화면 구현 (`src/screens/LoginScreen.tsx`)
+4. ✅ 홈 화면 구현 (`src/screens/HomeScreen.tsx`)
+5. ✅ App.tsx에 RootNavigator 연결
+6. ✅ useAuthStore hooks 연동 테스트 준비 완료
+
+### 🔄 Phase 4: 기능 구현 (다음 단계)
 
 다음 작업:
-- React Navigation v7 설치
-- Auth/Main navigation 구조 설정
-- 로그인/홈 화면 기본 구현
+- Expo 앱 실행 테스트 (iOS/Android)
+- 실제 로그인 기능 테스트
+- 오늘의 실천 화면 구현
+- 만다라트 목록/상세 화면 구현
 
 ---
 
@@ -604,9 +618,15 @@ export default function LoginScreen() {
 - [ ] Shared package import 성공
 
 ### ✅ Phase 3 완료 조건
-- [ ] Navigation 화면 전환 정상
-- [ ] useAuthStore hooks 에러 없음
-- [ ] React version conflict 없음
+- [x] React Navigation v7 설치 완료 (검증 완료: 2025-11-24)
+- [x] RootNavigator 구현 완료
+- [x] LoginScreen, HomeScreen 구현 완료
+- [x] useAuthStore hooks 연동 완료
+- [x] App.tsx에 Navigation 연결 완료
+- [ ] Expo 앱 실행 성공 (다음 단계 테스트)
+- [ ] 실제 로그인/로그아웃 기능 테스트
+- [ ] Navigation 화면 전환 테스트
+- [ ] React hooks 에러 없는지 확인
 
 ### ✅ Phase 4 완료 조건
 - [ ] 로그인 기능 작동

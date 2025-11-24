@@ -1,42 +1,17 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
 
-// Initialize Supabase
+// Initialize Supabase (must be imported before using stores)
 import './src/lib/supabase-init';
+
+// Navigation
+import RootNavigator from './src/navigation/RootNavigator';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>MandaAct Mobile</Text>
-      <Text style={styles.subtitle}>React 18.3.1 + RN 0.76.5</Text>
-      <Text style={styles.info}>Expo SDK 52</Text>
-      <Text style={styles.success}>✅ React 18 Migration Complete</Text>
+    <>
+      <RootNavigator />
       <StatusBar style="auto" />
-    </View>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginTop: 8,
-  },
-  success: {
-    fontSize: 16,
-    color: '#10b981',
-    marginTop: 16,
-    fontWeight: '600',
-  },
-});

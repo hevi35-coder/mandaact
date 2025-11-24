@@ -4,7 +4,13 @@ AI-powered Mandalart (9x9 goal framework) action tracker with gamification, AI c
 
 ## Overview
 
-MandaAct transforms your Mandalart goals into actionable daily habits with a complete productivity ecosystem:
+MandaAct transforms your Mandalart goals into actionable daily habits with a complete productivity ecosystem.
+
+**Platform Availability**:
+- 🌐 **Web PWA**: Production-ready progressive web app (Vercel)
+- 📱 **React Native Mobile**: In development (Phase 3 - Navigation implementation)
+  - Monorepo structure with shared business logic
+  - React 18.3.1 + Expo SDK 52 + React Native 0.76.5
 
 ### Core Features
 - 📸 **Triple Input Methods**: Image upload (OCR), text paste, or manual template entry
@@ -58,41 +64,66 @@ MandaAct transforms your Mandalart goals into actionable daily habits with a com
 
 ## Project Structure
 
+**Monorepo Structure** (as of 2025-11-24):
 ```
 mandaact/
-├── src/
-│   ├── components/        # Reusable UI components
-│   │   ├── stats/         # Statistics and progress components
-│   │   ├── ui/            # shadcn/ui base components
-│   │   └── ...            # Feature-specific components
-│   ├── pages/             # Page components (9 routes)
-│   ├── hooks/             # Custom React hooks
-│   ├── lib/               # Utilities and helpers
-│   │   ├── actionTypes.ts # Action type logic and display rules
-│   │   ├── xpMultipliers.ts # XP calculation system
-│   │   ├── stats.ts       # Badge and streak calculations
-│   │   └── ...            # Other utilities
-│   ├── store/             # Zustand global state
-│   ├── types/             # TypeScript type definitions
-│   ├── styles/            # Global styles and Tailwind config
-│   └── main.tsx           # App entry point
+├── apps/
+│   ├── web/               # Web PWA (React 18.3.1)
+│   │   ├── src/
+│   │   │   ├── components/        # Reusable UI components
+│   │   │   │   ├── stats/         # Statistics and progress components
+│   │   │   │   ├── ui/            # shadcn/ui base components
+│   │   │   │   └── ...            # Feature-specific components
+│   │   │   ├── pages/             # Page components (9 routes)
+│   │   │   ├── hooks/             # Custom React hooks
+│   │   │   ├── lib/               # Utilities and helpers
+│   │   │   │   ├── actionTypes.ts # Action type logic and display rules
+│   │   │   │   ├── xpMultipliers.ts # XP calculation system
+│   │   │   │   ├── stats.ts       # Badge and streak calculations
+│   │   │   │   └── ...            # Other utilities
+│   │   │   ├── store/             # Zustand global state
+│   │   │   ├── types/             # TypeScript type definitions
+│   │   │   ├── styles/            # Global styles and Tailwind config
+│   │   │   └── main.tsx           # App entry point
+│   │   ├── public/                # Static assets (icons, manifest, etc.)
+│   │   ├── vite.config.ts         # Vite configuration
+│   │   └── package.json           # Web app dependencies
+│   └── mobile/            # React Native Mobile App (Phase 3 in progress)
+│       ├── src/
+│       │   ├── lib/
+│       │   │   └── supabase-init.ts  # Supabase initialization
+│       │   ├── navigation/        # React Navigation (planned)
+│       │   └── screens/           # Screen components (planned)
+│       ├── App.tsx                # App entry point
+│       ├── app.json               # Expo configuration
+│       └── package.json           # Mobile app dependencies (React 18.3.1 + Expo SDK 52)
+├── packages/
+│   └── shared/            # Shared code between web and mobile
+│       ├── src/
+│       │   ├── lib/
+│       │   │   └── supabase.ts    # Supabase client setup
+│       │   └── stores/
+│       │       └── authStore.ts   # Zustand auth store
+│       └── package.json           # React 18.3.1 peerDependency
 ├── supabase/
 │   ├── migrations/        # Database schema migrations (35+ files)
 │   └── functions/         # Edge functions
 │       ├── ocr-mandalart/ # OCR processing (v4)
 │       ├── chat/          # AI coaching (v17)
 │       └── chat-v2/       # Experimental version
-├── public/                # Static assets (icons, manifest, etc.)
 ├── docs/                  # Comprehensive documentation
 │   ├── project/           # Roadmap, improvements, PRD
 │   ├── development/       # Setup, deployment, API guides
 │   ├── guidelines/        # UI/UX patterns (empty state, cards, etc.)
 │   ├── features/          # Feature docs (badges, XP, notifications, actions)
+│   │   └── REACT_NATIVE_MIGRATION_V2.md  # RN migration plan
+│   ├── migration/         # Migration roadmaps
 │   ├── troubleshooting/   # Debug guides and solutions
 │   └── archive/           # Historical documentation
 │       ├── completed/     # Finished work documentation
 │       ├── deprecated/    # Outdated documentation
 │       └── sessions/      # Development session logs
+├── package.json           # Monorepo workspace configuration
 └── CLAUDE.md              # AI assistant development guide
 ```
 
@@ -193,12 +224,28 @@ npx supabase db push
 ### Development Commands
 
 ```bash
-# Development
+# Monorepo Commands
+npm run web              # Start web app dev server
+npm run mobile           # Start mobile app (Expo)
+
+# Web App Development
+cd apps/web
 npm run dev              # Start Vite dev server with HMR
 npm run type-check       # TypeScript type checking (no emit)
 npm run lint             # ESLint code quality check
 npm run build            # Production build
 npm run preview          # Preview production build locally
+
+# Mobile App Development (React Native)
+cd apps/mobile
+npm start                # Start Expo dev server
+npm run android          # Run on Android device/emulator
+npm run ios              # Run on iOS device/simulator
+
+# Shared Package
+cd packages/shared
+npm run build            # Build TypeScript to dist/
+npm run dev              # Watch mode for development
 
 # Supabase Backend
 npx supabase start       # Start local Supabase (Docker required)
