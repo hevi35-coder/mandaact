@@ -6,12 +6,8 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // Explicitly define environment variables for Vercel build
-  define: {
-    'import.meta.env.VITE_POSTHOG_KEY': JSON.stringify(process.env.VITE_POSTHOG_KEY),
-    'import.meta.env.VITE_POSTHOG_HOST': JSON.stringify(process.env.VITE_POSTHOG_HOST),
-    'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN),
-  },
+  // NOTE: define block removed - Vite automatically loads .env.local
+  // For Vercel production builds, environment variables are set in Vercel dashboard
   // @ts-expect-error - Vitest and Vite plugin type compatibility issue
   plugins: [
     react(),

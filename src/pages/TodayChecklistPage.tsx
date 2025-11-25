@@ -219,7 +219,7 @@ export default function TodayChecklistPage() {
           action_id: action.id,
           action_type: action.type,
           sub_goal_id: action.sub_goal_id,
-          mandalart_id: action.mandalart.id,
+          mandalart_id: action.sub_goal.mandalart.id,
           checked_at: new Date(checkData.checked_at)
         })
 

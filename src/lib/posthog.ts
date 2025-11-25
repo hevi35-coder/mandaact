@@ -58,7 +58,7 @@ export const initPostHog = () => {
  * @param properties - 추가 사용자 속성
  */
 export const identifyUser = (userId: string, properties?: Record<string, unknown>) => {
-  if (!isInitialized) return
+  if (typeof posthog?.identify !== 'function') return
 
   posthog.identify(userId, properties)
 }
@@ -67,7 +67,7 @@ export const identifyUser = (userId: string, properties?: Record<string, unknown
  * 사용자 로그아웃 시 호출
  */
 export const resetUser = () => {
-  if (!isInitialized) return
+  if (typeof posthog?.reset !== 'function') return
 
   posthog.reset()
 }
@@ -79,7 +79,11 @@ export const resetUser = () => {
  * @param properties - 이벤트 속성
  */
 export const trackEvent = (eventName: string, properties?: Record<string, unknown>) => {
-  if (!isInitialized) return
+  // PostHog 객체가 로드되었는지 직접 확인
+  if (typeof posthog?.capture !== 'function') {
+    console.warn('PostHog not ready, event not captured:', eventName)
+    return
+  }
 
   posthog.capture(eventName, properties)
 }
