@@ -6,6 +6,12 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Explicitly define environment variables for Vercel build
+  define: {
+    'import.meta.env.VITE_POSTHOG_KEY': JSON.stringify(process.env.VITE_POSTHOG_KEY),
+    'import.meta.env.VITE_POSTHOG_HOST': JSON.stringify(process.env.VITE_POSTHOG_HOST),
+    'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN),
+  },
   // @ts-expect-error - Vitest and Vite plugin type compatibility issue
   plugins: [
     react(),
@@ -106,7 +112,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.log in production
+        drop_console: false, // Keep console.log for debugging (Phase 8.1)
         drop_debugger: true,
       }
     }
