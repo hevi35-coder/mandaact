@@ -13,6 +13,7 @@ import { suggestActionType } from '@/lib/actionTypes'
 import { Plus } from 'lucide-react'
 import { VALIDATION_MESSAGES, ERROR_MESSAGES } from '@/lib/notificationMessages'
 import { showWarning, showError } from '@/lib/notificationUtils'
+import { trackMandalartCreated } from '@/lib/posthog'
 
 export default function MandalartCreatePage() {
   const navigate = useNavigate()
@@ -209,6 +210,14 @@ export default function MandalartCreatePage() {
 
         if (actionsError) throw actionsError
       }
+
+      // Track mandalart creation event (Phase 8.1)
+      trackMandalartCreated({
+        mandalart_id: mandalart.id,
+        input_method: inputMethod || 'manual',
+        sub_goals_count: filledSubGoals.length,
+        actions_count: actionsToInsert.length
+      })
 
       // Success! Redirect to mandalart detail page
       navigate(`/mandalart/${mandalart.id}`)

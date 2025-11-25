@@ -19,6 +19,7 @@ import {
   ArrowRight,
   X
 } from 'lucide-react'
+import { trackTutorialCompleted } from '@/lib/posthog'
 
 interface TutorialStep {
   id: number
@@ -31,6 +32,7 @@ export default function TutorialPage() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(0)
   const [hasCompletedBefore, setHasCompletedBefore] = useState(false)
+  const [startTime] = useState(Date.now()) // Track tutorial start time
 
   useEffect(() => {
     // Check if user has completed tutorial before
@@ -543,6 +545,16 @@ export default function TutorialPage() {
               variant="outline"
               className="flex-1"
               onClick={() => {
+                const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000)
+
+                // Track tutorial completion (partially completed)
+                trackTutorialCompleted({
+                  completed_steps: steps.length, // All steps viewed
+                  total_steps: steps.length,
+                  time_spent_seconds: timeSpentSeconds,
+                  skipped: true // "나중에 하기" = skipped
+                })
+
                 localStorage.setItem('tutorial_completed', 'true')
                 navigate('/home')
               }}
@@ -552,6 +564,16 @@ export default function TutorialPage() {
             <Button
               className="flex-1 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
               onClick={() => {
+                const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000)
+
+                // Track tutorial completion (fully completed)
+                trackTutorialCompleted({
+                  completed_steps: steps.length,
+                  total_steps: steps.length,
+                  time_spent_seconds: timeSpentSeconds,
+                  skipped: false // "시작하기" = fully completed
+                })
+
                 localStorage.setItem('tutorial_completed', 'true')
                 navigate('/mandalart/create')
               }}
@@ -582,6 +604,16 @@ export default function TutorialPage() {
   }
 
   const handleSkip = () => {
+    const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000)
+
+    // Track tutorial completion (skipped)
+    trackTutorialCompleted({
+      completed_steps: currentStep + 1, // Current step + 1 (0-indexed)
+      total_steps: steps.length,
+      time_spent_seconds: timeSpentSeconds,
+      skipped: true
+    })
+
     localStorage.setItem('tutorial_completed', 'true')
     navigate('/home')
   }

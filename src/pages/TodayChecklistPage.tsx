@@ -21,6 +21,7 @@ import { showError, showSuccess, showCelebration } from '@/lib/notificationUtils
 import { getDayBoundsUTC, getCurrentUTC } from '@/lib/timezone'
 import { PAGE_SLIDE, LIST_ITEM_ANIMATION, getStaggerDelay, CARD_ANIMATION, HOVER_LIFT, CHECKBOX_ANIMATION } from '@/lib/animations'
 import { CardSkeleton, ListSkeleton } from '@/components/ui/skeleton'
+import { trackActionChecked } from '@/lib/posthog'
 
 export default function TodayChecklistPage() {
   const navigate = useNavigate()
@@ -212,6 +213,15 @@ export default function TodayChecklistPage() {
           .single()
 
         if (insertError) throw insertError
+
+        // Track action check event (Phase 8.1)
+        trackActionChecked({
+          action_id: action.id,
+          action_type: action.type,
+          sub_goal_id: action.sub_goal_id,
+          mandalart_id: action.mandalart.id,
+          checked_at: new Date(checkData.checked_at)
+        })
 
         // Update user XP for the new check
         {

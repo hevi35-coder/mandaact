@@ -9,6 +9,8 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import Navigation from '@/components/Navigation'
 import { Toaster } from '@/components/ui/toaster'
+import { initPostHog, identifyUser, resetUser } from '@/lib/posthog'
+import { initSentry, setSentryUser, clearSentryUser } from '@/lib/sentry'
 
 // Lazy load pages for code splitting
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
@@ -232,10 +234,37 @@ function AnimatedRoutes() {
 
 function App() {
   const initialize = useAuthStore((state) => state.initialize)
+  const user = useAuthStore((state) => state.user)
 
+  // Initialize monitoring tools on app mount
+  useEffect(() => {
+    // Phase 8.1 - Event Tracking
+    initPostHog()
+
+    // Phase 8.1 - Error Tracking
+    initSentry()
+  }, [])
+
+  // Initialize auth
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  // Track user identification/logout in both PostHog and Sentry
+  useEffect(() => {
+    if (user) {
+      // User logged in - identify in monitoring tools
+      identifyUser(user.id, {
+        email: user.email,
+        created_at: user.created_at
+      })
+      setSentryUser(user.id, user.email)
+    } else {
+      // User logged out - reset monitoring tools
+      resetUser()
+      clearSentryUser()
+    }
+  }, [user])
 
   return (
     <ErrorBoundary>

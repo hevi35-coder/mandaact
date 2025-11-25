@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase'
 import type { Achievement } from '@/types'
+import { trackBadgeUnlocked } from './posthog'
 
 export interface BadgeEvaluationResult {
   badgeKey: string
@@ -90,6 +91,25 @@ export async function evaluateAndUnlockBadges(userId: string): Promise<BadgeEval
             progress: progress.progress,
             emotionalMessage: badge.emotional_message
           })
+
+          // Track badge unlock event (Phase 8.1)
+          try {
+            const { data: gamificationData } = await supabase
+              .from('user_gamification')
+              .select('current_level')
+              .eq('user_id', userId)
+              .single()
+
+            trackBadgeUnlocked({
+              badge_id: badge.id,
+              badge_title: badge.title,
+              badge_category: badge.category,
+              xp_reward: badge.xp_reward,
+              current_level: gamificationData?.current_level || 1
+            })
+          } catch (trackError) {
+            console.error('Error tracking badge unlock:', trackError)
+          }
         }
       }
     }
@@ -148,6 +168,25 @@ export async function evaluateSingleBadge(
 
     // If successfully unlocked
     if (unlockResult === true) {
+      // Track badge unlock event (Phase 8.1)
+      try {
+        const { data: gamificationData } = await supabase
+          .from('user_gamification')
+          .select('current_level')
+          .eq('user_id', userId)
+          .single()
+
+        trackBadgeUnlocked({
+          badge_id: badge.id,
+          badge_title: badge.title,
+          badge_category: badge.category,
+          xp_reward: badge.xp_reward,
+          current_level: gamificationData?.current_level || 1
+        })
+      } catch (trackError) {
+        console.error('Error tracking badge unlock:', trackError)
+      }
+
       return {
         badgeKey: badge.key,
         badgeTitle: badge.title,

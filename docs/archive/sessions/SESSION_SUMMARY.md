@@ -1,17 +1,229 @@
-# Session Summary - Phase 4 Complete
+# Session Summary - Phase 8 Event Tracking Complete
 
 **Date**: 2025-11-25 (Latest)
-**Previous Session**: 2025-11-23
-**Duration**: ~3 hours
-**Status**: ✅ Phase 4: 코드 품질 & 안정성 100% 완료
+**Previous Session**: 2025-11-25 (Phase 4)
+**Duration**: ~2 hours
+**Status**: ✅ Phase 8.1: 모니터링 & 이벤트 추적 90% 완료
 
 ---
 
-## 🎯 Latest Session (2025-11-25)
+## 🎯 Latest Session (2025-11-25 오후)
+
+### Phase 8.1: 모니터링 & 이벤트 추적 - 90% 완료 ✅
+
+**전체 변경**: 9 files modified, 400+ lines added
+
+---
+
+### Part 1: PostHog & Sentry 설치 및 통합 (100%) ✅
+
+**PostHog 설치**:
+- `posthog-js` 패키지 설치
+- `src/lib/posthog.ts` 유틸리티 생성
+- `App.tsx`에 초기화 로직 통합
+- 사용자 식별 자동 추적
+
+**Sentry 설치**:
+- `@sentry/react` 패키지 설치
+- `src/lib/sentry.ts` 유틸리티 생성
+- `App.tsx`에 초기화 로직 통합
+- 프로덕션 환경만 활성화 설정
+
+**환경변수 설정**:
+- `.env.local`에 PostHog API Key 추가
+- `.env.local`에 Sentry DSN 추가
+- GitHub Secrets 설정 완료
+- Vercel 환경변수 설정 완료
+
+---
+
+### Part 2: 핵심 이벤트 추적 통합 (100%) ✅
+
+**1. MandalartCreatePage - 만다라트 생성 추적**:
+```typescript
+trackMandalartCreated({
+  mandalart_id: string,
+  input_method: 'image' | 'text' | 'manual',
+  sub_goals_count: number,
+  actions_count: number
+})
+```
+- 위치: `src/pages/MandalartCreatePage.tsx` (214-220번째 라인)
+- 시점: 만다라트 저장 성공 직후
+
+**2. TodayChecklistPage - 액션 체크 추적**:
+```typescript
+trackActionChecked({
+  action_id: string,
+  action_type: 'routine' | 'mission' | 'reference',
+  sub_goal_id: string,
+  mandalart_id: string,
+  checked_at: Date
+})
+```
+- 위치: `src/pages/TodayChecklistPage.tsx` (217-224번째 라인)
+- 시점: 체크 완료 직후
+- 추가 데이터: 시간대(hour), 요일(day_of_week)
+
+**3. badgeEvaluator.ts - 배지 획득 추적**:
+```typescript
+trackBadgeUnlocked({
+  badge_id: string,
+  badge_title: string,
+  badge_category: string,
+  xp_reward: number,
+  current_level: number
+})
+```
+- 위치: `src/lib/badgeEvaluator.ts` (95-112, 171-188번째 라인)
+- 시점: 배지 자동 해제 성공 직후
+- 함수: `evaluateAndUnlockBadges`, `evaluateSingleBadge` 모두 적용
+
+**4. TutorialPage - 튜토리얼 완료 추적**:
+```typescript
+trackTutorialCompleted({
+  completed_steps: number,
+  total_steps: number,
+  time_spent_seconds: number,
+  skipped: boolean
+})
+```
+- 위치: `src/pages/TutorialPage.tsx` (여러 위치)
+- 시점: 완료/건너뛰기/나중에하기 시
+- 추가 로직: 튜토리얼 시작 시간 추적 (`startTime` state)
+
+---
+
+### Part 3: CI/CD 파이프라인 & 문서화 (100%) ✅
+
+**GitHub Actions CI/CD**:
+- 파일: `.github/workflows/ci.yml` 생성
+- 4단계 자동 검증:
+  1. Code Quality (TypeScript + ESLint)
+  2. Tests (192개 테스트)
+  3. Build Verification
+  4. Success Notification
+- PR마다 자동 실행
+
+**백업 & 복구 전략 문서화**:
+- 파일: `docs/operations/BACKUP_AND_RECOVERY.md`
+- 내용:
+  - 백업 대상 정의
+  - Supabase 자동/수동 백업 전략
+  - 복구 절차 (3가지 시나리오)
+  - 재해 복구 계획
+  - 백업 검증 절차
+  - 자동화 스크립트 템플릿
+
+**설정 가이드 문서**:
+- 파일: `docs/operations/PHASE8_SETUP_GUIDE.md`
+- 내용:
+  - 단계별 설정 가이드
+  - 이벤트 추적 사용 예시
+  - 문제 해결 가이드
+  - 체크리스트
+
+---
+
+### 📊 최종 지표
+
+**추적 중인 이벤트**:
+| 이벤트 | 페이지 | 상태 |
+|--------|--------|------|
+| `mandalart_created` | MandalartCreatePage | ✅ 통합 완료 |
+| `action_checked` | TodayChecklistPage | ✅ 통합 완료 |
+| `badge_unlocked` | badgeEvaluator (자동) | ✅ 통합 완료 |
+| `tutorial_completed` | TutorialPage | ✅ 통합 완료 |
+| `$pageview` | (PostHog 자동) | ✅ 자동 추적 |
+
+**환경 설정**:
+- ✅ PostHog API Key 설정 완료
+- ✅ Sentry DSN 설정 완료
+- ✅ GitHub Secrets 설정 완료
+- ✅ Vercel 환경변수 설정 완료
+
+**개발 서버**:
+- ✅ http://localhost:5173 정상 실행 중
+- ✅ HMR (Hot Module Replacement) 정상 작동
+- ✅ PostHog 로드 확인됨
+- ✅ Sentry 로드 확인됨 (프로덕션만)
+
+---
+
+### 📁 변경 파일 목록
+
+**신규 생성**:
+- `src/lib/posthog.ts` - PostHog 유틸리티 및 이벤트 추적 함수
+- `src/lib/sentry.ts` - Sentry 유틸리티 및 에러 추적 함수
+- `.github/workflows/ci.yml` - GitHub Actions CI/CD 파이프라인
+- `docs/operations/BACKUP_AND_RECOVERY.md` - 백업 & 복구 전략
+- `docs/operations/PHASE8_SETUP_GUIDE.md` - Phase 8 설정 가이드
+
+**수정**:
+- `src/App.tsx` - PostHog/Sentry 초기화 및 사용자 추적
+- `src/pages/MandalartCreatePage.tsx` - 만다라트 생성 이벤트 추적
+- `src/pages/TodayChecklistPage.tsx` - 액션 체크 이벤트 추적
+- `src/lib/badgeEvaluator.ts` - 배지 획득 이벤트 추적
+- `src/pages/TutorialPage.tsx` - 튜토리얼 완료 이벤트 추적
+- `.env.local` - PostHog/Sentry 환경변수 추가
+- `package.json` - posthog-js, @sentry/react 의존성 추가
+
+---
+
+### 🎯 Phase 8.1 완료도: **90%**
+
+**완료**:
+- ✅ PostHog 설치 및 통합
+- ✅ Sentry 설치 및 통합
+- ✅ 핵심 이벤트 4개 추적 통합
+- ✅ GitHub Actions CI/CD 파이프라인
+- ✅ 백업 & 복구 전략 문서화
+- ✅ 환경변수 설정 완료
+
+**남은 작업** (10%):
+- [ ] PostHog 대시보드 인사이트 생성 (6가지 추천)
+- [ ] Sentry 알림 규칙 설정
+- [ ] 실제 사용 시나리오 테스트
+- [ ] GitHub Actions 테스트 (PR 생성)
+- [ ] Vercel 프로덕션 재배포
+
+---
+
+### 📝 다음 단계 (Priority)
+
+**즉시 가능한 Quick Wins**:
+1. **PostHog 대시보드 인사이트 생성** (10분)
+   - 일일 활성 사용자 (DAU)
+   - 만다라트 생성 방법 분포
+   - 액션 타입별 체크 비율
+   - 시간대별 체크 패턴
+   - 배지 획득 TOP 10
+   - 튜토리얼 완료율 Funnel
+
+2. **실제 사용 시나리오 테스트** (20분)
+   - 새 계정 회원가입
+   - 튜토리얼 완료
+   - 만다라트 생성 (3가지 방법)
+   - 액션 체크
+   - PostHog Live Events 확인
+
+3. **Vercel 프로덕션 재배포** (5분)
+   - 환경변수 설정 완료
+   - Redeploy 클릭
+   - 프로덕션 환경 테스트
+
+**Phase 8.2 - 백업 자동화** (선택):
+- 백업 자동화 스크립트 구현
+- Cron 작업 설정
+- 클라우드 스토리지 연동
+
+---
+
+## 🎯 Previous Session (2025-11-25 오전)
 
 ### Phase 4: 코드 품질 & 안정성 - 100% 완료 ✅
 
-**전체 커밋**: 1개 (예정)
+**전체 커밋**: 1개
 **전체 변경**: 10 files modified, 300+ lines added
 
 ---
