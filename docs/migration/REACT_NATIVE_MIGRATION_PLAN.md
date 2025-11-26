@@ -1,8 +1,49 @@
 # MandaAct React Native 마이그레이션 계획서
 
-> **Version**: 1.0
+> **Version**: 2.0
 > **Date**: 2025-11-26
 > **Target**: iOS App Store + Google Play Store 배포
+> **Status**: 🟢 Phase 0-4 구현 완료
+
+---
+
+## 0. 구현 진행 상황
+
+### 완료된 작업 (2025-11-26)
+
+| Phase | 상태 | 주요 내용 |
+|-------|------|----------|
+| Phase 0 | ✅ 완료 | 모노레포 구조 설정 (pnpm + Turborepo) |
+| Phase 1 | ✅ 완료 | 데이터 페칭, 오늘 실천, OCR 서비스 |
+| Phase 2 | ✅ 완료 | 만다라트 관리 화면 (목록/생성/상세) |
+| Phase 3 | ✅ 완료 | 통계, 히트맵, 알림 서비스 |
+| Phase 4 | ✅ 완료 | 빌드 설정, 문서화 |
+| Phase 5 | ⏳ 대기 | 스토어 제출 (심사 준비 필요) |
+
+### 구현된 화면
+
+- [x] LoginScreen - 인증 (로그인/회원가입)
+- [x] HomeScreen - 대시보드 (통계, XP, 빠른 실행)
+- [x] TodayScreen - 오늘의 실천 체크리스트
+- [x] MandalartListScreen - 만다라트 목록/토글/삭제
+- [x] MandalartCreateScreen - 3가지 입력 방식 (OCR/텍스트/수동)
+- [x] MandalartDetailScreen - 9x9 그리드 시각화
+- [x] StatsScreen - 통계/히트맵/진행률
+- [x] SettingsScreen - 설정/알림/앱 정보
+
+### 구현된 서비스
+
+- [x] ocrService - 이미지 업로드 + OCR Edge Function
+- [x] exportService - 이미지 내보내기/공유
+- [x] notificationService - 푸시 알림 설정
+
+### 남은 작업
+
+- [ ] AI 리포트 화면 (주간/목표 진단)
+- [ ] 튜토리얼 화면
+- [ ] 뱃지 시스템 화면
+- [ ] 앱 아이콘/스플래시 에셋 추가
+- [ ] 스토어 심사 제출
 
 ---
 
