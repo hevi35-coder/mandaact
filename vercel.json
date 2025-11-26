@@ -1,6 +1,7 @@
 {
-  "buildCommand": "cd apps/web && pnpm build",
+  "buildCommand": "pnpm --filter @mandaact/web build",
   "outputDirectory": "apps/web/dist",
-  "installCommand": "pnpm install",
-  "framework": "vite"
+  "installCommand": "pnpm install --filter @mandaact/web...",
+  "framework": "vite",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- apps/web packages/shared"
 }
