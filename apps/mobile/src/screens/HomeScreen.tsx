@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { CompositeNavigationProp } from '@react-navigation/native'
-import { CalendarCheck, Grid3X3, TrendingUp, FileText, Award, HelpCircle } from 'lucide-react-native'
+import { CalendarCheck, Grid3X3, TrendingUp, FileText, Award, HelpCircle, Settings } from 'lucide-react-native'
 import { useAuthStore } from '../store/authStore'
 import { useDailyStats, useUserGamification } from '../hooks/useStats'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
@@ -66,10 +66,18 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 px-4 pt-4">
-        {/* Header - match web style */}
-        <View className="flex-row items-center mb-6">
-          <Text className="text-3xl font-bold text-gray-900">홈</Text>
-          <Text className="text-gray-500 ml-3 text-sm">성장 대시보드</Text>
+        {/* Header - match web style with settings icon */}
+        <View className="flex-row items-center justify-between mb-6">
+          <View className="flex-row items-center">
+            <Text className="text-3xl font-bold text-gray-900">홈</Text>
+            <Text className="text-gray-500 ml-3 text-sm">성장 대시보드</Text>
+          </View>
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            className="p-2 rounded-full active:bg-gray-100"
+          >
+            <Settings size={24} color="#6b7280" />
+          </Pressable>
         </View>
 
         {/* Quick Stats Card */}

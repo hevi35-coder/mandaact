@@ -12,7 +12,7 @@
 
 ---
 
-## 🚨 Phase 0: IA Unification (Priority: CRITICAL) - NEW
+## ✅ Phase 0: IA Unification (Priority: CRITICAL) - COMPLETED
 
 > **상세 문서**: [MOBILE_IA_UNIFICATION.md](./MOBILE_IA_UNIFICATION.md)
 
@@ -20,20 +20,20 @@
 
 ### Current vs Target
 
-| Position | Current Mobile | Target Mobile | Web |
-|----------|---------------|---------------|-----|
+| Position | Before | After | Web |
+|----------|--------|-------|-----|
 | 1 | 홈 | 홈 | 홈 |
-| 2 | 오늘 | **투데이** | 투데이 |
+| 2 | 오늘 | **투데이** ✅ | 투데이 |
 | 3 | 만다라트 | 만다라트 | 만다라트 |
-| 4 | 통계 | **리포트** | 리포트 |
-| 5 | 설정 | ❌ 제거 | - |
+| 4 | 통계 | **리포트** ✅ | 리포트 |
+| 5 | 설정 | ❌ 제거 ✅ | - |
 
 ### Tasks
-- [ ] RootNavigator.tsx 탭 구조 변경 (5탭 → 4탭)
-- [ ] "오늘" → "투데이" 라벨 변경
-- [ ] 통계 탭 제거, HomeScreen에 통합
-- [ ] 설정 탭 제거, 홈 우측 상단 아이콘으로 이동
-- [ ] ReportsScreen을 메인 탭으로 승격
+- [x] RootNavigator.tsx 탭 구조 변경 (5탭 → 4탭)
+- [x] "오늘" → "투데이" 라벨 변경
+- [ ] 통계 탭 제거, HomeScreen에 통합 (미니 히트맵 추가 - Future)
+- [x] 설정 탭 제거, 홈 우측 상단 아이콘으로 이동
+- [x] ReportsScreen을 메인 탭으로 승격
 
 ### Current State Comparison
 

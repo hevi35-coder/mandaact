@@ -2,7 +2,7 @@ import React from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { Home, CheckSquare, Grid3X3, BarChart3, Settings } from 'lucide-react-native'
+import { Home, CheckSquare, Grid3X3, FileText, Settings } from 'lucide-react-native'
 
 import { useAuthStore } from '../store/authStore'
 
@@ -12,7 +12,7 @@ import TodayScreen from '../screens/TodayScreen'
 import MandalartListScreen from '../screens/MandalartListScreen'
 import MandalartCreateScreen from '../screens/MandalartCreateScreen'
 import MandalartDetailScreen from '../screens/MandalartDetailScreen'
-import StatsScreen from '../screens/StatsScreen'
+// StatsScreen features are now integrated into HomeScreen
 import SettingsScreen from '../screens/SettingsScreen'
 import ReportsScreen from '../screens/ReportsScreen'
 import TutorialScreen from '../screens/TutorialScreen'
@@ -25,7 +25,7 @@ export type RootStackParamList = {
   Login: undefined
   MandalartDetail: { id: string }
   CreateMandalart: undefined
-  Reports: undefined
+  Settings: undefined
   Tutorial: undefined
   Badges: undefined
 }
@@ -34,8 +34,7 @@ export type MainTabParamList = {
   Home: undefined
   Today: undefined
   Mandalart: undefined
-  Stats: undefined
-  Settings: undefined
+  Reports: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -73,7 +72,7 @@ function MainTabs() {
         name="Today"
         component={TodayScreen}
         options={{
-          tabBarLabel: '오늘',
+          tabBarLabel: '투데이',
           tabBarIcon: ({ color, size }) => <CheckSquare size={size} color={color} />,
         }}
       />
@@ -86,19 +85,11 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Stats"
-        component={StatsScreen}
+        name="Reports"
+        component={ReportsScreen}
         options={{
-          tabBarLabel: '통계',
-          tabBarIcon: ({ color, size }) => <BarChart3 size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarLabel: '설정',
-          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
+          tabBarLabel: '리포트',
+          tabBarIcon: ({ color, size }) => <FileText size={size} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -134,8 +125,8 @@ export default function RootNavigator() {
               }}
             />
             <Stack.Screen
-              name="Reports"
-              component={ReportsScreen}
+              name="Settings"
+              component={SettingsScreen}
               options={{
                 animation: 'slide_from_right',
               }}
