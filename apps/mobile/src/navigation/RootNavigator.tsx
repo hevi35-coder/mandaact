@@ -14,6 +14,9 @@ import MandalartCreateScreen from '../screens/MandalartCreateScreen'
 import MandalartDetailScreen from '../screens/MandalartDetailScreen'
 import StatsScreen from '../screens/StatsScreen'
 import SettingsScreen from '../screens/SettingsScreen'
+import ReportsScreen from '../screens/ReportsScreen'
+import TutorialScreen from '../screens/TutorialScreen'
+import BadgeScreen from '../screens/BadgeScreen'
 import LoginScreen from '../screens/LoginScreen'
 import LoadingScreen from '../screens/LoadingScreen'
 
@@ -22,6 +25,9 @@ export type RootStackParamList = {
   Login: undefined
   MandalartDetail: { id: string }
   CreateMandalart: undefined
+  Reports: undefined
+  Tutorial: undefined
+  Badges: undefined
 }
 
 export type MainTabParamList = {
@@ -123,6 +129,28 @@ export default function RootNavigator() {
             <Stack.Screen
               name="MandalartDetail"
               component={MandalartDetailScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Reports"
+              component={ReportsScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Tutorial"
+              component={TutorialScreen}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
+              name="Badges"
+              component={BadgeScreen}
               options={{
                 animation: 'slide_from_right',
               }}

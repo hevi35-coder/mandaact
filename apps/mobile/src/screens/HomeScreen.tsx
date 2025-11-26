@@ -3,11 +3,14 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
-import { CalendarCheck, Grid3X3, TrendingUp } from 'lucide-react-native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { CompositeNavigationProp } from '@react-navigation/native'
+import { CalendarCheck, Grid3X3, TrendingUp, FileText, Award, HelpCircle } from 'lucide-react-native'
 import { useAuthStore } from '../store/authStore'
 import { useDailyStats, useUserGamification } from '../hooks/useStats'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { APP_NAME } from '@mandaact/shared'
+import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
 
 // XP calculation helpers (simplified version)
 function calculateXPForLevel(level: number): number {
@@ -31,16 +34,13 @@ function getXPForCurrentLevel(totalXP: number, level: number): { current: number
   }
 }
 
-type RootTabParamList = {
-  Home: undefined
-  Today: undefined
-  Mandalart: undefined
-  Stats: undefined
-  Settings: undefined
-}
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>
 
 export default function HomeScreen() {
-  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>()
+  const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
 
   // Data fetching
@@ -168,7 +168,7 @@ export default function HomeScreen() {
           <Text className="text-lg font-semibold text-gray-900 mb-4">
             빠른 실행
           </Text>
-          <View className="flex-row gap-3">
+          <View className="flex-row gap-3 mb-3">
             <Pressable
               className="flex-1 bg-primary/10 rounded-xl py-4 items-center flex-row justify-center"
               onPress={() => navigation.navigate('Today')}
@@ -184,7 +184,37 @@ export default function HomeScreen() {
               <Text className="text-gray-700 font-semibold ml-2">만다라트 관리</Text>
             </Pressable>
           </View>
+          <View className="flex-row gap-3">
+            <Pressable
+              className="flex-1 bg-purple-50 rounded-xl py-4 items-center flex-row justify-center"
+              onPress={() => navigation.navigate('Reports')}
+            >
+              <FileText size={18} color="#8b5cf6" />
+              <Text className="text-purple-600 font-semibold ml-2">AI 리포트</Text>
+            </Pressable>
+            <Pressable
+              className="flex-1 bg-amber-50 rounded-xl py-4 items-center flex-row justify-center"
+              onPress={() => navigation.navigate('Badges')}
+            >
+              <Award size={18} color="#f59e0b" />
+              <Text className="text-amber-600 font-semibold ml-2">뱃지</Text>
+            </Pressable>
+          </View>
         </View>
+
+        {/* Tutorial Banner */}
+        <Pressable
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl p-4 mb-4 flex-row items-center"
+          onPress={() => navigation.navigate('Tutorial')}
+        >
+          <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center">
+            <HelpCircle size={20} color="white" />
+          </View>
+          <View className="flex-1 ml-3">
+            <Text className="text-white font-semibold">사용법이 궁금하신가요?</Text>
+            <Text className="text-white/80 text-sm">튜토리얼 다시 보기</Text>
+          </View>
+        </Pressable>
 
         {/* App Info */}
         <View className="items-center py-4">

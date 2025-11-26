@@ -28,3 +28,28 @@ export {
   useSubGoalProgress,
 } from './useStats'
 export type { DailyStats, UserGamification, HeatmapData, SubGoalProgress } from './useStats'
+
+// Report hooks
+export {
+  reportKeys,
+  useWeeklyReport,
+  useGenerateWeeklyReport,
+  useGoalDiagnosis,
+  useGenerateGoalDiagnosis,
+  useReportHistory,
+} from './useReports'
+export type { WeeklyReport, GoalDiagnosis } from './useReports'
+
+// Badge hooks
+export {
+  badgeKeys,
+  useBadgeDefinitions,
+  useUserBadges,
+  useBadgeProgress,
+  BADGE_CATEGORIES,
+  BADGE_DEFINITIONS,
+  getBadgesByCategory,
+  isBadgeUnlocked,
+  getBadgeUnlockDate,
+} from './useBadges'
+export type { BadgeDefinition, UserBadge, BadgeProgress } from './useBadges'

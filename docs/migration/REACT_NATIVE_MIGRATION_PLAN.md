@@ -30,6 +30,9 @@
 - [x] MandalartDetailScreen - 9x9 그리드 시각화
 - [x] StatsScreen - 통계/히트맵/진행률
 - [x] SettingsScreen - 설정/알림/앱 정보
+- [x] ReportsScreen - AI 리포트 (주간 리포트 + 목표 진단)
+- [x] TutorialScreen - 7단계 온보딩 튜토리얼
+- [x] BadgeScreen - 뱃지 시스템 (21개 뱃지, 카테고리별 정리)
 
 ### 구현된 서비스
 
@@ -37,12 +40,18 @@
 - [x] exportService - 이미지 내보내기/공유
 - [x] notificationService - 푸시 알림 설정
 
+### 구현된 훅
+
+- [x] useMandalarts - 만다라트 CRUD
+- [x] useActions - 오늘의 실천 + 체크 토글
+- [x] useStats - 일간/주간 통계, 히트맵, 진행률
+- [x] useReports - 주간 리포트, 목표 진단 생성
+- [x] useBadges - 뱃지 정의, 사용자 뱃지, 진행도
+
 ### 남은 작업
 
-- [ ] AI 리포트 화면 (주간/목표 진단)
-- [ ] 튜토리얼 화면
-- [ ] 뱃지 시스템 화면
-- [ ] 앱 아이콘/스플래시 에셋 추가
+- [ ] 실제 앱 아이콘/스플래시 에셋 제작
+- [ ] Apple Developer / Google Play 계정 설정
 - [ ] 스토어 심사 제출
 
 ---
