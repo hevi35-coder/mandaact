@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
 import { useNavigation } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -85,7 +86,10 @@ export default function HomeScreen() {
         </View>
 
         {/* Quick Stats Card */}
-        <View className="bg-white rounded-2xl p-6 shadow-sm mb-4">
+        <Animated.View
+          entering={FadeInUp.delay(100).duration(400)}
+          className="bg-white rounded-2xl p-6 shadow-sm mb-4"
+        >
           <Text className="text-lg font-semibold text-gray-900 mb-4">
             오늘의 진행상황
           </Text>
@@ -107,10 +111,13 @@ export default function HomeScreen() {
               </View>
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Level Card - white theme to match web */}
-        <View className="bg-white rounded-2xl p-6 mb-4 border border-gray-200 shadow-sm">
+        <Animated.View
+          entering={FadeInUp.delay(200).duration(400)}
+          className="bg-white rounded-2xl p-6 mb-4 border border-gray-200 shadow-sm"
+        >
           <View className="flex-row justify-between items-center">
             <View>
               <Text className="text-gray-500 text-sm">현재 레벨</Text>
@@ -125,16 +132,20 @@ export default function HomeScreen() {
           </View>
           {/* XP Progress Bar */}
           <View className="h-3 bg-gray-200 rounded-full mt-4 overflow-hidden">
-            <View
+            <Animated.View
+              entering={FadeInUp.delay(400).duration(300)}
               className="h-full bg-gray-900 rounded-full"
               style={{ width: `${xpPercentage}%` }}
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Streak Cards */}
         <View className="flex-row gap-3 mb-4">
-          <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
+          <Animated.View
+            entering={FadeInUp.delay(300).duration(400)}
+            className="flex-1 bg-white rounded-2xl p-4 border border-gray-200"
+          >
             <View className="flex-row items-center mb-2">
               <Flame size={16} color="#f59e0b" />
               <Text className="text-sm text-gray-500 ml-1">현재 스트릭</Text>
@@ -142,9 +153,12 @@ export default function HomeScreen() {
             <Text className="text-2xl font-bold text-amber-500">
               {currentStreak}일
             </Text>
-          </View>
+          </Animated.View>
 
-          <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
+          <Animated.View
+            entering={FadeInUp.delay(350).duration(400)}
+            className="flex-1 bg-white rounded-2xl p-4 border border-gray-200"
+          >
             <View className="flex-row items-center mb-2">
               <Target size={16} color="#ef4444" />
               <Text className="text-sm text-gray-500 ml-1">최장 스트릭</Text>
@@ -152,7 +166,7 @@ export default function HomeScreen() {
             <Text className="text-2xl font-bold text-red-500">
               {longestStreak}일
             </Text>
-          </View>
+          </Animated.View>
         </View>
 
         {/* Activity Heatmap */}
@@ -199,7 +213,10 @@ export default function HomeScreen() {
         )}
 
         {/* Quick Actions - outline style to match web */}
-        <View className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
+        <Animated.View
+          entering={FadeInUp.delay(500).duration(400)}
+          className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200"
+        >
           <Text className="text-lg font-semibold text-gray-900 mb-4">
             빠른 실행
           </Text>
@@ -235,7 +252,7 @@ export default function HomeScreen() {
               <Text className="text-gray-700 font-semibold ml-2">뱃지</Text>
             </Pressable>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Tutorial Banner - outline style to match web */}
         <View>

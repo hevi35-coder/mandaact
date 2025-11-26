@@ -415,12 +415,12 @@ const animatedStyle = useAnimatedStyle(() => ({
 11. [x] Update MandalartListScreen (상태 뱃지, 토글, 카운트)
 12. [x] StatsScreen → HomeScreen 통합
 
-### Sprint 4 (Day 7): Polish ⚠️
-13. [ ] Add basic animations (롤백 - babel reanimated 플러그인 미활성화)
+### Sprint 4 (Day 7): Polish ✅
+13. [x] Add basic animations (FadeInUp 애니메이션 - HomeScreen 카드들)
 14. [ ] Test on multiple devices
 15. [x] Documentation update
 
-> **Note**: Sprint 4 애니메이션은 `babel.config.js`에서 reanimated 플러그인이 비활성화되어 있어 롤백됨. 추후 플러그인 활성화 시 재적용 필요.
+> **Note**: Sprint 4 애니메이션 구현 완료 (2025-11-27). `react-native-reanimated` 플러그인 활성화 후 HomeScreen에 FadeInUp 애니메이션 적용.
 
 ---
 

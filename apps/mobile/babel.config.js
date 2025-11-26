@@ -10,7 +10,7 @@ module.exports = function (api) {
       'nativewind/babel',
     ],
     plugins: [
-      // Reanimated plugin disabled - app works without advanced animations
+      'react-native-reanimated/plugin',
     ],
   };
 };
