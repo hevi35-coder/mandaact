@@ -1,7 +1,7 @@
-# MandaAct 개발 로드맵 v3.2
+# MandaAct 개발 로드맵 v3.3
 
-**최종 업데이트**: 2025-11-25 (Latest) - Phase 4 완료
-**현재 상태**: Phase 4 완료 100% ✅ (코드 품질, 성능 최적화, 에러 핸들링, 테스트 완성)
+**최종 업데이트**: 2025-11-26 (Latest) - Mobile App 기능 완료
+**현재 상태**: Phase 4 완료 ✅ | Mobile App 95% 완료 ✅
 
 ---
 
@@ -22,6 +22,7 @@
   - 주간 실천 리포트 (AI 분석)
   - 목표 진단 리포트 (SMART 기준)
 - **PWA 배포**: 프로덕션 환경 구축 완료 ✅
+- **Mobile App**: React Native 개발 완료 ✅ (95%)
 
 ### 🎯 핵심 기능 현황
 | 기능 영역 | 상태 | 설명 |
@@ -36,6 +37,46 @@
 | 알림 | ✅ 완료 | PWA 푸시 알림, 권한 관리 |
 | 인증 | ✅ 완료 | 이메일/비밀번호 로그인 |
 | PWA | ✅ 완료 | 설치 가능, 오프라인 지원, 모바일 최적화 |
+
+---
+
+## 🔥 다음 세션 우선 작업: Mobile App 테스트
+
+> **우선순위**: 🔴 Critical
+> **예상 소요**: 1-2시간
+> **문서**: [`docs/mobile/TESTING_GUIDE.md`](../mobile/TESTING_GUIDE.md)
+
+### 즉시 실행 명령어
+
+```bash
+# 1. 환경 설정 (최초 1회)
+cd apps/mobile
+cp .env.example .env
+# .env 파일에 Supabase 설정 입력
+
+# 2. 의존성 설치 + 실행
+cd ../..
+npm install
+cd apps/mobile
+npm start
+```
+
+### 테스트 항목 (49개)
+
+| 영역 | 항목 수 | 주요 테스트 |
+|------|--------|------------|
+| 인증 | 6 | 로그인, 회원가입, 비밀번호 재설정 |
+| 홈 화면 | 4 | XP/레벨/스트릭 표시 |
+| 오늘의 실천 | 5 | 체크, 타입 필터 |
+| 만다라트 관리 | 4 | 활성화 토글, 상세 이동 |
+| 만다라트 생성 | 7 | OCR, 텍스트 파싱, 수동 입력 |
+| 만다라트 상세 | 7 | 9x9 그리드, **액션 편집**, 이미지 내보내기 |
+| 통계 | 4 | 히트맵, 진행률 |
+| AI 리포트 | 3 | 주간 리포트, 목표 진단 |
+| 배지 | 4 | 21개 배지, 진행률 |
+| 설정 | 5 | **알림 토글**, **시간 선택**, 로그아웃 |
+
+**신규 기능 (Mobile-1~4)**: 설정의 알림 시스템, 만다라트 상세의 액션 편집
 
 ---
 
@@ -158,6 +199,94 @@
   - 배지 해제 플로우
 
 **우선순위**: 🟢 Recommended - ✅ 완료
+
+---
+
+## 📱 Mobile App: React Native 개발 ✅ **95% 완료** (2025-11-26)
+
+**목표**: 네이티브 모바일 앱으로 사용자 경험 향상
+**기술 스택**: React Native + Expo + NativeWind
+
+### 완료된 기능 ✅
+
+**스크린 (12개)**:
+- ✅ HomeScreen - 대시보드, XP/레벨, 스트릭
+- ✅ TodayScreen - 일일 체크리스트, 만다라트별 그룹화
+- ✅ MandalartListScreen - 만다라트 관리, 활성화 토글
+- ✅ MandalartCreateScreen - 3가지 입력 방식 (OCR/텍스트/수동)
+- ✅ MandalartDetailScreen - 9x9 그리드, 이미지 내보내기, 액션 인라인 편집
+- ✅ StatsScreen - 히트맵, 통계, 게임화 정보
+- ✅ ReportsScreen - 주간 리포트, 목표 진단
+- ✅ BadgeScreen - 21개 배지, 진행률
+- ✅ TutorialScreen - 7단계 온보딩
+- ✅ SettingsScreen - 설정, 알림 시간 선택, 로그아웃
+- ✅ LoginScreen - 이메일/비밀번호 인증, 비밀번호 재설정
+- ✅ LoadingScreen - 초기 로딩
+
+**훅 (6개)**:
+- ✅ useMandalarts - 만다라트 CRUD
+- ✅ useActions - 액션 체크, 조회, 수정
+- ✅ useStats - 통계, 게임화
+- ✅ useBadges - 배지 시스템
+- ✅ useReports - AI 리포트
+- ✅ useNotifications - 푸시 알림 관리
+
+**서비스 (3개)**:
+- ✅ ocrService - 이미지 OCR
+- ✅ exportService - 이미지 캡처/저장
+- ✅ notificationService - 푸시 알림 스케줄링
+
+**코드 품질**:
+- ✅ ErrorBoundary 컴포넌트
+- ✅ Toast 알림 시스템
+- ✅ Skeleton 로딩
+- ✅ EmptyState 컴포넌트
+- ✅ errorHandling 유틸리티 (한글화 완료)
+- ✅ ActionEditModal 컴포넌트
+
+### 완료된 작업 ✅
+
+#### Mobile-1: 푸시 알림 시스템 ✅ **완료** (2025-11-26)
+**작업 목록**:
+- [x] Expo Notifications 설정
+- [x] 권한 요청 플로우
+- [x] 시간 선택 UI (TimePicker Modal)
+- [x] 백그라운드 스케줄링
+
+#### Mobile-2: 액션 인라인 편집 ✅ **완료** (2025-11-26)
+**작업 목록**:
+- [x] MandalartDetailScreen 편집 모드
+- [x] ActionEditModal 컴포넌트
+- [x] 액션 타입 변경 UI (루틴/미션/참고)
+- [x] frequency/cycle 수정
+
+#### Mobile-3: 에러 메시지 한글화 ✅ **완료** (2025-11-26)
+**작업 목록**:
+- [x] 인증 에러 메시지 번역 (20+ 메시지)
+- [x] API 에러 메시지 번역
+- [x] 사용자 친화적 메시지
+
+#### Mobile-4: 비밀번호 재설정 ✅ **완료** (2025-11-26)
+**작업 목록**:
+- [x] LoginScreen에 "비밀번호를 잊으셨나요?" 링크
+- [x] Supabase 비밀번호 재설정 연동
+- [x] 성공/실패 피드백 (Modal UI)
+
+### Web vs Mobile 비교
+
+| 기능 | Web | Mobile | 상태 |
+|------|-----|--------|------|
+| 만다라트 CRUD | ✅ | ✅ | 동등 |
+| 3가지 입력 방식 | ✅ | ✅ | 동등 |
+| 일일 체크 | ✅ | ✅ | 동등 |
+| 게임화 (XP/배지) | ✅ | ✅ | 동등 |
+| AI 리포트 | ✅ | ✅ | 동등 |
+| 튜토리얼 | ✅ | ✅ | 동등 |
+| 알림 시스템 | ✅ | ✅ | 동등 |
+| 액션 편집 | ✅ | ✅ | 동등 |
+| 비밀번호 재설정 | ✅ | ✅ | 동등 |
+
+**상태**: ✅ 완료 - Web과 기능 동등성 달성
 
 ---
 
@@ -484,7 +613,17 @@ Week 5+   | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ## 🎉 주요 성과
 
-### 최근 완료 (2025-11-14)
+### 최근 완료 (2025-11-26)
+✅ React Native 모바일 앱 기능 완성 (95%)
+✅ 12개 스크린, 6개 훅, 3개 서비스 구현
+✅ Mobile-1: 푸시 알림 시스템 (useNotifications 훅, 시간 선택 UI)
+✅ Mobile-2: 액션 인라인 편집 (ActionEditModal 컴포넌트)
+✅ Mobile-3: 에러 메시지 한글화 (20+ 메시지 번역)
+✅ Mobile-4: 비밀번호 재설정 (LoginScreen 통합)
+✅ Vercel 배포 설정 수정 (npm workspaces)
+✅ 코드 품질 컴포넌트 추가 (ErrorBoundary, Toast, Skeleton)
+
+### 이전 완료 (2025-11-14)
 ✅ PWA 프로덕션 배포 완료
 ✅ 모바일 라우팅 수정 (vercel.json)
 ✅ 브랜드 로고 적용 (PWA manifest)
@@ -504,6 +643,6 @@ Week 5+   | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ---
 
-**문서 버전**: 3.0
-**최종 수정**: 2025-11-15
+**문서 버전**: 3.3
+**최종 수정**: 2025-11-26
 **작성자**: Development Team
