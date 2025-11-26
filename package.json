@@ -3,12 +3,16 @@
   "private": true,
   "version": "1.0.0",
   "packageManager": "pnpm@9.14.2",
+  "workspaces": [
+    "apps/web",
+    "packages/shared"
+  ],
   "scripts": {
     "dev": "pnpm --filter @mandaact/web dev",
     "dev:web": "pnpm --filter @mandaact/web dev",
     "dev:mobile": "pnpm --filter @mandaact/mobile start",
     "build": "turbo run build",
-    "build:web": "pnpm --filter @mandaact/web build",
+    "build:web": "npm run build --workspace=@mandaact/web",
     "build:mobile": "pnpm --filter @mandaact/mobile build",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",

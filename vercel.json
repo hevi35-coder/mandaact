@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm --filter @mandaact/web build",
+  "buildCommand": "npm run build:web",
   "outputDirectory": "apps/web/dist",
-  "installCommand": "pnpm install --filter @mandaact/web...",
+  "installCommand": "npm install",
   "framework": "vite"
 }
