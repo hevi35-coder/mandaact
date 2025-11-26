@@ -18,12 +18,15 @@ import {
   RotateCw,
   Target,
   Lightbulb,
+  Edit3,
+  ChevronRight,
 } from 'lucide-react-native'
 
 import { useMandalartWithDetails } from '../hooks/useMandalarts'
-import { exportMandalart, saveToGallery, shareImage, captureViewAsImage } from '../services/exportService'
+import { saveToGallery, shareImage, captureViewAsImage } from '../services/exportService'
+import { ActionEditModal } from '../components'
 import type { RootStackParamList } from '../navigation/RootNavigator'
-import type { ActionType } from '@mandaact/shared'
+import type { Action, ActionType } from '@mandaact/shared'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 type DetailRouteProp = RouteProp<RootStackParamList, 'MandalartDetail'>
@@ -47,6 +50,7 @@ export default function MandalartDetailScreen() {
   const { id } = route.params
   const gridRef = useRef<View>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [editingAction, setEditingAction] = useState<Action | null>(null)
 
   const {
     data: mandalart,
@@ -58,6 +62,14 @@ export default function MandalartDetailScreen() {
   const handleBack = useCallback(() => {
     navigation.goBack()
   }, [navigation])
+
+  const handleEditAction = useCallback((action: Action) => {
+    setEditingAction(action)
+  }, [])
+
+  const handleEditSuccess = useCallback(() => {
+    refetch()
+  }, [refetch])
 
   const handleExport = useCallback(async (action: 'share' | 'save') => {
     if (!gridRef.current) return
@@ -334,11 +346,17 @@ export default function MandalartDetailScreen() {
           </View>
         </View>
 
-        {/* Sub-goals list */}
+        {/* Sub-goals list with edit */}
         <View className="px-4 pb-8">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">
-            세부 목표 ({mandalart.sub_goals?.length || 0}개)
-          </Text>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-lg font-semibold text-gray-900">
+              세부 목표 ({mandalart.sub_goals?.length || 0}개)
+            </Text>
+            <View className="flex-row items-center">
+              <Edit3 size={14} color="#667eea" />
+              <Text className="text-sm text-primary ml-1">탭하여 수정</Text>
+            </View>
+          </View>
           {mandalart.sub_goals?.map((subGoal) => (
             <View
               key={subGoal.id}
@@ -347,25 +365,37 @@ export default function MandalartDetailScreen() {
               <Text className="text-base font-semibold text-gray-900 mb-2">
                 {subGoal.position}. {subGoal.title}
               </Text>
-              <View className="pl-2">
+              <View>
                 {subGoal.actions?.map((action) => (
-                  <View
+                  <Pressable
                     key={action.id}
-                    className="flex-row items-center py-1"
+                    onPress={() => handleEditAction(action)}
+                    className="flex-row items-center py-2 px-2 -mx-2 rounded-lg active:bg-gray-50"
                   >
-                    {action.type === 'routine' && <RotateCw size={12} color="#667eea" />}
-                    {action.type === 'mission' && <Target size={12} color="#f59e0b" />}
-                    {action.type === 'reference' && <Lightbulb size={12} color="#6b7280" />}
-                    <Text className="text-sm text-gray-600 ml-2">
-                      {action.title}
-                    </Text>
-                  </View>
+                    <View className="flex-row items-center flex-1">
+                      {action.type === 'routine' && <RotateCw size={14} color="#667eea" />}
+                      {action.type === 'mission' && <Target size={14} color="#f59e0b" />}
+                      {action.type === 'reference' && <Lightbulb size={14} color="#6b7280" />}
+                      <Text className="text-sm text-gray-700 ml-2 flex-1">
+                        {action.title}
+                      </Text>
+                    </View>
+                    <ChevronRight size={16} color="#9ca3af" />
+                  </Pressable>
                 ))}
               </View>
             </View>
           ))}
         </View>
       </ScrollView>
+
+      {/* Action Edit Modal */}
+      <ActionEditModal
+        visible={!!editingAction}
+        action={editingAction}
+        onClose={() => setEditingAction(null)}
+        onSuccess={handleEditSuccess}
+      />
     </SafeAreaView>
   )
 }

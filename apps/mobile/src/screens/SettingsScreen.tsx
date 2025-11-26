@@ -8,6 +8,8 @@ import {
   Switch,
   Linking,
   ActivityIndicator,
+  Modal,
+  Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -20,17 +22,36 @@ import {
   MessageCircle,
   Star,
   ExternalLink,
+  Clock,
+  X,
+  Check,
 } from 'lucide-react-native'
 import * as Application from 'expo-application'
 import { useAuthStore } from '../store/authStore'
 import { useUserGamification } from '../hooks/useStats'
+import { useNotifications } from '../hooks/useNotifications'
 import { APP_NAME } from '@mandaact/shared'
+
+// Time picker options
+const HOURS = Array.from({ length: 24 }, (_, i) => i)
+const MINUTES = [0, 15, 30, 45]
 
 export default function SettingsScreen() {
   const { user, signOut, loading } = useAuthStore()
   const { data: gamification } = useUserGamification(user?.id)
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const {
+    isEnabled: notificationsEnabled,
+    isLoading: notificationLoading,
+    isPermissionDenied,
+    reminderTime,
+    toggleNotifications,
+    updateReminderTime,
+    formatReminderTime,
+  } = useNotifications()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const [showTimePicker, setShowTimePicker] = useState(false)
+  const [selectedHour, setSelectedHour] = useState(reminderTime.hour)
+  const [selectedMinute, setSelectedMinute] = useState(reminderTime.minute)
 
   const currentLevel = gamification?.current_level || 1
   const totalXP = gamification?.total_xp || 0
@@ -53,13 +74,41 @@ export default function SettingsScreen() {
     ])
   }, [signOut])
 
-  const handleToggleNotifications = useCallback((value: boolean) => {
-    setNotificationsEnabled(value)
-    // TODO: Implement actual notification permission handling
-    if (value) {
-      Alert.alert('알림 활성화', '푸시 알림이 활성화되었습니다.')
+  const handleToggleNotifications = useCallback(async (value: boolean) => {
+    const success = await toggleNotifications(value)
+
+    if (!success && value) {
+      Alert.alert(
+        '알림 권한 필요',
+        '푸시 알림을 사용하려면 설정에서 알림 권한을 허용해주세요.',
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '설정으로 이동',
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:')
+              } else {
+                Linking.openSettings()
+              }
+            },
+          },
+        ]
+      )
     }
-  }, [])
+  }, [toggleNotifications])
+
+  const handleOpenTimePicker = useCallback(() => {
+    setSelectedHour(reminderTime.hour)
+    setSelectedMinute(reminderTime.minute)
+    setShowTimePicker(true)
+  }, [reminderTime])
+
+  const handleSaveTime = useCallback(async () => {
+    await updateReminderTime(selectedHour, selectedMinute)
+    setShowTimePicker(false)
+    Alert.alert('알림 시간 설정', `매일 ${formatTimeDisplay(selectedHour, selectedMinute)}에 알림을 보내드립니다.`)
+  }, [selectedHour, selectedMinute, updateReminderTime])
 
   const handleOpenURL = useCallback(async (url: string) => {
     const canOpen = await Linking.canOpenURL(url)
@@ -80,9 +129,8 @@ export default function SettingsScreen() {
   }, [])
 
   const handlePrivacyPolicy = useCallback(() => {
-    // TODO: Replace with actual privacy policy URL
-    Alert.alert('개인정보 처리방침', '개인정보 처리방침 페이지로 이동합니다.')
-  }, [])
+    handleOpenURL('https://mandaact.com/privacy')
+  }, [handleOpenURL])
 
   const handleFeedback = useCallback(() => {
     Alert.alert('피드백 보내기', '피드백을 보내시겠습니까?', [
@@ -95,17 +143,21 @@ export default function SettingsScreen() {
   }, [handleOpenURL])
 
   const handleRateApp = useCallback(() => {
-    // TODO: Replace with actual store URLs
     Alert.alert('앱 평가하기', '스토어에서 앱을 평가해주세요!', [
       { text: '나중에', style: 'cancel' },
       {
         text: '평가하기',
         onPress: () => {
-          // Linking.openURL for App Store or Play Store
+          // Platform-specific store URLs
+          const storeUrl = Platform.select({
+            ios: 'https://apps.apple.com/app/mandaact/id000000000',
+            android: 'https://play.google.com/store/apps/details?id=com.mandaact',
+          })
+          if (storeUrl) handleOpenURL(storeUrl)
         },
       },
     ])
-  }, [])
+  }, [handleOpenURL])
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -137,19 +189,50 @@ export default function SettingsScreen() {
         </View>
 
         {/* Notification Settings */}
+        <Text className="text-sm font-semibold text-gray-500 mb-2 ml-1">
+          알림
+        </Text>
         <View className="bg-white rounded-2xl overflow-hidden mb-4">
-          <View className="flex-row items-center px-4 py-4">
+          <View className="flex-row items-center px-4 py-4 border-b border-gray-100">
             <Bell size={20} color="#6b7280" />
-            <Text className="flex-1 ml-3 text-base text-gray-900">
-              푸시 알림
-            </Text>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={handleToggleNotifications}
-              trackColor={{ false: '#d1d5db', true: '#667eea' }}
-              thumbColor="white"
-            />
+            <View className="flex-1 ml-3">
+              <Text className="text-base text-gray-900">푸시 알림</Text>
+              {isPermissionDenied && (
+                <Text className="text-xs text-red-500 mt-0.5">
+                  설정에서 알림 권한을 허용해주세요
+                </Text>
+              )}
+            </View>
+            {notificationLoading ? (
+              <ActivityIndicator size="small" color="#667eea" />
+            ) : (
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: '#d1d5db', true: '#667eea' }}
+                thumbColor="white"
+              />
+            )}
           </View>
+
+          {notificationsEnabled && (
+            <Pressable
+              onPress={handleOpenTimePicker}
+              className="flex-row items-center px-4 py-4"
+            >
+              <Clock size={20} color="#6b7280" />
+              <View className="flex-1 ml-3">
+                <Text className="text-base text-gray-900">알림 시간</Text>
+                <Text className="text-xs text-gray-500 mt-0.5">
+                  매일 이 시간에 알림을 보내드려요
+                </Text>
+              </View>
+              <Text className="text-base font-medium text-primary mr-1">
+                {formatReminderTime()}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Pressable>
+          )}
         </View>
 
         {/* Support Section */}
@@ -233,6 +316,122 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Time Picker Modal */}
+      <Modal
+        visible={showTimePicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTimePicker(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl pt-4 pb-8">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-4 pb-4 border-b border-gray-100">
+              <Pressable
+                onPress={() => setShowTimePicker(false)}
+                className="p-2"
+              >
+                <X size={24} color="#6b7280" />
+              </Pressable>
+              <Text className="text-lg font-semibold text-gray-900">
+                알림 시간 설정
+              </Text>
+              <Pressable onPress={handleSaveTime} className="p-2">
+                <Check size={24} color="#667eea" />
+              </Pressable>
+            </View>
+
+            {/* Time Selection */}
+            <View className="flex-row justify-center items-center py-8 px-4">
+              {/* Hour Picker */}
+              <View className="items-center">
+                <Text className="text-sm text-gray-500 mb-2">시</Text>
+                <ScrollView
+                  className="h-40"
+                  showsVerticalScrollIndicator={false}
+                  snapToInterval={44}
+                  decelerationRate="fast"
+                >
+                  {HOURS.map((hour) => (
+                    <Pressable
+                      key={hour}
+                      onPress={() => setSelectedHour(hour)}
+                      className={`py-2 px-6 ${
+                        selectedHour === hour ? 'bg-primary/10 rounded-lg' : ''
+                      }`}
+                    >
+                      <Text
+                        className={`text-2xl ${
+                          selectedHour === hour
+                            ? 'font-bold text-primary'
+                            : 'text-gray-400'
+                        }`}
+                      >
+                        {hour.toString().padStart(2, '0')}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <Text className="text-3xl text-gray-400 mx-4">:</Text>
+
+              {/* Minute Picker */}
+              <View className="items-center">
+                <Text className="text-sm text-gray-500 mb-2">분</Text>
+                <ScrollView
+                  className="h-40"
+                  showsVerticalScrollIndicator={false}
+                  snapToInterval={44}
+                  decelerationRate="fast"
+                >
+                  {MINUTES.map((minute) => (
+                    <Pressable
+                      key={minute}
+                      onPress={() => setSelectedMinute(minute)}
+                      className={`py-2 px-6 ${
+                        selectedMinute === minute
+                          ? 'bg-primary/10 rounded-lg'
+                          : ''
+                      }`}
+                    >
+                      <Text
+                        className={`text-2xl ${
+                          selectedMinute === minute
+                            ? 'font-bold text-primary'
+                            : 'text-gray-400'
+                        }`}
+                      >
+                        {minute.toString().padStart(2, '0')}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            {/* Preview */}
+            <View className="items-center pb-4">
+              <Text className="text-base text-gray-600">
+                매일{' '}
+                <Text className="font-semibold text-primary">
+                  {formatTimeDisplay(selectedHour, selectedMinute)}
+                </Text>
+                에 알림
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
+}
+
+// Helper function to format time display
+function formatTimeDisplay(hour: number, minute: number): string {
+  const period = hour >= 12 ? '오후' : '오전'
+  const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+  const displayMinute = minute.toString().padStart(2, '0')
+  return `${period} ${displayHour}:${displayMinute}`
 }

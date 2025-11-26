@@ -28,3 +28,6 @@ export {
 
 // Activity visualization
 export { default as ActivityHeatmap } from './ActivityHeatmap'
+
+// Action editing
+export { default as ActionEditModal } from './ActionEditModal'

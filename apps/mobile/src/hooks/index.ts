@@ -53,3 +53,6 @@ export {
   getBadgeUnlockDate,
 } from './useBadges'
 export type { BadgeDefinition, UserBadge, BadgeProgress } from './useBadges'
+
+// Notification hooks
+export { useNotifications } from './useNotifications'

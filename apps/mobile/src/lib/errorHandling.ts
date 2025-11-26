@@ -26,15 +26,39 @@ export class ValidationError extends Error {
 
 // Error messages in Korean
 export const ERROR_MESSAGES = {
+  // Network errors
   NETWORK: '네트워크 연결을 확인해주세요',
+  TIMEOUT: '요청 시간이 초과되었습니다. 다시 시도해주세요',
+
+  // Auth errors
   AUTH_REQUIRED: '로그인이 필요합니다',
   AUTH_EXPIRED: '세션이 만료되었습니다. 다시 로그인해주세요',
-  SERVER_ERROR: '서버 오류가 발생했습니다',
+  INVALID_CREDENTIALS: '이메일 또는 비밀번호가 올바르지 않습니다',
+  USER_EXISTS: '이미 가입된 이메일입니다',
+  EMAIL_NOT_CONFIRMED: '이메일 인증이 필요합니다. 메일함을 확인해주세요',
+  WEAK_PASSWORD: '비밀번호는 최소 6자 이상이어야 합니다',
+  INVALID_EMAIL: '올바른 이메일 형식이 아닙니다',
+  USER_NOT_FOUND: '등록되지 않은 이메일입니다',
+  TOO_MANY_REQUESTS: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요',
+  SIGNUP_DISABLED: '현재 회원가입이 제한되어 있습니다',
+
+  // Server errors
+  SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요',
   NOT_FOUND: '요청한 데이터를 찾을 수 없습니다',
   PERMISSION_DENIED: '접근 권한이 없습니다',
-  UNKNOWN: '알 수 없는 오류가 발생했습니다',
   RATE_LIMIT: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요',
+
+  // Validation errors
   VALIDATION: '입력 정보를 확인해주세요',
+  REQUIRED_FIELD: '필수 항목을 입력해주세요',
+
+  // Generic
+  UNKNOWN: '오류가 발생했습니다. 다시 시도해주세요',
+
+  // Data errors
+  LOAD_FAILED: '데이터를 불러오는 중 오류가 발생했습니다',
+  SAVE_FAILED: '저장 중 오류가 발생했습니다',
+  DELETE_FAILED: '삭제 중 오류가 발생했습니다',
 } as const
 
 // Parse error and return user-friendly message
@@ -52,43 +76,77 @@ export function parseError(error: unknown): string {
   }
 
   if (error instanceof Error) {
-    // Supabase errors
-    if (error.message.includes('JWT expired')) {
+    const message = error.message.toLowerCase()
+
+    // Supabase Auth errors
+    if (message.includes('jwt expired') || message.includes('token expired')) {
       return ERROR_MESSAGES.AUTH_EXPIRED
     }
-    if (error.message.includes('Invalid login credentials')) {
-      return '이메일 또는 비밀번호가 올바르지 않습니다'
+    if (message.includes('invalid login credentials') || message.includes('invalid password')) {
+      return ERROR_MESSAGES.INVALID_CREDENTIALS
     }
-    if (error.message.includes('Email not confirmed')) {
-      return '이메일 인증이 필요합니다'
+    if (message.includes('email not confirmed')) {
+      return ERROR_MESSAGES.EMAIL_NOT_CONFIRMED
     }
-    if (error.message.includes('User already registered')) {
-      return '이미 가입된 이메일입니다'
+    if (message.includes('user already registered') || message.includes('already exists')) {
+      return ERROR_MESSAGES.USER_EXISTS
+    }
+    if (message.includes('password should be at least') || message.includes('weak password')) {
+      return ERROR_MESSAGES.WEAK_PASSWORD
+    }
+    if (message.includes('invalid email') || message.includes('unable to validate email')) {
+      return ERROR_MESSAGES.INVALID_EMAIL
+    }
+    if (message.includes('user not found') || message.includes('no user found')) {
+      return ERROR_MESSAGES.USER_NOT_FOUND
+    }
+    if (message.includes('too many requests') || message.includes('rate limit')) {
+      return ERROR_MESSAGES.TOO_MANY_REQUESTS
+    }
+    if (message.includes('signup disabled') || message.includes('signups not allowed')) {
+      return ERROR_MESSAGES.SIGNUP_DISABLED
     }
 
     // Network errors
-    if (error.message.includes('Network request failed')) {
+    if (message.includes('network request failed') || message.includes('networkerror')) {
       return ERROR_MESSAGES.NETWORK
     }
-    if (error.message.includes('fetch')) {
+    if (message.includes('fetch') && !message.includes('fetched')) {
+      return ERROR_MESSAGES.NETWORK
+    }
+    if (message.includes('timeout') || message.includes('timed out')) {
+      return ERROR_MESSAGES.TIMEOUT
+    }
+    if (message.includes('abort') || message.includes('cancelled')) {
       return ERROR_MESSAGES.NETWORK
     }
 
-    // Generic errors
-    if (error.message.includes('404')) {
+    // HTTP status errors
+    if (message.includes('404') || message.includes('not found')) {
       return ERROR_MESSAGES.NOT_FOUND
     }
-    if (error.message.includes('403')) {
+    if (message.includes('403') || message.includes('forbidden')) {
       return ERROR_MESSAGES.PERMISSION_DENIED
     }
-    if (error.message.includes('429')) {
+    if (message.includes('401') || message.includes('unauthorized')) {
+      return ERROR_MESSAGES.AUTH_REQUIRED
+    }
+    if (message.includes('429')) {
       return ERROR_MESSAGES.RATE_LIMIT
     }
-    if (error.message.includes('500')) {
+    if (message.includes('500') || message.includes('internal server')) {
+      return ERROR_MESSAGES.SERVER_ERROR
+    }
+    if (message.includes('502') || message.includes('503') || message.includes('504')) {
       return ERROR_MESSAGES.SERVER_ERROR
     }
 
-    return error.message || ERROR_MESSAGES.UNKNOWN
+    // Return the original message only if it's short and not technical
+    if (error.message && error.message.length < 100 && !error.message.includes('Error:')) {
+      return error.message
+    }
+
+    return ERROR_MESSAGES.UNKNOWN
   }
 
   return ERROR_MESSAGES.UNKNOWN

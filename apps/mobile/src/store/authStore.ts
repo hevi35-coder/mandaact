@@ -11,6 +11,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
   initialize: () => Promise<void>
 }
 
@@ -54,6 +55,18 @@ export const useAuthStore = create<AuthState>()(
         try {
           await supabase.auth.signOut()
           set({ user: null })
+        } finally {
+          set({ loading: false })
+        }
+      },
+
+      resetPassword: async (email) => {
+        set({ loading: true })
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'mandaact://reset-password',
+          })
+          if (error) throw error
         } finally {
           set({ loading: false })
         }

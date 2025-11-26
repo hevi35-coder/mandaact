@@ -226,6 +226,8 @@ export function useUpdateAction() {
     onSuccess: () => {
       // Invalidate all action lists
       queryClient.invalidateQueries({ queryKey: actionKeys.lists() })
+      // Also invalidate mandalart details to reflect action changes
+      queryClient.invalidateQueries({ queryKey: ['mandalarts', 'detail'] })
     },
   })
 }

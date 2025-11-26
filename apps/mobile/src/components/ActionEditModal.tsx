@@ -1,0 +1,252 @@
+import React, { useState, useEffect, useCallback } from 'react'
+import {
+  View,
+  Text,
+  Modal,
+  Pressable,
+  TextInput,
+  ScrollView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native'
+import {
+  X,
+  Check,
+  RotateCw,
+  Target,
+  Lightbulb,
+} from 'lucide-react-native'
+import type { Action, ActionType } from '@mandaact/shared'
+import { useUpdateAction } from '../hooks/useActions'
+
+interface ActionEditModalProps {
+  visible: boolean
+  action: Action | null
+  onClose: () => void
+  onSuccess?: () => void
+}
+
+const ACTION_TYPES: { type: ActionType; label: string; description: string; icon: React.ReactNode }[] = [
+  {
+    type: 'routine',
+    label: '루틴',
+    description: '매일/매주 반복하는 습관',
+    icon: <RotateCw size={20} color="#667eea" />,
+  },
+  {
+    type: 'mission',
+    label: '미션',
+    description: '한 번 완료해야 하는 목표',
+    icon: <Target size={20} color="#f59e0b" />,
+  },
+  {
+    type: 'reference',
+    label: '참고',
+    description: '마음가짐이나 참고사항',
+    icon: <Lightbulb size={20} color="#6b7280" />,
+  },
+]
+
+const FREQUENCIES = [
+  { value: 'daily', label: '매일' },
+  { value: 'weekly', label: '매주' },
+  { value: 'monthly', label: '매월' },
+]
+
+export default function ActionEditModal({
+  visible,
+  action,
+  onClose,
+  onSuccess,
+}: ActionEditModalProps) {
+  const [title, setTitle] = useState('')
+  const [actionType, setActionType] = useState<ActionType>('routine')
+  const [frequency, setFrequency] = useState<string>('daily')
+
+  const updateAction = useUpdateAction()
+
+  // Initialize form when action changes
+  useEffect(() => {
+    if (action) {
+      setTitle(action.title)
+      setActionType((action.type as ActionType) || 'routine')
+      setFrequency(action.frequency || 'daily')
+    }
+  }, [action])
+
+  const handleSave = useCallback(async () => {
+    if (!action || !title.trim()) return
+
+    try {
+      await updateAction.mutateAsync({
+        id: action.id,
+        updates: {
+          title: title.trim(),
+          type: actionType,
+          frequency: actionType === 'routine' ? frequency : null,
+        },
+      })
+      onSuccess?.()
+      onClose()
+    } catch (error) {
+      console.error('Error updating action:', error)
+    }
+  }, [action, title, actionType, frequency, updateAction, onSuccess, onClose])
+
+  const handleClose = useCallback(() => {
+    // Reset form
+    if (action) {
+      setTitle(action.title)
+      setActionType((action.type as ActionType) || 'routine')
+      setFrequency(action.frequency || 'daily')
+    }
+    onClose()
+  }, [action, onClose])
+
+  if (!action) return null
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={handleClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl max-h-[80%]">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
+              <Pressable onPress={handleClose} className="p-2">
+                <X size={24} color="#6b7280" />
+              </Pressable>
+              <Text className="text-lg font-semibold text-gray-900">
+                실천 항목 수정
+              </Text>
+              <Pressable
+                onPress={handleSave}
+                disabled={updateAction.isPending || !title.trim()}
+                className="p-2"
+              >
+                {updateAction.isPending ? (
+                  <ActivityIndicator size="small" color="#667eea" />
+                ) : (
+                  <Check
+                    size={24}
+                    color={title.trim() ? '#667eea' : '#d1d5db'}
+                  />
+                )}
+              </Pressable>
+            </View>
+
+            <ScrollView className="px-4 py-4">
+              {/* Title Input */}
+              <View className="mb-6">
+                <Text className="text-sm font-semibold text-gray-700 mb-2">
+                  제목
+                </Text>
+                <TextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="실천 항목을 입력하세요"
+                  placeholderTextColor="#9ca3af"
+                  className="bg-gray-50 rounded-xl px-4 py-3 text-base text-gray-900 border border-gray-200"
+                  multiline
+                  maxLength={100}
+                />
+                <Text className="text-xs text-gray-400 mt-1 text-right">
+                  {title.length}/100
+                </Text>
+              </View>
+
+              {/* Action Type Selection */}
+              <View className="mb-6">
+                <Text className="text-sm font-semibold text-gray-700 mb-2">
+                  유형
+                </Text>
+                <View className="gap-2">
+                  {ACTION_TYPES.map((type) => (
+                    <Pressable
+                      key={type.type}
+                      onPress={() => setActionType(type.type)}
+                      className={`flex-row items-center p-4 rounded-xl border ${
+                        actionType === type.type
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <View className="mr-3">{type.icon}</View>
+                      <View className="flex-1">
+                        <Text
+                          className={`text-base font-semibold ${
+                            actionType === type.type
+                              ? 'text-primary'
+                              : 'text-gray-900'
+                          }`}
+                        >
+                          {type.label}
+                        </Text>
+                        <Text className="text-xs text-gray-500 mt-0.5">
+                          {type.description}
+                        </Text>
+                      </View>
+                      {actionType === type.type && (
+                        <Check size={20} color="#667eea" />
+                      )}
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {/* Frequency Selection (only for routine) */}
+              {actionType === 'routine' && (
+                <View className="mb-6">
+                  <Text className="text-sm font-semibold text-gray-700 mb-2">
+                    반복 주기
+                  </Text>
+                  <View className="flex-row gap-2">
+                    {FREQUENCIES.map((freq) => (
+                      <Pressable
+                        key={freq.value}
+                        onPress={() => setFrequency(freq.value)}
+                        className={`flex-1 py-3 rounded-xl border ${
+                          frequency === freq.value
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <Text
+                          className={`text-center font-semibold ${
+                            frequency === freq.value
+                              ? 'text-primary'
+                              : 'text-gray-600'
+                          }`}
+                        >
+                          {freq.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* Info notice */}
+              <View className="bg-blue-50 rounded-xl p-4 mb-8">
+                <Text className="text-sm text-blue-700">
+                  💡 유형에 따라 실천 표시 방식이 달라집니다.{'\n'}
+                  • 루틴: 설정한 주기마다 체크 가능{'\n'}
+                  • 미션: 완료할 때까지 표시{'\n'}
+                  • 참고: 체크 없이 항상 표시
+                </Text>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  )
+}
