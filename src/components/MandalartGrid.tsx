@@ -1,6 +1,12 @@
 import React from 'react'
 import { MandalartGridData } from '@/types'
 import { Plus } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface MandalartGridProps {
   mode: 'view' | 'create'
@@ -59,9 +65,9 @@ function MandalartGrid({
           >
             {data.center_goal ? (
               <p
-                className={`${forDownload ? 'text-6xl' : forMobile ? 'text-base' : 'text-xl'
-                  } font-bold ${!forDownload ? 'line-clamp-4' : ''
-                  } text-white text-center`}
+                className={`${forDownload ? 'text-6xl' : forMobile ? 'text-lg' : 'text-2xl'
+                  } font-bold ${!forDownload ? 'line-clamp-3' : ''
+                  } text-white text-center drop-shadow-lg`}
                 style={
                   forDownload
                     ? {
@@ -75,6 +81,7 @@ function MandalartGrid({
                     }
                     : { textAlign: 'center', margin: 0 }
                 }
+                title={!forDownload ? data.center_goal : undefined}
               >
                 {data.center_goal}
               </p>
@@ -112,6 +119,7 @@ function MandalartGrid({
                     }
                     : { textAlign: 'center', margin: 0 }
                 }
+                title={!forDownload ? subGoal.title : undefined}
               >
                 {subGoal.title}
               </p>
@@ -216,6 +224,7 @@ function MandalartGrid({
                 }
                 : { textAlign: 'center', margin: 0 }
             }
+            title={!forDownload ? action.title : undefined}
           >
             {action.title}
           </p>
@@ -270,12 +279,14 @@ function MandalartGrid({
   const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   return (
-    <div
-      className={`grid grid-cols-3 ${forDownload ? '' : 'gap-4'}`}
-      style={forDownload ? { gap: 0 } : undefined}
-    >
-      {sectionPositions.map((sectionPos) => renderSection(sectionPos))}
-    </div>
+    <TooltipProvider>
+      <div
+        className={`grid grid-cols-3 ${forDownload ? '' : 'gap-4'}`}
+        style={forDownload ? { gap: 0 } : undefined}
+      >
+        {sectionPositions.map((sectionPos) => renderSection(sectionPos))}
+      </div>
+    </TooltipProvider>
   )
 }
 export default React.memo(MandalartGrid)
