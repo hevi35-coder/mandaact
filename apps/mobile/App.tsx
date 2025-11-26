@@ -12,6 +12,7 @@ import {
   createPersistableQueryClient,
   persistOptions,
 } from './src/lib/queryPersister'
+import { ErrorBoundary, ToastProvider } from './src/components'
 
 // Create a single instance of the query client
 const queryClient = createPersistableQueryClient()
@@ -30,17 +31,21 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{
-            persister: asyncStoragePersister,
-            maxAge: persistOptions.maxAge,
-            buster: persistOptions.buster,
-          }}
-        >
-          <StatusBar style="auto" />
-          <AppContent />
-        </PersistQueryClientProvider>
+        <ErrorBoundary>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+              persister: asyncStoragePersister,
+              maxAge: persistOptions.maxAge,
+              buster: persistOptions.buster,
+            }}
+          >
+            <ToastProvider>
+              <StatusBar style="auto" />
+              <AppContent />
+            </ToastProvider>
+          </PersistQueryClientProvider>
+        </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )
