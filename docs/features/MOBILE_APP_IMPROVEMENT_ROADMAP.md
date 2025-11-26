@@ -10,6 +10,31 @@
 
 웹앱과 모바일 앱의 디자인 차이를 분석하고, 효율적인 통일 전략을 수립합니다.
 
+---
+
+## 🚨 Phase 0: IA Unification (Priority: CRITICAL) - NEW
+
+> **상세 문서**: [MOBILE_IA_UNIFICATION.md](./MOBILE_IA_UNIFICATION.md)
+
+웹앱과 모바일앱의 탭 구조가 상이하여 사용자 경험 일관성 문제 발생. 웹앱 기준 4탭 구조로 통일.
+
+### Current vs Target
+
+| Position | Current Mobile | Target Mobile | Web |
+|----------|---------------|---------------|-----|
+| 1 | 홈 | 홈 | 홈 |
+| 2 | 오늘 | **투데이** | 투데이 |
+| 3 | 만다라트 | 만다라트 | 만다라트 |
+| 4 | 통계 | **리포트** | 리포트 |
+| 5 | 설정 | ❌ 제거 | - |
+
+### Tasks
+- [ ] RootNavigator.tsx 탭 구조 변경 (5탭 → 4탭)
+- [ ] "오늘" → "투데이" 라벨 변경
+- [ ] 통계 탭 제거, HomeScreen에 통합
+- [ ] 설정 탭 제거, 홈 우측 상단 아이콘으로 이동
+- [ ] ReportsScreen을 메인 탭으로 승격
+
 ### Current State Comparison
 
 | 항목 | Web | Mobile | Gap |
