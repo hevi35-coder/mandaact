@@ -57,6 +57,20 @@ export default {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			actionType: {
+  				routine: {
+  					DEFAULT: '#3b82f6',
+  					light: '#eff6ff'
+  				},
+  				mission: {
+  					DEFAULT: '#10b981',
+  					light: '#f0fdf4'
+  				},
+  				reference: {
+  					DEFAULT: '#f59e0b',
+  					light: '#fffbeb'
+  				}
   			}
   		},
   		borderRadius: {
@@ -80,11 +94,17 @@ export default {
   				to: {
   					height: '0'
   				}
+  			},
+  			spin: {
+  				to: {
+  					transform: 'rotate(360deg)'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			spin: 'spin 1s linear infinite'
   		}
   	}
   },
