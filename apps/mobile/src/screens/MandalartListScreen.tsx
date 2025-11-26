@@ -231,8 +231,19 @@ export default function MandalartListScreen() {
                     </View>
                   </View>
 
-                  {/* Active Toggle */}
+                  {/* Status Badge & Active Toggle */}
                   <View className="flex-row items-center">
+                    {/* Status Badge */}
+                    <View className={`px-2 py-0.5 rounded-full mr-3 ${
+                      mandalart.is_active ? 'bg-green-100' : 'bg-gray-100'
+                    }`}>
+                      <Text className={`text-xs font-medium ${
+                        mandalart.is_active ? 'text-green-700' : 'text-gray-500'
+                      }`}>
+                        {mandalart.is_active ? '활성' : '비활성'}
+                      </Text>
+                    </View>
+                    {/* Toggle Switch */}
                     {togglingIds.has(mandalart.id) ? (
                       <ActivityIndicator size="small" color="#374151" />
                     ) : (

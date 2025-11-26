@@ -1,15 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { CompositeNavigationProp } from '@react-navigation/native'
-import { CalendarCheck, Grid3X3, TrendingUp, FileText, Award, HelpCircle, Settings } from 'lucide-react-native'
+import { CalendarCheck, Grid3X3, TrendingUp, FileText, Award, HelpCircle, Settings, Flame, Target } from 'lucide-react-native'
 import { useAuthStore } from '../store/authStore'
-import { useDailyStats, useUserGamification } from '../hooks/useStats'
+import { useDailyStats, useUserGamification, useHeatmapData } from '../hooks/useStats'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { APP_NAME } from '@mandaact/shared'
+import ActivityHeatmap from '../components/ActivityHeatmap'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
 
 // XP calculation helpers (simplified version)
@@ -42,11 +43,13 @@ type NavigationProp = CompositeNavigationProp<
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
+  const [selectedMonth, setSelectedMonth] = useState(new Date())
 
   // Data fetching
   const { data: dailyStats, isLoading: statsLoading } = useDailyStats(user?.id)
   const { data: gamification, isLoading: gamificationLoading } = useUserGamification(user?.id)
   const { data: mandalarts, isLoading: mandalartLoading } = useActiveMandalarts(user?.id)
+  const { data: heatmapData = [], isLoading: heatmapLoading } = useHeatmapData(user?.id, selectedMonth)
 
   const isLoading = statsLoading || gamificationLoading || mandalartLoading
 
@@ -62,6 +65,7 @@ export default function HomeScreen() {
   const todayRemaining = Math.max(0, todayTotal - todayChecked)
   const completionPercentage = dailyStats?.percentage || 0
   const currentStreak = gamification?.current_streak || 0
+  const longestStreak = gamification?.longest_streak || 0
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -126,15 +130,42 @@ export default function HomeScreen() {
               style={{ width: `${xpPercentage}%` }}
             />
           </View>
-          {/* Streak */}
-          {currentStreak > 0 && (
-            <View className="flex-row items-center mt-3 bg-amber-50 px-3 py-2 rounded-lg">
-              <TrendingUp size={16} color="#f59e0b" />
-              <Text className="text-amber-700 text-sm ml-2 font-medium">
-                {currentStreak}일 연속 실천 중!
-              </Text>
+        </View>
+
+        {/* Streak Cards */}
+        <View className="flex-row gap-3 mb-4">
+          <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
+            <View className="flex-row items-center mb-2">
+              <Flame size={16} color="#f59e0b" />
+              <Text className="text-sm text-gray-500 ml-1">현재 스트릭</Text>
             </View>
-          )}
+            <Text className="text-2xl font-bold text-amber-500">
+              {currentStreak}일
+            </Text>
+          </View>
+
+          <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
+            <View className="flex-row items-center mb-2">
+              <Target size={16} color="#ef4444" />
+              <Text className="text-sm text-gray-500 ml-1">최장 스트릭</Text>
+            </View>
+            <Text className="text-2xl font-bold text-red-500">
+              {longestStreak}일
+            </Text>
+          </View>
+        </View>
+
+        {/* Activity Heatmap */}
+        <View className="mb-4">
+          <Text className="text-lg font-semibold text-gray-900 mb-3">
+            활동 히트맵
+          </Text>
+          <ActivityHeatmap
+            data={heatmapData}
+            month={selectedMonth}
+            onMonthChange={setSelectedMonth}
+            isLoading={heatmapLoading}
+          />
         </View>
 
         {/* Active Mandalarts Summary */}

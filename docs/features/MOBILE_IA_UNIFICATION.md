@@ -90,9 +90,9 @@ export type MainTabParamList = {
 ### Phase 2: Feature Relocation
 
 #### Task 2.1: Integrate Stats into HomeScreen
-- [ ] Add heatmap section to HomeScreen (below level card)
-- [ ] Add streak stats to HomeScreen
-- [ ] Keep XP/Level display in HomeScreen (already exists)
+- [x] Add heatmap section to HomeScreen (below level card)
+- [x] Add streak stats to HomeScreen (current + longest streak cards)
+- [x] Keep XP/Level display in HomeScreen (already exists)
 
 #### Task 2.2: Settings Access via Icon
 - [x] Add settings icon to HomeScreen header (top-right)
@@ -112,18 +112,18 @@ export type MainTabParamList = {
 ### Phase 3: Screen Updates
 
 #### Task 3.1: ReportsScreen Enhancement
-- [ ] Ensure full feature parity with web ReportsPage
-- [ ] Weekly report generation
-- [ ] Goal diagnosis
+- [x] Ensure full feature parity with web ReportsPage
+- [x] Weekly report generation
+- [x] Goal diagnosis
 
 #### Task 3.2: HomeScreen Enhancement
-- [ ] Add mini heatmap (from StatsScreen) - Future
-- [x] Add streak display (from StatsScreen) - Already exists
+- [x] Add mini heatmap (from StatsScreen)
+- [x] Add streak display (from StatsScreen) - current + longest
 - [x] Settings icon in header
 
 #### Task 3.3: Remove/Archive StatsScreen
-- [ ] Keep file for reference but remove from navigation
-- [ ] Or delete entirely after confirming all features migrated
+- [x] Keep file for reference but remove from navigation
+- [x] Features migrated to HomeScreen (heatmap, streak cards)
 
 ---
 
@@ -144,7 +144,7 @@ export type MainTabParamList = {
 - [x] All 4 tabs navigate correctly
 - [x] Tab icons and labels match web
 - [x] Settings accessible from Home header
-- [ ] Stats features visible in Home - Future (heatmap integration)
+- [x] Stats features visible in Home (heatmap, streak cards)
 - [x] Reports fully functional as tab
 - [x] No broken navigation links
 - [x] Quick actions in Home still work

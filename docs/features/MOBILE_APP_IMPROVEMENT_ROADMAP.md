@@ -31,7 +31,7 @@
 ### Tasks
 - [x] RootNavigator.tsx 탭 구조 변경 (5탭 → 4탭)
 - [x] "오늘" → "투데이" 라벨 변경
-- [ ] 통계 탭 제거, HomeScreen에 통합 (미니 히트맵 추가 - Future)
+- [x] 통계 탭 제거, HomeScreen에 통합 (히트맵, 스트릭 카드 추가)
 - [x] 설정 탭 제거, 홈 우측 상단 아이콘으로 이동
 - [x] ReportsScreen을 메인 탭으로 승격
 
@@ -221,19 +221,22 @@ export function Button({ variant = 'default', size = 'md', children, onPress, di
 
 ---
 
-## Phase 3: Screen-by-Screen Improvements
+## Phase 3: Screen-by-Screen Improvements ✅
 
-### 3.1 HomeScreen Improvements
+### 3.1 HomeScreen Improvements ✅
 **File**: `apps/mobile/src/screens/HomeScreen.tsx`
 **Effort**: 2-3 hours
 
-| Component | Current | Target |
-|-----------|---------|--------|
-| Header | "안녕하세요! 👋" | "홈" + "성장 대시보드" subtitle (like web) |
-| Stats Card | Blue numbers | Monochrome with accent |
-| Level Card | Full Indigo bg | White card with progress |
-| Quick Actions | Colored backgrounds | Outline style buttons |
-| Tutorial Banner | Gradient bg | Outline with icon |
+| Component | Current | Target | Status |
+|-----------|---------|--------|--------|
+| Header | "안녕하세요! 👋" | "홈" + "성장 대시보드" subtitle (like web) | ✅ |
+| Stats Card | Blue numbers | Monochrome with accent | ✅ |
+| Level Card | Full Indigo bg | White card with progress | ✅ |
+| Quick Actions | Colored backgrounds | Outline style buttons | ✅ |
+| Tutorial Banner | Gradient bg | Outline with icon | ✅ |
+| Settings Icon | N/A | Header 우측 상단 | ✅ |
+| Streak Cards | N/A | 현재/최장 스트릭 | ✅ |
+| Activity Heatmap | N/A | 월별 히트맵 | ✅ |
 
 **Specific Changes:**
 
@@ -271,16 +274,17 @@ export function Button({ variant = 'default', size = 'md', children, onPress, di
 </View>
 ```
 
-### 3.2 TodayScreen Improvements
+### 3.2 TodayScreen Improvements ✅
 **File**: `apps/mobile/src/screens/TodayScreen.tsx`
 **Effort**: 2-3 hours
 
-| Component | Current | Target |
-|-----------|---------|--------|
-| Header | "오늘의 실천" only | + Subtitle + Date nav buttons |
-| Progress Card | Simple bar | + Type filter (collapsible) |
-| Section Header | Gray bg | Border style (like web) |
-| Action Item | Basic card | Hover-lift effect + inline edit |
+| Component | Current | Target | Status |
+|-----------|---------|--------|--------|
+| Header | "오늘의 실천" only | + Date nav buttons | ✅ |
+| Progress Card | Simple bar | + Type stats row | ✅ |
+| Section Header | Gray bg | Border style (like web) | ✅ |
+| Action Item | Basic card | Checkbox + type badge | ✅ |
+| Date Navigation | N/A | 이전/오늘/다음 버튼 | ✅ |
 
 **Date Navigation (from web TodayChecklistPage.tsx:534-573):**
 ```tsx
@@ -309,43 +313,46 @@ export function Button({ variant = 'default', size = 'md', children, onPress, di
 <Pressable className="p-4 bg-gray-50 rounded-lg border border-gray-200">
 ```
 
-### 3.3 MandalartListScreen Improvements
+### 3.3 MandalartListScreen Improvements ✅
 **Effort**: 1-2 hours
 
-- Add status badges (활성/비활성)
-- Improve toggle switch styling
-- Add mandalart count in header
+- [x] Add status badges (활성/비활성)
+- [x] Improve toggle switch styling
+- [x] Add mandalart count in header
 
-### 3.4 StatsScreen Improvements
-**Effort**: 2-3 hours
+### 3.4 StatsScreen Improvements → HomeScreen 통합 ✅
+**Status**: Archived (기능 HomeScreen으로 이전)
 
-- Match heatmap colors with web
-- Add mandalart filter dropdown
-- Improve chart styling
+- [x] 히트맵 → HomeScreen에 통합
+- [x] 스트릭 카드 → HomeScreen에 통합
+- [x] XP/레벨 → HomeScreen에 기존 존재
 
-### 3.5 SettingsScreen Improvements
+### 3.5 SettingsScreen Improvements ✅
 **Effort**: 1 hour
 
-- Add profile editing section
-- Match toggle styling
-- Add logout confirmation
+- [x] Add profile editing section (user info card)
+- [x] Match toggle styling
+- [x] Add logout confirmation
 
 ---
 
-## Phase 4: Shared UI Components
+## Phase 4: Shared UI Components ✅
 
 ### 4.1 Create Mobile UI Library
 **Directory**: `apps/mobile/src/components/ui/`
 **Effort**: 3-4 hours
 
 Components to create:
-- `Button.tsx` - Primary, outline, ghost variants
-- `Card.tsx` - Header, content, footer sections
-- `Input.tsx` - Text input with label
-- `Badge.tsx` - Status badges
-- `Skeleton.tsx` - Loading placeholders (already exists, improve)
-- `Dialog.tsx` - Modal wrapper
-- `Progress.tsx` - Progress bar component
+- [x] `Button.tsx` - Primary, outline, ghost, secondary variants ✅
+- [x] `Card.tsx` - Header, Title, Description, Content, Footer sections ✅
+- [x] `Input.tsx` - Text input with label, error, hint ✅
+- [x] `Badge.tsx` - 6 variants (default, success, warning, error, info, outline) ✅
+- [x] `Skeleton.tsx` - Loading placeholders (exists in components/) ✅
+- [x] `Dialog.tsx` - Modal wrapper with Header, Title, Description, Content, Footer ✅
+- [x] `Progress.tsx` - Progress bar with 5 variants and 3 sizes ✅
+- [x] `index.ts` - Barrel export file ✅
+
+> **Note**: 모든 UI 컴포넌트 구현 완료.
 
 ### 4.2 Icon Consistency
 **Current**: `lucide-react-native` (correct)
@@ -405,8 +412,8 @@ const animatedStyle = useAnimatedStyle(() => ({
 ### Sprint 3 (Day 5-6): Screens ✅
 9. [x] Complete HomeScreen improvements
 10. [x] Complete TodayScreen improvements
-11. [x] Update MandalartListScreen
-12. [x] Update StatsScreen
+11. [x] Update MandalartListScreen (상태 뱃지, 토글, 카운트)
+12. [x] StatsScreen → HomeScreen 통합
 
 ### Sprint 4 (Day 7): Polish ⚠️
 13. [ ] Add basic animations (롤백 - babel reanimated 플러그인 미활성화)
@@ -419,16 +426,18 @@ const animatedStyle = useAnimatedStyle(() => ({
 
 ## Files to Modify
 
-| File | Changes | Priority |
-|------|---------|----------|
-| `tailwind.config.js` | Color system update | P0 |
-| `HomeScreen.tsx` | Header, cards, buttons | P0 |
-| `TodayScreen.tsx` | Colors, layout, date nav | P0 |
-| `components/ui/Button.tsx` | New file | P1 |
-| `components/ui/Card.tsx` | New file | P1 |
-| `MandalartListScreen.tsx` | Status badges, toggle | P1 |
-| `StatsScreen.tsx` | Heatmap colors, filters | P2 |
-| `SettingsScreen.tsx` | Profile, logout | P2 |
+| File | Changes | Priority | Status |
+|------|---------|----------|--------|
+| `tailwind.config.js` | Color system update | P0 | ✅ |
+| `HomeScreen.tsx` | Header, cards, heatmap, streak | P0 | ✅ |
+| `TodayScreen.tsx` | Colors, layout, date nav | P0 | ✅ |
+| `components/ui/Button.tsx` | New file | P1 | ✅ |
+| `components/ui/Card.tsx` | New file | P1 | ✅ |
+| `MandalartListScreen.tsx` | Status badges, toggle, count | P1 | ✅ |
+| `StatsScreen.tsx` | Archived (features → Home) | P2 | ✅ |
+| `SettingsScreen.tsx` | Profile, logout | P2 | ✅ |
+| `RootNavigator.tsx` | 4-tab structure | P0 | ✅ |
+| `ReportsScreen.tsx` | Tab-ready styling | P1 | ✅ |
 
 ---
 
