@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Animated, { FadeInUp } from 'react-native-reanimated'
 import {
   FileText,
   Target,
@@ -196,7 +197,7 @@ export default function ReportsScreen() {
         </View>
 
         {/* Tab Selector */}
-        <View className="flex-row mx-4 mb-4 bg-gray-200 rounded-xl p-1">
+        <Animated.View entering={FadeInUp.delay(100).duration(400)} className="flex-row mx-4 mb-4 bg-gray-200 rounded-xl p-1">
           <Pressable
             className={`flex-1 py-2 rounded-lg ${activeTab === 'weekly' ? 'bg-white' : ''}`}
             onPress={() => setActiveTab('weekly')}
@@ -228,11 +229,11 @@ export default function ReportsScreen() {
               </Text>
             </View>
           </Pressable>
-        </View>
+        </Animated.View>
 
         {/* Weekly Report Tab */}
         {activeTab === 'weekly' && (
-          <View className="px-4">
+          <Animated.View entering={FadeInUp.delay(200).duration(400)} className="px-4">
             {weeklyLoading ? (
               <View className="bg-white rounded-2xl p-8 items-center">
                 <ActivityIndicator size="large" color="#667eea" />
@@ -339,12 +340,12 @@ export default function ReportsScreen() {
                 </View>
               </View>
             )}
-          </View>
+          </Animated.View>
         )}
 
         {/* Goal Diagnosis Tab */}
         {activeTab === 'diagnosis' && (
-          <View className="px-4">
+          <Animated.View entering={FadeInUp.delay(200).duration(400)} className="px-4">
             {/* Mandalart Selector */}
             {mandalarts.length > 0 ? (
               <>
@@ -464,7 +465,7 @@ export default function ReportsScreen() {
                 </Text>
               </View>
             )}
-          </View>
+          </Animated.View>
         )}
 
         {/* Bottom spacing */}

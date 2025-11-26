@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
 import {
   ChevronDown,
   ChevronRight,
@@ -251,7 +252,10 @@ export default function TodayScreen() {
 
         {/* Progress Card */}
         {filteredActions.length > 0 && (
-          <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
+          <Animated.View
+            entering={FadeInUp.delay(100).duration(400)}
+            className="bg-white rounded-2xl p-5 mb-4 border border-gray-200"
+          >
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-base font-semibold text-gray-900">
                 {isToday ? '오늘의 달성율' : '달성율'}
@@ -266,7 +270,8 @@ export default function TodayScreen() {
 
             {/* Progress Bar */}
             <View className="h-3 bg-gray-200 rounded-full overflow-hidden">
-              <View
+              <Animated.View
+                entering={FadeInUp.delay(300).duration(300)}
                 className="h-full bg-gray-900 rounded-full"
                 style={{ width: `${progressPercentage}%` }}
               />
@@ -295,12 +300,15 @@ export default function TodayScreen() {
                 </Text>
               </View>
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* Empty State */}
         {filteredActions.length === 0 && (
-          <View className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]">
+          <Animated.View
+            entering={FadeInUp.delay(100).duration(400)}
+            className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
+          >
             <Text className="text-4xl mb-4">📋</Text>
             <Text className="text-lg font-semibold text-gray-900 text-center mb-2">
               오늘 실천할 항목이 없습니다
@@ -308,7 +316,7 @@ export default function TodayScreen() {
             <Text className="text-gray-500 text-center">
               만다라트를 활성화하거나{'\n'}새로운 목표를 추가해보세요
             </Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* Actions List - Grouped by Mandalart */}

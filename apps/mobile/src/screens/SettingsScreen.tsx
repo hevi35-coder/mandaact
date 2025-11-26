@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Animated, { FadeInUp } from 'react-native-reanimated'
 import {
   LogOut,
   Bell,
@@ -165,7 +166,7 @@ export default function SettingsScreen() {
         <Text className="text-2xl font-bold text-gray-900 mb-4">설정</Text>
 
         {/* User Info Card */}
-        <View className="bg-white rounded-2xl p-4 mb-4">
+        <Animated.View entering={FadeInUp.delay(100).duration(400)} className="bg-white rounded-2xl p-4 mb-4">
           <View className="flex-row items-center">
             <View className="w-14 h-14 bg-primary/20 rounded-full items-center justify-center">
               <User size={28} color="#667eea" />
@@ -186,13 +187,13 @@ export default function SettingsScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Notification Settings */}
         <Text className="text-sm font-semibold text-gray-500 mb-2 ml-1">
           알림
         </Text>
-        <View className="bg-white rounded-2xl overflow-hidden mb-4">
+        <Animated.View entering={FadeInUp.delay(200).duration(400)} className="bg-white rounded-2xl overflow-hidden mb-4">
           <View className="flex-row items-center px-4 py-4 border-b border-gray-100">
             <Bell size={20} color="#6b7280" />
             <View className="flex-1 ml-3">
@@ -233,13 +234,13 @@ export default function SettingsScreen() {
               <ChevronRight size={18} color="#9ca3af" />
             </Pressable>
           )}
-        </View>
+        </Animated.View>
 
         {/* Support Section */}
         <Text className="text-sm font-semibold text-gray-500 mb-2 ml-1">
           지원
         </Text>
-        <View className="bg-white rounded-2xl overflow-hidden mb-4">
+        <Animated.View entering={FadeInUp.delay(300).duration(400)} className="bg-white rounded-2xl overflow-hidden mb-4">
           <Pressable
             onPress={handleFeedback}
             className="flex-row items-center px-4 py-4 border-b border-gray-100"
@@ -260,13 +261,13 @@ export default function SettingsScreen() {
             </Text>
             <ChevronRight size={18} color="#9ca3af" />
           </Pressable>
-        </View>
+        </Animated.View>
 
         {/* Info Section */}
         <Text className="text-sm font-semibold text-gray-500 mb-2 ml-1">
           정보
         </Text>
-        <View className="bg-white rounded-2xl overflow-hidden mb-4">
+        <Animated.View entering={FadeInUp.delay(400).duration(400)} className="bg-white rounded-2xl overflow-hidden mb-4">
           <Pressable
             onPress={handleShowAppInfo}
             className="flex-row items-center px-4 py-4 border-b border-gray-100"
@@ -288,7 +289,7 @@ export default function SettingsScreen() {
             </Text>
             <ExternalLink size={16} color="#9ca3af" />
           </Pressable>
-        </View>
+        </Animated.View>
 
         {/* Sign Out */}
         <Pressable

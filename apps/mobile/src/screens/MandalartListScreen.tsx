@@ -10,6 +10,7 @@ import {
   Switch,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import {
@@ -174,7 +175,10 @@ export default function MandalartListScreen() {
 
         {/* Empty State */}
         {mandalarts.length === 0 && (
-          <View className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]">
+          <Animated.View
+            entering={FadeInUp.delay(100).duration(400)}
+            className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
+          >
             <Grid3X3 size={48} color="#d1d5db" />
             <Text className="text-lg font-semibold text-gray-900 mt-4 mb-2">
               만다라트가 없습니다
@@ -189,22 +193,25 @@ export default function MandalartListScreen() {
               <Plus size={18} color="white" />
               <Text className="text-white font-semibold ml-2">새로 만들기</Text>
             </Pressable>
-          </View>
+          </Animated.View>
         )}
 
         {/* Mandalart List */}
         {mandalarts.length > 0 && (
           <View className="space-y-3 pb-4">
-            {mandalarts.map((mandalart) => (
-              <Pressable
+            {mandalarts.map((mandalart, index) => (
+              <Animated.View
                 key={mandalart.id}
-                onPress={() => handleViewDetail(mandalart)}
-                className={`bg-white rounded-2xl p-4 border ${
-                  mandalart.is_active
-                    ? 'border-primary/30'
-                    : 'border-gray-200 opacity-70'
-                }`}
+                entering={FadeInUp.delay(100 + index * 50).duration(400)}
               >
+                <Pressable
+                  onPress={() => handleViewDetail(mandalart)}
+                  className={`bg-white rounded-2xl p-4 border ${
+                    mandalart.is_active
+                      ? 'border-primary/30'
+                      : 'border-gray-200 opacity-70'
+                  }`}
+                >
                 {/* Header Row */}
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-row items-center flex-1">
@@ -280,6 +287,7 @@ export default function MandalartListScreen() {
                   </View>
                 </View>
               </Pressable>
+              </Animated.View>
             ))}
           </View>
         )}
