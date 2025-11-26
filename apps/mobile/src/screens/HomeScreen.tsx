@@ -66,14 +66,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 px-4 pt-4">
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-900">
-            안녕하세요! 👋
-          </Text>
-          <Text className="text-gray-500 mt-1">
-            오늘도 목표를 향해 한 걸음 나아가세요
-          </Text>
+        {/* Header - match web style */}
+        <View className="flex-row items-center mb-6">
+          <Text className="text-3xl font-bold text-gray-900">홈</Text>
+          <Text className="text-gray-500 ml-3 text-sm">성장 대시보드</Text>
         </View>
 
         {/* Quick Stats Card */}
@@ -101,33 +97,33 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Level Card */}
-        <View className="bg-primary rounded-2xl p-6 mb-4">
+        {/* Level Card - white theme to match web */}
+        <View className="bg-white rounded-2xl p-6 mb-4 border border-gray-200 shadow-sm">
           <View className="flex-row justify-between items-center">
             <View>
-              <Text className="text-white/80 text-sm">현재 레벨</Text>
-              <Text className="text-white text-3xl font-bold">Lv. {currentLevel}</Text>
+              <Text className="text-gray-500 text-sm">현재 레벨</Text>
+              <Text className="text-gray-900 text-3xl font-bold">Lv. {currentLevel}</Text>
             </View>
             <View className="items-end">
-              <Text className="text-white/80 text-sm">XP</Text>
-              <Text className="text-white text-xl font-semibold">
+              <Text className="text-gray-500 text-sm">XP</Text>
+              <Text className="text-gray-900 text-xl font-semibold">
                 {xpProgress} / {xpRequired}
               </Text>
             </View>
           </View>
           {/* XP Progress Bar */}
-          <View className="h-2 bg-white/30 rounded-full mt-4 overflow-hidden">
+          <View className="h-3 bg-gray-200 rounded-full mt-4 overflow-hidden">
             <View
-              className="h-full bg-white rounded-full"
+              className="h-full bg-gray-900 rounded-full"
               style={{ width: `${xpPercentage}%` }}
             />
           </View>
           {/* Streak */}
           {currentStreak > 0 && (
-            <View className="flex-row items-center mt-3">
-              <TrendingUp size={16} color="white" />
-              <Text className="text-white/90 text-sm ml-2">
-                🔥 {currentStreak}일 연속 실천 중!
+            <View className="flex-row items-center mt-3 bg-amber-50 px-3 py-2 rounded-lg">
+              <TrendingUp size={16} color="#f59e0b" />
+              <Text className="text-amber-700 text-sm ml-2 font-medium">
+                {currentStreak}일 연속 실천 중!
               </Text>
             </View>
           )}
@@ -163,56 +159,56 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Quick Actions */}
-        <View className="bg-white rounded-2xl p-6 shadow-sm mb-4">
+        {/* Quick Actions - outline style to match web */}
+        <View className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
           <Text className="text-lg font-semibold text-gray-900 mb-4">
             빠른 실행
           </Text>
           <View className="flex-row gap-3 mb-3">
             <Pressable
-              className="flex-1 bg-primary/10 rounded-xl py-4 items-center flex-row justify-center"
+              className="flex-1 bg-gray-900 rounded-xl py-4 items-center flex-row justify-center"
               onPress={() => navigation.navigate('Today')}
             >
-              <CalendarCheck size={18} color="#667eea" />
-              <Text className="text-primary font-semibold ml-2">오늘의 실천</Text>
+              <CalendarCheck size={18} color="#ffffff" />
+              <Text className="text-white font-semibold ml-2">오늘의 실천</Text>
             </Pressable>
             <Pressable
-              className="flex-1 bg-gray-100 rounded-xl py-4 items-center flex-row justify-center"
+              className="flex-1 bg-white border border-gray-300 rounded-xl py-4 items-center flex-row justify-center"
               onPress={() => navigation.navigate('Mandalart')}
             >
-              <Grid3X3 size={18} color="#4b5563" />
+              <Grid3X3 size={18} color="#374151" />
               <Text className="text-gray-700 font-semibold ml-2">만다라트 관리</Text>
             </Pressable>
           </View>
           <View className="flex-row gap-3">
             <Pressable
-              className="flex-1 bg-purple-50 rounded-xl py-4 items-center flex-row justify-center"
+              className="flex-1 bg-white border border-gray-300 rounded-xl py-4 items-center flex-row justify-center"
               onPress={() => navigation.navigate('Reports')}
             >
               <FileText size={18} color="#8b5cf6" />
-              <Text className="text-purple-600 font-semibold ml-2">AI 리포트</Text>
+              <Text className="text-gray-700 font-semibold ml-2">AI 리포트</Text>
             </Pressable>
             <Pressable
-              className="flex-1 bg-amber-50 rounded-xl py-4 items-center flex-row justify-center"
+              className="flex-1 bg-white border border-gray-300 rounded-xl py-4 items-center flex-row justify-center"
               onPress={() => navigation.navigate('Badges')}
             >
               <Award size={18} color="#f59e0b" />
-              <Text className="text-amber-600 font-semibold ml-2">뱃지</Text>
+              <Text className="text-gray-700 font-semibold ml-2">뱃지</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Tutorial Banner */}
+        {/* Tutorial Banner - outline style to match web */}
         <Pressable
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl p-4 mb-4 flex-row items-center"
+          className="bg-white border border-gray-300 rounded-2xl p-4 mb-4 flex-row items-center"
           onPress={() => navigation.navigate('Tutorial')}
         >
-          <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center">
-            <HelpCircle size={20} color="white" />
+          <View className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center">
+            <HelpCircle size={20} color="#3b82f6" />
           </View>
           <View className="flex-1 ml-3">
-            <Text className="text-white font-semibold">사용법이 궁금하신가요?</Text>
-            <Text className="text-white/80 text-sm">튜토리얼 다시 보기</Text>
+            <Text className="text-gray-900 font-semibold">튜토리얼</Text>
+            <Text className="text-gray-500 text-sm">사용법 다시 보기</Text>
           </View>
         </Pressable>
 

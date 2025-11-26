@@ -35,7 +35,7 @@ import {
 } from '@mandaact/shared'
 import type { Mandalart } from '@mandaact/shared'
 
-// Action type icon component
+// Action type icon component - colors match web exactly
 function ActionTypeIcon({
   type,
   size = 16,
@@ -45,11 +45,11 @@ function ActionTypeIcon({
 }) {
   switch (type) {
     case 'routine':
-      return <RotateCw size={size} color="#667eea" />
+      return <RotateCw size={size} color="#3b82f6" />  // Blue (web)
     case 'mission':
-      return <Target size={size} color="#f59e0b" />
+      return <Target size={size} color="#10b981" />    // Green (web)
     case 'reference':
-      return <Lightbulb size={size} color="#6b7280" />
+      return <Lightbulb size={size} color="#f59e0b" /> // Amber (web)
     default:
       return null
   }
