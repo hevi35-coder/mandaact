@@ -100,7 +100,7 @@ export default function StatsScreen() {
         {/* Loading state */}
         {isLoading && (
           <View className="items-center py-8">
-            <ActivityIndicator size="large" color="#667eea" />
+            <ActivityIndicator size="large" color="#374151" />
           </View>
         )}
 
@@ -108,9 +108,9 @@ export default function StatsScreen() {
           <>
             {/* Today & Week Summary */}
             <View className="flex-row gap-3 mb-4">
-              <View className="flex-1 bg-white rounded-2xl p-4">
+              <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
                 <View className="flex-row items-center mb-2">
-                  <Calendar size={16} color="#667eea" />
+                  <Calendar size={16} color="#6b7280" />
                   <Text className="text-sm text-gray-500 ml-1">오늘</Text>
                 </View>
                 <Text className="text-2xl font-bold text-gray-900">
@@ -121,9 +121,9 @@ export default function StatsScreen() {
                 </Text>
               </View>
 
-              <View className="flex-1 bg-white rounded-2xl p-4">
+              <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
                 <View className="flex-row items-center mb-2">
-                  <TrendingUp size={16} color="#22c55e" />
+                  <TrendingUp size={16} color="#10b981" />
                   <Text className="text-sm text-gray-500 ml-1">이번 주</Text>
                 </View>
                 <Text className="text-2xl font-bold text-gray-900">
@@ -135,36 +135,36 @@ export default function StatsScreen() {
               </View>
             </View>
 
-            {/* Level & XP Card */}
-            <View className="bg-primary rounded-2xl p-4 mb-4">
+            {/* Level & XP Card - white theme to match HomeScreen */}
+            <View className="bg-white rounded-2xl p-4 mb-4 border border-gray-200">
               <View className="flex-row items-center justify-between mb-3">
                 <View className="flex-row items-center">
-                  <Award size={20} color="white" />
-                  <Text className="text-white font-semibold ml-2">
+                  <Award size={20} color="#f59e0b" />
+                  <Text className="text-gray-900 font-semibold ml-2">
                     레벨 {currentLevel}
                   </Text>
                 </View>
-                <Text className="text-white/80 text-sm">
+                <Text className="text-gray-500 text-sm">
                   {totalXP.toLocaleString()} XP
                 </Text>
               </View>
 
               {/* XP Progress Bar */}
-              <View className="h-2 bg-white/30 rounded-full overflow-hidden mb-2">
+              <View className="h-3 bg-gray-200 rounded-full overflow-hidden mb-2">
                 <View
-                  className="h-full bg-white rounded-full"
+                  className="h-full bg-gray-900 rounded-full"
                   style={{ width: `${xpProgress.percentage}%` }}
                 />
               </View>
 
-              <Text className="text-white/70 text-xs text-right">
+              <Text className="text-gray-500 text-xs text-right">
                 다음 레벨까지 {xpProgress.required - xpProgress.current} XP
               </Text>
             </View>
 
             {/* Streak Cards */}
             <View className="flex-row gap-3 mb-4">
-              <View className="flex-1 bg-white rounded-2xl p-4">
+              <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
                 <View className="flex-row items-center mb-2">
                   <Flame size={16} color="#f59e0b" />
                   <Text className="text-sm text-gray-500 ml-1">현재 스트릭</Text>
@@ -174,7 +174,7 @@ export default function StatsScreen() {
                 </Text>
               </View>
 
-              <View className="flex-1 bg-white rounded-2xl p-4">
+              <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-200">
                 <View className="flex-row items-center mb-2">
                   <Target size={16} color="#ef4444" />
                   <Text className="text-sm text-gray-500 ml-1">최장 스트릭</Text>
@@ -206,7 +206,7 @@ export default function StatsScreen() {
 
               {progressLoading ? (
                 <View className="bg-white rounded-2xl p-6 items-center">
-                  <ActivityIndicator size="small" color="#667eea" />
+                  <ActivityIndicator size="small" color="#374151" />
                 </View>
               ) : subGoalProgress.length === 0 ? (
                 <View className="bg-white rounded-2xl p-6 items-center">
@@ -275,10 +275,10 @@ export default function StatsScreen() {
                       className="p-4 flex-row items-center justify-center border-t border-gray-100"
                       onPress={() => navigation.navigate('Mandalart')}
                     >
-                      <Text className="text-sm text-primary">
+                      <Text className="text-sm text-gray-600">
                         더 보기 ({subGoalProgress.length - 5}개 더)
                       </Text>
-                      <ChevronRight size={16} color="#667eea" />
+                      <ChevronRight size={16} color="#6b7280" />
                     </Pressable>
                   )}
                 </View>

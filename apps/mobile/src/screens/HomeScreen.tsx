@@ -78,7 +78,7 @@ export default function HomeScreen() {
             오늘의 진행상황
           </Text>
           {isLoading ? (
-            <ActivityIndicator size="small" color="#667eea" />
+            <ActivityIndicator size="small" color="#374151" />
           ) : (
             <View className="flex-row justify-between">
               <View className="items-center">
@@ -199,18 +199,20 @@ export default function HomeScreen() {
         </View>
 
         {/* Tutorial Banner - outline style to match web */}
-        <Pressable
-          className="bg-white border border-gray-300 rounded-2xl p-4 mb-4 flex-row items-center"
-          onPress={() => navigation.navigate('Tutorial')}
-        >
+        <View>
+          <Pressable
+            className="bg-white border border-gray-300 rounded-2xl p-4 mb-4 flex-row items-center"
+            onPress={() => navigation.navigate('Tutorial')}
+          >
           <View className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center">
             <HelpCircle size={20} color="#3b82f6" />
           </View>
-          <View className="flex-1 ml-3">
-            <Text className="text-gray-900 font-semibold">튜토리얼</Text>
-            <Text className="text-gray-500 text-sm">사용법 다시 보기</Text>
-          </View>
-        </Pressable>
+            <View className="flex-1 ml-3">
+              <Text className="text-gray-900 font-semibold">튜토리얼</Text>
+              <Text className="text-gray-500 text-sm">사용법 다시 보기</Text>
+            </View>
+          </Pressable>
+        </View>
 
         {/* App Info */}
         <View className="items-center py-4">

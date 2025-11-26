@@ -365,28 +365,30 @@ const animatedStyle = useAnimatedStyle(() => ({
 
 ## Implementation Priority Order
 
-### Sprint 1 (Day 1-2): Core Styling
-1. [ ] Update tailwind.config.js with web colors
-2. [ ] Fix ActionTypeIcon colors in TodayScreen
-3. [ ] Update HomeScreen header style
-4. [ ] Update Level Card to white theme
+### Sprint 1 (Day 1-2): Core Styling ✅
+1. [x] Update tailwind.config.js with web colors
+2. [x] Fix ActionTypeIcon colors in TodayScreen
+3. [x] Update HomeScreen header style
+4. [x] Update Level Card to white theme
 
-### Sprint 2 (Day 3-4): Components
-5. [ ] Create Button.tsx UI component
-6. [ ] Create Card.tsx UI component
-7. [ ] Update TodayScreen progress card
-8. [ ] Add date navigation to TodayScreen
+### Sprint 2 (Day 3-4): Components ✅
+5. [x] Create Button.tsx UI component
+6. [x] Create Card.tsx UI component
+7. [x] Update TodayScreen progress card
+8. [x] Add date navigation to TodayScreen
 
-### Sprint 3 (Day 5-6): Screens
-9. [ ] Complete HomeScreen improvements
-10. [ ] Complete TodayScreen improvements
-11. [ ] Update MandalartListScreen
-12. [ ] Update StatsScreen
+### Sprint 3 (Day 5-6): Screens ✅
+9. [x] Complete HomeScreen improvements
+10. [x] Complete TodayScreen improvements
+11. [x] Update MandalartListScreen
+12. [x] Update StatsScreen
 
-### Sprint 4 (Day 7): Polish
-13. [ ] Add basic animations
+### Sprint 4 (Day 7): Polish ⚠️
+13. [ ] Add basic animations (롤백 - babel reanimated 플러그인 미활성화)
 14. [ ] Test on multiple devices
-15. [ ] Documentation update
+15. [x] Documentation update
+
+> **Note**: Sprint 4 애니메이션은 `babel.config.js`에서 reanimated 플러그인이 비활성화되어 있어 롤백됨. 추후 플러그인 활성화 시 재적용 필요.
 
 ---
 

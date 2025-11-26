@@ -123,7 +123,7 @@ export default function MandalartListScreen() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color="#374151" />
         <Text className="text-gray-500 mt-4">불러오는 중...</Text>
       </SafeAreaView>
     )
@@ -156,10 +156,17 @@ export default function MandalartListScreen() {
       >
         {/* Header */}
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-2xl font-bold text-gray-900">만다라트 관리</Text>
+          <View className="flex-row items-center">
+            <Text className="text-2xl font-bold text-gray-900">만다라트 관리</Text>
+            {mandalarts.length > 0 && (
+              <View className="ml-2 bg-gray-200 px-2 py-0.5 rounded-full">
+                <Text className="text-xs text-gray-600 font-medium">{mandalarts.length}</Text>
+              </View>
+            )}
+          </View>
           <Pressable
             onPress={handleCreateNew}
-            className="bg-primary rounded-full p-2"
+            className="bg-gray-900 rounded-full p-2"
           >
             <Plus size={24} color="white" />
           </Pressable>
@@ -227,12 +234,12 @@ export default function MandalartListScreen() {
                   {/* Active Toggle */}
                   <View className="flex-row items-center">
                     {togglingIds.has(mandalart.id) ? (
-                      <ActivityIndicator size="small" color="#667eea" />
+                      <ActivityIndicator size="small" color="#374151" />
                     ) : (
                       <Switch
                         value={mandalart.is_active}
                         onValueChange={() => handleToggleActive(mandalart)}
-                        trackColor={{ false: '#d1d5db', true: '#667eea' }}
+                        trackColor={{ false: '#d1d5db', true: '#18181b' }}
                         thumbColor="white"
                       />
                     )}
@@ -257,8 +264,8 @@ export default function MandalartListScreen() {
                   </Pressable>
 
                   <View className="flex-row items-center">
-                    <Text className="text-sm text-primary mr-1">상세보기</Text>
-                    <ChevronRight size={16} color="#667eea" />
+                    <Text className="text-sm text-gray-600 mr-1">상세보기</Text>
+                    <ChevronRight size={16} color="#6b7280" />
                   </View>
                 </View>
               </Pressable>

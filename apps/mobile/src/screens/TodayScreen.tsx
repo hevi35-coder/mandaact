@@ -12,13 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import {
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   CheckCircle2,
   Circle,
   RotateCw,
   Target,
   Lightbulb,
 } from 'lucide-react-native'
-import { format } from 'date-fns'
+import { format, addDays, isSameDay, startOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
 import { useAuthStore } from '../store/authStore'
 import {
@@ -57,12 +58,28 @@ function ActionTypeIcon({
 
 export default function TodayScreen() {
   const { user } = useAuthStore()
-  const [selectedDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState(new Date())
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     new Set()
   )
   const [refreshing, setRefreshing] = useState(false)
   const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
+
+  // Date navigation
+  const today = startOfDay(new Date())
+  const isToday = isSameDay(selectedDate, today)
+
+  const handlePreviousDay = useCallback(() => {
+    setSelectedDate((prev) => addDays(prev, -1))
+  }, [])
+
+  const handleNextDay = useCallback(() => {
+    setSelectedDate((prev) => addDays(prev, 1))
+  }, [])
+
+  const handleToday = useCallback(() => {
+    setSelectedDate(new Date())
+  }, [])
 
   // Data fetching
   const {
@@ -162,7 +179,7 @@ export default function TodayScreen() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color="#374151" />
         <Text className="text-gray-500 mt-4">불러오는 중...</Text>
       </SafeAreaView>
     )
@@ -194,42 +211,89 @@ export default function TodayScreen() {
         }
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between mb-4">
-          <View>
-            <Text className="text-2xl font-bold text-gray-900">
-              오늘의 실천
-            </Text>
-            <Text className="text-gray-500 text-sm mt-1">
-              {format(selectedDate, 'M월 d일 (EEEE)', { locale: ko })}
-            </Text>
+        <View className="mb-4">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <Text className="text-2xl font-bold text-gray-900">
+                {isToday ? '오늘의 실천' : '실천 기록'}
+              </Text>
+            </View>
+            {/* Date Navigation */}
+            <View className="flex-row items-center rounded-lg border border-gray-300 overflow-hidden">
+              <Pressable
+                onPress={handlePreviousDay}
+                className="px-3 py-2 border-r border-gray-300 active:bg-gray-100"
+              >
+                <ChevronLeft size={18} color="#374151" />
+              </Pressable>
+              <Pressable
+                onPress={handleToday}
+                className="px-4 py-2 border-r border-gray-300 active:bg-gray-100"
+              >
+                <Text
+                  className={`text-sm font-medium ${isToday ? 'text-blue-600' : 'text-gray-700'}`}
+                >
+                  오늘
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleNextDay}
+                className="px-3 py-2 active:bg-gray-100"
+              >
+                <ChevronRight size={18} color="#374151" />
+              </Pressable>
+            </View>
           </View>
+          <Text className="text-gray-500 text-sm mt-2">
+            {format(selectedDate, 'yyyy년 M월 d일 (EEEE)', { locale: ko })}
+          </Text>
         </View>
 
         {/* Progress Card */}
         {filteredActions.length > 0 && (
-          <View className="bg-white rounded-2xl p-6 shadow-sm mb-4">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-semibold text-gray-900">
-                오늘의 달성율
+          <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-base font-semibold text-gray-900">
+                {isToday ? '오늘의 달성율' : '달성율'}
               </Text>
-              <Text className="text-lg font-bold text-primary">
-                {progressPercentage}%
-              </Text>
+              <View className="flex-row items-center">
+                <Text className="text-2xl font-bold text-gray-900">
+                  {progressPercentage}
+                </Text>
+                <Text className="text-lg text-gray-500 ml-1">%</Text>
+              </View>
             </View>
 
             {/* Progress Bar */}
             <View className="h-3 bg-gray-200 rounded-full overflow-hidden">
               <View
-                className="h-full bg-primary rounded-full"
+                className="h-full bg-gray-900 rounded-full"
                 style={{ width: `${progressPercentage}%` }}
               />
             </View>
 
-            <View className="flex-row justify-between mt-2">
-              <Text className="text-sm text-gray-500">
-                {checkedCount} / {totalCount} 완료
-              </Text>
-              <Text className="text-xs text-gray-400">참고는 제외</Text>
+            {/* Stats Row */}
+            <View className="flex-row justify-between mt-3 pt-3 border-t border-gray-100">
+              <View className="flex-row items-center">
+                <RotateCw size={14} color="#3b82f6" />
+                <Text className="text-xs text-gray-600 ml-1">
+                  루틴 {filteredActions.filter((a) => a.type === 'routine' && a.is_checked).length}/
+                  {filteredActions.filter((a) => a.type === 'routine').length}
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <Target size={14} color="#10b981" />
+                <Text className="text-xs text-gray-600 ml-1">
+                  미션 {filteredActions.filter((a) => a.type === 'mission' && a.is_checked).length}/
+                  {filteredActions.filter((a) => a.type === 'mission').length}
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <Lightbulb size={14} color="#f59e0b" />
+                <Text className="text-xs text-gray-600 ml-1">
+                  참고 {filteredActions.filter((a) => a.type === 'reference').length}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -266,7 +330,7 @@ export default function TodayScreen() {
                     {/* Section Header */}
                     <Pressable
                       onPress={() => toggleSection(mandalartId)}
-                      className="flex-row items-center justify-between p-4 bg-gray-100 rounded-2xl"
+                      className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
                     >
                       <View className="flex-1">
                         <View className="flex-row items-center">
@@ -313,9 +377,9 @@ export default function TodayScreen() {
                             {/* Checkbox */}
                             <View className="mr-3">
                               {checkingActions.has(action.id) ? (
-                                <ActivityIndicator size="small" color="#667eea" />
+                                <ActivityIndicator size="small" color="#10b981" />
                               ) : action.is_checked ? (
-                                <CheckCircle2 size={24} color="#667eea" />
+                                <CheckCircle2 size={24} color="#10b981" />
                               ) : (
                                 <Circle
                                   size={24}
