@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { getDayBoundsUTC, getUserToday } from '@mandaact/shared'
-import { format, subDays } from 'date-fns'
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
 
 /**
  * Query key factory for stats
@@ -185,5 +185,154 @@ export function useWeeklyStats(userId: string | undefined) {
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+export interface HeatmapData {
+  date: string
+  count: number
+  level: 0 | 1 | 2 | 3 | 4
+}
+
+/**
+ * Hook to fetch heatmap data for a month
+ */
+export function useHeatmapData(userId: string | undefined, month: Date = new Date()) {
+  const monthKey = format(month, 'yyyy-MM')
+
+  return useQuery({
+    queryKey: [...statsKeys.user(userId || ''), 'heatmap', monthKey] as const,
+    queryFn: async (): Promise<HeatmapData[]> => {
+      const monthStart = startOfMonth(month)
+      const monthEnd = endOfMonth(month)
+      const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
+
+      // Get all checks for the month
+      const { start: startUTC } = getDayBoundsUTC(format(monthStart, 'yyyy-MM-dd'))
+      const { end: endUTC } = getDayBoundsUTC(format(monthEnd, 'yyyy-MM-dd'))
+
+      const { data: checksData, error } = await supabase
+        .from('check_history')
+        .select('checked_at')
+        .eq('user_id', userId!)
+        .gte('checked_at', startUTC)
+        .lt('checked_at', endUTC)
+
+      if (error) throw error
+
+      // Count checks per day
+      const checksByDay: Record<string, number> = {}
+      checksData?.forEach((check) => {
+        const dateStr = format(new Date(check.checked_at), 'yyyy-MM-dd')
+        checksByDay[dateStr] = (checksByDay[dateStr] || 0) + 1
+      })
+
+      // Calculate max checks for level normalization
+      const maxChecks = Math.max(...Object.values(checksByDay), 1)
+
+      // Build heatmap data
+      return days.map((day) => {
+        const dateStr = format(day, 'yyyy-MM-dd')
+        const count = checksByDay[dateStr] || 0
+        let level: 0 | 1 | 2 | 3 | 4 = 0
+
+        if (count > 0) {
+          const ratio = count / maxChecks
+          if (ratio >= 0.75) level = 4
+          else if (ratio >= 0.5) level = 3
+          else if (ratio >= 0.25) level = 2
+          else level = 1
+        }
+
+        return { date: dateStr, count, level }
+      })
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+export interface SubGoalProgress {
+  id: string
+  title: string
+  mandalartTitle: string
+  totalActions: number
+  completedToday: number
+  completionRate: number
+}
+
+/**
+ * Hook to fetch sub-goal progress
+ */
+export function useSubGoalProgress(userId: string | undefined) {
+  const today = getUserToday()
+
+  return useQuery({
+    queryKey: [...statsKeys.user(userId || ''), 'subgoal-progress', today] as const,
+    queryFn: async (): Promise<SubGoalProgress[]> => {
+      // Get all sub-goals with actions from active mandalarts
+      const { data: subGoalsData, error: subGoalsError } = await supabase
+        .from('sub_goals')
+        .select(`
+          id,
+          title,
+          mandalart:mandalarts (
+            id,
+            title,
+            user_id,
+            is_active
+          ),
+          actions (
+            id,
+            type
+          )
+        `)
+        .eq('mandalart.user_id', userId!)
+        .eq('mandalart.is_active', true)
+
+      if (subGoalsError) throw subGoalsError
+
+      // Get today's checks
+      const { start: dayStart, end: dayEnd } = getDayBoundsUTC(today)
+      const { data: checksData, error: checksError } = await supabase
+        .from('check_history')
+        .select('action_id')
+        .eq('user_id', userId!)
+        .gte('checked_at', dayStart)
+        .lt('checked_at', dayEnd)
+
+      if (checksError) throw checksError
+
+      const checkedActionIds = new Set(checksData?.map((c) => c.action_id) || [])
+
+      // Build progress data
+      const progress: SubGoalProgress[] = (subGoalsData || [])
+        .filter((sg: { mandalart: object | null }) => sg.mandalart != null)
+        .map((sg: {
+          id: string
+          title: string
+          mandalart: { title: string } | null
+          actions: Array<{ id: string; type: string }>
+        }) => {
+          const checkableActions = sg.actions.filter((a) => a.type !== 'reference')
+          const completedToday = checkableActions.filter((a) => checkedActionIds.has(a.id)).length
+          const totalActions = checkableActions.length
+          const completionRate = totalActions > 0 ? Math.round((completedToday / totalActions) * 100) : 0
+
+          return {
+            id: sg.id,
+            title: sg.title,
+            mandalartTitle: sg.mandalart?.title || '',
+            totalActions,
+            completedToday,
+            completionRate,
+          }
+        })
+        .filter((p: SubGoalProgress) => p.totalActions > 0)
+
+      return progress
+    },
+    enabled: !!userId,
+    staleTime: 1 * 60 * 1000, // 1 minute
   })
 }

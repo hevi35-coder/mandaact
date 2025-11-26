@@ -24,5 +24,7 @@ export {
   useDailyStats,
   useUserGamification,
   useWeeklyStats,
+  useHeatmapData,
+  useSubGoalProgress,
 } from './useStats'
-export type { DailyStats, UserGamification } from './useStats'
+export type { DailyStats, UserGamification, HeatmapData, SubGoalProgress } from './useStats'
