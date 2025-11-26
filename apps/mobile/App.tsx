@@ -3,19 +3,18 @@ import React, { useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 
 import RootNavigator from './src/navigation/RootNavigator'
 import { useAuthStore } from './src/store/authStore'
+import {
+  asyncStoragePersister,
+  createPersistableQueryClient,
+  persistOptions,
+} from './src/lib/queryPersister'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 3,
-    },
-  },
-})
+// Create a single instance of the query client
+const queryClient = createPersistableQueryClient()
 
 function AppContent() {
   const { initialize } = useAuthStore()
@@ -31,10 +30,17 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister: asyncStoragePersister,
+            maxAge: persistOptions.maxAge,
+            buster: persistOptions.buster,
+          }}
+        >
           <StatusBar style="auto" />
           <AppContent />
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )
