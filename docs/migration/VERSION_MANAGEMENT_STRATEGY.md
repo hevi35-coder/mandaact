@@ -561,12 +561,42 @@ packages:
   - 'packages/*'
 
 catalog:
+  # Core
   react: ^18.3.1
-  typescript: ^5.5.4
-  '@tanstack/react-query': ^5.56.0
+  react-dom: ^18.3.1
+  typescript: ^5.9.2
+
+  # State Management
   zustand: ^4.5.5
-  date-fns: ^3.6.0
+  '@tanstack/react-query': ^5.56.0
+  '@tanstack/query-async-storage-persister': ^5.56.0
+  '@tanstack/react-query-persist-client': ^5.56.0
+
+  # Backend
   '@supabase/supabase-js': ^2.45.0
+
+  # Utilities
+  date-fns: ^3.6.0
+  date-fns-tz: ^3.2.0
+  zod: ^4.1.12
+
+  # Forms
+  react-hook-form: ^7.65.0
+
+  # React Native Core (Expo SDK 52)
+  react-native: 0.76.1
+
+  # React Native UI (SDK 52 compatible)
+  react-native-gesture-handler: ~2.20.2
+  react-native-reanimated: ~3.16.1
+  react-native-safe-area-context: 4.12.0
+  react-native-screens: ~4.8.0
+
+  # Expo SDK 52 packages
+  expo: ~52.0.0
+  expo-application: ~6.0.0
+  expo-device: ~7.0.0
+  expo-status-bar: ~2.0.0
 ```
 
 **사용:**

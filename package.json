@@ -2,22 +2,18 @@
   "name": "mandaact",
   "private": true,
   "version": "1.0.0",
-  "packageManager": "npm@10.9.0",
-  "workspaces": [
-    "apps/web",
-    "packages/shared"
-  ],
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev": "npm run dev --workspace=@mandaact/web",
-    "dev:web": "npm run dev --workspace=@mandaact/web",
-    "dev:mobile": "cd apps/mobile && npm start",
+    "dev": "pnpm --filter @mandaact/web dev",
+    "dev:web": "pnpm --filter @mandaact/web dev",
+    "dev:mobile": "pnpm --filter @mandaact/mobile start",
     "build": "turbo run build --filter=@mandaact/web --filter=@mandaact/shared",
-    "build:web": "npm run build --workspace=@mandaact/web",
-    "build:mobile": "cd apps/mobile && npm run build",
+    "build:web": "pnpm --filter @mandaact/web build",
+    "build:mobile": "pnpm --filter @mandaact/mobile build",
     "lint": "turbo run lint --filter=@mandaact/web --filter=@mandaact/shared",
     "type-check": "turbo run type-check --filter=@mandaact/web --filter=@mandaact/shared",
     "test": "turbo run test --filter=@mandaact/web --filter=@mandaact/shared",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
     "turbo": "^2.3.0"
