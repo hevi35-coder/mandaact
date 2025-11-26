@@ -10,6 +10,21 @@ coverage/
 dist/
 build/
 
+# Monorepo
+.turbo/
+*.tsbuildinfo
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/ios/
+apps/mobile/android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
 # Environment variables
 .env
 .env.local
