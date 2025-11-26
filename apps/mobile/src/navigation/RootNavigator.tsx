@@ -10,6 +10,8 @@ import { useAuthStore } from '../store/authStore'
 import HomeScreen from '../screens/HomeScreen'
 import TodayScreen from '../screens/TodayScreen'
 import MandalartListScreen from '../screens/MandalartListScreen'
+import MandalartCreateScreen from '../screens/MandalartCreateScreen'
+import MandalartDetailScreen from '../screens/MandalartDetailScreen'
 import StatsScreen from '../screens/StatsScreen'
 import SettingsScreen from '../screens/SettingsScreen'
 import LoginScreen from '../screens/LoginScreen'
@@ -108,7 +110,24 @@ export default function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen
+              name="CreateMandalart"
+              component={MandalartCreateScreen}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
+              name="MandalartDetail"
+              component={MandalartDetailScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+          </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
