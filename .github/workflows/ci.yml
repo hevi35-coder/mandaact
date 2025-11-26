@@ -53,6 +53,11 @@ jobs:
 
       - name: Run tests
         run: npm run test
+        env:
+         # Required for tests (use dummy values for CI if not set)
+         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://dummy.supabase.co' }}
+         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key' }}
+
 
   # Job 3: Build Verification
   build:
