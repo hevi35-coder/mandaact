@@ -179,9 +179,9 @@ describe('MandalartGrid', () => {
     const data = createTestData()
     const { container } = render(<MandalartGrid mode="view" data={data} forMobile />)
 
-    // Check for smaller text sizes (mobile mode uses smaller fonts)
+    // Check for smaller text sizes (mobile mode uses text-lg for center goal)
     const centerGoal = screen.getByText('핵심 목표')
-    expect(centerGoal.className).toContain('text-base')
+    expect(centerGoal.className).toContain('text-lg')
   })
 
   it('hides center section when hideCenterGoal is true', () => {
