@@ -1,9 +1,9 @@
 /**
  * Badge System v5.0 - Narrative Category System
  * Organizes badges by emotional journey themes instead of technical categories
+ *
+ * Shared between web and mobile apps
  */
-
-import type { Achievement } from '../types'
 
 export interface BadgeCategory {
   key: string
@@ -60,36 +60,37 @@ export const BADGE_CATEGORIES: BadgeCategory[] = [
 
 /**
  * Categorize badges by narrative themes (v5.0)
+ * Generic function that works with any badge type that has 'key' property
  */
-export function categorizeBadges(badges: Achievement[]) {
-  const result: Array<BadgeCategory & { badges: Achievement[] }> = []
+export function categorizeBadges<T extends { id: string; key?: string }>(badges: T[]): Array<BadgeCategory & { badges: T[] }> {
+  const result: Array<BadgeCategory & { badges: T[] }> = []
 
   for (const category of BADGE_CATEGORIES) {
-    let categoryBadges: Achievement[] = []
+    let categoryBadges: T[] = []
 
     switch (category.key) {
       case 'streak':
-        categoryBadges = badges.filter(b => b.key.startsWith('streak_'))
+        categoryBadges = badges.filter(b => b.key?.startsWith('streak_'))
         break
       case 'volume':
-        categoryBadges = badges.filter(b => b.key.startsWith('checks_'))
+        categoryBadges = badges.filter(b => b.key?.startsWith('checks_'))
         break
       case 'monthly':
-        categoryBadges = badges.filter(b => b.key.startsWith('monthly_'))
+        categoryBadges = badges.filter(b => b.key?.startsWith('monthly_'))
         break
       case 'secret':
         categoryBadges = badges.filter(b =>
-          ['midnight_warrior', 'mandalart_rainbow', 'night_owl'].includes(b.key)
+          ['midnight_warrior', 'mandalart_rainbow', 'night_owl'].includes(b.key || '')
         )
         break
       case 'achievement':
         categoryBadges = badges.filter(b =>
-          ['perfect_day', 'level_10'].includes(b.key)
+          ['perfect_day', 'level_10'].includes(b.key || '')
         )
         break
       case 'first_steps':
         categoryBadges = badges.filter(b =>
-          ['first_check', 'first_mandalart'].includes(b.key)
+          ['first_check', 'first_mandalart'].includes(b.key || '')
         )
         break
     }

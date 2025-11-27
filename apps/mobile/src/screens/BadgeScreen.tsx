@@ -25,7 +25,7 @@ import {
   type BadgeDefinition,
 } from '../hooks/useBadges'
 import { useUserGamification } from '../hooks/useStats'
-import { formatUnlockCondition, getProgressMessage, getBadgeHint } from '../lib/badgeHints'
+import { formatUnlockCondition, getProgressMessage, getBadgeHint } from '@mandaact/shared'
 
 // Badge Card Component
 function BadgeCard({

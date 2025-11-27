@@ -28,8 +28,17 @@ import { useAuthStore } from '../store/authStore'
 import { useUserGamification, useHeatmapData, useProfileStats } from '../hooks/useStats'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useBadgeDefinitions, useUserBadges, isBadgeUnlocked } from '../hooks/useBadges'
-import { APP_NAME, getXPForCurrentLevel } from '@mandaact/shared'
-import { categorizeBadges } from '../lib/badgeCategories'
+import {
+  APP_NAME,
+  getXPForCurrentLevel,
+  categorizeBadges,
+  XP_EARNING_RULES,
+  XP_MULTIPLIER_BONUSES,
+  XP_MULTIPLIER_EXAMPLE,
+  FAIR_XP_POLICIES,
+  FAIR_BADGE_POLICIES,
+  XP_MULTIPLIER_COLORS,
+} from '@mandaact/shared'
 import ActivityHeatmap from '../components/ActivityHeatmap'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
 import type { BadgeDefinition } from '../hooks/useBadges'

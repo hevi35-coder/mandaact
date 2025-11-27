@@ -12,6 +12,7 @@ export * from './lib/reportParser'
 export * from './lib/timezone'
 export * from './lib/xpUtils'
 export * from './lib/xpService'
+export * from './lib/xpInfo'
 
 // Constants
 export * from './constants'
