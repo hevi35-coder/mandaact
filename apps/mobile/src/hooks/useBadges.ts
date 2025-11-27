@@ -60,7 +60,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
 
 // Types
 export interface BadgeDefinition {
-  id: string
+  id: string  // UUID from DB (or string key for fallback)
+  key?: string  // String key (e.g., 'first_check')
   category: keyof typeof BADGE_CATEGORIES
   name: string
   description: string
@@ -85,13 +86,76 @@ export interface BadgeProgress {
   percentage: number
 }
 
-// Get all badge definitions
+// Achievement type from DB
+export interface Achievement {
+  id: string  // UUID
+  key: string
+  title: string
+  description: string
+  icon: string
+  category: string
+  xp_reward: number
+  unlock_condition: { type: string; count?: number; days?: number; threshold?: number }
+  display_order: number
+  is_repeatable?: boolean
+  badge_type?: string
+  hint_level?: string
+  emotional_message?: string
+}
+
+// Get all badge definitions from DB (same as web)
 export function useBadgeDefinitions() {
   return useQuery({
     queryKey: badgeKeys.definitions(),
-    queryFn: () => BADGE_DEFINITIONS,
-    staleTime: Infinity,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('achievements')
+        .select('*')
+        .order('display_order', { ascending: true })
+
+      if (error) {
+        logger.error('Error fetching achievements', { error })
+        // Fall back to hardcoded definitions
+        return BADGE_DEFINITIONS
+      }
+
+      // Map DB achievements to BadgeDefinition format
+      return (data || []).map((ach: Achievement) => ({
+        id: ach.id,  // Use UUID from DB
+        key: ach.key,
+        category: mapCategoryFromDB(ach.category),
+        name: ach.title,
+        description: ach.description,
+        icon: ach.icon,
+        xp_reward: ach.xp_reward,
+        target: getTargetFromCondition(ach.unlock_condition),
+        repeatable: ach.is_repeatable,
+      })) as BadgeDefinition[]
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutes
   })
+}
+
+// Helper: Map DB category to local category keys
+function mapCategoryFromDB(dbCategory: string): keyof typeof BADGE_CATEGORIES {
+  const categoryMap: Record<string, keyof typeof BADGE_CATEGORIES> = {
+    'volume': 'practice',
+    'milestone': 'practice',
+    'streak': 'streak',
+    'consistency': 'consistency',
+    'monthly': 'monthly',
+    'completion': 'completion',
+    'special': 'special',
+  }
+  return categoryMap[dbCategory] || 'special'
+}
+
+// Helper: Extract target from unlock condition
+function getTargetFromCondition(condition: Achievement['unlock_condition']): number {
+  if (condition.count) return condition.count
+  if (condition.days) return condition.days
+  if (condition.threshold) return condition.threshold
+  return 1
 }
 
 // Get user's unlocked badges

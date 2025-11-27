@@ -1,6 +1,9 @@
 /**
  * Badge Service with Dependency Injection
  * Shared between web and mobile apps
+ *
+ * Uses JavaScript-based evaluation (same as web) instead of RPC
+ * for consistent behavior across platforms
  */
 
 import type { Achievement, AchievementUnlockCondition } from '../types'
@@ -8,7 +11,7 @@ import type { Achievement, AchievementUnlockCondition } from '../types'
 // Type definitions for Supabase client (simplified)
 interface SupabaseClient {
   from: (table: string) => {
-    select: (columns?: string) => any
+    select: (columns?: string, options?: { count?: 'exact'; head?: boolean }) => any
     insert: (data: any) => any
     update: (data: any) => any
     delete: () => any
@@ -52,6 +55,178 @@ export interface BadgeService {
 export function createBadgeService(supabase: SupabaseClient): BadgeService {
 
   /**
+   * Check if user meets criteria for a specific achievement
+   * JavaScript-based evaluation (same approach as web)
+   */
+  async function checkAchievementUnlock(
+    userId: string,
+    unlockCondition: AchievementUnlockCondition
+  ): Promise<{ unlocked: boolean; current: number; target: number }> {
+    const { type } = unlockCondition
+
+    switch (type) {
+      case 'total_checks': {
+        // Get total check count for user
+        const { count, error } = await supabase
+          .from('check_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+
+        if (error) {
+          console.error('Error counting checks:', error)
+          return { unlocked: false, current: 0, target: unlockCondition.count ?? 1 }
+        }
+
+        const totalChecks = count || 0
+        const requiredCount = unlockCondition.count ?? 1
+        return {
+          unlocked: totalChecks >= requiredCount,
+          current: totalChecks,
+          target: requiredCount
+        }
+      }
+
+      case 'streak': {
+        // Get streak stats from user_levels or calculate
+        const { data: streakData, error } = await supabase
+          .from('user_levels')
+          .select('user_id')
+          .eq('user_id', userId)
+          .single()
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching streak:', error)
+        }
+
+        // Calculate current streak from check_history
+        const { data: checksData } = await supabase
+          .from('check_history')
+          .select('checked_at')
+          .eq('user_id', userId)
+          .order('checked_at', { ascending: false })
+          .limit(100)
+
+        const checks = checksData || []
+        let currentStreak = 0
+
+        if (checks.length > 0) {
+          // Simple streak calculation: count consecutive days with checks
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+
+          const checkDates = new Set<string>()
+          checks.forEach((check: { checked_at: string }) => {
+            const date = new Date(check.checked_at)
+            checkDates.add(`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`)
+          })
+
+          // Count streak backwards from today
+          for (let i = 0; i <= checks.length; i++) {
+            const checkDate = new Date(today)
+            checkDate.setDate(today.getDate() - i)
+            const dateKey = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`
+
+            if (checkDates.has(dateKey)) {
+              currentStreak++
+            } else if (i > 0) {
+              // Allow today to be missing (streak continues from yesterday)
+              break
+            }
+          }
+        }
+
+        const requiredDays = unlockCondition.days ?? 1
+        return {
+          unlocked: currentStreak >= requiredDays,
+          current: currentStreak,
+          target: requiredDays
+        }
+      }
+
+      case 'monthly_completion': {
+        // Get current month completion rate
+        const now = new Date()
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
+        // Get checks this month
+        const { count: checkCount } = await supabase
+          .from('check_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('checked_at', monthStart.toISOString())
+          .lt('checked_at', monthEnd.toISOString())
+
+        // For simplicity, just count monthly checks vs target
+        const currentChecks = checkCount || 0
+        const threshold = unlockCondition.threshold ?? 80
+
+        return {
+          unlocked: currentChecks >= threshold, // Simplified
+          current: currentChecks,
+          target: threshold
+        }
+      }
+
+      default:
+        // Unknown type - use RPC as fallback
+        return { unlocked: false, current: 0, target: 1 }
+    }
+  }
+
+  /**
+   * Unlock an achievement for user (direct insert + XP update)
+   */
+  async function unlockAchievement(
+    userId: string,
+    achievementId: string,
+    xpReward: number
+  ): Promise<boolean> {
+    try {
+      // Insert into user_achievements
+      const { error: insertError } = await supabase
+        .from('user_achievements')
+        .insert({
+          user_id: userId,
+          achievement_id: achievementId
+        })
+
+      if (insertError) {
+        // Check if it's a duplicate error (already unlocked)
+        if (insertError.code === '23505') {
+          return false // Already unlocked
+        }
+        console.error('Error inserting user_achievement:', insertError)
+        return false
+      }
+
+      // Award XP to user_levels using SELECT + UPDATE pattern
+      if (xpReward > 0) {
+        // Get current XP
+        const { data: levelData, error: levelError } = await supabase
+          .from('user_levels')
+          .select('total_xp')
+          .eq('user_id', userId)
+          .single()
+
+        if (!levelError && levelData) {
+          // Update with new XP total
+          const currentXP = levelData.total_xp || 0
+          await supabase
+            .from('user_levels')
+            .update({ total_xp: currentXP + xpReward })
+            .eq('user_id', userId)
+        }
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error unlocking achievement:', error)
+      return false
+    }
+  }
+
+  /**
    * Evaluate all badges for a user and unlock any that are completed
    */
   async function evaluateAndUnlockBadges(userId: string): Promise<BadgeEvaluationResult[]> {
@@ -79,56 +254,31 @@ export function createBadgeService(supabase: SupabaseClient): BadgeService {
         console.error('Error fetching user achievements:', userAchError)
       }
 
-      const unlockedBadgeIds = new Set(userAchievements?.map((ua: { achievement_id: string }) => ua.achievement_id) || [])
+      const unlockedBadgeIds = new Set(
+        userAchievements?.map((ua: { achievement_id: string }) => ua.achievement_id) || []
+      )
 
-      // Evaluate each badge
+      // Evaluate each badge using JavaScript logic (same as web)
       for (const badge of allBadges) {
         // Skip if already unlocked and not repeatable
         if (unlockedBadgeIds.has(badge.id) && !badge.is_repeatable) {
           continue
         }
 
-        // Evaluate badge progress using RPC function
-        const { data: progressData, error: progressError } = await supabase.rpc(
-          'evaluate_badge_progress',
-          {
-            p_user_id: userId,
-            p_achievement_id: badge.id,
-            p_unlock_condition: badge.unlock_condition
-          }
-        )
-
-        if (progressError) {
-          console.error(`Error evaluating badge ${badge.key}:`, progressError)
-          continue
-        }
-
-        const progress = progressData as BadgeProgress
+        // Evaluate badge progress using JavaScript (not RPC)
+        const evaluation = await checkAchievementUnlock(userId, badge.unlock_condition)
 
         // If completed, try to unlock
-        if (progress.completed) {
-          const { data: unlockResult, error: unlockError } = await supabase.rpc(
-            'unlock_achievement',
-            {
-              p_user_id: userId,
-              p_achievement_id: badge.id,
-              p_xp_reward: badge.xp_reward
-            }
-          )
+        if (evaluation.unlocked) {
+          const wasUnlocked = await unlockAchievement(userId, badge.id, badge.xp_reward)
 
-          if (unlockError) {
-            console.error(`Error unlocking badge ${badge.key}:`, unlockError)
-            continue
-          }
-
-          // If successfully unlocked (returns true)
-          if (unlockResult === true) {
+          if (wasUnlocked) {
             results.push({
               badgeKey: badge.key,
               badgeTitle: badge.title,
               wasUnlocked: true,
               xpAwarded: badge.xp_reward,
-              progress: progress.progress,
+              progress: 100,
               emotionalMessage: badge.emotional_message
             })
           }
@@ -150,51 +300,24 @@ export function createBadgeService(supabase: SupabaseClient): BadgeService {
     badge: Achievement
   ): Promise<BadgeEvaluationResult | null> {
     try {
-      // Evaluate progress
-      const { data: progressData, error: progressError } = await supabase.rpc(
-        'evaluate_badge_progress',
-        {
-          p_user_id: userId,
-          p_achievement_id: badge.id,
-          p_unlock_condition: badge.unlock_condition
-        }
-      )
-
-      if (progressError) {
-        console.error(`Error evaluating badge ${badge.key}:`, progressError)
-        return null
-      }
-
-      const progress = progressData as BadgeProgress
+      // Evaluate badge progress using JavaScript
+      const evaluation = await checkAchievementUnlock(userId, badge.unlock_condition)
 
       // If not completed, return null
-      if (!progress.completed) {
+      if (!evaluation.unlocked) {
         return null
       }
 
       // Try to unlock
-      const { data: unlockResult, error: unlockError } = await supabase.rpc(
-        'unlock_achievement',
-        {
-          p_user_id: userId,
-          p_achievement_id: badge.id,
-          p_xp_reward: badge.xp_reward
-        }
-      )
+      const wasUnlocked = await unlockAchievement(userId, badge.id, badge.xp_reward)
 
-      if (unlockError) {
-        console.error(`Error unlocking badge ${badge.key}:`, unlockError)
-        return null
-      }
-
-      // If successfully unlocked
-      if (unlockResult === true) {
+      if (wasUnlocked) {
         return {
           badgeKey: badge.key,
           badgeTitle: badge.title,
           wasUnlocked: true,
           xpAwarded: badge.xp_reward,
-          progress: progress.progress,
+          progress: 100,
           emotionalMessage: badge.emotional_message
         }
       }
@@ -214,21 +337,18 @@ export function createBadgeService(supabase: SupabaseClient): BadgeService {
     badge: Achievement
   ): Promise<BadgeProgress | null> {
     try {
-      const { data, error } = await supabase.rpc(
-        'evaluate_badge_progress',
-        {
-          p_user_id: userId,
-          p_achievement_id: badge.id,
-          p_unlock_condition: badge.unlock_condition
-        }
-      )
+      const evaluation = await checkAchievementUnlock(userId, badge.unlock_condition)
 
-      if (error) {
-        console.error(`Error getting badge progress for ${badge.key}:`, error)
-        return null
+      const progress = evaluation.target > 0
+        ? Math.min(100, (evaluation.current / evaluation.target) * 100)
+        : 0
+
+      return {
+        current: evaluation.current,
+        target: evaluation.target,
+        progress,
+        completed: evaluation.unlocked
       }
-
-      return data as BadgeProgress
     } catch (error) {
       console.error('Error getting badge progress:', error)
       return null
