@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react-native'
+import { logger } from '../lib/logger'
 
 interface Props {
   children: ReactNode
@@ -32,11 +33,8 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo })
 
-    // Log to error reporting service (e.g., Sentry)
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
-
-    // TODO: Send to Sentry
-    // Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } })
+    // Log to error reporting service (Sentry via logger)
+    logger.error('ErrorBoundary caught an error', error, { errorInfo })
   }
 
   handleReset = () => {

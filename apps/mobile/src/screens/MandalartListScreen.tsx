@@ -32,6 +32,7 @@ import {
 import { useAuthStore } from '../store/authStore'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import type { Mandalart } from '@mandaact/shared'
+import { logger } from '../lib/logger'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -71,7 +72,7 @@ export default function MandalartListScreen() {
           isActive: !mandalart.is_active,
         })
       } catch (err) {
-        console.error('Toggle error:', err)
+        logger.error('Toggle error', err)
         Alert.alert('오류', '상태 변경 중 오류가 발생했습니다.')
       } finally {
         setTogglingIds((prev) => {
@@ -98,7 +99,7 @@ export default function MandalartListScreen() {
               try {
                 await deleteMandalart.mutateAsync(mandalart.id)
               } catch (err) {
-                console.error('Delete error:', err)
+                logger.error('Delete error', err)
                 Alert.alert('오류', '삭제 중 오류가 발생했습니다.')
               }
             },

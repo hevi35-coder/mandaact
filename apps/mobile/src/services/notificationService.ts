@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { logger } from '../lib/logger'
 
 const NOTIFICATION_TOKEN_KEY = '@mandaact/push_token'
 const NOTIFICATION_ENABLED_KEY = '@mandaact/notifications_enabled'
@@ -27,7 +28,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
   // Check if physical device
   if (!Device.isDevice) {
-    console.log('Push notifications require a physical device')
+    logger.info('Push notifications require a physical device')
     return null
   }
 
@@ -42,7 +43,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 
   if (finalStatus !== 'granted') {
-    console.log('Failed to get push token for push notification!')
+    logger.info('Failed to get push token for push notification')
     return null
   }
 
@@ -56,7 +57,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     // Store token locally
     await AsyncStorage.setItem(NOTIFICATION_TOKEN_KEY, token)
   } catch (error) {
-    console.error('Error getting push token:', error)
+    logger.error('Error getting push token', error)
   }
 
   // Configure Android channel
@@ -145,7 +146,7 @@ export async function scheduleDailyReminder(
 
     return identifier
   } catch (error) {
-    console.error('Error scheduling daily reminder:', error)
+    logger.error('Error scheduling daily reminder', error)
     return null
   }
 }
@@ -157,7 +158,7 @@ export async function cancelScheduledNotification(identifier: string): Promise<v
   try {
     await Notifications.cancelScheduledNotificationAsync(identifier)
   } catch (error) {
-    console.error('Error canceling notification:', error)
+    logger.error('Error canceling notification', error)
   }
 }
 
@@ -168,7 +169,7 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync()
   } catch (error) {
-    console.error('Error canceling all notifications:', error)
+    logger.error('Error canceling all notifications', error)
   }
 }
 
@@ -179,7 +180,7 @@ export async function getScheduledNotifications(): Promise<Notifications.Notific
   try {
     return await Notifications.getAllScheduledNotificationsAsync()
   } catch (error) {
-    console.error('Error getting scheduled notifications:', error)
+    logger.error('Error getting scheduled notifications', error)
     return []
   }
 }
@@ -204,7 +205,7 @@ export async function sendLocalNotification(
     })
     return identifier
   } catch (error) {
-    console.error('Error sending local notification:', error)
+    logger.error('Error sending local notification', error)
     return null
   }
 }

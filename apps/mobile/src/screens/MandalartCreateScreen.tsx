@@ -27,6 +27,7 @@ import { supabase } from '../lib/supabase'
 import { runOCRFlow, parseMandalartText, type OCRResult, type UploadProgress } from '../services/ocrService'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { suggestActionType } from '@mandaact/shared'
+import { logger } from '../lib/logger'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -104,7 +105,7 @@ export default function MandalartCreateScreen() {
           setStep('preview')
         }
       } catch (err) {
-        console.error('OCR error:', err)
+        logger.error('OCR error', err)
         Alert.alert('오류', err instanceof Error ? err.message : 'OCR 처리 중 오류가 발생했습니다.')
         setStep('select')
       } finally {
@@ -131,7 +132,7 @@ export default function MandalartCreateScreen() {
       setTitle(result.center_goal.slice(0, 50))
       setStep('preview')
     } catch (err) {
-      console.error('Parse error:', err)
+      logger.error('Parse error', err)
       Alert.alert('오류', '텍스트 파싱 중 오류가 발생했습니다.')
     } finally {
       setProgress(null)
@@ -252,7 +253,7 @@ export default function MandalartCreateScreen() {
         },
       ])
     } catch (err) {
-      console.error('Save error:', err)
+      logger.error('Save error', err)
       Alert.alert('오류', '저장 중 오류가 발생했습니다.')
       setStep('preview')
     } finally {

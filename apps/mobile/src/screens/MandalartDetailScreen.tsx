@@ -27,6 +27,7 @@ import { saveToGallery, shareImage, captureViewAsImage } from '../services/expor
 import { ActionEditModal } from '../components'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import type { Action, ActionType } from '@mandaact/shared'
+import { logger } from '../lib/logger'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 type DetailRouteProp = RouteProp<RootStackParamList, 'MandalartDetail'>
@@ -85,7 +86,7 @@ export default function MandalartDetailScreen() {
         Alert.alert('성공', '이미지가 갤러리에 저장되었습니다.')
       }
     } catch (err) {
-      console.error('Export error:', err)
+      logger.error('Export error', err)
       Alert.alert('오류', err instanceof Error ? err.message : '내보내기 중 오류가 발생했습니다.')
     } finally {
       setIsExporting(false)

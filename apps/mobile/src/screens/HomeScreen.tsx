@@ -10,31 +10,9 @@ import { CalendarCheck, Grid3X3, TrendingUp, FileText, Award, HelpCircle, Settin
 import { useAuthStore } from '../store/authStore'
 import { useDailyStats, useUserGamification, useHeatmapData } from '../hooks/useStats'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
-import { APP_NAME } from '@mandaact/shared'
+import { APP_NAME, getXPForCurrentLevel } from '@mandaact/shared'
 import ActivityHeatmap from '../components/ActivityHeatmap'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
-
-// XP calculation helpers (simplified version)
-function calculateXPForLevel(level: number): number {
-  if (level <= 0) return 0
-  if (level === 1) return 100
-  if (level === 2) return 200
-  // Hybrid log curve for higher levels
-  const baseXP = 100
-  const scaleFactor = 1.8
-  return Math.floor(baseXP * Math.pow(level, scaleFactor))
-}
-
-function getXPForCurrentLevel(totalXP: number, level: number): { current: number; required: number } {
-  const xpForCurrentLevel = calculateXPForLevel(level)
-  const xpForNextLevel = calculateXPForLevel(level + 1)
-  const xpProgress = totalXP - xpForCurrentLevel
-  const xpRequired = xpForNextLevel - xpForCurrentLevel
-  return {
-    current: Math.max(0, xpProgress),
-    required: xpRequired,
-  }
-}
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList>,
@@ -57,8 +35,7 @@ export default function HomeScreen() {
   // Calculate XP progress
   const currentLevel = gamification?.current_level || 1
   const totalXP = gamification?.total_xp || 0
-  const { current: xpProgress, required: xpRequired } = getXPForCurrentLevel(totalXP, currentLevel)
-  const xpPercentage = xpRequired > 0 ? Math.round((xpProgress / xpRequired) * 100) : 0
+  const { current: xpProgress, required: xpRequired, percentage: xpPercentage } = getXPForCurrentLevel(totalXP, currentLevel)
 
   // Stats
   const todayChecked = dailyStats?.checked || 0

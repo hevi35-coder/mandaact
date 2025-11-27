@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '../lib/supabase'
+import { logger } from '../lib/logger'
 
 export interface OCRResult {
   center_goal: string
@@ -89,7 +90,7 @@ export async function uploadImage(
     })
 
   if (error) {
-    console.error('Upload error:', error)
+    logger.error('Upload error', error)
     throw new Error(`이미지 업로드 실패: ${error.message}`)
   }
 
@@ -127,7 +128,7 @@ export async function processOCR(imageUrl: string): Promise<OCRResult> {
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('OCR error:', errorText)
+    logger.error('OCR error', new Error(errorText))
     throw new Error('OCR 처리 중 오류가 발생했습니다.')
   }
 
@@ -196,7 +197,7 @@ export async function parseMandalartText(text: string): Promise<OCRResult> {
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('Parse error:', errorText)
+    logger.error('Parse error', new Error(errorText))
     throw new Error('텍스트 파싱 중 오류가 발생했습니다.')
   }
 

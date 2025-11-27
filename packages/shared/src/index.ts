@@ -9,6 +9,7 @@ export * from './lib/badgeStages'
 export * from './lib/notificationMessages'
 export * from './lib/reportParser'
 export * from './lib/timezone'
+export * from './lib/xpUtils'
 
 // Constants
 export * from './constants'

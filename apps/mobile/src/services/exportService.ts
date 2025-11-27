@@ -4,6 +4,7 @@ import * as MediaLibrary from 'expo-media-library'
 import { captureRef } from 'react-native-view-shot'
 import { RefObject } from 'react'
 import { View } from 'react-native'
+import { logger } from '../lib/logger'
 
 export interface ExportOptions {
   format: 'png' | 'jpg'
@@ -54,7 +55,7 @@ export async function saveToGallery(imageUri: string): Promise<boolean> {
 
     return true
   } catch (error) {
-    console.error('Save to gallery error:', error)
+    logger.error('Save to gallery error', error)
     throw new Error('이미지 저장 중 오류가 발생했습니다.')
   }
 }
@@ -98,7 +99,7 @@ export async function exportMandalart(
       return await saveToGallery(uri)
     }
   } catch (error) {
-    console.error('Export error:', error)
+    logger.error('Export error', error)
     throw error
   }
 }
@@ -127,7 +128,7 @@ export async function downloadAndSave(imageUrl: string): Promise<boolean> {
     // Save to gallery
     return await saveToGallery(downloadResult.uri)
   } catch (error) {
-    console.error('Download and save error:', error)
+    logger.error('Download and save error', error)
     throw error
   }
 }

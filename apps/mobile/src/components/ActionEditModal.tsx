@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native'
 import type { Action, ActionType } from '@mandaact/shared'
 import { useUpdateAction } from '../hooks/useActions'
+import { logger } from '../lib/logger'
 
 interface ActionEditModalProps {
   visible: boolean
@@ -90,7 +91,7 @@ export default function ActionEditModal({
       onSuccess?.()
       onClose()
     } catch (error) {
-      console.error('Error updating action:', error)
+      logger.error('Error updating action', error)
     }
   }, [action, title, actionType, frequency, updateAction, onSuccess, onClose])
 

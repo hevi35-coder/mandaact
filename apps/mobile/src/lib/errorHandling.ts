@@ -216,12 +216,11 @@ export async function retryWithBackoff<T>(
 
 // Log error (for debugging and analytics)
 export function logError(error: unknown, context?: Record<string, unknown>): void {
-  console.error('[Error]', {
-    error,
-    context,
+  // Import logger lazily to avoid circular dependency at module load time
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { logger } = require('./logger')
+  logger.error('Application error', error, {
+    ...context,
     timestamp: new Date().toISOString(),
   })
-
-  // TODO: Send to Sentry or other error tracking service
-  // Sentry.captureException(error, { extra: context })
 }

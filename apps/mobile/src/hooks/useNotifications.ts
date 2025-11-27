@@ -9,6 +9,7 @@ import {
   setNotificationsEnabled,
   getScheduledNotifications,
 } from '../services/notificationService'
+import { logger } from '../lib/logger'
 
 const REMINDER_TIME_KEY = '@mandaact/reminder_time'
 
@@ -55,7 +56,7 @@ export function useNotifications() {
           isLoading: false,
         })
       } catch (error) {
-        console.error('Error loading notification state:', error)
+        logger.error('Error loading notification state', error)
         setState((prev) => ({ ...prev, isLoading: false }))
       }
     }
@@ -109,7 +110,7 @@ export function useNotifications() {
         return true
       }
     } catch (error) {
-      console.error('Error toggling notifications:', error)
+      logger.error('Error toggling notifications', error)
       setState((prev) => ({ ...prev, isLoading: false }))
       return false
     }
@@ -135,7 +136,7 @@ export function useNotifications() {
       }))
       return true
     } catch (error) {
-      console.error('Error updating reminder time:', error)
+      logger.error('Error updating reminder time', error)
       setState((prev) => ({ ...prev, isLoading: false }))
       return false
     }

@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import { logger } from '../lib/logger'
 
 interface AuthState {
   user: User | null
@@ -82,7 +83,7 @@ export const useAuthStore = create<AuthState>()(
             set({ user: session?.user ?? null })
           })
         } catch (error) {
-          console.error('Auth initialization error:', error)
+          logger.error('Auth initialization error', error)
           set({ initialized: true })
         }
       },

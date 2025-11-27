@@ -36,6 +36,7 @@ import {
   type ActionType,
 } from '@mandaact/shared'
 import type { Mandalart } from '@mandaact/shared'
+import { logger } from '../lib/logger'
 
 // Action type icon component - colors match web exactly
 function ActionTypeIcon({
@@ -163,7 +164,7 @@ export default function TodayScreen() {
           checkId: action.check_id,
         })
       } catch (err) {
-        console.error('Check toggle error:', err)
+        logger.error('Check toggle error', err)
         Alert.alert('오류', '체크 상태를 변경하는 중 오류가 발생했습니다.')
       } finally {
         setCheckingActions((prev) => {

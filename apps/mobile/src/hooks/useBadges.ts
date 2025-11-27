@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { logger } from '../lib/logger'
 
 // Query keys
 export const badgeKeys = {
@@ -123,7 +124,7 @@ export function useBadgeProgress(userId: string | undefined) {
 
       if (error) {
         // If RPC doesn't exist, return empty progress
-        console.warn('Badge progress RPC not available:', error)
+        logger.warn('Badge progress RPC not available', { error })
         return [] as BadgeProgress[]
       }
 

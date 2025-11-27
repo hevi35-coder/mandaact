@@ -18,6 +18,7 @@
     "@react-navigation/bottom-tabs": "catalog:",
     "@react-navigation/native": "catalog:",
     "@react-navigation/native-stack": "catalog:",
+    "@sentry/react-native": "^7.7.0",
     "@supabase/supabase-js": "catalog:",
     "@tanstack/query-async-storage-persister": "catalog:",
     "@tanstack/react-query": "catalog:",
