@@ -71,7 +71,7 @@ export default function ActionEditModal({
     if (action) {
       setTitle(action.title)
       setActionType((action.type as ActionType) || 'routine')
-      setFrequency(action.frequency || 'daily')
+      setFrequency(action.routine_frequency || 'daily')
     }
   }, [action])
 
@@ -84,7 +84,7 @@ export default function ActionEditModal({
         updates: {
           title: title.trim(),
           type: actionType,
-          frequency: actionType === 'routine' ? frequency : null,
+          routine_frequency: actionType === 'routine' ? (frequency as 'daily' | 'weekly' | 'monthly') : undefined,
         },
       })
       onSuccess?.()
@@ -99,7 +99,7 @@ export default function ActionEditModal({
     if (action) {
       setTitle(action.title)
       setActionType((action.type as ActionType) || 'routine')
-      setFrequency(action.frequency || 'daily')
+      setFrequency(action.routine_frequency || 'daily')
     }
     onClose()
   }, [action, onClose])

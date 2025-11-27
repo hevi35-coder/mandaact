@@ -1,9 +1,9 @@
 import React from 'react'
-import { View, Animated, Easing, ViewStyle } from 'react-native'
+import { View, Animated, Easing, ViewStyle, DimensionValue } from 'react-native'
 
 interface SkeletonProps {
-  width?: number | string
-  height?: number | string
+  width?: DimensionValue
+  height?: DimensionValue
   borderRadius?: number
   style?: ViewStyle
 }

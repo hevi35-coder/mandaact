@@ -61,9 +61,12 @@ export function useDailyStats(userId: string | undefined, date?: Date) {
       if (actionsError) throw actionsError
 
       // Filter out reference type actions (they don't count towards completion)
-      const checkableActions = (actionsData || []).filter(
-        (action: { type: string; sub_goal: { mandalart: object | null } | null }) =>
-          action.type !== 'reference' && action.sub_goal?.mandalart != null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const checkableActions = (actionsData || []).filter((action: any) =>
+        action.type !== 'reference' &&
+        action.sub_goal &&
+        Array.isArray(action.sub_goal) &&
+        action.sub_goal[0]?.mandalart
       )
 
       const total = checkableActions.length
@@ -165,9 +168,12 @@ export function useWeeklyStats(userId: string | undefined) {
 
       if (actionsError) throw actionsError
 
-      const checkableActions = (actionsData || []).filter(
-        (action: { type: string; sub_goal: { mandalart: object | null } | null }) =>
-          action.type !== 'reference' && action.sub_goal?.mandalart != null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const checkableActions = (actionsData || []).filter((action: any) =>
+        action.type !== 'reference' &&
+        action.sub_goal &&
+        Array.isArray(action.sub_goal) &&
+        action.sub_goal[0]?.mandalart
       )
 
       totalCheckable = checkableActions.length * 7
@@ -306,23 +312,19 @@ export function useSubGoalProgress(userId: string | undefined) {
       const checkedActionIds = new Set(checksData?.map((c) => c.action_id) || [])
 
       // Build progress data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const progress: SubGoalProgress[] = (subGoalsData || [])
-        .filter((sg: { mandalart: object | null }) => sg.mandalart != null)
-        .map((sg: {
-          id: string
-          title: string
-          mandalart: { title: string } | null
-          actions: Array<{ id: string; type: string }>
-        }) => {
-          const checkableActions = sg.actions.filter((a) => a.type !== 'reference')
-          const completedToday = checkableActions.filter((a) => checkedActionIds.has(a.id)).length
+        .filter((sg: any) => sg.mandalart && Array.isArray(sg.mandalart) && sg.mandalart.length > 0)
+        .map((sg: any) => {
+          const checkableActions = (sg.actions || []).filter((a: any) => a.type !== 'reference')
+          const completedToday = checkableActions.filter((a: any) => checkedActionIds.has(a.id)).length
           const totalActions = checkableActions.length
           const completionRate = totalActions > 0 ? Math.round((completedToday / totalActions) * 100) : 0
 
           return {
             id: sg.id,
             title: sg.title,
-            mandalartTitle: sg.mandalart?.title || '',
+            mandalartTitle: sg.mandalart[0]?.title || '',
             totalActions,
             completedToday,
             completionRate,

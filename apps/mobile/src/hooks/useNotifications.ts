@@ -92,7 +92,7 @@ export function useNotifications() {
         setState((prev) => ({
           ...prev,
           isEnabled: true,
-          permissionStatus: 'granted',
+          permissionStatus: Notifications.PermissionStatus.GRANTED,
           isLoading: false,
         }))
         return true
