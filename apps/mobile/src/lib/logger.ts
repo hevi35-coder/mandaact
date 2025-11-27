@@ -1,43 +1,27 @@
 /**
- * Production-safe logger with Sentry integration
+ * Production-safe logger
  * Replaces console.log/error/warn with environment-aware logging
+ *
+ * Note: Sentry integration will be added in production builds
+ * For now, this provides consistent logging without external dependencies
  */
-import * as Sentry from '@sentry/react-native'
 
 // Check if we're in development mode
 const __DEV__ = process.env.NODE_ENV !== 'production'
-
-// Sentry DSN - set via environment variable
-const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN
-
-// Initialize Sentry
-let sentryInitialized = false
-
-export function initSentry() {
-  if (sentryInitialized || !SENTRY_DSN) {
-    if (__DEV__ && !SENTRY_DSN) {
-      // Only log once in dev if DSN is missing
-    }
-    return
-  }
-
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    debug: __DEV__,
-    environment: __DEV__ ? 'development' : 'production',
-    enableAutoSessionTracking: true,
-    sessionTrackingIntervalMillis: 30000,
-    tracesSampleRate: __DEV__ ? 1.0 : 0.2,
-  })
-
-  sentryInitialized = true
-}
 
 // Log levels
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 interface LogContext {
   [key: string]: unknown
+}
+
+// Placeholder for future Sentry integration
+export function initSentry(): void {
+  if (__DEV__) {
+    // eslint-disable-next-line no-console
+    console.log('[Logger] Running in development mode (Sentry disabled)')
+  }
 }
 
 /**
@@ -55,58 +39,33 @@ export const logger = {
   },
 
   /**
-   * Info level - logged in development, breadcrumb in production
+   * Info level - logged in development
    */
   info(message: string, context?: LogContext): void {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.log(`[INFO] ${message}`, context || '')
-    } else if (sentryInitialized) {
-      Sentry.addBreadcrumb({
-        category: 'info',
-        message,
-        data: context,
-        level: 'info',
-      })
     }
   },
 
   /**
-   * Warning level - logged in development, breadcrumb in production
+   * Warning level - logged in development
    */
   warn(message: string, context?: LogContext): void {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.warn(`[WARN] ${message}`, context || '')
-    } else if (sentryInitialized) {
-      Sentry.addBreadcrumb({
-        category: 'warning',
-        message,
-        data: context,
-        level: 'warning',
-      })
     }
   },
 
   /**
-   * Error level - always captured, sent to Sentry in production
+   * Error level - always logged
    */
   error(message: string, error?: unknown, context?: LogContext): void {
     const errorObj = error instanceof Error ? error : new Error(String(error))
 
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error(`[ERROR] ${message}`, errorObj, context || '')
-    }
-
-    if (sentryInitialized) {
-      Sentry.captureException(errorObj, {
-        extra: {
-          message,
-          ...context,
-        },
-      })
-    }
+    // eslint-disable-next-line no-console
+    console.error(`[ERROR] ${message}`, errorObj, context || '')
   },
 
   /**
@@ -115,53 +74,34 @@ export const logger = {
   captureException(error: unknown, context?: LogContext): void {
     const errorObj = error instanceof Error ? error : new Error(String(error))
 
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[EXCEPTION]', errorObj, context || '')
-    }
-
-    if (sentryInitialized) {
-      Sentry.captureException(errorObj, {
-        extra: context,
-      })
-    }
+    // eslint-disable-next-line no-console
+    console.error('[EXCEPTION]', errorObj, context || '')
   },
 
   /**
-   * Set user context for error tracking
+   * Set user context for error tracking (no-op for now)
    */
-  setUser(user: { id: string; email?: string }): void {
-    if (sentryInitialized) {
-      Sentry.setUser(user)
-    }
+  setUser(_user: { id: string; email?: string }): void {
+    // Will be implemented with Sentry in production
   },
 
   /**
-   * Clear user context (on logout)
+   * Clear user context (no-op for now)
    */
   clearUser(): void {
-    if (sentryInitialized) {
-      Sentry.setUser(null)
-    }
+    // Will be implemented with Sentry in production
   },
 
   /**
-   * Add a breadcrumb for debugging
+   * Add a breadcrumb for debugging (no-op for now)
    */
   addBreadcrumb(
-    category: string,
-    message: string,
-    data?: LogContext,
-    level: Sentry.SeverityLevel = 'info'
+    _category: string,
+    _message: string,
+    _data?: LogContext,
+    _level?: string
   ): void {
-    if (sentryInitialized) {
-      Sentry.addBreadcrumb({
-        category,
-        message,
-        data,
-        level,
-      })
-    }
+    // Will be implemented with Sentry in production
   },
 }
 

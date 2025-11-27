@@ -362,6 +362,7 @@ export default function MandalartDetailScreen() {
             <View
               key={subGoal.id}
               className="bg-white rounded-xl p-4 mb-3 border border-gray-200"
+              style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
             >
               <Text className="text-base font-semibold text-gray-900 mb-2">
                 {subGoal.position}. {subGoal.title}

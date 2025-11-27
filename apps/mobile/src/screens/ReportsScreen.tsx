@@ -188,12 +188,12 @@ export default function ReportsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
+        {/* Header - Web과 동일 */}
         <View className="px-4 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-gray-900">AI 리포트</Text>
-          <Text className="text-sm text-gray-500 mt-1">
-            AI가 분석한 실천 리포트와 목표 진단
-          </Text>
+          <View className="flex-row items-center">
+            <Text className="text-2xl font-bold text-gray-900">리포트</Text>
+            <Text className="text-sm text-gray-500 ml-3">맞춤형 분석과 코칭</Text>
+          </View>
         </View>
 
         {/* Tab Selector */}

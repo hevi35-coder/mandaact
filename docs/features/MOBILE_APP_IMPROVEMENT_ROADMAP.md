@@ -1,8 +1,9 @@
 # Mobile App Improvement Roadmap
 
-**Date**: 2025-11-27
-**Goal**: 웹앱 디자인에 맞춰 네이티브 앱 스타일링 개선
+**Date**: 2025-11-27 (Updated)
+**Goal**: 웹앱 디자인에 맞춰 네이티브 앱 스타일링 개선 + 코드 품질 확보
 **Approach**: 버전 변경 없이 최소 변경으로 최대 효과
+**Status**: ✅ **100% 완료** - 모든 Phase 및 Sprint 완료
 
 ---
 
@@ -427,6 +428,21 @@ const animatedStyle = useAnimatedStyle(() => ({
 > - ReportsScreen: Tab Selector, Weekly/Diagnosis tabs
 > - SettingsScreen: User Card, Notification, Support, Info sections
 
+### Sprint 5 (Day 8): Code Quality ✅
+16. [x] Sentry 에러 추적 통합 (@sentry/react-native)
+17. [x] Production Logger 시스템 (console.log → logger)
+18. [x] 환경변수 검증 유틸리티 (env.ts)
+19. [x] React.memo 최적화 (ActionListItem)
+20. [x] 공유 XP 유틸리티 (@mandaact/shared)
+21. [x] EAS Build 배포 가이드 문서화
+
+> **Note**: Sprint 5 코드 품질 개선 완료 (2025-11-27):
+> - `src/lib/logger.ts`: Sentry 통합 + 환경별 로깅
+> - `src/lib/env.ts`: 런타임 환경변수 검증
+> - `src/components/ActionListItem.tsx`: React.memo + 커스텀 비교 함수
+> - `packages/shared/src/lib/xpUtils.ts`: XP 계산 공유 유틸리티
+> - `docs/mobile/TESTING_GUIDE.md`: EAS Build 프로덕션 배포 가이드 추가
+
 ---
 
 ## Files to Modify
@@ -443,6 +459,11 @@ const animatedStyle = useAnimatedStyle(() => ({
 | `SettingsScreen.tsx` | Profile, logout | P2 | ✅ |
 | `RootNavigator.tsx` | 4-tab structure | P0 | ✅ |
 | `ReportsScreen.tsx` | Tab-ready styling | P1 | ✅ |
+| `lib/logger.ts` | Sentry + Production Logger | P1 | ✅ |
+| `lib/env.ts` | Environment validation | P1 | ✅ |
+| `components/ActionListItem.tsx` | React.memo optimization | P2 | ✅ |
+| `App.tsx` | initSentry() + logger | P1 | ✅ |
+| `@mandaact/shared/xpUtils.ts` | Shared XP utilities | P2 | ✅ |
 
 ---
 

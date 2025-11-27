@@ -277,77 +277,80 @@ export default function MandalartCreateScreen() {
           </View>
         )}
 
-        {/* Header */}
+        {/* Header - Web과 동일 */}
         <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
           <Pressable onPress={handleBack} className="p-2 -ml-2">
             <ArrowLeft size={24} color="#374151" />
           </Pressable>
-          <Text className="text-lg font-semibold text-gray-900 ml-2">
-            새 만다라트
-          </Text>
+          <View className="flex-row items-center ml-2">
+            <Text className="text-lg font-semibold text-gray-900">
+              만다라트 만들기
+            </Text>
+            <Text className="text-sm text-gray-500 ml-2">새로운 목표 생성</Text>
+          </View>
         </View>
 
         <ScrollView className="flex-1 px-4 pt-6">
-          <Text className="text-2xl font-bold text-gray-900 mb-2">
-            어떻게 만들까요?
-          </Text>
-          <Text className="text-gray-500 mb-6">
-            입력 방식을 선택해주세요
+          <Text className="text-lg font-semibold text-gray-900 mb-4">
+            생성 방식 선택
           </Text>
 
-          {/* Image OCR */}
+          {/* Image OCR - Web 스타일 (이모지 아이콘 + 그림자) */}
           <Pressable
             onPress={() => handleSelectMethod('image')}
-            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center"
+            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center shadow-sm"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
           >
-            <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center mr-4">
-              <Camera size={24} color="#667eea" />
+            <View className="w-12 h-12 rounded-xl bg-gray-50 items-center justify-center mr-4">
+              <Text className="text-2xl">📸</Text>
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-gray-900">
-                이미지로 만들기
+                이미지 업로드
               </Text>
               <Text className="text-sm text-gray-500 mt-1">
-                만다라트 이미지를 촬영하거나 선택하세요
+                만들어둔 만다라트가 있다면 사진 찍어 업로드
               </Text>
             </View>
           </Pressable>
 
-          {/* Text Paste */}
+          {/* Text Paste - Web 스타일 */}
           <Pressable
             onPress={() => handleSelectMethod('text')}
-            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center"
+            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center shadow-sm"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
           >
-            <View className="w-12 h-12 rounded-xl bg-amber-50 items-center justify-center mr-4">
-              <FileText size={24} color="#f59e0b" />
+            <View className="w-12 h-12 rounded-xl bg-gray-50 items-center justify-center mr-4">
+              <Text className="text-2xl">📋</Text>
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-gray-900">
-                텍스트로 만들기
+                텍스트 붙여넣기
               </Text>
               <Text className="text-sm text-gray-500 mt-1">
-                엑셀이나 문서에서 텍스트를 붙여넣으세요
+                AI로 만든 텍스트가 있다면 메시지에서 붙여넣기
               </Text>
             </View>
           </Pressable>
 
-          {/* Manual Input */}
+          {/* Manual Input - Web 스타일 */}
           <Pressable
             onPress={() => {
               setInputMethod('manual')
               handleManualCreate()
             }}
-            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center"
+            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center shadow-sm"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
           >
-            <View className="w-12 h-12 rounded-xl bg-green-50 items-center justify-center mr-4">
-              <Edit3 size={24} color="#22c55e" />
+            <View className="w-12 h-12 rounded-xl bg-gray-50 items-center justify-center mr-4">
+              <Text className="text-2xl">✏️</Text>
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-gray-900">
-                직접 입력하기
+                직접 입력
               </Text>
               <Text className="text-sm text-gray-500 mt-1">
-                빈 템플릿에서 하나씩 입력하세요
+                아직 만다라트가 없다면 빈 그리드에서 처음부터 작성
               </Text>
             </View>
           </Pressable>

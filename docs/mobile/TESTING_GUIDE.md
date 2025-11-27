@@ -311,5 +311,88 @@ npm install
 
 ---
 
-**문서 버전**: 1.0
-**최종 수정**: 2025-11-26
+---
+
+## 🚢 프로덕션 배포 (EAS Build)
+
+### EAS Build 환경 변수 설정
+
+앱스토어 배포 전 EAS Build에서 Sentry DSN을 설정해야 합니다.
+
+#### 방법 1: eas.json에 직접 설정
+
+```json
+// apps/mobile/eas.json
+{
+  "build": {
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_SENTRY_DSN": "https://xxx@o123.ingest.sentry.io/456"
+      }
+    },
+    "preview": {
+      "env": {
+        "EXPO_PUBLIC_SENTRY_DSN": "https://xxx@o123.ingest.sentry.io/456"
+      }
+    }
+  }
+}
+```
+
+#### 방법 2: EAS Secrets 사용 (권장 - 보안)
+
+```bash
+# EAS CLI 설치
+npm install -g eas-cli
+
+# 로그인
+eas login
+
+# Secret 생성 (프로젝트 스코프)
+eas secret:create --scope project --name EXPO_PUBLIC_SENTRY_DSN --value "https://xxx@o123.ingest.sentry.io/456"
+
+# Secret 확인
+eas secret:list
+```
+
+#### 빌드 명령어
+
+```bash
+# 프로덕션 빌드 (iOS)
+eas build --platform ios --profile production
+
+# 프로덕션 빌드 (Android)
+eas build --platform android --profile production
+
+# 양쪽 플랫폼
+eas build --platform all --profile production
+```
+
+### Sentry 소스맵 업로드 (선택)
+
+더 나은 에러 추적을 위해 소스맵을 업로드할 수 있습니다:
+
+```bash
+# @sentry/react-native의 sentry.properties 설정
+# apps/mobile/sentry.properties
+defaults.url=https://sentry.io/
+defaults.org=your-org
+defaults.project=mandaact-mobile
+auth.token=your-sentry-auth-token
+```
+
+### 체크리스트
+
+| 단계 | 설명 | 완료 |
+|------|------|------|
+| 1 | Sentry 프로젝트 생성 | ☐ |
+| 2 | DSN을 `.env`에 추가 (개발용) | ☐ |
+| 3 | App.tsx에 `initSentry()` 추가 | ☐ |
+| 4 | EAS Secrets 설정 (프로덕션용) | ☐ |
+| 5 | 프로덕션 빌드 생성 | ☐ |
+| 6 | 앱스토어 제출 | ☐ |
+
+---
+
+**문서 버전**: 1.1
+**최종 수정**: 2025-11-27

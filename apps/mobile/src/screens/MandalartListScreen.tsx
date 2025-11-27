@@ -156,21 +156,20 @@ export default function MandalartListScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
+        {/* Header - Web과 동일 */}
         <View className="flex-row justify-between items-center mb-4">
           <View className="flex-row items-center">
-            <Text className="text-2xl font-bold text-gray-900">만다라트 관리</Text>
-            {mandalarts.length > 0 && (
-              <View className="ml-2 bg-gray-200 px-2 py-0.5 rounded-full">
-                <Text className="text-xs text-gray-600 font-medium">{mandalarts.length}</Text>
-              </View>
-            )}
+            <Text className="text-2xl font-bold text-gray-900">만다라트</Text>
+            <Text className="text-sm text-gray-500 ml-3">
+              목표 관리 {mandalarts.length}개
+            </Text>
           </View>
           <Pressable
             onPress={handleCreateNew}
-            className="bg-gray-900 rounded-full p-2"
+            className="flex-row items-center active:opacity-70"
           >
-            <Plus size={24} color="white" />
+            <Plus size={16} color="#667eea" />
+            <Text className="text-primary text-sm font-medium ml-1">새로 만들기</Text>
           </Pressable>
         </View>
 
@@ -212,6 +211,7 @@ export default function MandalartListScreen() {
                       ? 'border-primary/30'
                       : 'border-gray-200 opacity-70'
                   }`}
+                  style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
                 >
                 {/* Header Row */}
                 <View className="flex-row items-center justify-between mb-2">

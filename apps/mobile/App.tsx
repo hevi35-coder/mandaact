@@ -18,6 +18,10 @@ import {
   addNotificationResponseListener,
   addNotificationReceivedListener,
 } from './src/services/notificationService'
+import { initSentry, logger } from './src/lib/logger'
+
+// Initialize Sentry on app load
+initSentry()
 
 // Create a single instance of the query client
 const queryClient = createPersistableQueryClient()
@@ -33,17 +37,17 @@ function AppContent() {
     // Set up notification listeners
     notificationListener.current = addNotificationReceivedListener(
       (notification) => {
-        console.log('Notification received:', notification)
+        logger.debug('Notification received', { notification })
       }
     )
 
     responseListener.current = addNotificationResponseListener((response) => {
-      console.log('Notification response:', response)
+      logger.debug('Notification response', { response })
       // Handle notification tap - navigate to specific screen if needed
       const data = response.notification.request.content.data
       if (data?.screen) {
         // Navigation handling can be added here
-        console.log('Navigate to:', data.screen)
+        logger.debug('Navigate to', { screen: data.screen })
       }
     })
 

@@ -14,11 +14,13 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
-  CheckCircle2,
-  Circle,
+  Check,
+  Square,
   RotateCw,
   Target,
   Lightbulb,
+  Calendar,
+  Info,
 } from 'lucide-react-native'
 import { format, addDays, isSameDay, startOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
@@ -67,6 +69,11 @@ export default function TodayScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
 
+  // Type filter state - multiple selection using Set (Web과 동일)
+  const [activeFilters, setActiveFilters] = useState<Set<ActionType>>(new Set())
+  // Type filter collapse state - default collapsed (Web과 동일)
+  const [typeFilterCollapsed, setTypeFilterCollapsed] = useState(true)
+
   // Date navigation
   const today = startOfDay(new Date())
   const isToday = isSameDay(selectedDate, today)
@@ -95,10 +102,38 @@ export default function TodayScreen() {
   // Mutations
   const toggleCheck = useToggleActionCheck()
 
-  // Filter actions based on shouldShowToday logic
+  // Filter toggle functions (Web과 동일)
+  const toggleFilter = useCallback((type: ActionType) => {
+    setActiveFilters((prev) => {
+      const newFilters = new Set(prev)
+      if (newFilters.has(type)) {
+        newFilters.delete(type)
+      } else {
+        newFilters.add(type)
+      }
+      return newFilters
+    })
+  }, [])
+
+  const clearAllFilters = useCallback(() => {
+    setActiveFilters(new Set())
+  }, [])
+
+  // Filter actions based on type and shouldShowToday logic (Web과 동일)
   const filteredActions = useMemo(() => {
-    return actions.filter((action) => shouldShowToday(action))
-  }, [actions])
+    return actions.filter((action) => {
+      // Apply shouldShowToday logic
+      const shouldShow = shouldShowToday(action)
+      if (!shouldShow) return false
+
+      // Apply type filters (multiple selection)
+      // If no filters selected, show all types
+      if (activeFilters.size === 0) return true
+
+      // Show only if action type is in active filters
+      return activeFilters.has(action.type)
+    })
+  }, [actions, activeFilters])
 
   // Group actions by mandalart
   const actionsByMandalart = useMemo(() => {
@@ -212,21 +247,23 @@ export default function TodayScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
+        {/* Header - Web과 동일 */}
         <View className="mb-4">
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
-              <Text className="text-2xl font-bold text-gray-900">
-                {isToday ? '오늘의 실천' : '실천 기록'}
-              </Text>
+              <Text className="text-2xl font-bold text-gray-900">투데이</Text>
+              <Text className="text-sm text-gray-500 ml-3">오늘의 실천</Text>
             </View>
-            {/* Date Navigation */}
-            <View className="flex-row items-center rounded-lg border border-gray-300 overflow-hidden">
+          </View>
+
+          {/* Date Navigation - Web 스타일 (이전/오늘/다음 + 날짜) */}
+          <View className="flex-row items-center justify-between mt-3">
+            <View className="flex-row items-center rounded-lg border border-gray-300 overflow-hidden bg-white">
               <Pressable
                 onPress={handlePreviousDay}
                 className="px-3 py-2 border-r border-gray-300 active:bg-gray-100"
               >
-                <ChevronLeft size={18} color="#374151" />
+                <Text className="text-sm text-gray-700">이전</Text>
               </Pressable>
               <Pressable
                 onPress={handleToday}
@@ -242,31 +279,39 @@ export default function TodayScreen() {
                 onPress={handleNextDay}
                 className="px-3 py-2 active:bg-gray-100"
               >
-                <ChevronRight size={18} color="#374151" />
+                <Text className="text-sm text-gray-700">다음</Text>
               </Pressable>
             </View>
+
+            {/* 날짜 표시 버튼 */}
+            <View className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-2">
+              <Calendar size={16} color="#6b7280" />
+              <Text className="text-sm text-gray-700 ml-2">
+                {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+              </Text>
+            </View>
           </View>
-          <Text className="text-gray-500 text-sm mt-2">
-            {format(selectedDate, 'yyyy년 M월 d일 (EEEE)', { locale: ko })}
-          </Text>
         </View>
 
-        {/* Progress Card */}
-        {filteredActions.length > 0 && (
+        {/* Progress Card with Type Filter - Web과 동일 */}
+        {actions.length > 0 && (
           <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
             className="bg-white rounded-2xl p-5 mb-4 border border-gray-200"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
           >
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-base font-semibold text-gray-900">
-                {isToday ? '오늘의 달성율' : '달성율'}
-              </Text>
               <View className="flex-row items-center">
-                <Text className="text-2xl font-bold text-gray-900">
-                  {progressPercentage}
+                <Text className="text-base font-semibold text-gray-900">
+                  오늘의 달성율
                 </Text>
-                <Text className="text-lg text-gray-500 ml-1">%</Text>
+                <Text className="text-lg font-bold text-gray-900 ml-3">
+                  {progressPercentage}%
+                </Text>
               </View>
+              <Text className="text-sm text-gray-500">
+                {checkedCount} / {totalCount}
+              </Text>
             </View>
 
             {/* Progress Bar */}
@@ -278,34 +323,132 @@ export default function TodayScreen() {
               />
             </View>
 
-            {/* Stats Row */}
-            <View className="flex-row justify-between mt-3 pt-3 border-t border-gray-100">
-              <View className="flex-row items-center">
-                <RotateCw size={14} color="#3b82f6" />
-                <Text className="text-xs text-gray-600 ml-1">
-                  루틴 {filteredActions.filter((a) => a.type === 'routine' && a.is_checked).length}/
-                  {filteredActions.filter((a) => a.type === 'routine').length}
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <Target size={14} color="#10b981" />
-                <Text className="text-xs text-gray-600 ml-1">
-                  미션 {filteredActions.filter((a) => a.type === 'mission' && a.is_checked).length}/
-                  {filteredActions.filter((a) => a.type === 'mission').length}
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <Lightbulb size={14} color="#f59e0b" />
-                <Text className="text-xs text-gray-600 ml-1">
-                  참고 {filteredActions.filter((a) => a.type === 'reference').length}
-                </Text>
-              </View>
+            {/* Info Text */}
+            <View className="flex-row items-center mt-3">
+              <Info size={12} color="#9ca3af" />
+              <Text className="text-xs text-gray-400 ml-1">
+                오늘과 어제 날짜만 달성(체크) 가능합니다
+              </Text>
+            </View>
+
+            {/* Type Filter - Collapsible Section (Web과 동일) */}
+            <View className="border-t border-gray-100 mt-4 pt-4">
+              <Pressable
+                onPress={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
+                className="flex-row items-center justify-between"
+              >
+                <Text className="text-sm font-medium text-gray-900">타입 필터</Text>
+                {typeFilterCollapsed ? (
+                  <ChevronRight size={16} color="#6b7280" />
+                ) : (
+                  <ChevronDown size={16} color="#6b7280" />
+                )}
+              </Pressable>
+
+              {!typeFilterCollapsed && (
+                <View className="mt-3">
+                  {/* Filter Buttons - 4 columns like Web */}
+                  <View className="flex-row flex-wrap gap-2">
+                    {/* 전체 버튼 */}
+                    <Pressable
+                      onPress={clearAllFilters}
+                      className={`flex-1 min-w-[70px] py-2 px-3 rounded-lg border ${
+                        activeFilters.size === 0
+                          ? 'bg-gray-900 border-gray-900'
+                          : 'bg-white border-gray-300'
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm text-center font-medium ${
+                          activeFilters.size === 0 ? 'text-white' : 'text-gray-700'
+                        }`}
+                      >
+                        전체
+                      </Text>
+                    </Pressable>
+
+                    {/* 루틴 버튼 */}
+                    <Pressable
+                      onPress={() => toggleFilter('routine')}
+                      className={`flex-1 min-w-[70px] py-2 px-3 rounded-lg border flex-row items-center justify-center ${
+                        activeFilters.has('routine')
+                          ? 'bg-gray-900 border-gray-900'
+                          : 'bg-white border-gray-300'
+                      }`}
+                    >
+                      <RotateCw
+                        size={14}
+                        color={activeFilters.has('routine') ? '#ffffff' : '#3b82f6'}
+                      />
+                      <Text
+                        className={`text-sm ml-1 font-medium ${
+                          activeFilters.has('routine') ? 'text-white' : 'text-gray-700'
+                        }`}
+                      >
+                        루틴
+                      </Text>
+                    </Pressable>
+
+                    {/* 미션 버튼 */}
+                    <Pressable
+                      onPress={() => toggleFilter('mission')}
+                      className={`flex-1 min-w-[70px] py-2 px-3 rounded-lg border flex-row items-center justify-center ${
+                        activeFilters.has('mission')
+                          ? 'bg-gray-900 border-gray-900'
+                          : 'bg-white border-gray-300'
+                      }`}
+                    >
+                      <Target
+                        size={14}
+                        color={activeFilters.has('mission') ? '#ffffff' : '#10b981'}
+                      />
+                      <Text
+                        className={`text-sm ml-1 font-medium ${
+                          activeFilters.has('mission') ? 'text-white' : 'text-gray-700'
+                        }`}
+                      >
+                        미션
+                      </Text>
+                    </Pressable>
+
+                    {/* 참고 버튼 */}
+                    <Pressable
+                      onPress={() => toggleFilter('reference')}
+                      className={`flex-1 min-w-[70px] py-2 px-3 rounded-lg border flex-row items-center justify-center ${
+                        activeFilters.has('reference')
+                          ? 'bg-gray-900 border-gray-900'
+                          : 'bg-white border-gray-300'
+                      }`}
+                    >
+                      <Lightbulb
+                        size={14}
+                        color={activeFilters.has('reference') ? '#ffffff' : '#f59e0b'}
+                      />
+                      <Text
+                        className={`text-sm ml-1 font-medium ${
+                          activeFilters.has('reference') ? 'text-white' : 'text-gray-700'
+                        }`}
+                      >
+                        참고
+                      </Text>
+                    </Pressable>
+                  </View>
+
+                  {/* Info Text */}
+                  <View className="flex-row items-center mt-3">
+                    <Info size={12} color="#9ca3af" />
+                    <Text className="text-xs text-gray-400 ml-1">
+                      참고 타입은 달성율에 포함되지 않습니다
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
           </Animated.View>
         )}
 
-        {/* Empty State */}
-        {filteredActions.length === 0 && (
+        {/* Empty State - 전체 데이터가 없을 때 */}
+        {actions.length === 0 && (
           <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
             className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
@@ -316,6 +459,22 @@ export default function TodayScreen() {
             </Text>
             <Text className="text-gray-500 text-center">
               만다라트를 활성화하거나{'\n'}새로운 목표를 추가해보세요
+            </Text>
+          </Animated.View>
+        )}
+
+        {/* Filtered Empty State - 필터 결과가 없을 때 (Web과 동일) */}
+        {actions.length > 0 && filteredActions.length === 0 && (
+          <Animated.View
+            entering={FadeInUp.delay(100).duration(400)}
+            className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
+          >
+            <Text className="text-4xl mb-4">🔍</Text>
+            <Text className="text-lg font-semibold text-gray-900 text-center mb-2">
+              필터에 맞는 항목이 없습니다
+            </Text>
+            <Text className="text-gray-500 text-center">
+              다른 타입 필터를 선택해보세요
             </Text>
           </Animated.View>
         )}
@@ -354,7 +513,7 @@ export default function TodayScreen() {
                           className="text-sm text-gray-500 mt-1"
                           numberOfLines={1}
                         >
-                          {mandalart.center_goal}
+                          핵심 목표: {mandalart.center_goal}
                         </Text>
                       </View>
                       {isCollapsed ? (
@@ -383,20 +542,21 @@ export default function TodayScreen() {
                                   : 'border-gray-200'
                             }`}
                           >
-                            {/* Checkbox */}
+                            {/* Checkbox - 사각형 스타일 (Web과 동일) */}
                             <View className="mr-3">
                               {checkingActions.has(action.id) ? (
-                                <ActivityIndicator size="small" color="#10b981" />
+                                <ActivityIndicator size="small" color="#374151" />
                               ) : action.is_checked ? (
-                                <CheckCircle2 size={24} color="#10b981" />
+                                <View className="w-5 h-5 bg-gray-900 rounded border border-gray-900 items-center justify-center">
+                                  <Check size={14} color="#ffffff" strokeWidth={3} />
+                                </View>
                               ) : (
-                                <Circle
-                                  size={24}
-                                  color={
+                                <View
+                                  className={`w-5 h-5 rounded border-2 ${
                                     action.type === 'reference'
-                                      ? '#d1d5db'
-                                      : '#9ca3af'
-                                  }
+                                      ? 'border-gray-300 bg-gray-100'
+                                      : 'border-gray-400'
+                                  }`}
                                 />
                               )}
                             </View>
