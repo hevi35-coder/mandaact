@@ -5,11 +5,10 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
-  ActivityIndicator,
   Modal,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { X, Lock, Award, Sparkles } from 'lucide-react-native'
+import { X, Lock, Award, Sparkles, Zap, Trophy, Repeat } from 'lucide-react-native'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
@@ -22,9 +21,11 @@ import {
   getBadgesByCategory,
   isBadgeUnlocked,
   getBadgeUnlockDate,
+  getBadgeRepeatCount,
   type BadgeDefinition,
 } from '../hooks/useBadges'
 import { useUserGamification } from '../hooks/useStats'
+import { formatUnlockCondition, getProgressMessage, getBadgeHint } from '../lib/badgeHints'
 
 // Badge Card Component
 function BadgeCard({
@@ -42,36 +43,44 @@ function BadgeCard({
 }) {
   return (
     <Pressable
-      className={`w-[30%] items-center p-3 rounded-2xl ${
-        isUnlocked ? 'bg-white' : 'bg-gray-100'
+      className={`w-[30%] items-center p-3 rounded-2xl border-2 ${
+        isUnlocked
+          ? 'bg-white border-primary/30'
+          : 'bg-gray-50 border-gray-200'
       }`}
       onPress={onPress}
     >
-      <View
-        className={`w-14 h-14 rounded-full items-center justify-center mb-2 ${
-          isUnlocked ? 'bg-amber-50' : 'bg-gray-200'
-        }`}
-      >
-        {isUnlocked ? (
-          <Text className="text-2xl">{badge.icon}</Text>
-        ) : (
-          <Lock size={24} color="#9ca3af" />
+      {/* Icon - Always show, grayscale when locked (like web) */}
+      <View className="items-center mb-2">
+        <Text
+          className={`text-3xl ${isUnlocked ? '' : 'opacity-40'}`}
+          style={isUnlocked ? {} : { filter: 'grayscale(1)' }}
+        >
+          {badge.icon}
+        </Text>
+        {!isUnlocked && (
+          <Lock size={14} color="#9ca3af" style={{ marginTop: 2 }} />
         )}
       </View>
       <Text
-        className={`text-xs font-medium text-center ${
+        className={`text-xs font-semibold text-center ${
           isUnlocked ? 'text-gray-900' : 'text-gray-400'
         }`}
         numberOfLines={1}
       >
         {badge.name}
       </Text>
+      {/* XP Reward */}
+      <Text className="text-[10px] text-primary font-mono mt-1">
+        +{badge.xp_reward} XP
+      </Text>
+      {/* Progress for locked badges */}
       {!isUnlocked && progress && (
         <View className="w-full mt-2">
-          <View className="h-1 bg-gray-300 rounded-full overflow-hidden">
+          <View className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <View
               className="h-full bg-primary rounded-full"
-              style={{ width: `${progress.percentage}%` }}
+              style={{ width: `${Math.min(progress.percentage, 100)}%` }}
             />
           </View>
           <Text className="text-[10px] text-gray-400 text-center mt-1">
@@ -79,9 +88,16 @@ function BadgeCard({
           </Text>
         </View>
       )}
-      {isUnlocked && badge.repeatable && (
-        <View className="mt-1 px-2 py-0.5 bg-amber-100 rounded-full">
-          <Text className="text-[10px] text-amber-700">반복</Text>
+      {/* Unlocked date */}
+      {isUnlocked && unlockDate && (
+        <Text className="text-[10px] text-gray-400 text-center mt-1 pt-1 border-t border-gray-100">
+          {format(new Date(unlockDate), 'M월 d일', { locale: ko })}
+        </Text>
+      )}
+      {/* Repeatable badge indicator */}
+      {badge.repeatable && (
+        <View className="mt-1 px-2 py-0.5 bg-amber-50 rounded-full">
+          <Text className="text-[10px] text-amber-600">반복</Text>
         </View>
       )}
     </Pressable>
@@ -94,6 +110,7 @@ function BadgeDetailModal({
   isUnlocked,
   unlockDate,
   progress,
+  repeatCount = 0,
   visible,
   onClose,
 }: {
@@ -101,12 +118,21 @@ function BadgeDetailModal({
   isUnlocked: boolean
   unlockDate: string | null
   progress?: { current: number; target: number; percentage: number }
+  repeatCount?: number
   visible: boolean
   onClose: () => void
 }) {
   if (!badge) return null
 
   const category = BADGE_CATEGORIES[badge.category]
+  const hintLevel = badge.hint_level || 'full'
+  const crypticHint = getBadgeHint(badge.key || '', hintLevel)
+  const formattedCondition = formatUnlockCondition(
+    badge.unlock_condition || { type: '' },
+    hintLevel,
+    badge.key
+  )
+  const canShowProgress = !isUnlocked && progress && hintLevel !== 'hidden'
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -122,80 +148,112 @@ function BadgeDetailModal({
             </View>
 
             {/* Content */}
-            <View className="p-6 items-center">
-              {/* Badge Icon */}
-              <View
-                className={`w-24 h-24 rounded-full items-center justify-center mb-4 ${
-                  isUnlocked ? 'bg-amber-50' : 'bg-gray-100'
-                }`}
-              >
-                {isUnlocked ? (
-                  <Text className="text-5xl">{badge.icon}</Text>
-                ) : (
-                  <Lock size={40} color="#9ca3af" />
-                )}
+            <View className="p-6">
+              {/* Badge Icon - Always show, grayscale when locked (like web) */}
+              <View className="items-center mb-4">
+                <Text
+                  className={`text-6xl ${isUnlocked ? '' : 'opacity-40'}`}
+                >
+                  {badge.icon}
+                </Text>
               </View>
 
               {/* Badge Name */}
-              <Text className="text-xl font-bold text-gray-900 mb-1">{badge.name}</Text>
-
-              {/* Category */}
-              <View
-                className="px-3 py-1 rounded-full mb-4"
-                style={{ backgroundColor: category.color + '20' }}
-              >
-                <Text style={{ color: category.color }} className="text-sm font-medium">
-                  {category.icon} {category.name}
-                </Text>
-              </View>
+              <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
+                {badge.name}
+              </Text>
 
               {/* Description */}
-              <Text className="text-base text-gray-600 text-center mb-4">
+              <Text className="text-base text-gray-500 text-center mb-4">
                 {badge.description}
               </Text>
 
-              {/* XP Reward */}
-              <View className="flex-row items-center bg-primary/10 px-4 py-2 rounded-full mb-4">
-                <Sparkles size={16} color="#667eea" />
-                <Text className="text-primary font-semibold ml-2">
-                  +{badge.xp_reward} XP
-                </Text>
-              </View>
-
-              {/* Status */}
+              {/* Unlock Status Box - like web */}
               {isUnlocked ? (
-                <View className="bg-green-50 px-4 py-3 rounded-xl w-full">
-                  <View className="flex-row items-center justify-center">
-                    <Award size={18} color="#22c55e" />
-                    <Text className="text-green-700 font-medium ml-2">획득 완료!</Text>
+                <View className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-4">
+                  <View className="flex-row items-center mb-2">
+                    <Trophy size={20} color="#d97706" />
+                    <Text className="text-amber-700 font-semibold ml-2">배지 획득 완료!</Text>
                   </View>
                   {unlockDate && (
-                    <Text className="text-green-600 text-sm text-center mt-1">
-                      {format(new Date(unlockDate), 'yyyy년 M월 d일', { locale: ko })} 획득
+                    <Text className="text-amber-600 text-sm">
+                      {format(new Date(unlockDate), 'yyyy년 M월 d일', { locale: ko })}
+                      {badge.repeatable && repeatCount > 1 && (
+                        <Text className="text-xs"> (최초 획득일)</Text>
+                      )}
                     </Text>
+                  )}
+                  {/* Repeat count for recurring badges */}
+                  {badge.repeatable && repeatCount > 1 && (
+                    <View className="mt-3 pt-3 border-t border-amber-200">
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <Repeat size={16} color="#d97706" />
+                          <Text className="text-amber-700 font-medium ml-2">누적 획득 횟수</Text>
+                        </View>
+                        <Text className="text-2xl font-bold text-amber-600">{repeatCount}회</Text>
+                      </View>
+                    </View>
                   )}
                 </View>
               ) : (
-                <View className="bg-gray-100 px-4 py-3 rounded-xl w-full">
-                  <Text className="text-gray-600 text-center mb-2">진행 상황</Text>
-                  <View className="h-3 bg-gray-200 rounded-full overflow-hidden mb-2">
-                    <View
-                      className="h-full bg-primary rounded-full"
-                      style={{ width: `${progress?.percentage || 0}%` }}
-                    />
+                <View className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-4">
+                  <View className="flex-row items-start mb-2">
+                    <Lock size={20} color="#d97706" style={{ marginTop: 2 }} />
+                    <View className="flex-1 ml-2">
+                      <Text className="text-amber-700 font-semibold mb-1">
+                        {hintLevel === 'hidden' ? '비밀 배지' : '잠금 해제 조건'}
+                      </Text>
+                      {hintLevel === 'hidden' ? (
+                        <Text className="text-gray-500 italic">{crypticHint || '???'}</Text>
+                      ) : hintLevel === 'cryptic' ? (
+                        <Text className="text-gray-500 italic">"{crypticHint}"</Text>
+                      ) : (
+                        <Text className="text-gray-700">{formattedCondition}</Text>
+                      )}
+                    </View>
                   </View>
-                  <Text className="text-gray-500 text-center">
-                    {progress?.current || 0} / {badge.target}
-                  </Text>
+
+                  {/* Progress - integrated into unlock condition box (like web) */}
+                  {canShowProgress && progress && (
+                    <View className="mt-3 pt-3 border-t border-amber-200">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <View className="flex-row items-center">
+                          <Zap size={14} color="#667eea" />
+                          <Text className="text-gray-500 text-sm ml-1">
+                            {getProgressMessage(progress.current, progress.target)}
+                          </Text>
+                        </View>
+                        <Text className="font-mono font-semibold text-gray-900">
+                          {progress.current} / {progress.target}
+                        </Text>
+                      </View>
+                      <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <View
+                          className="h-full bg-primary rounded-full"
+                          style={{ width: `${Math.min(progress.percentage, 100)}%` }}
+                        />
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
 
-              {/* Repeatable note */}
-              {badge.repeatable && (
-                <Text className="text-xs text-gray-400 text-center mt-4">
-                  * 이 뱃지는 매월 초기화되어 반복 획득이 가능합니다
+              {/* XP Reward - Larger style like web */}
+              <View className="bg-primary/10 border-2 border-primary/20 rounded-xl p-4">
+                <View className="flex-row items-center justify-center mb-1">
+                  <Zap size={20} color="#667eea" />
+                  <Text className="text-gray-500 text-sm font-medium ml-2">획득 보상</Text>
+                </View>
+                <Text className="text-4xl font-bold text-primary text-center">
+                  +{badge.xp_reward.toLocaleString()} XP
                 </Text>
-              )}
+                {badge.repeatable && (
+                  <Text className="text-xs text-primary/70 text-center mt-2">
+                    반복 획득 가능 (매회 동일 보상)
+                  </Text>
+                )}
+              </View>
             </View>
           </SafeAreaView>
         </View>
@@ -365,6 +423,7 @@ export default function BadgeScreen() {
         isUnlocked={selectedBadge ? isBadgeUnlocked(selectedBadge.id, userBadges) : false}
         unlockDate={selectedBadge ? getBadgeUnlockDate(selectedBadge.id, userBadges) : null}
         progress={selectedBadge ? getProgress(selectedBadge.id) : undefined}
+        repeatCount={selectedBadge ? getBadgeRepeatCount(selectedBadge.id, userBadges) : 0}
         visible={!!selectedBadge}
         onClose={() => setSelectedBadge(null)}
       />

@@ -69,6 +69,14 @@ export interface BadgeDefinition {
   xp_reward: number
   target: number
   repeatable?: boolean
+  hint_level?: 'full' | 'cryptic' | 'hidden'
+  unlock_condition?: {
+    type: string
+    days?: number
+    count?: number
+    threshold?: number
+    period?: string
+  }
 }
 
 export interface UserBadge {
@@ -130,6 +138,8 @@ export function useBadgeDefinitions() {
         xp_reward: ach.xp_reward,
         target: getTargetFromCondition(ach.unlock_condition),
         repeatable: ach.is_repeatable,
+        hint_level: ach.hint_level as BadgeDefinition['hint_level'],
+        unlock_condition: ach.unlock_condition,
       })) as BadgeDefinition[]
     },
     staleTime: 1000 * 60 * 30, // 30 minutes
@@ -216,4 +226,10 @@ export function isBadgeUnlocked(badgeId: string, userBadges: UserBadge[]): boole
 export function getBadgeUnlockDate(badgeId: string, userBadges: UserBadge[]): string | null {
   const badge = userBadges.find(ub => ub.achievement_id === badgeId)
   return badge?.unlocked_at || null
+}
+
+// Get badge repeat count
+export function getBadgeRepeatCount(badgeId: string, userBadges: UserBadge[]): number {
+  const badge = userBadges.find(ub => ub.achievement_id === badgeId)
+  return badge?.repeat_count || 1
 }
