@@ -552,10 +552,10 @@ export function formatTypeDetails(action: {
         const isWeekdays = sortedWeekdays.length === 5 &&
           sortedWeekdays.every((day, idx) => day === idx + 1)
 
-        // Check for weekend (Sat-Sun): [0,6]
+        // Check for weekend (Sat-Sun): after sorting [6, 0] (Sat=6, Sun=0→7)
         const isWeekend = sortedWeekdays.length === 2 &&
-          sortedWeekdays[0] === 0 &&
-          sortedWeekdays[1] === 6
+          sortedWeekdays[0] === 6 &&
+          sortedWeekdays[1] === 0
 
         if (isWeekdays) {
           return '평일'
