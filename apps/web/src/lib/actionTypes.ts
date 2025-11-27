@@ -422,7 +422,9 @@ export function getInitialPeriod(cycle: MissionPeriodCycle): { start: Date; end:
 }
 
 /**
- * Check if action should be shown today based on type and settings
+ * Check if action should be shown on a given date based on type and settings
+ * @param action - The action to check
+ * @param targetDate - The date to check against (defaults to today)
  */
 export function shouldShowToday(action: {
   type: ActionType
@@ -431,9 +433,9 @@ export function shouldShowToday(action: {
   mission_completion_type?: MissionCompletionType
   mission_current_period_end?: string
   mission_status?: string
-}): boolean {
-  const today = new Date()
-  const dayOfWeek = today.getDay()
+}, targetDate?: Date): boolean {
+  const checkDate = targetDate || new Date()
+  const dayOfWeek = checkDate.getDay()
 
   switch (action.type) {
     case 'routine':
@@ -459,7 +461,7 @@ export function shouldShowToday(action: {
         action.mission_current_period_end
       ) {
         const periodEnd = new Date(action.mission_current_period_end)
-        return today <= periodEnd
+        return checkDate <= periodEnd
       }
 
       return true

@@ -181,7 +181,7 @@ export default function TodayScreen() {
   const filteredActions = useMemo(() => {
     return actions.filter((action) => {
       // Apply shouldShowToday logic
-      const shouldShow = shouldShowToday(action)
+      const shouldShow = shouldShowToday(action, selectedDate)
       if (!shouldShow) return false
 
       // Apply type filters (multiple selection)
@@ -191,7 +191,7 @@ export default function TodayScreen() {
       // Show only if action type is in active filters
       return activeFilters.has(action.type)
     })
-  }, [actions, activeFilters])
+  }, [actions, activeFilters, selectedDate])
 
   // Group actions by mandalart
   const actionsByMandalart = useMemo(() => {
