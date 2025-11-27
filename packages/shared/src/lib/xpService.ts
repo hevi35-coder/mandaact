@@ -5,6 +5,7 @@
 
 import { getLevelFromXP } from './xpUtils'
 import { format } from 'date-fns'
+import { utcToUserDate, getUserToday } from './timezone'
 
 // Type definitions for Supabase client (simplified)
 interface SupabaseClient {
@@ -25,6 +26,8 @@ interface SupabaseClient {
 export interface StreakStats {
   current: number
   longest: number
+  lastCheckDate: Date | null
+  longestStreakDate: Date | null
 }
 
 export interface XPUserLevel {
@@ -168,6 +171,7 @@ export function createXPService(supabase: SupabaseClient): XPService {
 
   /**
    * Get streak statistics for a user
+   * Uses proper timezone-aware date calculations (same as web)
    */
   async function getStreakStats(userId: string): Promise<StreakStats> {
     try {
@@ -178,35 +182,32 @@ export function createXPService(supabase: SupabaseClient): XPService {
         .order('checked_at', { ascending: false })
 
       if (error || !checks || checks.length === 0) {
-        return { current: 0, longest: 0 }
+        return { current: 0, longest: 0, lastCheckDate: null, longestStreakDate: null }
       }
 
-      // Extract unique dates (convert to KST YYYY-MM-DD format)
-      const dateStrings: string[] = checks.map((check: { checked_at: string }) => {
-        const date = new Date(check.checked_at)
-        // Convert to KST (UTC+9)
-        date.setHours(date.getHours() + 9)
-        return format(date, 'yyyy-MM-dd')
-      })
-      const uniqueDates: string[] = Array.from(new Set<string>(dateStrings)).sort((a, b) => b.localeCompare(a)) // Sort descending
+      // Store actual last check timestamp (for display)
+      const lastCheckDate = checks.length > 0 ? new Date(checks[0].checked_at) : null
+
+      // Extract unique dates using proper timezone conversion
+      const dateStrings: string[] = checks.map((check: { checked_at: string }) => utcToUserDate(check.checked_at))
+      const uniqueDatesSet = new Set<string>(dateStrings)
+      const uniqueDates: string[] = [...uniqueDatesSet].sort((a, b) => b.localeCompare(a)) // Sort descending
 
       if (uniqueDates.length === 0) {
-        return { current: 0, longest: 0 }
+        return { current: 0, longest: 0, lastCheckDate: null, longestStreakDate: null }
       }
+
+      // Get today and yesterday using proper timezone
+      const todayStr = getUserToday()
+      const yesterdayDate = new Date()
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+      const yesterdayStr = utcToUserDate(yesterdayDate.toISOString())
 
       // Calculate current streak
       let currentStreak = 0
-      const today = new Date()
-      today.setHours(today.getHours() + 9) // Convert to KST
-      const todayStr = format(today, 'yyyy-MM-dd')
-
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      yesterday.setHours(yesterday.getHours() + 9)
-      const yesterdayStr = format(yesterday, 'yyyy-MM-dd')
+      const lastCheckDateStr = uniqueDates[0]
 
       // Only count current streak if last check was today or yesterday
-      const lastCheckDateStr = uniqueDates[0]
       if (lastCheckDateStr === todayStr || lastCheckDateStr === yesterdayStr) {
         let expectedDateStr = lastCheckDateStr
         for (const dateStr of uniqueDates) {
@@ -222,10 +223,12 @@ export function createXPService(supabase: SupabaseClient): XPService {
         }
       }
 
-      // Calculate longest streak
-      const dates: Date[] = uniqueDates.map((dateStr: string) => new Date(dateStr))
+      // Calculate longest streak and track the end date
+      const dates: Date[] = uniqueDates.map((dateStr) => new Date(dateStr))
       let longestStreak = 0
       let tempStreak = 1
+      let longestStreakEndIndex = 0
+      let tempStreakStartIndex = 0
 
       for (let i = 0; i < dates.length - 1; i++) {
         const current = new Date(dates[i])
@@ -240,19 +243,41 @@ export function createXPService(supabase: SupabaseClient): XPService {
         } else {
           if (tempStreak > longestStreak) {
             longestStreak = tempStreak
+            longestStreakEndIndex = tempStreakStartIndex
           }
           tempStreak = 1
+          tempStreakStartIndex = i + 1
         }
       }
 
       if (tempStreak > longestStreak) {
         longestStreak = tempStreak
+        longestStreakEndIndex = tempStreakStartIndex
       }
 
-      return { current: currentStreak, longest: longestStreak }
+      // Get the most recent date of the longest streak period
+      const longestStreakDateStr = uniqueDates[longestStreakEndIndex]
+      let longestStreakDate: Date | null = null
+
+      if (longestStreakDateStr) {
+        // Find the most recent check on that date
+        for (const check of checks) {
+          if (utcToUserDate(check.checked_at) === longestStreakDateStr) {
+            longestStreakDate = new Date(check.checked_at)
+            break
+          }
+        }
+      }
+
+      return {
+        current: currentStreak,
+        longest: longestStreak,
+        lastCheckDate,
+        longestStreakDate
+      }
     } catch (error) {
       console.error('Error getting streak stats:', error)
-      return { current: 0, longest: 0 }
+      return { current: 0, longest: 0, lastCheckDate: null, longestStreakDate: null }
     }
   }
 

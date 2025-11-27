@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Modal } from 'react-native'
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Modal, TextInput, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useNavigation } from '@react-navigation/native'
@@ -23,9 +23,11 @@ import {
   Info,
   X,
   Lock,
+  Pencil,
+  Calendar,
 } from 'lucide-react-native'
 import { useAuthStore } from '../store/authStore'
-import { useUserGamification, useHeatmapData, useProfileStats } from '../hooks/useStats'
+import { useUserGamification, use4WeekHeatmap, useProfileStats } from '../hooks/useStats'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useBadgeDefinitions, useUserBadges, isBadgeUnlocked } from '../hooks/useBadges'
 import {
@@ -38,8 +40,11 @@ import {
   FAIR_XP_POLICIES,
   FAIR_BADGE_POLICIES,
   XP_MULTIPLIER_COLORS,
+  validateNickname,
+  NICKNAME_DIALOG,
+  NICKNAME_ERRORS,
 } from '@mandaact/shared'
-import ActivityHeatmap from '../components/ActivityHeatmap'
+import { supabase } from '../lib/supabase'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
 import type { BadgeDefinition } from '../hooks/useBadges'
 
@@ -87,16 +92,21 @@ function BadgeMiniCard({
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
-  const [selectedMonth, setSelectedMonth] = useState(new Date())
 
   // Collapsible states
   const [xpInfoOpen, setXpInfoOpen] = useState(false)
   const [badgeCollectionOpen, setBadgeCollectionOpen] = useState(false)
 
+  // Nickname editing states
+  const [nicknameModalVisible, setNicknameModalVisible] = useState(false)
+  const [newNickname, setNewNickname] = useState('')
+  const [nicknameError, setNicknameError] = useState('')
+  const [nicknameSaving, setNicknameSaving] = useState(false)
+
   // Data fetching
   const { data: gamification, isLoading: gamificationLoading } = useUserGamification(user?.id)
   const { data: profileStats, isLoading: profileStatsLoading } = useProfileStats(user?.id)
-  const { data: heatmapData = [], isLoading: heatmapLoading } = useHeatmapData(user?.id, selectedMonth)
+  const { data: fourWeekData = [], isLoading: fourWeekLoading } = use4WeekHeatmap(user?.id)
   const { data: badges = [], isLoading: badgesLoading } = useBadgeDefinitions()
   const { data: userBadges = [] } = useUserBadges(user?.id)
 
@@ -113,6 +123,14 @@ export default function HomeScreen() {
   const activeDays = profileStats?.activeDays || 0
   const currentStreak = gamification?.current_streak || 0
   const longestStreak = gamification?.longest_streak || 0
+  const lastCheckDate = gamification?.last_check_date
+  const longestStreakDate = gamification?.longest_streak_date
+
+  // Check if current equals longest (new record badge)
+  const isNewRecord = currentStreak === longestStreak && currentStreak > 0
+
+  // Today's date for heatmap highlight
+  const todayStr = new Date().toISOString().split('T')[0]
 
   // Badge stats
   const unlockedBadgeIds = new Set(userBadges.map(ub => ub.achievement_id))
@@ -121,6 +139,67 @@ export default function HomeScreen() {
 
   // Categorized badges
   const categorizedBadges = categorizeBadges(badges)
+
+  // Open nickname edit modal
+  const openNicknameModal = useCallback(() => {
+    setNewNickname(nickname)
+    setNicknameError('')
+    setNicknameModalVisible(true)
+  }, [nickname])
+
+  // Save nickname
+  const handleSaveNickname = useCallback(async () => {
+    if (!user) return
+
+    // Validate
+    const validation = validateNickname(newNickname)
+    if (!validation.isValid) {
+      setNicknameError(validation.error || '')
+      return
+    }
+
+    // Check if unchanged
+    if (newNickname === nickname) {
+      setNicknameModalVisible(false)
+      return
+    }
+
+    setNicknameSaving(true)
+    setNicknameError('')
+
+    try {
+      // Check if nickname is already taken
+      const { data: existing } = await supabase
+        .from('user_gamification')
+        .select('nickname')
+        .ilike('nickname', newNickname)
+        .neq('user_id', user.id)
+        .maybeSingle()
+
+      if (existing) {
+        setNicknameError(NICKNAME_ERRORS.ALREADY_TAKEN)
+        setNicknameSaving(false)
+        return
+      }
+
+      // Update nickname
+      const { error: updateError } = await supabase
+        .from('user_gamification')
+        .update({ nickname: newNickname })
+        .eq('user_id', user.id)
+
+      if (updateError) throw updateError
+
+      // Close modal and show success
+      setNicknameModalVisible(false)
+      Alert.alert('완료', '닉네임이 변경되었습니다.')
+    } catch (err) {
+      console.error('Nickname update error:', err)
+      setNicknameError(NICKNAME_ERRORS.UPDATE_ERROR)
+    } finally {
+      setNicknameSaving(false)
+    }
+  }, [user, newNickname, nickname])
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -157,7 +236,15 @@ export default function HomeScreen() {
                       레벨 {currentLevel}
                     </Text>
                   </View>
-                  <Text className="text-base text-gray-500">{nickname}</Text>
+                  <View className="flex-row items-center">
+                    <Text className="text-base text-gray-500">{nickname}</Text>
+                    <Pressable
+                      onPress={openNicknameModal}
+                      className="ml-2 p-1 rounded-full active:bg-gray-100"
+                    >
+                      <Pencil size={14} color="#9ca3af" />
+                    </Pressable>
+                  </View>
                 </View>
                 <View className="items-end">
                   <Text className="text-sm text-gray-400">총 XP</Text>
@@ -394,88 +481,167 @@ export default function HomeScreen() {
           )}
         </Animated.View>
 
-        {/* Streak Cards */}
-        <View className="flex-row gap-3 mb-4">
-          <Animated.View
-            entering={FadeInUp.delay(200).duration(400)}
-            className="flex-1 bg-white rounded-2xl p-4 border border-gray-200"
-          >
-            <View className="flex-row items-center mb-2">
-              <Flame size={16} color="#f59e0b" />
-              <Text className="text-sm text-gray-500 ml-1">현재 스트릭</Text>
-            </View>
-            <Text className="text-2xl font-bold text-amber-500">
-              {currentStreak}일
-            </Text>
-          </Animated.View>
-
-          <Animated.View
-            entering={FadeInUp.delay(250).duration(400)}
-            className="flex-1 bg-white rounded-2xl p-4 border border-gray-200"
-          >
-            <View className="flex-row items-center mb-2">
-              <Target size={16} color="#ef4444" />
-              <Text className="text-sm text-gray-500 ml-1">최장 스트릭</Text>
-            </View>
-            <Text className="text-2xl font-bold text-red-500">
-              {longestStreak}일
-            </Text>
-          </Animated.View>
-        </View>
-
-        {/* Activity Heatmap */}
-        <View className="mb-4">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">
-            활동 히트맵
-          </Text>
-          <ActivityHeatmap
-            data={heatmapData}
-            month={selectedMonth}
-            onMonthChange={setSelectedMonth}
-            isLoading={heatmapLoading}
-          />
-        </View>
-
-        {/* Quick Actions */}
+        {/* Streak Card - Web Aligned Design */}
         <Animated.View
-          entering={FadeInUp.delay(300).duration(400)}
-          className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200"
+          entering={FadeInUp.delay(200).duration(400)}
+          className="bg-white rounded-2xl p-5 shadow-sm mb-4 border border-gray-200"
         >
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            빠른 실행
-          </Text>
-          <View className="flex-row gap-3 mb-3">
-            <Pressable
-              className="flex-1 bg-gray-900 rounded-xl py-4 items-center flex-row justify-center"
-              onPress={() => navigation.navigate('Today')}
-            >
-              <CalendarCheck size={18} color="#ffffff" />
-              <Text className="text-white font-semibold ml-2">오늘의 실천</Text>
-            </Pressable>
-            <Pressable
-              className="flex-1 bg-white border border-gray-300 rounded-xl py-4 items-center flex-row justify-center"
-              onPress={() => navigation.navigate('Mandalart')}
-            >
-              <Grid3X3 size={18} color="#374151" />
-              <Text className="text-gray-700 font-semibold ml-2">만다라트 관리</Text>
-            </Pressable>
+          {/* Header */}
+          <View className="flex-row items-center gap-2 mb-1">
+            <Flame size={20} color="#f97316" />
+            <Text className="text-lg font-bold text-orange-500">스트릭</Text>
           </View>
-          <View className="flex-row gap-3">
-            <Pressable
-              className="flex-1 bg-white border border-gray-300 rounded-xl py-4 items-center flex-row justify-center"
-              onPress={() => navigation.navigate('Reports')}
-            >
-              <FileText size={18} color="#8b5cf6" />
-              <Text className="text-gray-700 font-semibold ml-2">AI 리포트</Text>
-            </Pressable>
-            <Pressable
-              className="flex-1 bg-white border border-gray-300 rounded-xl py-4 items-center flex-row justify-center"
-              onPress={() => navigation.navigate('Badges')}
-            >
-              <Award size={18} color="#f59e0b" />
-              <Text className="text-gray-700 font-semibold ml-2">뱃지</Text>
-            </Pressable>
+          <Text className="text-sm text-gray-500 mb-4">연속 실천 기록</Text>
+
+          {/* Current Streak & Longest Streak - Side by Side */}
+          <View className="flex-row gap-3 mb-4">
+            {/* Current Streak */}
+            <View className="flex-1 p-4 rounded-xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 items-center">
+              <Flame size={32} color="#f97316" />
+              <Text className="text-4xl font-bold text-orange-500 my-1">
+                {currentStreak}
+              </Text>
+              <Text className="text-sm font-semibold text-gray-500">일 연속</Text>
+              {currentStreak > 0 && lastCheckDate && (
+                <View className="mt-2 items-center">
+                  <Text className="text-xs text-gray-400">
+                    {new Date(lastCheckDate).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                    }).replace(/\. /g, '.').replace(/\.$/, '')}
+                  </Text>
+                  <Text className="text-xs text-gray-400">
+                    {new Date(lastCheckDate).toLocaleTimeString('ko-KR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Longest Streak */}
+            <View className="flex-1 p-4 rounded-xl border border-gray-200 bg-gray-50 items-center relative">
+              {isNewRecord && (
+                <View className="absolute -top-2 -right-2 px-2 py-1 bg-yellow-100 rounded-full border border-yellow-300">
+                  <Text className="text-xs font-bold text-yellow-700">신기록!</Text>
+                </View>
+              )}
+              <Trophy size={32} color="#eab308" />
+              <Text className="text-4xl font-bold text-gray-900 my-1">
+                {longestStreak}
+              </Text>
+              <Text className="text-sm font-semibold text-gray-500">최장 기록</Text>
+              {longestStreak > 0 && longestStreakDate && (
+                <View className="mt-2 items-center">
+                  <Text className="text-xs text-gray-400">
+                    {new Date(longestStreakDate).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                    }).replace(/\. /g, '.').replace(/\.$/, '')}
+                  </Text>
+                  <Text className="text-xs text-gray-400">
+                    {new Date(longestStreakDate).toLocaleTimeString('ko-KR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
+
+          {/* 4-Week Heatmap */}
+          <View>
+            <View className="flex-row items-center gap-2 mb-3">
+              <Calendar size={16} color="#6b7280" />
+              <Text className="text-sm font-medium text-gray-700">최근 4주 활동</Text>
+            </View>
+
+            {fourWeekLoading ? (
+              <View className="py-4 items-center">
+                <ActivityIndicator size="small" color="#667eea" />
+              </View>
+            ) : (
+              <>
+                {/* 28-day grid: 4 rows x 7 columns */}
+                <View className="mb-3">
+                  {[0, 1, 2, 3].map((rowIndex) => (
+                    <View key={rowIndex} className="flex-row justify-between mb-2">
+                      {fourWeekData.slice(rowIndex * 7, rowIndex * 7 + 7).map((day) => {
+                        const isToday = day.date === todayStr
+                        const intensity = day.percentage >= 80
+                          ? 'high'
+                          : day.percentage >= 50
+                            ? 'medium'
+                            : day.percentage >= 20
+                              ? 'low'
+                              : day.percentage > 0
+                                ? 'minimal'
+                                : 'none'
+
+                        return (
+                          <View
+                            key={day.date}
+                            style={{ width: 36, height: 36 }}
+                            className={`rounded-sm ${
+                              isToday ? 'border-2 border-primary' : ''
+                            } ${
+                              intensity === 'high'
+                                ? 'bg-green-500'
+                                : intensity === 'medium'
+                                  ? 'bg-green-400'
+                                  : intensity === 'low'
+                                    ? 'bg-green-300'
+                                    : intensity === 'minimal'
+                                      ? 'bg-green-200'
+                                      : 'bg-gray-200'
+                            }`}
+                          />
+                        )
+                      })}
+                    </View>
+                  ))}
+                </View>
+
+                {/* Legend */}
+                <View className="flex-row items-center justify-center gap-2">
+                  <Text className="text-xs text-gray-400">0%</Text>
+                  <View className="w-3 h-3 bg-gray-200 rounded-sm" />
+                  <View className="w-3 h-3 bg-green-200 rounded-sm" />
+                  <View className="w-3 h-3 bg-green-300 rounded-sm" />
+                  <View className="w-3 h-3 bg-green-400 rounded-sm" />
+                  <View className="w-3 h-3 bg-green-500 rounded-sm" />
+                  <Text className="text-xs text-gray-400">100%</Text>
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Motivational Message */}
+          {currentStreak === 0 ? (
+            <View className="mt-4 px-3 py-3 bg-gray-100 rounded-xl border-l-4 border-gray-400">
+              <Text className="text-sm text-gray-600 text-center">
+                오늘부터 새로운 스트릭을 시작해보세요! 🌱
+              </Text>
+            </View>
+          ) : currentStreak >= 7 ? (
+            <View className="mt-4 px-3 py-3 bg-orange-50 rounded-xl border-l-4 border-orange-500">
+              <Text className="text-sm text-gray-700 font-medium text-center">
+                대단해요! 꾸준함이 습관이 되고 있어요 🎉
+              </Text>
+            </View>
+          ) : (
+            <View className="mt-4 px-3 py-3 bg-gray-100 rounded-xl border-l-4 border-gray-400">
+              <Text className="text-sm text-gray-600 text-center">
+                7일 연속까지 {7 - currentStreak}일 남았어요. 계속 이대로! 💪
+              </Text>
+            </View>
+          )}
         </Animated.View>
 
         {/* Tutorial Banner */}
@@ -502,6 +668,79 @@ export default function HomeScreen() {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
+
+      {/* Nickname Edit Modal */}
+      <Modal
+        visible={nicknameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNicknameModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl w-full max-w-sm p-6">
+            {/* Header */}
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-lg font-bold text-gray-900">
+                {NICKNAME_DIALOG.TITLE}
+              </Text>
+              <Pressable
+                onPress={() => setNicknameModalVisible(false)}
+                className="p-1 rounded-full active:bg-gray-100"
+              >
+                <X size={20} color="#6b7280" />
+              </Pressable>
+            </View>
+
+            {/* Description */}
+            <Text className="text-sm text-gray-500 mb-4">
+              {NICKNAME_DIALOG.DESCRIPTION}
+            </Text>
+
+            {/* Input */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                {NICKNAME_DIALOG.LABEL}
+              </Text>
+              <TextInput
+                value={newNickname}
+                onChangeText={setNewNickname}
+                placeholder={NICKNAME_DIALOG.PLACEHOLDER}
+                maxLength={12}
+                editable={!nicknameSaving}
+                className="border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-900"
+                placeholderTextColor="#9ca3af"
+              />
+              {nicknameError ? (
+                <Text className="text-sm text-red-500 mt-2">{nicknameError}</Text>
+              ) : null}
+            </View>
+
+            {/* Buttons */}
+            <View className="space-y-2">
+              <Pressable
+                onPress={handleSaveNickname}
+                disabled={nicknameSaving}
+                className={`py-3 rounded-xl items-center ${
+                  nicknameSaving ? 'bg-gray-400' : 'bg-gray-900'
+                }`}
+              >
+                <Text className="text-white font-semibold">
+                  {nicknameSaving ? NICKNAME_DIALOG.SAVING : NICKNAME_DIALOG.SAVE}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setNicknameModalVisible(false)}
+                disabled={nicknameSaving}
+                className="py-3 rounded-xl items-center border border-gray-300"
+              >
+                <Text className="text-gray-700 font-semibold">
+                  {NICKNAME_DIALOG.CANCEL}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }

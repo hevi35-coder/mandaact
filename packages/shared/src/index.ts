@@ -13,6 +13,7 @@ export * from './lib/timezone'
 export * from './lib/xpUtils'
 export * from './lib/xpService'
 export * from './lib/xpInfo'
+export * from './lib/nicknameUtils'
 
 // Constants
 export * from './constants'

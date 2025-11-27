@@ -30,6 +30,8 @@ export interface UserGamification {
   current_level: number
   current_streak: number
   longest_streak: number
+  last_check_date: Date | null
+  longest_streak_date: Date | null
   created_at: string
   updated_at: string
 }
@@ -129,6 +131,8 @@ export function useUserGamification(userId: string | undefined) {
         current_level: levelData.level,
         current_streak: streakStats.current,
         longest_streak: streakStats.longest,
+        last_check_date: streakStats.lastCheckDate,
+        longest_streak_date: streakStats.longestStreakDate,
         created_at: levelData.created_at,
         updated_at: levelData.updated_at,
       }
@@ -270,6 +274,93 @@ export function useHeatmapData(userId: string | undefined, month: Date = new Dat
 
         return { date: dateStr, count, level }
       })
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+export interface FourWeekHeatmapData {
+  date: string
+  count: number
+  percentage: number
+}
+
+/**
+ * Hook to fetch 4-week (28 days) heatmap data for streak display
+ */
+export function use4WeekHeatmap(userId: string | undefined) {
+  return useQuery({
+    queryKey: [...statsKeys.user(userId || ''), '4week-heatmap'] as const,
+    queryFn: async (): Promise<FourWeekHeatmapData[]> => {
+      // Get date range for last 28 days
+      const endDate = new Date()
+      const startDate = subDays(endDate, 27) // 28 days including today
+
+      const startStr = format(startDate, 'yyyy-MM-dd')
+      const endStr = format(endDate, 'yyyy-MM-dd')
+
+      // Get UTC bounds
+      const { start: startUTC } = getDayBoundsUTC(startStr)
+      const { end: endUTC } = getDayBoundsUTC(endStr)
+
+      // Get all checks in the 28-day period
+      const { data: checksData, error: checksError } = await supabase
+        .from('check_history')
+        .select('checked_at')
+        .eq('user_id', userId!)
+        .gte('checked_at', startUTC)
+        .lt('checked_at', endUTC)
+
+      if (checksError) throw checksError
+
+      // Get total checkable actions for percentage calculation
+      const { data: actionsData, error: actionsError } = await supabase
+        .from('actions')
+        .select(`
+          id,
+          type,
+          sub_goal:sub_goals (
+            mandalart:mandalarts (
+              user_id,
+              is_active
+            )
+          )
+        `)
+        .eq('sub_goal.mandalart.user_id', userId!)
+        .eq('sub_goal.mandalart.is_active', true)
+
+      if (actionsError) throw actionsError
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const checkableActions = (actionsData || []).filter((action: any) =>
+        action.type !== 'reference' &&
+        action.sub_goal &&
+        Array.isArray(action.sub_goal) &&
+        action.sub_goal[0]?.mandalart
+      )
+
+      const totalActions = checkableActions.length
+
+      // Count checks per day
+      const checksByDay: Record<string, number> = {}
+      checksData?.forEach((check) => {
+        const dateStr = format(new Date(check.checked_at), 'yyyy-MM-dd')
+        checksByDay[dateStr] = (checksByDay[dateStr] || 0) + 1
+      })
+
+      // Build 28-day array with percentages
+      const result: FourWeekHeatmapData[] = []
+      for (let i = 0; i < 28; i++) {
+        const date = subDays(endDate, 27 - i) // Start from oldest to newest
+        const dateStr = format(date, 'yyyy-MM-dd')
+        const count = checksByDay[dateStr] || 0
+        const percentage = totalActions > 0 ? Math.round((count / totalActions) * 100) : 0
+
+        result.push({ date: dateStr, count, percentage })
+      }
+
+      return result
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
