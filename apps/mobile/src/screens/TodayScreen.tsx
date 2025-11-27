@@ -30,7 +30,8 @@ import {
   useToggleActionCheck,
   ActionWithContext,
 } from '../hooks/useActions'
-import { useDailyStats } from '../hooks/useStats'
+import { useDailyStats, useXPUpdate } from '../hooks/useStats'
+import { useToast } from '../components/Toast'
 import {
   shouldShowToday,
   getActionTypeLabel,
@@ -68,6 +69,7 @@ export default function TodayScreen() {
   )
   const [refreshing, setRefreshing] = useState(false)
   const [checkingActions, setCheckingActions] = useState<Set<string>>(new Set())
+  const toast = useToast()
 
   // Type filter state - multiple selection using Set (Web과 동일)
   const [activeFilters, setActiveFilters] = useState<Set<ActionType>>(new Set())
@@ -101,6 +103,7 @@ export default function TodayScreen() {
 
   // Mutations
   const toggleCheck = useToggleActionCheck()
+  const { awardXP, checkPerfectDay } = useXPUpdate()
 
   // Filter toggle functions (Web과 동일)
   const toggleFilter = useCallback((type: ActionType) => {
@@ -192,12 +195,57 @@ export default function TodayScreen() {
       setCheckingActions((prev) => new Set(prev).add(action.id))
 
       try {
+        const wasChecked = action.is_checked
+
         await toggleCheck.mutateAsync({
           actionId: action.id,
           userId: user.id,
           isChecked: action.is_checked,
           checkId: action.check_id,
         })
+
+        // Award XP only when checking (not unchecking)
+        if (!wasChecked) {
+          try {
+            // Award base XP (10) + streak bonus if applicable
+            const xpResult = await awardXP(user.id, 10)
+
+            // Show XP toast
+            if (xpResult.multipliers.length > 0) {
+              const totalMultiplier = xpResult.multipliers.reduce((sum, m) => sum + m.multiplier, 0)
+              toast.success(`+${xpResult.finalXP} XP`, `×${totalMultiplier.toFixed(1)} 배율 적용!`)
+            } else {
+              toast.success(`+${xpResult.finalXP} XP`, '실천 완료!')
+            }
+
+            // Show level up toast
+            if (xpResult.leveledUp) {
+              setTimeout(() => {
+                toast.success('🎉 레벨 업!', '축하합니다! 레벨이 올랐습니다!')
+              }, 1500)
+            }
+
+            // Check for perfect day bonus (after a short delay)
+            setTimeout(async () => {
+              try {
+                const checkDate = format(selectedDate, 'yyyy-MM-dd')
+                const perfectResult = await checkPerfectDay(user.id, checkDate)
+
+                if (perfectResult.is_perfect_day && perfectResult.xp_awarded > 0) {
+                  toast.success('⭐ 완벽한 하루!', `+${perfectResult.xp_awarded} XP 보너스!`)
+                  logger.info('Perfect day bonus awarded', { xp: perfectResult.xp_awarded })
+                }
+              } catch (bonusError) {
+                logger.error('Perfect day check error', bonusError)
+              }
+            }, 500)
+
+            logger.info('XP awarded', { xp: xpResult.finalXP, multipliers: xpResult.multipliers.length })
+          } catch (xpError) {
+            logger.error('XP award error', xpError)
+            // Don't fail the whole operation if XP update fails
+          }
+        }
       } catch (err) {
         logger.error('Check toggle error', err)
         Alert.alert('오류', '체크 상태를 변경하는 중 오류가 발생했습니다.')
@@ -209,7 +257,7 @@ export default function TodayScreen() {
         })
       }
     },
-    [user, checkingActions, toggleCheck]
+    [user, checkingActions, toggleCheck, awardXP, checkPerfectDay, selectedDate, toast]
   )
 
   // Loading state
