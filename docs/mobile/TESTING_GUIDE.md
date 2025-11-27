@@ -1,8 +1,54 @@
 # React Native 모바일 앱 테스트 가이드
 
-**최종 업데이트**: 2025-11-26
+**최종 업데이트**: 2025-11-27
 **앱 버전**: 1.0.0
-**Expo SDK**: 54
+**Expo SDK**: 52
+
+---
+
+## ⚠️ 실제 기기 테스트 제약사항 (2025-11-27)
+
+### SDK 버전 불일치 문제
+
+| 항목 | 버전 |
+|------|------|
+| 프로젝트 SDK | **52** |
+| Expo Go (iOS/Android) | **54** |
+
+**문제**: Expo Go 앱은 항상 최신 SDK만 지원하므로, SDK 52 프로젝트를 실제 기기의 Expo Go에서 실행할 수 없습니다.
+
+### 시도한 방법들
+
+| 방법 | 결과 | 이유 |
+|------|------|------|
+| LAN 모드 (`npx expo start`) | ❌ 실패 | SDK 버전 불일치 |
+| Tunnel 모드 (`npx expo start --tunnel`) | ❌ 실패 | SDK 버전 불일치 |
+| Expo Go 다운그레이드 (iOS) | ❌ 불가 | App Store 정책 |
+| Expo Go 다운그레이드 (Android) | ⚠️ 가능 | APK 직접 설치 필요 |
+
+### 실제 기기 테스트 옵션
+
+| 방법 | 요구사항 | 추천 |
+|------|----------|------|
+| **iOS 시뮬레이터** | macOS + Xcode | ✅ **현재 사용** |
+| Android 에뮬레이터 | Android Studio | ✅ 대안 |
+| Development Build | Apple Developer ($99/년) | 앱 출시 시 |
+| Android APK (SDK 52) | Android 기기 | 차선책 |
+| 프로젝트 SDK 업그레이드 | 호환성 검증 필요 | 장기 계획 |
+
+### Android에서 구버전 Expo Go 설치
+
+Android 기기가 있다면 SDK 52용 Expo Go APK를 직접 설치할 수 있습니다:
+
+```
+https://expo.dev/go?sdkVersion=52&platform=android
+```
+
+### 결론
+
+- **개발 단계**: iOS 시뮬레이터 사용 (`i` 키)
+- **QA/베타 테스트**: Development Build 생성 (Apple Developer 계정 필요)
+- **앱스토어 출시**: EAS Build로 프로덕션 빌드 생성
 
 ---
 

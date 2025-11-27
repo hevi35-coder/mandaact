@@ -26,6 +26,7 @@
     "date-fns-tz": "catalog:",
     "expo": "catalog:",
     "expo-application": "catalog:",
+    "expo-dev-client": "~5.0.20",
     "expo-device": "catalog:",
     "expo-file-system": "catalog:",
     "expo-image": "catalog:",
