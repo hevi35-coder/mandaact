@@ -28,6 +28,7 @@ import { useAuthStore } from '../store/authStore'
 import {
   useTodayActions,
   useToggleActionCheck,
+  useUpdateAction,
   ActionWithContext,
 } from '../hooks/useActions'
 import { useDailyStats, useXPUpdate } from '../hooks/useStats'
@@ -36,11 +37,14 @@ import {
   shouldShowToday,
   getActionTypeLabel,
   formatTypeDetails,
+  isTodayOrYesterday,
   type ActionType,
 } from '@mandaact/shared'
 import type { Mandalart } from '@mandaact/shared'
 import { logger } from '../lib/logger'
 import { badgeService } from '../lib/badge'
+import DatePickerModal from '../components/DatePickerModal'
+import ActionTypeSelector, { type ActionTypeData } from '../components/ActionTypeSelector'
 
 // Action type icon component - colors match web exactly
 function ActionTypeIcon({
@@ -77,9 +81,19 @@ export default function TodayScreen() {
   // Type filter collapse state - default collapsed (Web과 동일)
   const [typeFilterCollapsed, setTypeFilterCollapsed] = useState(true)
 
+  // Date picker modal state
+  const [datePickerVisible, setDatePickerVisible] = useState(false)
+
+  // Action type selector state
+  const [typeSelectorVisible, setTypeSelectorVisible] = useState(false)
+  const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionWithContext | null>(null)
+
   // Date navigation
   const today = startOfDay(new Date())
   const isToday = isSameDay(selectedDate, today)
+
+  // Check if selected date allows checking (today or yesterday only)
+  const canCheck = isTodayOrYesterday(selectedDate)
 
   const handlePreviousDay = useCallback(() => {
     setSelectedDate((prev) => addDays(prev, -1))
@@ -104,7 +118,47 @@ export default function TodayScreen() {
 
   // Mutations
   const toggleCheck = useToggleActionCheck()
+  const updateAction = useUpdateAction()
   const { awardXP, subtractXP, checkPerfectDay, checkPerfectWeek } = useXPUpdate()
+
+  // Handle date selection from picker
+  const handleDateSelect = useCallback((date: Date) => {
+    setSelectedDate(date)
+  }, [])
+
+  // Handle type badge press - open type editor
+  const handleTypeBadgePress = useCallback((action: ActionWithContext) => {
+    setSelectedActionForTypeEdit(action)
+    setTypeSelectorVisible(true)
+  }, [])
+
+  // Handle type save
+  const handleTypeSave = useCallback(async (data: ActionTypeData) => {
+    if (!selectedActionForTypeEdit) return
+
+    try {
+      await updateAction.mutateAsync({
+        id: selectedActionForTypeEdit.id,
+        updates: {
+          type: data.type,
+          routine_frequency: data.routine_frequency,
+          routine_weekdays: data.routine_weekdays,
+          routine_count_per_period: data.routine_count_per_period,
+          mission_completion_type: data.mission_completion_type,
+          mission_period_cycle: data.mission_period_cycle,
+          mission_current_period_start: data.mission_current_period_start,
+          mission_current_period_end: data.mission_current_period_end,
+          ai_suggestion: data.ai_suggestion,
+        },
+      })
+
+      toast.success('타입 변경 완료', '실천 항목 타입이 변경되었습니다')
+      refetch()
+    } catch (error) {
+      logger.error('Error saving action type', error)
+      toast.error('오류', '타입 변경 중 오류가 발생했습니다')
+    }
+  }, [selectedActionForTypeEdit, updateAction, refetch, toast])
 
   // Filter toggle functions (Web과 동일)
   const toggleFilter = useCallback((type: ActionType) => {
@@ -192,6 +246,7 @@ export default function TodayScreen() {
       if (!user) return
       if (checkingActions.has(action.id)) return
       if (action.type === 'reference') return
+      if (!canCheck) return // Only allow checking on today or yesterday
 
       setCheckingActions((prev) => new Set(prev).add(action.id))
 
@@ -289,7 +344,7 @@ export default function TodayScreen() {
         })
       }
     },
-    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast]
+    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck]
   )
 
   // Loading state
@@ -363,13 +418,16 @@ export default function TodayScreen() {
               </Pressable>
             </View>
 
-            {/* 날짜 표시 버튼 */}
-            <View className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-2">
+            {/* 날짜 표시 버튼 - Pressable로 변경 (캘린더 모달 열기) */}
+            <Pressable
+              onPress={() => setDatePickerVisible(true)}
+              className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-2 active:bg-gray-50"
+            >
               <Calendar size={16} color="#6b7280" />
               <Text className="text-sm text-gray-700 ml-2">
                 {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
               </Text>
-            </View>
+            </Pressable>
           </View>
         </View>
 
@@ -606,69 +664,76 @@ export default function TodayScreen() {
                     {/* Actions in this Mandalart */}
                     {!isCollapsed && (
                       <View className="mt-2 space-y-2">
-                        {mandalartActions.map((action) => (
-                          <Pressable
-                            key={action.id}
-                            onPress={() => handleToggleCheck(action)}
-                            disabled={
-                              action.type === 'reference' ||
-                              checkingActions.has(action.id)
-                            }
-                            className={`flex-row items-center p-4 bg-white rounded-xl border ${
-                              action.is_checked
-                                ? 'border-gray-200 bg-gray-50'
-                                : action.type === 'reference'
-                                  ? 'border-gray-100 bg-gray-50/50'
-                                  : 'border-gray-200'
-                            }`}
-                          >
-                            {/* Checkbox - 사각형 스타일 (Web과 동일) */}
-                            <View className="mr-3">
-                              {checkingActions.has(action.id) ? (
-                                <ActivityIndicator size="small" color="#374151" />
-                              ) : action.is_checked ? (
-                                <View className="w-5 h-5 bg-gray-900 rounded border border-gray-900 items-center justify-center">
-                                  <Check size={14} color="#ffffff" strokeWidth={3} />
-                                </View>
-                              ) : (
-                                <View
-                                  className={`w-5 h-5 rounded border-2 ${
-                                    action.type === 'reference'
-                                      ? 'border-gray-300 bg-gray-100'
-                                      : 'border-gray-400'
-                                  }`}
-                                />
-                              )}
-                            </View>
+                        {mandalartActions.map((action) => {
+                          // Check if action can be checked (not reference AND date is today/yesterday)
+                          const isCheckDisabled = action.type === 'reference' || !canCheck
 
-                            {/* Content */}
-                            <View className="flex-1">
-                              <Text
-                                className={`text-base ${
-                                  action.is_checked
-                                    ? 'text-gray-500 line-through'
-                                    : 'text-gray-900'
-                                }`}
+                          return (
+                            <View
+                              key={action.id}
+                              className={`flex-row items-center p-4 bg-white rounded-xl border ${
+                                action.is_checked
+                                  ? 'border-gray-200 bg-gray-50'
+                                  : action.type === 'reference' || !canCheck
+                                    ? 'border-gray-100 bg-gray-50/50'
+                                    : 'border-gray-200'
+                              }`}
+                            >
+                              {/* Checkbox - 사각형 스타일 (Web과 동일) */}
+                              <Pressable
+                                onPress={() => handleToggleCheck(action)}
+                                disabled={isCheckDisabled || checkingActions.has(action.id)}
+                                className="mr-3"
                               >
-                                {action.title}
-                              </Text>
-                              <View className="flex-row items-center mt-1">
-                                <Text className="text-xs text-gray-400">
-                                  {action.sub_goal.title}
-                                </Text>
-                              </View>
-                            </View>
+                                {checkingActions.has(action.id) ? (
+                                  <ActivityIndicator size="small" color="#374151" />
+                                ) : action.is_checked ? (
+                                  <View className="w-5 h-5 bg-gray-900 rounded border border-gray-900 items-center justify-center">
+                                    <Check size={14} color="#ffffff" strokeWidth={3} />
+                                  </View>
+                                ) : (
+                                  <View
+                                    className={`w-5 h-5 rounded border-2 ${
+                                      isCheckDisabled
+                                        ? 'border-gray-300 bg-gray-100'
+                                        : 'border-gray-400'
+                                    }`}
+                                  />
+                                )}
+                              </Pressable>
 
-                            {/* Type Badge */}
-                            <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg">
-                              <ActionTypeIcon type={action.type} size={14} />
-                              <Text className="text-xs text-gray-600 ml-1">
-                                {formatTypeDetails(action) ||
-                                  getActionTypeLabel(action.type)}
-                              </Text>
+                              {/* Content */}
+                              <View className="flex-1">
+                                <Text
+                                  className={`text-base ${
+                                    action.is_checked
+                                      ? 'text-gray-500 line-through'
+                                      : 'text-gray-900'
+                                  }`}
+                                >
+                                  {action.title}
+                                </Text>
+                                <View className="flex-row items-center mt-1">
+                                  <Text className="text-xs text-gray-400">
+                                    {action.sub_goal.title}
+                                  </Text>
+                                </View>
+                              </View>
+
+                              {/* Type Badge - Pressable로 변경 (타입 수정 모달 열기) */}
+                              <Pressable
+                                onPress={() => handleTypeBadgePress(action)}
+                                className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200 active:bg-gray-200"
+                              >
+                                <ActionTypeIcon type={action.type} size={14} />
+                                <Text className="text-xs text-gray-600 ml-1">
+                                  {formatTypeDetails(action) ||
+                                    getActionTypeLabel(action.type)}
+                                </Text>
+                              </Pressable>
                             </View>
-                          </Pressable>
-                        ))}
+                          )
+                        })}
                       </View>
                     )}
                   </View>
@@ -681,6 +746,43 @@ export default function TodayScreen() {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
+
+      {/* Date Picker Modal */}
+      <DatePickerModal
+        visible={datePickerVisible}
+        selectedDate={selectedDate}
+        onSelect={handleDateSelect}
+        onClose={() => setDatePickerVisible(false)}
+      />
+
+      {/* Action Type Selector Modal */}
+      {selectedActionForTypeEdit && (
+        <ActionTypeSelector
+          visible={typeSelectorVisible}
+          actionId={selectedActionForTypeEdit.id}
+          actionTitle={selectedActionForTypeEdit.title}
+          initialData={{
+            type: selectedActionForTypeEdit.type,
+            routine_frequency: selectedActionForTypeEdit.routine_frequency,
+            routine_weekdays: selectedActionForTypeEdit.routine_weekdays,
+            routine_count_per_period: selectedActionForTypeEdit.routine_count_per_period,
+            mission_completion_type: selectedActionForTypeEdit.mission_completion_type,
+            mission_period_cycle: selectedActionForTypeEdit.mission_period_cycle,
+            mission_current_period_start: selectedActionForTypeEdit.mission_current_period_start,
+            mission_current_period_end: selectedActionForTypeEdit.mission_current_period_end,
+            ai_suggestion: selectedActionForTypeEdit.ai_suggestion
+              ? (typeof selectedActionForTypeEdit.ai_suggestion === 'string'
+                ? JSON.parse(selectedActionForTypeEdit.ai_suggestion)
+                : selectedActionForTypeEdit.ai_suggestion)
+              : undefined,
+          }}
+          onClose={() => {
+            setTypeSelectorVisible(false)
+            setSelectedActionForTypeEdit(null)
+          }}
+          onSave={handleTypeSave}
+        />
+      )}
     </SafeAreaView>
   )
 }
