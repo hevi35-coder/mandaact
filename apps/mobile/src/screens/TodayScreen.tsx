@@ -193,25 +193,38 @@ export default function TodayScreen() {
     })
   }, [actions, activeFilters, selectedDate])
 
-  // Group actions by mandalart
+  // Group actions by mandalart and sort by sub_goal.position, then action.position
   const actionsByMandalart = useMemo(() => {
-    return filteredActions.reduce(
-      (groups, action) => {
+    const groups = filteredActions.reduce(
+      (acc, action) => {
         const mandalartId = action.sub_goal.mandalart.id
-        if (!groups[mandalartId]) {
-          groups[mandalartId] = {
+        if (!acc[mandalartId]) {
+          acc[mandalartId] = {
             mandalart: action.sub_goal.mandalart,
             actions: [],
           }
         }
-        groups[mandalartId].actions.push(action)
-        return groups
+        acc[mandalartId].actions.push(action)
+        return acc
       },
       {} as Record<
         string,
         { mandalart: Mandalart; actions: ActionWithContext[] }
       >
     )
+
+    // Sort actions within each mandalart group
+    Object.values(groups).forEach((group) => {
+      group.actions.sort((a, b) => {
+        // Primary: sort by sub_goal.position
+        const subGoalDiff = a.sub_goal.position - b.sub_goal.position
+        if (subGoalDiff !== 0) return subGoalDiff
+        // Secondary: sort by action.position
+        return a.position - b.position
+      })
+    })
+
+    return groups
   }, [filteredActions])
 
   // Calculate progress (exclude reference actions)

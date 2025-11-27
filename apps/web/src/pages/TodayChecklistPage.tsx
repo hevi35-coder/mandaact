@@ -417,18 +417,33 @@ export default function TodayChecklistPage() {
     return activeFilters.has(action.type)
   }), [actions, activeFilters, selectedDate])
 
-  // Group actions by mandalart
-  const actionsByMandalart = useMemo(() => filteredActions.reduce((groups, action) => {
-    const mandalartId = action.sub_goal.mandalart.id
-    if (!groups[mandalartId]) {
-      groups[mandalartId] = {
-        mandalart: action.sub_goal.mandalart,
-        actions: []
+  // Group actions by mandalart and sort by sub_goal.position, then action.position
+  const actionsByMandalart = useMemo(() => {
+    const groups = filteredActions.reduce((acc, action) => {
+      const mandalartId = action.sub_goal.mandalart.id
+      if (!acc[mandalartId]) {
+        acc[mandalartId] = {
+          mandalart: action.sub_goal.mandalart,
+          actions: []
+        }
       }
-    }
-    groups[mandalartId].actions.push(action)
+      acc[mandalartId].actions.push(action)
+      return acc
+    }, {} as Record<string, { mandalart: Mandalart; actions: ActionWithContext[] }>)
+
+    // Sort actions within each mandalart group
+    Object.values(groups).forEach(group => {
+      group.actions.sort((a, b) => {
+        // Primary: sort by sub_goal.position
+        const subGoalDiff = a.sub_goal.position - b.sub_goal.position
+        if (subGoalDiff !== 0) return subGoalDiff
+        // Secondary: sort by action.position
+        return a.position - b.position
+      })
+    })
+
     return groups
-  }, {} as Record<string, { mandalart: Mandalart; actions: ActionWithContext[] }>), [filteredActions])
+  }, [filteredActions])
 
   // Section collapse state - default expanded
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
