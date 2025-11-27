@@ -43,6 +43,8 @@ export interface BadgeService {
   evaluateAndUnlockBadges: (userId: string) => Promise<BadgeEvaluationResult[]>
   evaluateSingleBadge: (userId: string, badge: Achievement) => Promise<BadgeEvaluationResult | null>
   getBadgeProgress: (userId: string, badge: Achievement) => Promise<BadgeProgress | null>
+  getNewlyUnlockedBadges: (userId: string, sinceTimestamp: string) => Promise<BadgeEvaluationResult[]>
+  getUserBadgeIds: (userId: string) => Promise<string[]>
 }
 
 // ============================================================================
@@ -235,10 +237,86 @@ export function createBadgeService(supabase: SupabaseClient): BadgeService {
     }
   }
 
+  /**
+   * Get user's current badge IDs (for comparison before/after check)
+   */
+  async function getUserBadgeIds(userId: string): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('user_achievements')
+        .select('achievement_id')
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Error fetching user badge IDs:', error)
+        return []
+      }
+
+      return data?.map((ua: { achievement_id: string }) => ua.achievement_id) || []
+    } catch (error) {
+      console.error('Error in getUserBadgeIds:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get badges unlocked since a specific timestamp
+   * This detects badges awarded by DB triggers (e.g., first_check)
+   */
+  async function getNewlyUnlockedBadges(userId: string, sinceTimestamp: string): Promise<BadgeEvaluationResult[]> {
+    const results: BadgeEvaluationResult[] = []
+
+    try {
+      // Get achievements unlocked since the timestamp
+      const { data: recentUnlocks, error: unlocksError } = await supabase
+        .from('user_achievements')
+        .select(`
+          achievement_id,
+          unlocked_at,
+          achievement:achievements (
+            id,
+            key,
+            title,
+            xp_reward,
+            emotional_message
+          )
+        `)
+        .eq('user_id', userId)
+        .gte('unlocked_at', sinceTimestamp)
+
+      if (unlocksError) {
+        console.error('Error fetching recent unlocks:', unlocksError)
+        return results
+      }
+
+      // Convert to BadgeEvaluationResult format
+      for (const unlock of recentUnlocks || []) {
+        const achievement = unlock.achievement as any
+        if (achievement) {
+          results.push({
+            badgeKey: achievement.key,
+            badgeTitle: achievement.title,
+            wasUnlocked: true,
+            xpAwarded: achievement.xp_reward,
+            progress: 100,
+            emotionalMessage: achievement.emotional_message
+          })
+        }
+      }
+
+      return results
+    } catch (error) {
+      console.error('Error in getNewlyUnlockedBadges:', error)
+      return results
+    }
+  }
+
   // Return service object
   return {
     evaluateAndUnlockBadges,
     evaluateSingleBadge,
-    getBadgeProgress
+    getBadgeProgress,
+    getNewlyUnlockedBadges,
+    getUserBadgeIds
   }
 }

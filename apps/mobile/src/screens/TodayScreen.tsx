@@ -198,6 +198,9 @@ export default function TodayScreen() {
       try {
         const wasChecked = action.is_checked
 
+        // Save timestamp BEFORE check for detecting trigger-awarded badges
+        const beforeCheckTime = new Date().toISOString()
+
         await toggleCheck.mutateAsync({
           actionId: action.id,
           userId: user.id,
@@ -238,13 +241,19 @@ export default function TodayScreen() {
                   logger.info('Perfect day bonus awarded', { xp: perfectResult.xp_awarded })
                 }
 
-                // Check and unlock new badges
-                const newlyUnlocked = await badgeService.evaluateAndUnlockBadges(user.id)
-                if (newlyUnlocked && newlyUnlocked.length > 0) {
-                  for (const badge of newlyUnlocked) {
+                // 1. Check for badges awarded by DB triggers (e.g., first_check)
+                const triggerBadges = await badgeService.getNewlyUnlockedBadges(user.id, beforeCheckTime)
+
+                // 2. Evaluate and unlock additional badges
+                const evaluatedBadges = await badgeService.evaluateAndUnlockBadges(user.id)
+
+                // 3. Combine and show all newly unlocked badges
+                const allNewBadges = [...triggerBadges, ...evaluatedBadges]
+                if (allNewBadges.length > 0) {
+                  for (const badge of allNewBadges) {
                     setTimeout(() => {
                       toast.success('🏆 새로운 배지 획득!', `${badge.badgeTitle} (+${badge.xpAwarded} XP)`)
-                    }, 500 * newlyUnlocked.indexOf(badge))
+                    }, 500 * allNewBadges.indexOf(badge))
                     logger.info('Badge unlocked', { badge: badge.badgeTitle, xp: badge.xpAwarded })
                   }
                 }
