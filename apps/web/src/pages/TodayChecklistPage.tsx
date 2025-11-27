@@ -18,7 +18,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, ACHIEVEMENT_MESSAGES } from '@/lib/notificationMessages'
 import { showError, showSuccess, showCelebration } from '@/lib/notificationUtils'
-import { getDayBoundsUTC, getCurrentUTC } from '@/lib/timezone'
+import { getDayBoundsUTC, getCurrentUTC, isToday, isTodayOrYesterday } from '@/lib/timezone'
 import { PAGE_SLIDE, LIST_ITEM_ANIMATION, getStaggerDelay, CARD_ANIMATION, HOVER_LIFT, CHECKBOX_ANIMATION } from '@/lib/animations'
 import { CardSkeleton, ListSkeleton } from '@/components/ui/skeleton'
 import { trackActionChecked } from '@/lib/posthog'
@@ -59,29 +59,6 @@ export default function TodayChecklistPage() {
       const dateStr = format(date, 'yyyy-MM-dd')
       setSearchParams({ date: dateStr })
     }
-  }
-
-  const isToday = (date: Date) => {
-    const today = new Date()
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    )
-  }
-
-  const isYesterday = (date: Date) => {
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    return (
-      date.getDate() === yesterday.getDate() &&
-      date.getMonth() === yesterday.getMonth() &&
-      date.getFullYear() === yesterday.getFullYear()
-    )
-  }
-
-  const isTodayOrYesterday = (date: Date) => {
-    return isToday(date) || isYesterday(date)
   }
 
   // Fetch total mandalart count separately (not in useTodayActions)

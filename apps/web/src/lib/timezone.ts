@@ -136,3 +136,64 @@ export function userDateTimeToUTC(
 
   return utcDate.toISOString()
 }
+
+/**
+ * Check if a given date is today in user's timezone
+ *
+ * @param date - Date to check
+ * @param timezone - User's timezone (default: Asia/Seoul)
+ * @returns True if the date is today
+ */
+export function isToday(
+  date: Date,
+  timezone: string = DEFAULT_TIMEZONE
+): boolean {
+  const zonedDate = toZonedTime(date, timezone)
+  const zonedNow = toZonedTime(new Date(), timezone)
+
+  return (
+    zonedDate.getFullYear() === zonedNow.getFullYear() &&
+    zonedDate.getMonth() === zonedNow.getMonth() &&
+    zonedDate.getDate() === zonedNow.getDate()
+  )
+}
+
+/**
+ * Check if a given date is yesterday in user's timezone
+ *
+ * @param date - Date to check
+ * @param timezone - User's timezone (default: Asia/Seoul)
+ * @returns True if the date is yesterday
+ */
+export function isYesterday(
+  date: Date,
+  timezone: string = DEFAULT_TIMEZONE
+): boolean {
+  const zonedDate = toZonedTime(date, timezone)
+  const zonedNow = toZonedTime(new Date(), timezone)
+
+  // Get yesterday's date
+  const yesterday = new Date(zonedNow)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  return (
+    zonedDate.getFullYear() === yesterday.getFullYear() &&
+    zonedDate.getMonth() === yesterday.getMonth() &&
+    zonedDate.getDate() === yesterday.getDate()
+  )
+}
+
+/**
+ * Check if a given date is today or yesterday in user's timezone
+ * Used to determine if action checks are allowed
+ *
+ * @param date - Date to check
+ * @param timezone - User's timezone (default: Asia/Seoul)
+ * @returns True if the date is today or yesterday
+ */
+export function isTodayOrYesterday(
+  date: Date,
+  timezone: string = DEFAULT_TIMEZONE
+): boolean {
+  return isToday(date, timezone) || isYesterday(date, timezone)
+}
