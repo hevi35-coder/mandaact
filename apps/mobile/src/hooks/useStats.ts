@@ -462,5 +462,33 @@ export function useXPUpdate() {
     }
   }
 
-  return { awardXP, checkPerfectDay, checkPerfectWeek }
+  /**
+   * Subtract XP when unchecking (same calculation as awarding)
+   */
+  const subtractXP = async (userId: string, baseXP: number = 10): Promise<{ finalXP: number }> => {
+    try {
+      // Get streak for bonus calculation (same as award)
+      const streakStats = await xpService.getStreakStats(userId)
+      const streakBonus = streakStats.current >= 7 ? 5 : 0
+      const subtotalXP = baseXP + streakBonus
+
+      // Apply multipliers (same as award)
+      const multipliers = await xpService.getActiveMultipliers(userId)
+      const totalMultiplier = xpService.calculateTotalMultiplier(multipliers)
+      const finalXP = Math.floor(subtotalXP * totalMultiplier)
+
+      // Subtract XP (negative value)
+      await xpService.updateUserXP(userId, -finalXP)
+
+      // Invalidate gamification queries
+      queryClient.invalidateQueries({ queryKey: statsKeys.gamification(userId) })
+
+      return { finalXP }
+    } catch (error) {
+      console.error('Error subtracting XP:', error)
+      return { finalXP: 0 }
+    }
+  }
+
+  return { awardXP, subtractXP, checkPerfectDay, checkPerfectWeek }
 }

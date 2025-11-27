@@ -104,7 +104,7 @@ export default function TodayScreen() {
 
   // Mutations
   const toggleCheck = useToggleActionCheck()
-  const { awardXP, checkPerfectDay, checkPerfectWeek } = useXPUpdate()
+  const { awardXP, subtractXP, checkPerfectDay, checkPerfectWeek } = useXPUpdate()
 
   // Filter toggle functions (Web과 동일)
   const toggleFilter = useCallback((type: ActionType) => {
@@ -205,8 +205,9 @@ export default function TodayScreen() {
           checkId: action.check_id,
         })
 
-        // Award XP only when checking (not unchecking)
+        // Award XP when checking, subtract when unchecking
         if (!wasChecked) {
+          // Checking: Award XP
           try {
             // Award base XP (10) + streak bonus if applicable
             const xpResult = await awardXP(user.id, 10)
@@ -264,6 +265,18 @@ export default function TodayScreen() {
             logger.error('XP award error', xpError)
             // Don't fail the whole operation if XP update fails
           }
+        } else {
+          // Unchecking: Subtract XP
+          try {
+            const result = await subtractXP(user.id, 10)
+            if (result.finalXP > 0) {
+              toast.info(`-${result.finalXP} XP`, '체크 해제')
+              logger.info('XP subtracted', { xp: result.finalXP })
+            }
+          } catch (xpError) {
+            logger.error('XP subtract error', xpError)
+            // Don't fail the whole operation if XP update fails
+          }
         }
       } catch (err) {
         logger.error('Check toggle error', err)
@@ -276,7 +289,7 @@ export default function TodayScreen() {
         })
       }
     },
-    [user, checkingActions, toggleCheck, awardXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast]
+    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast]
   )
 
   // Loading state
