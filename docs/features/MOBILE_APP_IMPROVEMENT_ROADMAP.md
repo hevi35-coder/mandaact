@@ -416,11 +416,16 @@ const animatedStyle = useAnimatedStyle(() => ({
 12. [x] StatsScreen → HomeScreen 통합
 
 ### Sprint 4 (Day 7): Polish ✅
-13. [x] Add basic animations (FadeInUp 애니메이션 - HomeScreen 카드들)
-14. [ ] Test on multiple devices
+13. [x] Add basic animations (FadeInUp 애니메이션 - 모든 메인 화면)
+14. [x] Test on iOS Simulator
 15. [x] Documentation update
 
-> **Note**: Sprint 4 애니메이션 구현 완료 (2025-11-27). `react-native-reanimated` 플러그인 활성화 후 HomeScreen에 FadeInUp 애니메이션 적용.
+> **Note**: Sprint 4 애니메이션 구현 완료 (2025-11-27). `react-native-reanimated` 플러그인 활성화 후 모든 메인 화면에 FadeInUp 애니메이션 적용:
+> - HomeScreen: Stats Card, Level Card, Streak Cards, Quick Actions
+> - TodayScreen: Progress Card, Empty State, Progress Bar
+> - MandalartListScreen: Empty State, Card List (staggered)
+> - ReportsScreen: Tab Selector, Weekly/Diagnosis tabs
+> - SettingsScreen: User Card, Notification, Support, Info sections
 
 ---
 
