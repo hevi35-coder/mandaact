@@ -10,6 +10,7 @@ export * from './lib/notificationMessages'
 export * from './lib/reportParser'
 export * from './lib/timezone'
 export * from './lib/xpUtils'
+export * from './lib/xpService'
 
 // Constants
 export * from './constants'
