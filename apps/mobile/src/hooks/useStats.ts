@@ -285,6 +285,52 @@ export interface SubGoalProgress {
   completionRate: number
 }
 
+export interface ProfileStats {
+  totalChecks: number
+  activeDays: number
+}
+
+/**
+ * Hook to fetch total checks and active days (for profile card)
+ */
+export function useProfileStats(userId: string | undefined) {
+  return useQuery({
+    queryKey: [...statsKeys.user(userId || ''), 'profile-stats'] as const,
+    queryFn: async (): Promise<ProfileStats> => {
+      // Get total checks count
+      const { count: totalChecks, error: checksCountError } = await supabase
+        .from('check_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId!)
+
+      if (checksCountError) throw checksCountError
+
+      // Get all check dates to count unique active days
+      const { data: checksData, error: checksError } = await supabase
+        .from('check_history')
+        .select('checked_at')
+        .eq('user_id', userId!)
+
+      if (checksError) throw checksError
+
+      // Count unique dates (active days)
+      const uniqueDates = new Set(
+        checksData?.map((check) => {
+          const date = new Date(check.checked_at)
+          return format(date, 'yyyy-MM-dd')
+        }) || []
+      )
+
+      return {
+        totalChecks: totalChecks || 0,
+        activeDays: uniqueDates.size,
+      }
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000, // 30 seconds
+  })
+}
+
 /**
  * Hook to fetch sub-goal progress
  */
