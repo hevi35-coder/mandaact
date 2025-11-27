@@ -74,6 +74,11 @@ export interface XPService {
   // Bonus functions
   checkAndAwardPerfectDayXP: (userId: string, dateStr?: string) => Promise<PerfectDayResult>
 
+  // Bonus activation functions
+  activateLevelMilestoneBonus: (userId: string, level: number) => Promise<boolean>
+  activatePerfectWeekBonus: (userId: string) => Promise<boolean>
+  checkComebackBonus: (userId: string) => Promise<boolean>
+
   // Combined award function
   awardXP: (userId: string, baseXP?: number) => Promise<AwardXPResult>
 }
@@ -359,9 +364,154 @@ export function createXPService(supabase: SupabaseClient): XPService {
   }
 
   /**
+   * Activate level milestone bonus: 2x for 7 days after reaching levels 5, 10, 15, 20, 25, 30
+   */
+  async function activateLevelMilestoneBonus(userId: string, level: number): Promise<boolean> {
+    const milestones = [5, 10, 15, 20, 25, 30]
+
+    if (!milestones.includes(level)) {
+      return false // Not a milestone level
+    }
+
+    try {
+      // Check if already activated for this level
+      const { data: existing } = await supabase
+        .from('user_bonus_xp')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('bonus_type', 'level_milestone')
+        .gte('expires_at', new Date().toISOString())
+
+      if (existing && existing.length > 0) {
+        return false // Already active
+      }
+
+      // Activate for 7 days
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7)
+
+      const { error } = await supabase
+        .from('user_bonus_xp')
+        .insert({
+          user_id: userId,
+          bonus_type: 'level_milestone',
+          multiplier: 2.0,
+          activated_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          metadata: { level }
+        })
+
+      return !error
+    } catch (error) {
+      console.error('Error activating level milestone bonus:', error)
+      return false
+    }
+  }
+
+  /**
+   * Activate perfect week bonus: 2x for 7 days after achieving 80%+ weekly completion
+   */
+  async function activatePerfectWeekBonus(userId: string): Promise<boolean> {
+    try {
+      // Check if already activated this week
+      const { data: existing } = await supabase
+        .from('user_bonus_xp')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('bonus_type', 'perfect_week')
+        .gte('expires_at', new Date().toISOString())
+
+      if (existing && existing.length > 0) {
+        return false // Already active
+      }
+
+      // Activate for 7 days
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7)
+
+      const { error } = await supabase
+        .from('user_bonus_xp')
+        .insert({
+          user_id: userId,
+          bonus_type: 'perfect_week',
+          multiplier: 2.0,
+          activated_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString()
+        })
+
+      return !error
+    } catch (error) {
+      console.error('Error activating perfect week bonus:', error)
+      return false
+    }
+  }
+
+  /**
+   * Check and activate comeback bonus: 1.5x for 3 days after 3+ day absence
+   */
+  async function checkComebackBonus(userId: string): Promise<boolean> {
+    try {
+      // Check if comeback bonus is already active
+      const { data: bonusData } = await supabase
+        .from('user_bonus_xp')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('bonus_type', 'comeback')
+        .gte('expires_at', new Date().toISOString())
+        .maybeSingle()
+
+      if (bonusData) {
+        return false // Already active
+      }
+
+      // Check if user qualifies for new comeback bonus (3+ day absence)
+      const { data: recentChecks } = await supabase
+        .from('check_history')
+        .select('checked_at')
+        .eq('user_id', userId)
+        .order('checked_at', { ascending: false })
+        .limit(1)
+
+      if (!recentChecks || recentChecks.length === 0) {
+        return false // No check history
+      }
+
+      const lastCheckDate = new Date(recentChecks[0].checked_at)
+      const daysSinceLastCheck = Math.floor((Date.now() - lastCheckDate.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (daysSinceLastCheck >= 3) {
+        // Activate comeback bonus for 3 days
+        const expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + 3)
+
+        const { error } = await supabase
+          .from('user_bonus_xp')
+          .insert({
+            user_id: userId,
+            bonus_type: 'comeback',
+            multiplier: 1.5,
+            activated_at: new Date().toISOString(),
+            expires_at: expiresAt.toISOString()
+          })
+
+        return !error
+      }
+
+      return false
+    } catch (error) {
+      console.error('Error checking comeback bonus:', error)
+      return false
+    }
+  }
+
+  /**
    * Award XP with streak bonus and multipliers
+   * Also checks and activates level milestone bonus on level up
    */
   async function awardXP(userId: string, baseXP: number = 10): Promise<AwardXPResult> {
+    // Check comeback bonus first (before awarding XP)
+    await checkComebackBonus(userId)
+
     // Get streak for bonus
     const streakStats = await getStreakStats(userId)
     const streakBonus = streakStats.current >= 7 ? 5 : 0
@@ -374,6 +524,11 @@ export function createXPService(supabase: SupabaseClient): XPService {
 
     // Update XP
     const result = await updateUserXP(userId, finalXP)
+
+    // Check for level milestone bonus activation on level up
+    if (result.leveledUp && result.newLevel) {
+      await activateLevelMilestoneBonus(userId, result.newLevel)
+    }
 
     return {
       finalXP,
@@ -390,6 +545,9 @@ export function createXPService(supabase: SupabaseClient): XPService {
     getActiveMultipliers,
     calculateTotalMultiplier,
     checkAndAwardPerfectDayXP,
+    activateLevelMilestoneBonus,
+    activatePerfectWeekBonus,
+    checkComebackBonus,
     awardXP
   }
 }

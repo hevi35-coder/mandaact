@@ -40,6 +40,7 @@ import {
 } from '@mandaact/shared'
 import type { Mandalart } from '@mandaact/shared'
 import { logger } from '../lib/logger'
+import { badgeService } from '../lib/badge'
 
 // Action type icon component - colors match web exactly
 function ActionTypeIcon({
@@ -103,7 +104,7 @@ export default function TodayScreen() {
 
   // Mutations
   const toggleCheck = useToggleActionCheck()
-  const { awardXP, checkPerfectDay } = useXPUpdate()
+  const { awardXP, checkPerfectDay, checkPerfectWeek } = useXPUpdate()
 
   // Filter toggle functions (Web과 동일)
   const toggleFilter = useCallback((type: ActionType) => {
@@ -225,7 +226,7 @@ export default function TodayScreen() {
               }, 1500)
             }
 
-            // Check for perfect day bonus (after a short delay)
+            // Check for perfect day bonus and badges (after a short delay)
             setTimeout(async () => {
               try {
                 const checkDate = format(selectedDate, 'yyyy-MM-dd')
@@ -235,8 +236,26 @@ export default function TodayScreen() {
                   toast.success('⭐ 완벽한 하루!', `+${perfectResult.xp_awarded} XP 보너스!`)
                   logger.info('Perfect day bonus awarded', { xp: perfectResult.xp_awarded })
                 }
+
+                // Check and unlock new badges
+                const newlyUnlocked = await badgeService.evaluateAndUnlockBadges(user.id)
+                if (newlyUnlocked && newlyUnlocked.length > 0) {
+                  for (const badge of newlyUnlocked) {
+                    setTimeout(() => {
+                      toast.success('🏆 새로운 배지 획득!', `${badge.badgeTitle} (+${badge.xpAwarded} XP)`)
+                    }, 500 * newlyUnlocked.indexOf(badge))
+                    logger.info('Badge unlocked', { badge: badge.badgeTitle, xp: badge.xpAwarded })
+                  }
+                }
+
+                // Check for perfect week bonus (80%+ weekly completion)
+                const weekResult = await checkPerfectWeek(user.id)
+                if (weekResult.activated) {
+                  toast.success('🌟 완벽한 주!', '7일간 XP 2배 보너스 활성화!')
+                  logger.info('Perfect week bonus activated', { percentage: weekResult.percentage })
+                }
               } catch (bonusError) {
-                logger.error('Perfect day check error', bonusError)
+                logger.error('Perfect day/badge/week check error', bonusError)
               }
             }, 500)
 
@@ -257,7 +276,7 @@ export default function TodayScreen() {
         })
       }
     },
-    [user, checkingActions, toggleCheck, awardXP, checkPerfectDay, selectedDate, toast]
+    [user, checkingActions, toggleCheck, awardXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast]
   )
 
   // Loading state

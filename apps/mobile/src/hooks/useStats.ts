@@ -96,29 +96,45 @@ export function useDailyStats(userId: string | undefined, date?: Date) {
 
 /**
  * Hook to fetch user gamification data (XP, level, streaks)
+ * Uses user_levels table (same as shared xpService) + streak stats
  */
 export function useUserGamification(userId: string | undefined) {
   return useQuery({
     queryKey: statsKeys.gamification(userId || ''),
     queryFn: async (): Promise<UserGamification | null> => {
-      const { data, error } = await supabase
-        .from('user_gamification')
-        .select('*')
+      // 1. Get user level data from user_levels table (same as xpService uses)
+      const { data: levelData, error: levelError } = await supabase
+        .from('user_levels')
+        .select('user_id, level, total_xp, nickname, created_at, updated_at')
         .eq('user_id', userId!)
         .single()
 
-      if (error) {
-        if (error.code === 'PGRST116') {
+      if (levelError) {
+        if (levelError.code === 'PGRST116') {
           // No record found, return null
           return null
         }
-        throw error
+        throw levelError
       }
 
-      return data
+      // 2. Get streak stats using shared xpService
+      const streakStats = await xpService.getStreakStats(userId!)
+
+      // 3. Combine into UserGamification interface
+      return {
+        id: levelData.user_id, // Use user_id as id
+        user_id: levelData.user_id,
+        nickname: levelData.nickname || '',
+        total_xp: levelData.total_xp,
+        current_level: levelData.level,
+        current_streak: streakStats.current,
+        longest_streak: streakStats.longest,
+        created_at: levelData.created_at,
+        updated_at: levelData.updated_at,
+      }
     },
     enabled: !!userId,
-    staleTime: 1 * 60 * 1000, // 1 minute
+    staleTime: 30 * 1000, // 30 seconds (shorter to reflect XP changes faster)
   })
 }
 
@@ -380,5 +396,71 @@ export function useXPUpdate() {
     return result
   }
 
-  return { awardXP, checkPerfectDay }
+  /**
+   * Check weekly completion and activate Perfect Week bonus if 80%+
+   */
+  const checkPerfectWeek = async (userId: string): Promise<{ activated: boolean; percentage: number }> => {
+    try {
+      // Calculate weekly completion (same logic as useWeeklyStats)
+      let totalChecked = 0
+
+      for (let i = 0; i < 7; i++) {
+        const date = subDays(new Date(), i)
+        const dateStr = format(date, 'yyyy-MM-dd')
+        const { start: dayStart, end: dayEnd } = getDayBoundsUTC(dateStr)
+
+        const { count } = await supabase
+          .from('check_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('checked_at', dayStart)
+          .lt('checked_at', dayEnd)
+
+        totalChecked += count || 0
+      }
+
+      // Get total checkable actions
+      const { data: actionsData } = await supabase
+        .from('actions')
+        .select(`
+          id,
+          type,
+          sub_goal:sub_goals (
+            mandalart:mandalarts (
+              user_id,
+              is_active
+            )
+          )
+        `)
+        .eq('sub_goal.mandalart.user_id', userId)
+        .eq('sub_goal.mandalart.is_active', true)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const checkableActions = (actionsData || []).filter((action: any) =>
+        action.type !== 'reference' &&
+        action.sub_goal &&
+        Array.isArray(action.sub_goal) &&
+        action.sub_goal[0]?.mandalart
+      )
+
+      const totalCheckable = checkableActions.length * 7
+      const percentage = totalCheckable > 0 ? Math.round((totalChecked / totalCheckable) * 100) : 0
+
+      // Activate Perfect Week bonus if 80%+
+      if (percentage >= 80) {
+        const activated = await xpService.activatePerfectWeekBonus(userId)
+        if (activated) {
+          queryClient.invalidateQueries({ queryKey: statsKeys.gamification(userId) })
+        }
+        return { activated, percentage }
+      }
+
+      return { activated: false, percentage }
+    } catch (error) {
+      console.error('Error checking perfect week:', error)
+      return { activated: false, percentage: 0 }
+    }
+  }
+
+  return { awardXP, checkPerfectDay, checkPerfectWeek }
 }
