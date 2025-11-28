@@ -239,6 +239,7 @@ export default function ActionTypeSelector({
       transparent
       animationType="slide"
       onRequestClose={onClose}
+      presentationStyle="overFullScreen"
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

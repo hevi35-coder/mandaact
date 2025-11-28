@@ -435,10 +435,10 @@ export default function TodayChecklistPage() {
     Object.values(groups).forEach(group => {
       group.actions.sort((a, b) => {
         // Primary: sort by sub_goal.position
-        const subGoalDiff = a.sub_goal.position - b.sub_goal.position
+        const subGoalDiff = (a.sub_goal.position ?? 0) - (b.sub_goal.position ?? 0)
         if (subGoalDiff !== 0) return subGoalDiff
         // Secondary: sort by action.position
-        return a.position - b.position
+        return (a.position ?? 0) - (b.position ?? 0)
       })
     })
 

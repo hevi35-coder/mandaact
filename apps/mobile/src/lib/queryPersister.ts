@@ -44,5 +44,5 @@ export function createPersistableQueryClient(): QueryClient {
  */
 export const persistOptions = {
   maxAge: 1000 * 60 * 60 * 24, // 24 hours
-  buster: 'v1', // Change this to invalidate all cached data
+  buster: 'v2', // Changed from v1 to invalidate stale cached data
 }

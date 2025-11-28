@@ -216,11 +216,15 @@ export default function TodayScreen() {
     // Sort actions within each mandalart group
     Object.values(groups).forEach((group) => {
       group.actions.sort((a, b) => {
-        // Primary: sort by sub_goal.position
-        const subGoalDiff = a.sub_goal.position - b.sub_goal.position
+        // Primary: sort by sub_goal.position (fallback to 0 if undefined)
+        const aSubPos = a.sub_goal.position ?? 0
+        const bSubPos = b.sub_goal.position ?? 0
+        const subGoalDiff = aSubPos - bSubPos
         if (subGoalDiff !== 0) return subGoalDiff
-        // Secondary: sort by action.position
-        return a.position - b.position
+        // Secondary: sort by action.position (fallback to 0 if undefined)
+        const aPos = a.position ?? 0
+        const bPos = b.position ?? 0
+        return aPos - bPos
       })
     })
 

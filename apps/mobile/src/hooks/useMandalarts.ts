@@ -83,7 +83,8 @@ export function useMandalart(id: string | undefined) {
     queryKey: mandalartKeys.detail(id || ''),
     queryFn: () => fetchMandalart(id!),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - show cached data for fast UX
+    refetchOnMount: 'always', // Always refetch in background when component mounts
   })
 }
 
@@ -141,7 +142,8 @@ export function useMandalartWithDetails(id: string | undefined) {
     queryKey: mandalartKeys.detail(id || ''),
     queryFn: () => fetchMandalartWithDetails(id!),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - show cached data for fast UX
+    refetchOnMount: 'always', // Always refetch in background when component mounts
   })
 }
 

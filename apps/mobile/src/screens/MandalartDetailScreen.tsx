@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from 'react'
+import React, { useRef, useCallback, useState, useMemo } from 'react'
 import {
   View,
   Text,
@@ -18,31 +18,43 @@ import {
   RotateCw,
   Target,
   Lightbulb,
-  Edit3,
-  ChevronRight,
 } from 'lucide-react-native'
 
 import { useMandalartWithDetails } from '../hooks/useMandalarts'
 import { saveToGallery, shareImage, captureViewAsImage } from '../services/exportService'
-import { ActionEditModal } from '../components'
+import MandalartInfoModal from '../components/MandalartInfoModal'
+import SubGoalEditModal from '../components/SubGoalEditModal'
 import type { RootStackParamList } from '../navigation/RootNavigator'
-import type { Action, ActionType } from '@mandaact/shared'
+import type { Action, SubGoal, ActionType } from '@mandaact/shared'
 import { logger } from '../lib/logger'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 type DetailRouteProp = RouteProp<RootStackParamList, 'MandalartDetail'>
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-const GRID_PADDING = 16
-const CELL_GAP = 2
-const GRID_SIZE = SCREEN_WIDTH - GRID_PADDING * 2
-const CELL_SIZE = (GRID_SIZE - CELL_GAP * 8) / 9
+const CONTAINER_PADDING = 16 // 화면 좌우 패딩
+const CARD_PADDING = 12 // 카드 내부 패딩
+const CELL_MARGIN = 4 // 셀 간격 (한쪽)
+const AVAILABLE_WIDTH = SCREEN_WIDTH - (CONTAINER_PADDING * 2) - (CARD_PADDING * 2)
+const CELL_SIZE = Math.floor((AVAILABLE_WIDTH - (CELL_MARGIN * 6)) / 3) // 3개 셀 + 6개 마진(좌우)
 
-// Action type colors
-const TYPE_COLORS: Record<ActionType, { bg: string; border: string }> = {
-  routine: { bg: '#ede9fe', border: '#a78bfa' },
-  mission: { bg: '#fef3c7', border: '#fbbf24' },
-  reference: { bg: '#f3f4f6', border: '#d1d5db' },
+// Sub-goal with actions type
+interface SubGoalWithActions extends SubGoal {
+  actions: Action[]
+}
+
+// Action type icon component
+function ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number }) {
+  switch (type) {
+    case 'routine':
+      return <RotateCw size={size} color="#3b82f6" />
+    case 'mission':
+      return <Target size={size} color="#10b981" />
+    case 'reference':
+      return <Lightbulb size={size} color="#f59e0b" />
+    default:
+      return null
+  }
 }
 
 export default function MandalartDetailScreen() {
@@ -50,8 +62,13 @@ export default function MandalartDetailScreen() {
   const route = useRoute<DetailRouteProp>()
   const { id } = route.params
   const gridRef = useRef<View>(null)
+
+  // State
   const [isExporting, setIsExporting] = useState(false)
-  const [editingAction, setEditingAction] = useState<Action | null>(null)
+  const [expandedSubGoal, setExpandedSubGoal] = useState<SubGoalWithActions | null>(null)
+  const [infoModalVisible, setInfoModalVisible] = useState(false)
+  const [editModalVisible, setEditModalVisible] = useState(false)
+  const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoalWithActions | null>(null)
 
   const {
     data: mandalart,
@@ -61,16 +78,12 @@ export default function MandalartDetailScreen() {
   } = useMandalartWithDetails(id)
 
   const handleBack = useCallback(() => {
-    navigation.goBack()
-  }, [navigation])
-
-  const handleEditAction = useCallback((action: Action) => {
-    setEditingAction(action)
-  }, [])
-
-  const handleEditSuccess = useCallback(() => {
-    refetch()
-  }, [refetch])
+    if (expandedSubGoal) {
+      setExpandedSubGoal(null)
+    } else {
+      navigation.goBack()
+    }
+  }, [expandedSubGoal, navigation])
 
   const handleExport = useCallback(async (action: 'share' | 'save') => {
     if (!gridRef.current) return
@@ -93,90 +106,54 @@ export default function MandalartDetailScreen() {
     }
   }, [mandalart])
 
-  // Build 9x9 grid data
-  const buildGridData = useCallback(() => {
-    if (!mandalart?.sub_goals) return null
-
-    // Initialize 9x9 grid with empty cells
-    const grid: Array<Array<{ type: 'center' | 'subgoal' | 'action' | 'empty'; title: string; actionType?: ActionType; position?: number }>> =
-      Array(9).fill(null).map(() => Array(9).fill({ type: 'empty', title: '' }))
-
-    // Center cell (4,4) - 0-indexed
-    grid[4][4] = { type: 'center', title: mandalart.center_goal }
-
-    // Position mapping for sub-goals around center (in 3x3 center grid)
-    const subGoalPositions: Record<number, [number, number]> = {
-      1: [3, 3], // top-left
-      2: [3, 4], // top-center
-      3: [3, 5], // top-right
-      4: [4, 3], // middle-left
-      5: [4, 5], // middle-right
-      6: [5, 3], // bottom-left
-      7: [5, 4], // bottom-center
-      8: [5, 5], // bottom-right
-    }
-
-    // Position mapping for sub-goal 3x3 grids
-    const subGoalGridOffsets: Record<number, [number, number]> = {
-      1: [0, 0], // top-left
-      2: [0, 3], // top-center
-      3: [0, 6], // top-right
-      4: [3, 0], // middle-left
-      5: [3, 6], // middle-right
-      6: [6, 0], // bottom-left
-      7: [6, 3], // bottom-center
-      8: [6, 6], // bottom-right
-    }
-
-    // Action position mapping within each 3x3 sub-grid
-    const actionPositions: Record<number, [number, number]> = {
-      1: [0, 0], // top-left
-      2: [0, 1], // top-center
-      3: [0, 2], // top-right
-      4: [1, 0], // middle-left
-      5: [1, 2], // middle-right
-      6: [2, 0], // bottom-left
-      7: [2, 1], // bottom-center
-      8: [2, 2], // bottom-right
-    }
-
-    mandalart.sub_goals.forEach((subGoal) => {
-      // Place sub-goal title in center area
-      const [sgRow, sgCol] = subGoalPositions[subGoal.position]
-      if (sgRow !== undefined && sgCol !== undefined) {
-        grid[sgRow][sgCol] = {
-          type: 'subgoal',
-          title: subGoal.title,
-          position: subGoal.position
-        }
-      }
-
-      // Place sub-goal title in its own 3x3 grid center
-      const [offsetRow, offsetCol] = subGoalGridOffsets[subGoal.position]
-      if (offsetRow !== undefined && offsetCol !== undefined) {
-        grid[offsetRow + 1][offsetCol + 1] = {
-          type: 'subgoal',
-          title: subGoal.title,
-          position: subGoal.position
-        }
-
-        // Place actions
-        subGoal.actions?.forEach((action) => {
-          const [actionRow, actionCol] = actionPositions[action.position]
-          if (actionRow !== undefined && actionCol !== undefined) {
-            grid[offsetRow + actionRow][offsetCol + actionCol] = {
-              type: 'action',
-              title: action.title,
-              actionType: action.type as ActionType,
-              position: action.position,
-            }
-          }
-        })
-      }
-    })
-
-    return grid
+  // Get sub-goal by position
+  const getSubGoalByPosition = useCallback((position: number): SubGoalWithActions | undefined => {
+    return mandalart?.sub_goals.find(sg => sg.position === position) as SubGoalWithActions | undefined
   }, [mandalart])
+
+  // Handle center goal tap
+  const handleCenterGoalTap = useCallback(() => {
+    setInfoModalVisible(true)
+  }, [])
+
+  // Handle sub-goal tap
+  const handleSubGoalTap = useCallback((position: number) => {
+    const subGoal = getSubGoalByPosition(position)
+    if (subGoal) {
+      setExpandedSubGoal(subGoal)
+    }
+  }, [getSubGoalByPosition])
+
+  // Handle edit button in expanded view
+  const handleEditSubGoal = useCallback(() => {
+    if (expandedSubGoal) {
+      setSelectedSubGoal(expandedSubGoal)
+      setEditModalVisible(true)
+    }
+  }, [expandedSubGoal])
+
+  // Handle modal success
+  const handleModalSuccess = useCallback(() => {
+    refetch()
+  }, [refetch])
+
+  // Sync expandedSubGoal when mandalart data changes (after refetch)
+  React.useEffect(() => {
+    if (expandedSubGoal && mandalart) {
+      const updatedSubGoal = mandalart.sub_goals.find(
+        sg => sg.id === expandedSubGoal.id
+      ) as SubGoalWithActions | undefined
+      if (updatedSubGoal) {
+        setExpandedSubGoal(updatedSubGoal)
+      }
+    }
+  }, [mandalart])
+
+  // Section positions: [1,2,3,4,0,5,6,7,8] where 0 is center
+  const sectionPositions = useMemo(() => [1, 2, 3, 4, 0, 5, 6, 7, 8], [])
+
+  // Action positions in 3x3 grid: [1,2,3,4,center,5,6,7,8]
+  const actionPositions = useMemo(() => [1, 2, 3, 4, 0, 5, 6, 7, 8], [])
 
   // Loading state
   if (isLoading) {
@@ -205,7 +182,107 @@ export default function MandalartDetailScreen() {
     )
   }
 
-  const gridData = buildGridData()
+  // Render 3x3 cell for main view (center + sub-goals)
+  const renderMainCell = (position: number) => {
+    if (position === 0) {
+      // Center: Core goal
+      return (
+        <Pressable
+          key="center"
+          onPress={handleCenterGoalTap}
+          className="items-center justify-center p-2 rounded-xl active:opacity-90"
+          style={{
+            width: CELL_SIZE,
+            height: CELL_SIZE,
+            margin: CELL_MARGIN,
+            backgroundColor: '#667eea',
+          }}
+        >
+          <Text className="text-white text-sm font-bold text-center" numberOfLines={4}>
+            {mandalart.center_goal}
+          </Text>
+        </Pressable>
+      )
+    }
+
+    // Sub-goal cells
+    const subGoal = getSubGoalByPosition(position)
+    return (
+      <Pressable
+        key={position}
+        onPress={() => handleSubGoalTap(position)}
+        className="items-center justify-center p-1.5 rounded-xl border border-blue-200 active:bg-blue-100"
+        style={{
+          width: CELL_SIZE,
+          height: CELL_SIZE,
+          margin: CELL_MARGIN,
+          backgroundColor: '#eff6ff',
+        }}
+      >
+        <Text className="text-[10px] text-gray-400 mb-0.5">세부 {position}</Text>
+        <Text className="text-xs font-medium text-gray-800 text-center" numberOfLines={2}>
+          {subGoal?.title || '-'}
+        </Text>
+        {subGoal && (
+          <Text className="text-[10px] text-gray-400 mt-0.5">
+            {subGoal.actions?.length || 0}개
+          </Text>
+        )}
+      </Pressable>
+    )
+  }
+
+  // Render 3x3 cell for expanded sub-goal view (tappable to open edit modal)
+  const renderExpandedCell = (cellPos: number) => {
+    if (!expandedSubGoal) return null
+
+    if (cellPos === 0) {
+      // Center: Sub-goal title (tappable)
+      return (
+        <Pressable
+          key="subgoal-center"
+          onPress={handleEditSubGoal}
+          className="items-center justify-center p-2 rounded-xl active:opacity-80"
+          style={{
+            width: CELL_SIZE,
+            height: CELL_SIZE,
+            margin: CELL_MARGIN,
+            backgroundColor: '#dbeafe',
+            borderWidth: 2,
+            borderColor: '#3b82f6',
+          }}
+        >
+          <Text className="text-sm font-semibold text-gray-900 text-center" numberOfLines={3}>
+            {expandedSubGoal.title}
+          </Text>
+        </Pressable>
+      )
+    }
+
+    // Actions (tappable)
+    const action = expandedSubGoal.actions?.find(a => a.position === cellPos)
+
+    return (
+      <Pressable
+        key={cellPos}
+        onPress={handleEditSubGoal}
+        className="items-center justify-center p-1.5 rounded-xl bg-white border border-gray-200 active:bg-gray-50"
+        style={{
+          width: CELL_SIZE,
+          height: CELL_SIZE,
+          margin: CELL_MARGIN,
+        }}
+      >
+        {action ? (
+          <Text className="text-xs text-gray-800 text-center" numberOfLines={4}>
+            {action.title}
+          </Text>
+        ) : (
+          <Text className="text-xs text-gray-300">-</Text>
+        )}
+      </Pressable>
+    )
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -246,75 +323,53 @@ export default function MandalartDetailScreen() {
       </View>
 
       <ScrollView className="flex-1">
-        {/* Info Card */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-4 mb-4">
+        {/* Info Card - Only in main view */}
+        {!expandedSubGoal && (
+          <Pressable
+            onPress={handleCenterGoalTap}
+            className="mx-4 mt-4 bg-white rounded-2xl p-4 active:bg-gray-50"
+          >
             <Text className="text-base font-semibold text-gray-900 mb-1">
               핵심 목표
             </Text>
             <Text className="text-gray-600">{mandalart.center_goal}</Text>
+          </Pressable>
+        )}
+
+        {/* Expanded View Header */}
+        {expandedSubGoal && (
+          <View className="mx-4 mt-4 flex-row items-center justify-between">
+            <Pressable
+              onPress={() => setExpandedSubGoal(null)}
+              className="flex-row items-center px-4 py-2 bg-white border border-gray-300 rounded-xl"
+            >
+              <ArrowLeft size={16} color="#374151" />
+              <Text className="text-sm text-gray-700 ml-1">뒤로</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleEditSubGoal}
+              className="px-4 py-2 bg-gray-900 rounded-xl"
+            >
+              <Text className="text-sm text-white font-medium">수정</Text>
+            </Pressable>
           </View>
-        </View>
+        )}
 
-        {/* 9x9 Grid */}
-        <View className="px-4" ref={gridRef} collapsable={false}>
+        {/* 3x3 Grid */}
+        <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 16 }} ref={gridRef} collapsable={false}>
           <View
-            className="bg-white rounded-2xl p-2"
-            style={{ width: GRID_SIZE + 16 }}
+            className="bg-white rounded-2xl"
+            style={{
+              padding: CARD_PADDING,
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
           >
-            {gridData?.map((row, rowIndex) => (
-              <View key={rowIndex} className="flex-row">
-                {row.map((cell, colIndex) => {
-                  const isCenter = rowIndex === 4 && colIndex === 4
-                  const isCenterArea = rowIndex >= 3 && rowIndex <= 5 && colIndex >= 3 && colIndex <= 5
-
-                  let bgColor = '#ffffff'
-                  let borderColor = '#e5e7eb'
-                  let textColor = '#374151'
-
-                  if (cell.type === 'center') {
-                    bgColor = '#667eea'
-                    borderColor = '#667eea'
-                    textColor = '#ffffff'
-                  } else if (cell.type === 'subgoal') {
-                    bgColor = isCenterArea ? '#f3e8ff' : '#faf5ff'
-                    borderColor = '#a78bfa'
-                  } else if (cell.type === 'action' && cell.actionType) {
-                    bgColor = TYPE_COLORS[cell.actionType].bg
-                    borderColor = TYPE_COLORS[cell.actionType].border
-                  }
-
-                  return (
-                    <View
-                      key={colIndex}
-                      style={{
-                        width: CELL_SIZE,
-                        height: CELL_SIZE,
-                        margin: CELL_GAP / 2,
-                        backgroundColor: bgColor,
-                        borderWidth: 1,
-                        borderColor: borderColor,
-                        borderRadius: 4,
-                        padding: 2,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 7,
-                          color: textColor,
-                          textAlign: 'center',
-                        }}
-                        numberOfLines={3}
-                      >
-                        {cell.title}
-                      </Text>
-                    </View>
-                  )
-                })}
-              </View>
-            ))}
+            {(expandedSubGoal ? actionPositions : sectionPositions).map((pos) =>
+              expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
+            )}
           </View>
         </View>
 
@@ -328,75 +383,56 @@ export default function MandalartDetailScreen() {
                 <Text className="text-xs text-gray-600">핵심 목표</Text>
               </View>
               <View className="flex-row items-center">
-                <View className="w-4 h-4 rounded mr-2 bg-purple-100 border border-purple-400" />
+                <View className="w-4 h-4 rounded mr-2 bg-blue-100 border border-blue-200" />
                 <Text className="text-xs text-gray-600">세부 목표</Text>
               </View>
               <View className="flex-row items-center">
-                <RotateCw size={12} color="#667eea" />
+                <RotateCw size={12} color="#3b82f6" />
                 <Text className="text-xs text-gray-600 ml-1">루틴</Text>
               </View>
               <View className="flex-row items-center">
-                <Target size={12} color="#f59e0b" />
+                <Target size={12} color="#10b981" />
                 <Text className="text-xs text-gray-600 ml-1">미션</Text>
               </View>
               <View className="flex-row items-center">
-                <Lightbulb size={12} color="#6b7280" />
+                <Lightbulb size={12} color="#f59e0b" />
                 <Text className="text-xs text-gray-600 ml-1">참고</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Sub-goals list with edit */}
+        {/* Usage Instructions */}
         <View className="px-4 pb-8">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-semibold text-gray-900">
-              세부 목표 ({mandalart.sub_goals?.length || 0}개)
+          <View className="bg-white rounded-2xl p-4">
+            <View className="flex-row items-center mb-2">
+              <Lightbulb size={16} color="#667eea" />
+              <Text className="text-sm font-medium text-gray-900 ml-2">사용 방법</Text>
+            </View>
+            <Text className="text-xs text-gray-500">
+              • 각 영역을 탭하여 상세보기 및 수정이 가능합니다.
             </Text>
-            <View className="flex-row items-center">
-              <Edit3 size={14} color="#667eea" />
-              <Text className="text-sm text-primary ml-1">탭하여 수정</Text>
-            </View>
           </View>
-          {mandalart.sub_goals?.map((subGoal) => (
-            <View
-              key={subGoal.id}
-              className="bg-white rounded-xl p-4 mb-3 border border-gray-200"
-              style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
-            >
-              <Text className="text-base font-semibold text-gray-900 mb-2">
-                {subGoal.position}. {subGoal.title}
-              </Text>
-              <View>
-                {subGoal.actions?.map((action) => (
-                  <Pressable
-                    key={action.id}
-                    onPress={() => handleEditAction(action)}
-                    className="flex-row items-center py-2 px-2 -mx-2 rounded-lg active:bg-gray-50"
-                  >
-                    <View className="flex-row items-center flex-1">
-                      {action.type === 'routine' && <RotateCw size={14} color="#667eea" />}
-                      {action.type === 'mission' && <Target size={14} color="#f59e0b" />}
-                      {action.type === 'reference' && <Lightbulb size={14} color="#6b7280" />}
-                      <Text className="text-sm text-gray-700 ml-2 flex-1">
-                        {action.title}
-                      </Text>
-                    </View>
-                    <ChevronRight size={16} color="#9ca3af" />
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          ))}
         </View>
       </ScrollView>
 
-      {/* Action Edit Modal */}
-      <ActionEditModal
-        visible={!!editingAction}
-        action={editingAction}
-        onClose={() => setEditingAction(null)}
-        onSuccess={handleEditSuccess}
+      {/* Mandalart Info Modal */}
+      <MandalartInfoModal
+        visible={infoModalVisible}
+        mandalart={mandalart}
+        onClose={() => setInfoModalVisible(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* Sub-goal Edit Modal */}
+      <SubGoalEditModal
+        visible={editModalVisible}
+        subGoal={selectedSubGoal}
+        onClose={() => {
+          setEditModalVisible(false)
+          setSelectedSubGoal(null)
+        }}
+        onSuccess={handleModalSuccess}
       />
     </SafeAreaView>
   )
