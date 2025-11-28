@@ -17,7 +17,6 @@ import {
   Target,
   Lightbulb,
   Info,
-  ChevronDown,
 } from 'lucide-react-native'
 import {
   type ActionType,
@@ -87,7 +86,7 @@ const FREQUENCY_OPTIONS: { value: RoutineFrequency; label: string }[] = [
 ]
 
 const WEEKLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
-const MONTHLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 8, 10, 15, 20, 30]
+const MONTHLY_COUNT_OPTIONS = [1, 2, 3, 5, 10, 20, 30]
 
 const MISSION_COMPLETION_OPTIONS: { value: MissionCompletionType; label: string }[] = [
   { value: 'once', label: '1회 완료 (예: 자격증 취득, 책 읽기)' },
@@ -129,11 +128,9 @@ export default function ActionTypeSelector({
   const [aiSuggestion, setAiSuggestion] = useState(initialData?.ai_suggestion)
   const [saving, setSaving] = useState(false)
 
-  // Dropdown states
-  const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false)
-  const [showWeeklyCountDropdown, setShowWeeklyCountDropdown] = useState(false)
-  const [showMonthlyCountDropdown, setShowMonthlyCountDropdown] = useState(false)
-  const [showPeriodCycleDropdown, setShowPeriodCycleDropdown] = useState(false)
+  // Monthly custom input
+  const [showMonthlyCustomInput, setShowMonthlyCustomInput] = useState(false)
+  const [monthlyCustomValue, setMonthlyCustomValue] = useState('')
 
   const weekdays = getWeekdayNames()
 
@@ -175,9 +172,18 @@ export default function ActionTypeSelector({
     setSaving(true)
 
     try {
+      // Build data with explicit null values to clear unused fields
       const data: ActionTypeData = {
         type,
         ai_suggestion: aiSuggestion,
+        // Clear all type-specific fields by default
+        routine_frequency: undefined,
+        routine_weekdays: undefined,
+        routine_count_per_period: undefined,
+        mission_completion_type: undefined,
+        mission_period_cycle: undefined,
+        mission_current_period_start: undefined,
+        mission_current_period_end: undefined,
       }
 
       if (type === 'routine') {
@@ -185,12 +191,21 @@ export default function ActionTypeSelector({
 
         if (routineFrequency === 'weekly') {
           if (routineWeekdays.length > 0) {
+            // Weekday-based: set weekdays, clear count
             data.routine_weekdays = routineWeekdays
+            data.routine_count_per_period = undefined
           } else {
+            // Count-based: set count, clear weekdays
             data.routine_count_per_period = routineCountPerPeriod || 1
+            data.routine_weekdays = []  // Empty array to clear
           }
         } else if (routineFrequency === 'monthly') {
           data.routine_count_per_period = routineCountPerPeriod || 1
+          data.routine_weekdays = []  // Clear weekdays
+        } else if (routineFrequency === 'daily') {
+          // Daily: clear both weekdays and count
+          data.routine_weekdays = []
+          data.routine_count_per_period = undefined
         }
       } else if (type === 'mission') {
         data.mission_completion_type = missionCompletionType
@@ -337,44 +352,39 @@ export default function ActionTypeSelector({
                     루틴 설정
                   </Text>
 
-                  {/* Frequency Select */}
+                  {/* Frequency Select - Button Style */}
                   <View className="mb-3">
                     <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
-                    <Pressable
-                      onPress={() => setShowFrequencyDropdown(!showFrequencyDropdown)}
-                      className="flex-row items-center justify-between bg-white border border-gray-300 rounded-lg px-3 py-3"
-                    >
-                      <Text className="text-sm text-gray-900">
-                        {getRoutineFrequencyLabel(routineFrequency)}
-                      </Text>
-                      <ChevronDown size={16} color="#6b7280" />
-                    </Pressable>
-                    {showFrequencyDropdown && (
-                      <View className="bg-white border border-gray-300 rounded-lg mt-1">
-                        {FREQUENCY_OPTIONS.map((option) => (
-                          <Pressable
-                            key={option.value}
-                            onPress={() => {
-                              setRoutineFrequency(option.value)
-                              setShowFrequencyDropdown(false)
-                            }}
-                            className={`px-3 py-3 border-b border-gray-100 last:border-b-0 ${
-                              routineFrequency === option.value ? 'bg-gray-50' : ''
+                    <View className="flex-row" style={{ gap: 8 }}>
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <Pressable
+                          key={option.value}
+                          onPress={() => {
+                            setRoutineFrequency(option.value)
+                            // Reset count to appropriate default when frequency changes
+                            setRoutineCountPerPeriod(1)
+                            setRoutineWeekdays([])
+                            setShowMonthlyCustomInput(false)
+                            setMonthlyCustomValue('')
+                          }}
+                          className={`flex-1 py-2.5 rounded-lg border items-center ${
+                            routineFrequency === option.value
+                              ? 'bg-gray-900 border-gray-900'
+                              : 'bg-white border-gray-300'
+                          }`}
+                        >
+                          <Text
+                            className={`text-sm font-medium ${
+                              routineFrequency === option.value
+                                ? 'text-white'
+                                : 'text-gray-700'
                             }`}
                           >
-                            <Text
-                              className={`text-sm ${
-                                routineFrequency === option.value
-                                  ? 'text-gray-900 font-medium'
-                                  : 'text-gray-700'
-                              }`}
-                            >
-                              {option.label}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    )}
+                            {option.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
 
                   {/* Weekly Weekdays Selection */}
@@ -417,43 +427,29 @@ export default function ActionTypeSelector({
                       {routineWeekdays.length === 0 && (
                         <View className="mt-3">
                           <Text className="text-sm text-gray-700 mb-2">주간 목표 횟수</Text>
-                          <Pressable
-                            onPress={() => setShowWeeklyCountDropdown(!showWeeklyCountDropdown)}
-                            className="flex-row items-center justify-between bg-white border border-gray-300 rounded-lg px-3 py-3"
-                          >
-                            <Text className="text-sm text-gray-900">
-                              주 {routineCountPerPeriod}회
-                            </Text>
-                            <ChevronDown size={16} color="#6b7280" />
-                          </Pressable>
-                          {showWeeklyCountDropdown && (
-                            <View className="bg-white border border-gray-300 rounded-lg mt-1 max-h-48">
-                              <ScrollView>
-                                {WEEKLY_COUNT_OPTIONS.map((count) => (
-                                  <Pressable
-                                    key={count}
-                                    onPress={() => {
-                                      setRoutineCountPerPeriod(count)
-                                      setShowWeeklyCountDropdown(false)
-                                    }}
-                                    className={`px-3 py-3 border-b border-gray-100 ${
-                                      routineCountPerPeriod === count ? 'bg-gray-50' : ''
-                                    }`}
-                                  >
-                                    <Text
-                                      className={`text-sm ${
-                                        routineCountPerPeriod === count
-                                          ? 'text-gray-900 font-medium'
-                                          : 'text-gray-700'
-                                      }`}
-                                    >
-                                      주 {count}회
-                                    </Text>
-                                  </Pressable>
-                                ))}
-                              </ScrollView>
-                            </View>
-                          )}
+                          <View className="flex-row" style={{ gap: 8 }}>
+                            {WEEKLY_COUNT_OPTIONS.map((count) => (
+                              <Pressable
+                                key={count}
+                                onPress={() => setRoutineCountPerPeriod(count)}
+                                className={`w-9 h-9 rounded-lg items-center justify-center border ${
+                                  routineCountPerPeriod === count
+                                    ? 'bg-gray-900 border-gray-900'
+                                    : 'bg-white border-gray-300'
+                                }`}
+                              >
+                                <Text
+                                  className={`text-sm font-medium ${
+                                    routineCountPerPeriod === count
+                                      ? 'text-white'
+                                      : 'text-gray-700'
+                                  }`}
+                                >
+                                  {count}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
                         </View>
                       )}
                     </View>
@@ -463,43 +459,68 @@ export default function ActionTypeSelector({
                   {routineFrequency === 'monthly' && (
                     <View className="mb-3">
                       <Text className="text-sm text-gray-700 mb-2">월간 목표 횟수</Text>
-                      <Pressable
-                        onPress={() => setShowMonthlyCountDropdown(!showMonthlyCountDropdown)}
-                        className="flex-row items-center justify-between bg-white border border-gray-300 rounded-lg px-3 py-3"
-                      >
-                        <Text className="text-sm text-gray-900">
-                          월 {routineCountPerPeriod}회
-                        </Text>
-                        <ChevronDown size={16} color="#6b7280" />
-                      </Pressable>
-                      {showMonthlyCountDropdown && (
-                        <View className="bg-white border border-gray-300 rounded-lg mt-1 max-h-48">
-                          <ScrollView>
-                            {MONTHLY_COUNT_OPTIONS.map((count) => (
-                              <Pressable
-                                key={count}
-                                onPress={() => {
-                                  setRoutineCountPerPeriod(count)
-                                  setShowMonthlyCountDropdown(false)
-                                }}
-                                className={`px-3 py-3 border-b border-gray-100 ${
-                                  routineCountPerPeriod === count ? 'bg-gray-50' : ''
-                                }`}
-                              >
-                                <Text
-                                  className={`text-sm ${
-                                    routineCountPerPeriod === count
-                                      ? 'text-gray-900 font-medium'
-                                      : 'text-gray-700'
-                                  }`}
-                                >
-                                  월 {count}회
-                                </Text>
-                              </Pressable>
-                            ))}
-                          </ScrollView>
-                        </View>
-                      )}
+                      <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
+                        {MONTHLY_COUNT_OPTIONS.map((count) => (
+                          <Pressable
+                            key={count}
+                            onPress={() => {
+                              setRoutineCountPerPeriod(count)
+                              setShowMonthlyCustomInput(false)
+                            }}
+                            className={`w-9 h-9 rounded-lg items-center justify-center border ${
+                              routineCountPerPeriod === count && !showMonthlyCustomInput
+                                ? 'bg-gray-900 border-gray-900'
+                                : 'bg-white border-gray-300'
+                            }`}
+                          >
+                            <Text
+                              className={`text-sm font-medium ${
+                                routineCountPerPeriod === count && !showMonthlyCustomInput
+                                  ? 'text-white'
+                                  : 'text-gray-700'
+                              }`}
+                            >
+                              {count}
+                            </Text>
+                          </Pressable>
+                        ))}
+                        {/* Custom Input - inline */}
+                        {showMonthlyCustomInput ? (
+                          <View className="flex-row items-center" style={{ gap: 4 }}>
+                            <TextInput
+                              value={monthlyCustomValue}
+                              onChangeText={(text) => {
+                                const num = text.replace(/[^0-9]/g, '')
+                                const limitedNum = num ? Math.min(parseInt(num), 31) : 0
+                                setMonthlyCustomValue(limitedNum > 0 ? String(limitedNum) : '')
+                                if (limitedNum > 0) {
+                                  setRoutineCountPerPeriod(limitedNum)
+                                }
+                              }}
+                              placeholder="?"
+                              keyboardType="number-pad"
+                              maxLength={2}
+                              className="w-9 h-9 border border-gray-900 bg-gray-900 rounded-lg text-sm text-center text-white"
+                              placeholderTextColor="#9ca3af"
+                              autoFocus
+                            />
+                          </View>
+                        ) : (
+                          <Pressable
+                            onPress={() => {
+                              setShowMonthlyCustomInput(true)
+                              setMonthlyCustomValue(
+                                !MONTHLY_COUNT_OPTIONS.includes(routineCountPerPeriod)
+                                  ? String(routineCountPerPeriod)
+                                  : ''
+                              )
+                            }}
+                            className="w-9 h-9 rounded-lg items-center justify-center border border-dashed border-gray-400"
+                          >
+                            <Text className="text-sm font-medium text-gray-500">+</Text>
+                          </Pressable>
+                        )}
+                      </View>
                       <View className="flex-row items-center mt-2">
                         <Info size={12} color="#9ca3af" />
                         <Text className="text-xs text-gray-400 ml-1">
@@ -551,45 +572,33 @@ export default function ActionTypeSelector({
                     </View>
                   </View>
 
-                  {/* Period Cycle (for periodic missions) */}
+                  {/* Period Cycle (for periodic missions) - Button Style */}
                   {missionCompletionType === 'periodic' && (
                     <View className="mt-3">
                       <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
-                      <Pressable
-                        onPress={() => setShowPeriodCycleDropdown(!showPeriodCycleDropdown)}
-                        className="flex-row items-center justify-between bg-white border border-gray-300 rounded-lg px-3 py-3"
-                      >
-                        <Text className="text-sm text-gray-900">
-                          {getPeriodCycleLabel(missionPeriodCycle)}
-                        </Text>
-                        <ChevronDown size={16} color="#6b7280" />
-                      </Pressable>
-                      {showPeriodCycleDropdown && (
-                        <View className="bg-white border border-gray-300 rounded-lg mt-1">
-                          {PERIOD_CYCLE_OPTIONS.map((option) => (
-                            <Pressable
-                              key={option.value}
-                              onPress={() => {
-                                setMissionPeriodCycle(option.value)
-                                setShowPeriodCycleDropdown(false)
-                              }}
-                              className={`px-3 py-3 border-b border-gray-100 last:border-b-0 ${
-                                missionPeriodCycle === option.value ? 'bg-gray-50' : ''
+                      <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+                        {PERIOD_CYCLE_OPTIONS.map((option) => (
+                          <Pressable
+                            key={option.value}
+                            onPress={() => setMissionPeriodCycle(option.value)}
+                            className={`px-4 py-2 rounded-lg border ${
+                              missionPeriodCycle === option.value
+                                ? 'bg-gray-900 border-gray-900'
+                                : 'bg-white border-gray-300'
+                            }`}
+                          >
+                            <Text
+                              className={`text-sm font-medium ${
+                                missionPeriodCycle === option.value
+                                  ? 'text-white'
+                                  : 'text-gray-700'
                               }`}
                             >
-                              <Text
-                                className={`text-sm ${
-                                  missionPeriodCycle === option.value
-                                    ? 'text-gray-900 font-medium'
-                                    : 'text-gray-700'
-                                }`}
-                              >
-                                {option.label}
-                              </Text>
-                            </Pressable>
-                          ))}
-                        </View>
-                      )}
+                              {option.label}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
                     </View>
                   )}
                 </View>

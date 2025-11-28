@@ -501,6 +501,213 @@ export function getRoutineFrequencyLabel(frequency: RoutineFrequency): string {
 }
 
 /**
+ * Get period bounds (start/end dates) for a given date and frequency
+ * Used to calculate period check counts
+ *
+ * @param date - Reference date
+ * @param frequency - 'daily' | 'weekly' | 'monthly'
+ * @returns Object with start and end dates (inclusive) in YYYY-MM-DD format
+ */
+export function getPeriodBounds(
+  date: Date,
+  frequency: RoutineFrequency
+): { start: string; end: string; label: string } {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const dayOfMonth = date.getDate()
+  const dayOfWeek = date.getDay() // 0 = Sunday
+
+  let startDate: Date
+  let endDate: Date
+  let label: string
+
+  switch (frequency) {
+    case 'daily':
+      startDate = new Date(year, month, dayOfMonth)
+      endDate = new Date(year, month, dayOfMonth)
+      label = '오늘'
+      break
+
+    case 'weekly':
+      // Week starts on Monday (1), ends on Sunday (0)
+      // Calculate days since Monday
+      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      startDate = new Date(year, month, dayOfMonth - daysSinceMonday)
+      endDate = new Date(year, month, dayOfMonth - daysSinceMonday + 6)
+      label = '이번 주'
+      break
+
+    case 'monthly':
+      startDate = new Date(year, month, 1)
+      endDate = new Date(year, month + 1, 0) // Last day of month
+      label = '이번 달'
+      break
+
+    default:
+      startDate = new Date(year, month, dayOfMonth)
+      endDate = new Date(year, month, dayOfMonth)
+      label = '오늘'
+  }
+
+  const formatDate = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  return {
+    start: formatDate(startDate),
+    end: formatDate(endDate),
+    label
+  }
+}
+
+/**
+ * Get period bounds for mission period cycles (including quarterly and yearly)
+ * Used to calculate period check counts for missions
+ *
+ * @param date - Reference date
+ * @param cycle - 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+ * @returns Object with start and end dates (inclusive) in YYYY-MM-DD format
+ */
+export function getMissionPeriodBounds(
+  date: Date,
+  cycle: MissionPeriodCycle
+): { start: string; end: string; label: string } {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const dayOfMonth = date.getDate()
+  const dayOfWeek = date.getDay() // 0 = Sunday
+
+  let startDate: Date
+  let endDate: Date
+  let label: string
+
+  switch (cycle) {
+    case 'daily':
+      startDate = new Date(year, month, dayOfMonth)
+      endDate = new Date(year, month, dayOfMonth)
+      label = '오늘'
+      break
+
+    case 'weekly':
+      // Week starts on Monday (1), ends on Sunday (0)
+      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      startDate = new Date(year, month, dayOfMonth - daysSinceMonday)
+      endDate = new Date(year, month, dayOfMonth - daysSinceMonday + 6)
+      label = '이번 주'
+      break
+
+    case 'monthly':
+      startDate = new Date(year, month, 1)
+      endDate = new Date(year, month + 1, 0) // Last day of month
+      label = '이번 달'
+      break
+
+    case 'quarterly':
+      // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
+      const quarter = Math.floor(month / 3)
+      const quarterStartMonth = quarter * 3
+      startDate = new Date(year, quarterStartMonth, 1)
+      endDate = new Date(year, quarterStartMonth + 3, 0) // Last day of quarter
+      label = '이번 분기'
+      break
+
+    case 'yearly':
+      startDate = new Date(year, 0, 1) // Jan 1
+      endDate = new Date(year, 11, 31) // Dec 31
+      label = '올해'
+      break
+
+    default:
+      startDate = new Date(year, month, dayOfMonth)
+      endDate = new Date(year, month, dayOfMonth)
+      label = '오늘'
+  }
+
+  const formatDate = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  return {
+    start: formatDate(startDate),
+    end: formatDate(endDate),
+    label
+  }
+}
+
+/**
+ * Get target count for an action based on its settings
+ * Returns null for actions without count targets (daily, weekday-based, reference)
+ */
+export function getActionPeriodTarget(action: {
+  type: ActionType
+  routine_frequency?: RoutineFrequency
+  routine_weekdays?: number[]
+  routine_count_per_period?: number
+}): number | null {
+  // Reference type has no target
+  if (action.type === 'reference') return null
+
+  // Mission type: count as 1 target per period
+  if (action.type === 'mission') return 1
+
+  // Routine type
+  if (action.type === 'routine') {
+    const frequency = action.routine_frequency || 'daily'
+
+    // Daily: target is 1 per day (shown differently in UI)
+    if (frequency === 'daily') return null
+
+    // Weekday-based weekly: no count target (based on specific days)
+    if (frequency === 'weekly' && action.routine_weekdays && action.routine_weekdays.length > 0) {
+      return null
+    }
+
+    // Count-based weekly/monthly
+    if (frequency === 'weekly' || frequency === 'monthly') {
+      return action.routine_count_per_period || 1
+    }
+  }
+
+  return null
+}
+
+/**
+ * Format period progress for display
+ * Examples: "이번 주 2/3", "이번 달 3/5 ✓", "오늘 완료 ✓"
+ */
+export function formatPeriodProgress(
+  checkCount: number,
+  target: number | null,
+  frequency: RoutineFrequency,
+  isToday: boolean = false
+): { text: string; isCompleted: boolean } | null {
+  // No target = no progress display (daily, weekday-based)
+  if (target === null) {
+    // For daily, show simple completion status
+    if (frequency === 'daily' && isToday) {
+      return checkCount > 0
+        ? { text: '오늘 완료', isCompleted: true }
+        : null
+    }
+    return null
+  }
+
+  const isCompleted = checkCount >= target
+  const periodLabel = frequency === 'weekly' ? '이번 주' : frequency === 'monthly' ? '이번 달' : ''
+
+  return {
+    text: `${periodLabel} ${checkCount}/${target}`,
+    isCompleted
+  }
+}
+
+/**
  * Get weekday names in Korean (starting from Monday)
  */
 export function getWeekdayNames(): Array<{ value: number; label: string; short: string }> {

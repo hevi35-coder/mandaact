@@ -373,45 +373,25 @@ export default function MandalartDetailScreen() {
           </View>
         </View>
 
-        {/* Legend */}
-        <View className="px-4 py-4">
-          <View className="bg-white rounded-2xl p-4">
-            <Text className="text-sm font-semibold text-gray-900 mb-3">범례</Text>
-            <View className="flex-row flex-wrap gap-3">
-              <View className="flex-row items-center">
-                <View className="w-4 h-4 rounded mr-2 bg-primary" />
-                <Text className="text-xs text-gray-600">핵심 목표</Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-4 h-4 rounded mr-2 bg-blue-100 border border-blue-200" />
-                <Text className="text-xs text-gray-600">세부 목표</Text>
-              </View>
-              <View className="flex-row items-center">
-                <RotateCw size={12} color="#3b82f6" />
-                <Text className="text-xs text-gray-600 ml-1">루틴</Text>
-              </View>
-              <View className="flex-row items-center">
-                <Target size={12} color="#10b981" />
-                <Text className="text-xs text-gray-600 ml-1">미션</Text>
-              </View>
-              <View className="flex-row items-center">
-                <Lightbulb size={12} color="#f59e0b" />
-                <Text className="text-xs text-gray-600 ml-1">참고</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
         {/* Usage Instructions */}
-        <View className="px-4 pb-8">
+        <View className="px-4 py-4 pb-8">
           <View className="bg-white rounded-2xl p-4">
             <View className="flex-row items-center mb-2">
               <Lightbulb size={16} color="#667eea" />
               <Text className="text-sm font-medium text-gray-900 ml-2">사용 방법</Text>
             </View>
-            <Text className="text-xs text-gray-500">
+            <Text className="text-xs text-gray-500 mb-2">
               • 각 영역을 탭하여 상세보기 및 수정이 가능합니다.
             </Text>
+            <View className="flex-row items-center">
+              <Text className="text-xs text-gray-500">• 타입 구분: </Text>
+              <RotateCw size={12} color="#3b82f6" />
+              <Text className="text-xs text-gray-500 ml-1 mr-2">루틴</Text>
+              <Target size={12} color="#10b981" />
+              <Text className="text-xs text-gray-500 ml-1 mr-2">미션</Text>
+              <Lightbulb size={12} color="#f59e0b" />
+              <Text className="text-xs text-gray-500 ml-1">참고</Text>
+            </View>
           </View>
         </View>
       </ScrollView>

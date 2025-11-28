@@ -257,11 +257,17 @@ export default function MandalartCreatePage() {
 
   // Mobile handlers
   const handleMobileSectionTap = (sectionPos: number) => {
-    if (mobileExpandedSection === sectionPos) {
+    const subGoal = gridData.sub_goals.find(sg => sg.position === sectionPos)
+    const isEmpty = !subGoal?.title?.trim()
+
+    if (isEmpty) {
+      // Empty sub-goal: directly open modal
+      handleSectionClick(sectionPos)
+    } else if (mobileExpandedSection === sectionPos) {
       // Already expanded, open modal
       handleSectionClick(sectionPos)
     } else {
-      // Expand section
+      // Expand section to show details
       setMobileExpandedSection(sectionPos)
     }
   }

@@ -31,6 +31,7 @@
     "expo-file-system": "catalog:",
     "expo-image": "catalog:",
     "expo-image-picker": "catalog:",
+    "expo-linear-gradient": "~14.0.2",
     "expo-media-library": "catalog:",
     "expo-notifications": "catalog:",
     "expo-sharing": "catalog:",

@@ -4,6 +4,7 @@ export {
   uploadImage,
   processOCR,
   runOCRFlow,
+  runOCRFlowFromUri,
   parseMandalartText,
 } from './ocrService'
 export type { OCRResult, UploadProgress } from './ocrService'

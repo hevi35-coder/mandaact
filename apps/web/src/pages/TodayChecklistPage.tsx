@@ -1009,6 +1009,19 @@ export default function TodayChecklistPage() {
                                       </span>
                                     </div>
                                   </div>
+                                  {/* Period Progress Badge */}
+                                  {action.period_progress && action.period_progress.target !== null && (
+                                    <span
+                                      className={`text-xs px-2 py-1 rounded flex-shrink-0 ${
+                                        action.period_progress.isCompleted
+                                          ? 'bg-green-100 text-green-700 border border-green-200'
+                                          : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                      }`}
+                                    >
+                                      {action.period_progress.periodLabel} {action.period_progress.checkCount}/{action.period_progress.target}
+                                      {action.period_progress.isCompleted && ' ✓'}
+                                    </span>
+                                  )}
                                   <button
                                     onClick={(e) => openTypeEditor(action, e)}
                                     className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex-shrink-0"

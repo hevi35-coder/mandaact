@@ -172,6 +172,40 @@ export async function runOCRFlow(
 }
 
 /**
+ * OCR flow from image URI: Upload -> Process OCR
+ * Used when image is already picked and we have the URI
+ */
+export async function runOCRFlowFromUri(
+  userId: string,
+  imageUri: string,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<OCRResult | null> {
+  try {
+    // Create a minimal asset object from URI
+    const asset = {
+      uri: imageUri,
+      mimeType: 'image/jpeg',
+    } as ImagePicker.ImagePickerAsset
+
+    // Step 1: Upload image
+    onProgress?.({ stage: 'uploading', message: '이미지 업로드 중...', progress: 0 })
+    const imageUrl = await uploadImage(asset, userId)
+    onProgress?.({ stage: 'uploading', message: '업로드 완료', progress: 100 })
+
+    // Step 2: Process OCR
+    onProgress?.({ stage: 'processing', message: 'OCR 분석 중...' })
+    const result = await processOCR(imageUrl)
+
+    onProgress?.({ stage: 'done', message: '완료!' })
+    return result
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '알 수 없는 오류'
+    onProgress?.({ stage: 'error', message })
+    throw error
+  }
+}
+
+/**
  * Parse text input (for manual paste)
  */
 export async function parseMandalartText(text: string): Promise<OCRResult> {

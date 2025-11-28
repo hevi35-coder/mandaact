@@ -35,6 +35,8 @@ export { default as ActionEditModal } from './ActionEditModal'
 // Mandalart modals
 export { default as MandalartInfoModal } from './MandalartInfoModal'
 export { default as SubGoalEditModal } from './SubGoalEditModal'
+export { default as CoreGoalModal } from './CoreGoalModal'
+export { default as SubGoalModal } from './SubGoalModal'
 
 // Sortable list
 export { default as SortableList } from './SortableList'

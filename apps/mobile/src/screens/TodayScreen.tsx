@@ -24,6 +24,7 @@ import {
 } from 'lucide-react-native'
 import { format, addDays, isSameDay, startOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import {
   useTodayActions,
@@ -32,6 +33,7 @@ import {
   ActionWithContext,
 } from '../hooks/useActions'
 import { useDailyStats, useXPUpdate } from '../hooks/useStats'
+import { badgeKeys } from '../hooks/useBadges'
 import { useToast } from '../components/Toast'
 import {
   shouldShowToday,
@@ -40,7 +42,7 @@ import {
   isTodayOrYesterday,
   type ActionType,
 } from '@mandaact/shared'
-import type { Mandalart } from '@mandaact/shared'
+import type { Action, Mandalart } from '@mandaact/shared'
 import { logger } from '../lib/logger'
 import { badgeService } from '../lib/badge'
 import DatePickerModal from '../components/DatePickerModal'
@@ -68,6 +70,7 @@ function ActionTypeIcon({
 
 export default function TodayScreen() {
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     new Set()
@@ -137,23 +140,28 @@ export default function TodayScreen() {
     if (!selectedActionForTypeEdit) return
 
     try {
+      // Build updates object - use null for fields that need to be cleared in DB
+      // Cast as any to allow null values which Supabase needs to clear fields
+      const updates: Record<string, unknown> = {
+        type: data.type,
+        routine_frequency: data.routine_frequency ?? null,
+        routine_weekdays: data.routine_weekdays ?? null,
+        routine_count_per_period: data.routine_count_per_period ?? null,
+        mission_completion_type: data.mission_completion_type ?? null,
+        mission_period_cycle: data.mission_period_cycle ?? null,
+        mission_current_period_start: data.mission_current_period_start ?? null,
+        mission_current_period_end: data.mission_current_period_end ?? null,
+        ai_suggestion: data.ai_suggestion ?? null,
+      }
+
       await updateAction.mutateAsync({
         id: selectedActionForTypeEdit.id,
-        updates: {
-          type: data.type,
-          routine_frequency: data.routine_frequency,
-          routine_weekdays: data.routine_weekdays,
-          routine_count_per_period: data.routine_count_per_period,
-          mission_completion_type: data.mission_completion_type,
-          mission_period_cycle: data.mission_period_cycle,
-          mission_current_period_start: data.mission_current_period_start,
-          mission_current_period_end: data.mission_current_period_end,
-          ai_suggestion: data.ai_suggestion,
-        },
+        updates: updates as Partial<Action>,
       })
 
       toast.success('타입 변경 완료', '실천 항목 타입이 변경되었습니다')
-      refetch()
+      // Await refetch to ensure data is updated before modal closes
+      await refetch()
     } catch (error) {
       logger.error('Error saving action type', error)
       toast.error('오류', '타입 변경 중 오류가 발생했습니다')
@@ -277,6 +285,9 @@ export default function TodayScreen() {
           checkId: action.check_id,
         })
 
+        // Refetch to update UI with new period_progress
+        await refetch()
+
         // Award XP when checking, subtract when unchecking
         if (!wasChecked) {
           // Checking: Award XP
@@ -313,6 +324,10 @@ export default function TodayScreen() {
                 // Check and unlock new badges (uses shared badgeService)
                 const newlyUnlocked = await badgeService.evaluateAndUnlockBadges(user.id)
                 if (newlyUnlocked && newlyUnlocked.length > 0) {
+                  // Invalidate badge queries so BadgeScreen shows updated data
+                  queryClient.invalidateQueries({ queryKey: badgeKeys.userBadges(user.id) })
+                  queryClient.invalidateQueries({ queryKey: badgeKeys.progress(user.id) })
+
                   for (const badge of newlyUnlocked) {
                     setTimeout(() => {
                       toast.success('🏆 새로운 배지 획득!', `${badge.badgeTitle} (+${badge.xpAwarded} XP)`)
@@ -361,7 +376,7 @@ export default function TodayScreen() {
         })
       }
     },
-    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck]
+    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck, queryClient, refetch]
   )
 
   // Loading state
@@ -736,6 +751,28 @@ export default function TodayScreen() {
                                   </Text>
                                 </View>
                               </View>
+
+                              {/* Period Progress Badge */}
+                              {action.period_progress && action.period_progress.target !== null && (
+                                <View
+                                  className={`px-2 py-1 rounded-lg mr-2 ${
+                                    action.period_progress.isCompleted
+                                      ? 'bg-green-100 border border-green-200'
+                                      : 'bg-gray-100 border border-gray-200'
+                                  }`}
+                                >
+                                  <Text
+                                    className={`text-xs ${
+                                      action.period_progress.isCompleted
+                                        ? 'text-green-700'
+                                        : 'text-gray-600'
+                                    }`}
+                                  >
+                                    {action.period_progress.periodLabel} {action.period_progress.checkCount}/{action.period_progress.target}
+                                    {action.period_progress.isCompleted && ' ✓'}
+                                  </Text>
+                                </View>
+                              )}
 
                               {/* Type Badge - Pressable로 변경 (타입 수정 모달 열기) */}
                               <Pressable

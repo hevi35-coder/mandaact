@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { getDayBoundsUTC, getCurrentUTC } from '@mandaact/shared'
+import { getDayBoundsUTC, getCurrentUTC, getPeriodBounds, getMissionPeriodBounds, getActionPeriodTarget, type RoutineFrequency } from '@mandaact/shared'
 import type { Action, SubGoal, Mandalart, CheckHistory } from '@mandaact/shared'
 import { format } from 'date-fns'
 
@@ -18,6 +18,16 @@ export const actionKeys = {
 }
 
 /**
+ * Period progress info for display
+ */
+export interface PeriodProgress {
+  checkCount: number
+  target: number | null
+  periodLabel: string
+  isCompleted: boolean
+}
+
+/**
  * Action with nested relations and check status
  */
 export interface ActionWithContext extends Action {
@@ -26,6 +36,7 @@ export interface ActionWithContext extends Action {
   }
   is_checked: boolean
   check_id?: string
+  period_progress?: PeriodProgress
 }
 
 /**
@@ -51,7 +62,7 @@ async function fetchTodayActions(
 
   if (actionsError) throw actionsError
 
-  // Fetch check history for selected date
+  // Fetch check history for selected date (for is_checked status)
   const dateStr = format(selectedDate, 'yyyy-MM-dd')
   const { start: dayStart, end: dayEnd } = getDayBoundsUTC(dateStr)
 
@@ -64,10 +75,93 @@ async function fetchTodayActions(
 
   if (checksError) throw checksError
 
-  // Create a map of checked action IDs
+  // Create a map of checked action IDs for today
   const checkedActionsMap = new Map<string, string>()
   checksData?.forEach((check: CheckHistory) => {
     checkedActionsMap.set(check.action_id, check.id)
+  })
+
+  // Calculate period bounds for weekly, monthly, quarterly, yearly
+  const weekBounds = getPeriodBounds(selectedDate, 'weekly')
+  const monthBounds = getPeriodBounds(selectedDate, 'monthly')
+  const quarterBounds = getMissionPeriodBounds(selectedDate, 'quarterly')
+  const yearBounds = getMissionPeriodBounds(selectedDate, 'yearly')
+
+  // Fetch check history for the week (for period progress)
+  const { start: weekStart } = getDayBoundsUTC(weekBounds.start)
+  const { end: weekEnd } = getDayBoundsUTC(weekBounds.end)
+
+  const { data: weekChecksData, error: weekChecksError } = await supabase
+    .from('check_history')
+    .select('action_id')
+    .eq('user_id', userId)
+    .gte('checked_at', weekStart)
+    .lt('checked_at', weekEnd)
+
+  if (weekChecksError) throw weekChecksError
+
+  // Fetch check history for the month (for period progress)
+  const { start: monthStart } = getDayBoundsUTC(monthBounds.start)
+  const { end: monthEnd } = getDayBoundsUTC(monthBounds.end)
+
+  const { data: monthChecksData, error: monthChecksError } = await supabase
+    .from('check_history')
+    .select('action_id')
+    .eq('user_id', userId)
+    .gte('checked_at', monthStart)
+    .lt('checked_at', monthEnd)
+
+  if (monthChecksError) throw monthChecksError
+
+  // Fetch check history for the quarter (for period progress)
+  const { start: quarterStart } = getDayBoundsUTC(quarterBounds.start)
+  const { end: quarterEnd } = getDayBoundsUTC(quarterBounds.end)
+
+  const { data: quarterChecksData, error: quarterChecksError } = await supabase
+    .from('check_history')
+    .select('action_id')
+    .eq('user_id', userId)
+    .gte('checked_at', quarterStart)
+    .lt('checked_at', quarterEnd)
+
+  if (quarterChecksError) throw quarterChecksError
+
+  // Fetch check history for the year (for period progress)
+  const { start: yearStart } = getDayBoundsUTC(yearBounds.start)
+  const { end: yearEnd } = getDayBoundsUTC(yearBounds.end)
+
+  const { data: yearChecksData, error: yearChecksError } = await supabase
+    .from('check_history')
+    .select('action_id')
+    .eq('user_id', userId)
+    .gte('checked_at', yearStart)
+    .lt('checked_at', yearEnd)
+
+  if (yearChecksError) throw yearChecksError
+
+  // Create maps of check counts per action for each period
+  const weekCheckCounts = new Map<string, number>()
+  weekChecksData?.forEach((check) => {
+    const count = weekCheckCounts.get(check.action_id) || 0
+    weekCheckCounts.set(check.action_id, count + 1)
+  })
+
+  const monthCheckCounts = new Map<string, number>()
+  monthChecksData?.forEach((check) => {
+    const count = monthCheckCounts.get(check.action_id) || 0
+    monthCheckCounts.set(check.action_id, count + 1)
+  })
+
+  const quarterCheckCounts = new Map<string, number>()
+  quarterChecksData?.forEach((check) => {
+    const count = quarterCheckCounts.get(check.action_id) || 0
+    quarterCheckCounts.set(check.action_id, count + 1)
+  })
+
+  const yearCheckCounts = new Map<string, number>()
+  yearChecksData?.forEach((check) => {
+    const count = yearCheckCounts.get(check.action_id) || 0
+    yearCheckCounts.set(check.action_id, count + 1)
   })
 
   // Combine data
@@ -83,12 +177,106 @@ async function fetchTodayActions(
         // Only show actions from active mandalarts
         action.sub_goal.mandalart.is_active !== false
     )
-    .map((action) => ({
-      ...action,
-      sub_goal: action.sub_goal,
-      is_checked: checkedActionsMap.has(action.id),
-      check_id: checkedActionsMap.get(action.id),
-    }))
+    .map((action) => {
+      const target = getActionPeriodTarget(action)
+
+      // Determine period progress based on type and frequency
+      let periodProgress: PeriodProgress | undefined
+
+      if (action.type !== 'reference') {
+        // Handle mission type with periodic completion
+        if (action.type === 'mission' && action.mission_completion_type === 'periodic') {
+          const missionCycle = action.mission_period_cycle || 'monthly'
+          if (missionCycle === 'weekly') {
+            const checkCount = weekCheckCounts.get(action.id) || 0
+            periodProgress = {
+              checkCount,
+              target: target ?? 1,
+              periodLabel: weekBounds.label,
+              isCompleted: checkCount >= (target ?? 1)
+            }
+          } else if (missionCycle === 'monthly') {
+            const checkCount = monthCheckCounts.get(action.id) || 0
+            periodProgress = {
+              checkCount,
+              target: target ?? 1,
+              periodLabel: monthBounds.label,
+              isCompleted: checkCount >= (target ?? 1)
+            }
+          } else if (missionCycle === 'daily') {
+            const isCheckedToday = checkedActionsMap.has(action.id)
+            if (isCheckedToday) {
+              periodProgress = {
+                checkCount: 1,
+                target: 1,
+                periodLabel: '오늘',
+                isCompleted: true
+              }
+            }
+          } else if (missionCycle === 'quarterly') {
+            const checkCount = quarterCheckCounts.get(action.id) || 0
+            periodProgress = {
+              checkCount,
+              target: target ?? 1,
+              periodLabel: quarterBounds.label,
+              isCompleted: checkCount >= (target ?? 1)
+            }
+          } else if (missionCycle === 'yearly') {
+            const checkCount = yearCheckCounts.get(action.id) || 0
+            periodProgress = {
+              checkCount,
+              target: target ?? 1,
+              periodLabel: yearBounds.label,
+              isCompleted: checkCount >= (target ?? 1)
+            }
+          }
+        }
+        // Handle routine type
+        else if (action.type === 'routine') {
+          const frequency = (action.routine_frequency || 'daily') as RoutineFrequency
+          if (frequency === 'weekly' && target !== null) {
+            const checkCount = weekCheckCounts.get(action.id) || 0
+            periodProgress = {
+              checkCount,
+              target,
+              periodLabel: weekBounds.label,
+              isCompleted: checkCount >= target
+            }
+          } else if (frequency === 'monthly' && target !== null) {
+            const checkCount = monthCheckCounts.get(action.id) || 0
+            periodProgress = {
+              checkCount,
+              target,
+              periodLabel: monthBounds.label,
+              isCompleted: checkCount >= target
+            }
+          } else if (frequency === 'daily') {
+            // For daily, show today's check status
+            const isCheckedToday = checkedActionsMap.has(action.id)
+            if (isCheckedToday) {
+              periodProgress = {
+                checkCount: 1,
+                target: 1,
+                periodLabel: '오늘',
+                isCompleted: true
+              }
+            }
+          }
+        }
+        // Handle one-time missions (mission_completion_type === 'once')
+        else if (action.type === 'mission') {
+          // No period progress for one-time missions
+        }
+      }
+
+      return {
+        ...action,
+        sub_goal: action.sub_goal,
+        is_checked: checkedActionsMap.has(action.id),
+        check_id: checkedActionsMap.get(action.id),
+        period_progress: periodProgress
+      }
+    })
 
   return actionsWithContext
 }

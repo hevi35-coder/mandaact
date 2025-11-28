@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -11,15 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Info } from 'lucide-react'
+import { Info, Plus } from 'lucide-react'
 import {
   ActionType,
   RoutineFrequency,
@@ -35,6 +27,24 @@ import {
 import { getTypeIcon } from '@/lib/iconUtils'
 import { VALIDATION_MESSAGES } from '@/lib/notificationMessages'
 import { showWarning } from '@/lib/notificationUtils'
+
+// Constants for button selections
+const FREQUENCY_OPTIONS = [
+  { value: 'daily', label: '매일' },
+  { value: 'weekly', label: '매주' },
+  { value: 'monthly', label: '매월' },
+] as const
+
+const WEEKLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
+const MONTHLY_COUNT_OPTIONS = [1, 2, 3, 5, 10, 20, 30]
+
+const PERIOD_CYCLE_OPTIONS = [
+  { value: 'daily', label: '매일' },
+  { value: 'weekly', label: '매주' },
+  { value: 'monthly', label: '매월' },
+  { value: 'quarterly', label: '분기별' },
+  { value: 'yearly', label: '매년' },
+] as const
 
 export interface ActionTypeData {
   type: ActionType
@@ -94,6 +104,11 @@ function ActionTypeSelector({
   const [missionPeriodCycle, setMissionPeriodCycle] = useState<MissionPeriodCycle>(
     initialData?.mission_period_cycle || 'monthly'
   )
+
+  // Custom monthly input
+  const [showCustomMonthlyInput, setShowCustomMonthlyInput] = useState(false)
+  const [customMonthlyValue, setCustomMonthlyValue] = useState('')
+  const customMonthlyInputRef = useRef<HTMLInputElement>(null)
 
   // AI suggestion
   const [aiSuggestion, setAiSuggestion] = useState(initialData?.ai_suggestion)
@@ -245,18 +260,33 @@ function ActionTypeSelector({
             <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
               <Label className="text-base font-semibold">루틴 설정</Label>
 
+              {/* Frequency - Button Group */}
               <div className="space-y-2">
                 <Label>반복 주기</Label>
-                <Select value={routineFrequency} onValueChange={(value) => setRoutineFrequency(value as RoutineFrequency)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">{getRoutineFrequencyLabel('daily')}</SelectItem>
-                    <SelectItem value="weekly">{getRoutineFrequencyLabel('weekly')}</SelectItem>
-                    <SelectItem value="monthly">{getRoutineFrequencyLabel('monthly')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  {FREQUENCY_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setRoutineFrequency(option.value as RoutineFrequency)
+                        // Reset related values when frequency changes
+                        setRoutineCountPerPeriod(1)
+                        setRoutineWeekdays([])
+                        setShowCustomMonthlyInput(false)
+                        setCustomMonthlyValue('')
+                        setIsCustomMonthlyCount(false)
+                      }}
+                      className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                        routineFrequency === option.value
+                          ? 'bg-gray-900 border-gray-900 text-white'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Weekly specific settings */}
@@ -265,19 +295,18 @@ function ActionTypeSelector({
                   <Label>주중 실천 요일 선택 (선택사항)</Label>
                   <div className="grid grid-cols-7 gap-2">
                     {weekdays.map((day) => (
-                      <div key={day.value} className="flex items-center space-x-1">
-                        <Checkbox
-                          id={`weekday-${day.value}`}
-                          checked={routineWeekdays.includes(day.value)}
-                          onCheckedChange={() => handleWeekdayToggle(day.value)}
-                        />
-                        <Label
-                          htmlFor={`weekday-${day.value}`}
-                          className="text-sm cursor-pointer"
-                        >
-                          {day.short}
-                        </Label>
-                      </div>
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => handleWeekdayToggle(day.value)}
+                        className={`w-9 h-9 rounded-lg border text-sm font-medium transition-colors ${
+                          routineWeekdays.includes(day.value)
+                            ? 'bg-gray-900 border-gray-900 text-white'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {day.short}
+                      </button>
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -288,21 +317,22 @@ function ActionTypeSelector({
                   {routineWeekdays.length === 0 && (
                     <div className="space-y-2">
                       <Label>주간 목표 횟수</Label>
-                      <Select
-                        value={String(routineCountPerPeriod)}
-                        onValueChange={(value) => setRoutineCountPerPeriod(Number(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="횟수 선택" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7].map((count) => (
-                            <SelectItem key={count} value={String(count)}>
-                              주 {count}회
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex gap-2">
+                        {WEEKLY_COUNT_OPTIONS.map((count) => (
+                          <button
+                            key={count}
+                            type="button"
+                            onClick={() => setRoutineCountPerPeriod(count)}
+                            className={`w-9 h-9 rounded-lg border text-sm font-medium transition-colors ${
+                              routineCountPerPeriod === count
+                                ? 'bg-gray-900 border-gray-900 text-white'
+                                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {count}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -313,65 +343,74 @@ function ActionTypeSelector({
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label>월간 목표 횟수</Label>
-                    <Select
-                      value={isCustomMonthlyCount ? 'custom' : String(routineCountPerPeriod)}
-                      onValueChange={(value) => {
-                        if (value === 'custom') {
-                          setIsCustomMonthlyCount(true)
-                          setRoutineCountPerPeriod(1)
-                        } else {
-                          setIsCustomMonthlyCount(false)
-                          setRoutineCountPerPeriod(Number(value))
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="횟수 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 4, 5, 8, 10, 15, 20, 30].map((count) => (
-                          <SelectItem key={count} value={String(count)}>
-                            월 {count}회
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="custom">직접 입력</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Custom input for monthly count */}
-                  {isCustomMonthlyCount && (
-                    <div className="space-y-2">
-                      <Label>직접 입력 (1~30)</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="30"
-                        placeholder="1~30 사이 숫자 입력"
-                        value={routineCountPerPeriod === 0 ? '' : routineCountPerPeriod}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          if (value === '') {
-                            setRoutineCountPerPeriod(0)
-                          } else {
-                            const num = Number(value)
-                            if (num >= 0 && num <= 30) {
+                    <div className="flex gap-2 flex-wrap items-center">
+                      {MONTHLY_COUNT_OPTIONS.map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => {
+                            setRoutineCountPerPeriod(count)
+                            setShowCustomMonthlyInput(false)
+                            setCustomMonthlyValue('')
+                            setIsCustomMonthlyCount(false)
+                          }}
+                          className={`w-9 h-9 rounded-lg border text-sm font-medium transition-colors ${
+                            routineCountPerPeriod === count && !showCustomMonthlyInput
+                              ? 'bg-gray-900 border-gray-900 text-white'
+                              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                      {/* Custom Input Button / Field */}
+                      {showCustomMonthlyInput ? (
+                        <Input
+                          ref={customMonthlyInputRef}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={2}
+                          placeholder=""
+                          value={customMonthlyValue}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '')
+                            setCustomMonthlyValue(val)
+                            if (val) {
+                              const num = Math.min(parseInt(val, 10), 31)
                               setRoutineCountPerPeriod(num)
                             }
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const value = Number(e.target.value)
-                          if (!value || value < 1 || value > 30) {
-                            showWarning(VALIDATION_MESSAGES.invalidNumber(1, 30))
-                            setRoutineCountPerPeriod(1)
-                          }
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        autoFocus
-                      />
+                          }}
+                          onBlur={() => {
+                            if (!customMonthlyValue || parseInt(customMonthlyValue, 10) < 1) {
+                              setShowCustomMonthlyInput(false)
+                              setCustomMonthlyValue('')
+                              setRoutineCountPerPeriod(1)
+                              setIsCustomMonthlyCount(false)
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === 'Escape') {
+                              e.currentTarget.blur()
+                            }
+                          }}
+                          className="w-9 h-9 p-0 text-center bg-gray-900 border-gray-900 text-white text-sm"
+                          autoFocus
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCustomMonthlyInput(true)
+                            setIsCustomMonthlyCount(true)
+                            setTimeout(() => customMonthlyInputRef.current?.focus(), 50)
+                          }}
+                          className="w-9 h-9 rounded-lg border border-dashed border-gray-400 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Info className="h-3 w-3 flex-shrink-0" />
@@ -412,21 +451,22 @@ function ActionTypeSelector({
               {missionCompletionType === 'periodic' && (
                 <div className="space-y-2">
                   <Label>반복 주기</Label>
-                  <Select
-                    value={missionPeriodCycle}
-                    onValueChange={(value) => setMissionPeriodCycle(value as MissionPeriodCycle)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">{getPeriodCycleLabel('daily')}</SelectItem>
-                      <SelectItem value="weekly">{getPeriodCycleLabel('weekly')}</SelectItem>
-                      <SelectItem value="monthly">{getPeriodCycleLabel('monthly')}</SelectItem>
-                      <SelectItem value="quarterly">{getPeriodCycleLabel('quarterly')}</SelectItem>
-                      <SelectItem value="yearly">{getPeriodCycleLabel('yearly')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2 flex-wrap">
+                    {PERIOD_CYCLE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setMissionPeriodCycle(option.value as MissionPeriodCycle)}
+                        className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                          missionPeriodCycle === option.value
+                            ? 'bg-gray-900 border-gray-900 text-white'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
