@@ -369,6 +369,11 @@ async function collectReportData(
 interface Action {
   title: string
   type?: string
+  routine_frequency?: string
+  routine_weekdays?: number[]
+  routine_count_per_period?: number
+  mission_completion_type?: string
+  mission_status?: string
 }
 
 interface SubGoal {
@@ -386,13 +391,14 @@ function analyzeMandalartStructure(mandalarts: Mandalart[]) {
     return {
       totalMandalarts: 0,
       fillRate: 0,
-      avgTextLength: 0,
       typeDistribution: { routine: 0, mission: 0, reference: 0 },
       emptyItems: 0,
       totalItems: 0,
       filledItems: 0,
       measurableItems: 0,
       measurableRate: 0,
+      specificItems: 0,
+      specificRate: 0,
     }
   }
 
@@ -400,22 +406,25 @@ function analyzeMandalartStructure(mandalarts: Mandalart[]) {
   const ITEMS_PER_MANDALART = 73
   const totalItems = mandalarts.length * ITEMS_PER_MANDALART
 
-  // Pattern to detect measurable items (numbers + units)
-  const measurablePattern = /\d+\s*[개회시분초일주월년번차명회차]|[0-9]+\s*[%점페이지]|\d+\s*[~-]\s*\d+/
+  // Patterns to detect specific/clear expressions in text (supplementary to metadata)
+  const specificTextPatterns = [
+    /\d+\s*[개회시분초일주월년번차명권장]/, // 숫자+단위: "30분", "3회", "5장"
+    /매일|매주|매월|주\s*\d+회|일\s*\d+회/, // 빈도: "매일", "주 3회", "일 2회"
+    /아침|점심|저녁|오전|오후|밤|새벽/,      // 시간대
+    /[0-9]+\s*시|[0-9]+:[0-9]+/,           // 구체적 시간: "7시", "7:30"
+    /월요일|화요일|수요일|목요일|금요일|토요일|일요일|평일|주말/, // 요일
+  ]
 
   let filledItems = 0
-  let totalTextLength = 0
-  let textCount = 0
   let measurableItems = 0
-  let routineItems = 0 // Count routine actions only
+  let specificItems = 0
+  let trackableActions = 0 // Count routine + mission actions (exclude reference)
   const typeDistribution = { routine: 0, mission: 0, reference: 0 }
 
   mandalarts.forEach((mandalart) => {
     // Count center goal
     if (mandalart.center_goal && mandalart.center_goal.trim()) {
       filledItems++
-      totalTextLength += mandalart.center_goal.length
-      textCount++
     }
 
     // Count sub goals and actions
@@ -423,16 +432,12 @@ function analyzeMandalartStructure(mandalarts: Mandalart[]) {
       mandalart.sub_goals.forEach((subGoal) => {
         if (subGoal.title && subGoal.title.trim()) {
           filledItems++
-          totalTextLength += subGoal.title.length
-          textCount++
         }
 
         if (subGoal.actions) {
           subGoal.actions.forEach((action) => {
             if (action.title && action.title.trim()) {
               filledItems++
-              totalTextLength += action.title.length
-              textCount++
 
               // Count action types
               const actionType = action.type || 'routine'
@@ -440,11 +445,34 @@ function analyzeMandalartStructure(mandalarts: Mandalart[]) {
                 typeDistribution[actionType as keyof typeof typeDistribution]++
               }
 
-              // Only count measurability for routine actions
-              if (actionType === 'routine') {
-                routineItems++
-                if (measurablePattern.test(action.title)) {
+              // Only count measurability for routine and mission (exclude reference)
+              if (actionType !== 'reference') {
+                trackableActions++
+
+                // Check measurability based on metadata settings
+                let isMeasurable = false
+
+                if (actionType === 'routine') {
+                  // Routine is measurable if frequency/weekdays/count is set
+                  isMeasurable = !!(
+                    action.routine_frequency ||
+                    (action.routine_weekdays && action.routine_weekdays.length > 0) ||
+                    action.routine_count_per_period
+                  )
+                } else if (actionType === 'mission') {
+                  // Mission is measurable if completion type is set
+                  isMeasurable = !!action.mission_completion_type
+                }
+
+                if (isMeasurable) {
                   measurableItems++
+                }
+
+                // Check specificity (text patterns as supplementary)
+                // An action is specific if it has metadata settings OR clear text patterns
+                const hasTextSpecificity = specificTextPatterns.some(pattern => pattern.test(action.title))
+                if (isMeasurable || hasTextSpecificity) {
+                  specificItems++
                 }
               }
             }
@@ -455,18 +483,20 @@ function analyzeMandalartStructure(mandalarts: Mandalart[]) {
   })
 
   const emptyItems = totalItems - filledItems
-  const measurableRate = routineItems > 0 ? Math.round((measurableItems / routineItems) * 100) : 0
+  const measurableRate = trackableActions > 0 ? Math.round((measurableItems / trackableActions) * 100) : 0
+  const specificRate = trackableActions > 0 ? Math.round((specificItems / trackableActions) * 100) : 0
 
   return {
     totalMandalarts: mandalarts.length,
     fillRate: totalItems > 0 ? Math.round((filledItems / totalItems) * 100) : 0,
-    avgTextLength: textCount > 0 ? Math.round(totalTextLength / textCount) : 0,
     typeDistribution,
     emptyItems,
     totalItems,
     filledItems,
     measurableItems,
     measurableRate,
+    specificItems,
+    specificRate,
   }
 }
 
@@ -510,9 +540,9 @@ async function generateAIReport(reportType: string, data: ReportData): Promise<s
 {
   "headline": "이번 주 가장 중요한 패턴이나 변화를 한 문장으로",
   "key_metrics": [
-    {"label": "총 실천 횟수", "value": "42회"},
-    {"label": "실천일수", "value": "최근 7일 중 6일"},
-    {"label": "전주 대비", "value": "+15%"}
+    {"label": "실천일수", "value": "7일 중 6일"},
+    {"label": "총 실천횟수", "value": "42회"},
+    {"label": "전주대비 실천횟수", "value": "+15% (37회→42회)"}
   ],
   "strengths": [
     "목요일 저녁 시간대 집중도가 높았습니다",
@@ -534,21 +564,45 @@ async function generateAIReport(reportType: string, data: ReportData): Promise<s
 작성 규칙:
 - 반드시 위 JSON 구조를 정확히 따르세요
 - 코드 블록 없이 JSON만 반환하세요
+- key_metrics 순서: 실천일수 → 총 실천횟수 → 전주대비 실천횟수
 - key_metrics의 value는 실제 수치를 포함하세요
+- 전주대비는 퍼센트와 함께 구체적 횟수 변화도 표시 (예: "+15% (37회→42회)")
 - 패턴과 맥락을 분석하세요
 - 실행 가능한 조언을 제공하세요`
 
       const weeklyData = data
       const badges = weeklyData.recentBadges?.map((b: { achievement?: { title?: string } }) => b.achievement?.title).join(', ') || '없음'
-      const changeText = weeklyData.weekOverWeekChange != null
-        ? `전주 대비 ${weeklyData.weekOverWeekChange > 0 ? '+' : ''}${weeklyData.weekOverWeekChange}%`
-        : '비교 데이터 없음'
+
+      // Calculate previous week's checks for detailed comparison
+      const currentChecks = data.totalChecks || 0
+      let prevChecks: number | null = null
+      let changeText = '비교 데이터 없음'
+
+      if (weeklyData.weekOverWeekChange != null) {
+        // Calculate prevChecks from weekOverWeekChange percentage
+        // Formula: change = ((current - prev) / prev) * 100
+        // So: prev = current / (1 + change/100)
+        // Handle edge case: if change is -100%, prev would be infinite (avoid division by zero)
+        const divisor = 1 + weeklyData.weekOverWeekChange / 100
+        if (divisor > 0 && currentChecks > 0) {
+          prevChecks = Math.round(currentChecks / divisor)
+          changeText = `${weeklyData.weekOverWeekChange > 0 ? '+' : ''}${weeklyData.weekOverWeekChange}% (${prevChecks}회→${currentChecks}회)`
+        } else if (weeklyData.weekOverWeekChange === 0) {
+          // No change, prev equals current
+          prevChecks = currentChecks
+          changeText = `0% (${currentChecks}회→${currentChecks}회)`
+        } else {
+          // Edge case: -100% change (prev had checks, current has 0)
+          changeText = `${weeklyData.weekOverWeekChange}%`
+        }
+      }
 
       userPrompt = `다음 데이터에서 패턴을 찾아 인사이트를 제공하세요:
 
 [실천 현황]
-- 총 실천 횟수: ${data.totalChecks}회 (${changeText})
-- 실천일수: 최근 7일 중 ${data.uniqueDays}일
+- 실천일수: 7일 중 ${data.uniqueDays}일
+- 총 실천횟수: ${currentChecks}회
+- 전주대비 실천횟수: ${changeText}
 - 스트릭: 현재 ${weeklyData.currentStreak}일, 최고 ${weeklyData.longestStreak}일
 - 새로 획득한 배지: ${badges}
 
@@ -611,11 +665,11 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 
 정확한 JSON 형식:
 {
-  "headline": "만다라트 계획이 잘 잡혀있으나 구체성 보완이 필요합니다",
+  "headline": "만다라트 계획이 잘 잡혀있으나 표현 명확도 보완이 필요합니다",
   "structure_metrics": [
     {"label": "완성도", "value": "89/146 (61%)"},
-    {"label": "구체성", "value": "평균 10자, 다소 추상적"},
-    {"label": "측정 가능성", "value": "42% (루틴 31개 중 13개)"}
+    {"label": "표현 명확도", "value": "42% (31개 중 13개가 구체적)"},
+    {"label": "측정 가능성", "value": "35% (31개 중 11개가 측정 가능)"}
   ],
   "strengths": [
     "모든 항목이 빠짐없이 채워져 있습니다",
@@ -635,14 +689,19 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 작성 규칙:
 - 반드시 위 JSON 구조를 정확히 따르세요
 - 코드 블록 없이 JSON만 반환하세요
-- structure_metrics는 정확히 3개 항목만 포함: 완성도, 구체성, 측정 가능성
+- structure_metrics는 정확히 3개 항목만 포함: 완성도, 표현 명확도, 측정 가능성
 - structure_metrics의 value는 실제 수치를 포함하세요
+- 표현 명확도: 숫자+단위, 시간대, 빈도 표현이 있는 항목 비율 (예: "30분", "매일 아침", "주 3회")
+- 측정 가능성: 숫자로 달성 여부 확인 가능한 항목 비율 (예: "3회", "5장")
 - 구체적이고 실천 가능한 조언을 제공하세요
 - 전문 용어 대신 쉬운 표현을 사용하세요`
 
       const diagnosisData = data
       const structure = diagnosisData.structureAnalysis || {}
       const mandalart = diagnosisData.mandalarts?.[0]
+
+      // Calculate trackable actions (routine + mission)
+      const trackableCount = (structure.typeDistribution?.routine || 0) + (structure.typeDistribution?.mission || 0)
 
       userPrompt = `만다라트 구조를 분석하여 개선점을 제시하세요:
 
@@ -652,8 +711,8 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 
 [구조 분석]
 - 전체 항목: ${structure.totalItems || 0}개 중 ${structure.filledItems || 0}개 작성 (${structure.fillRate || 0}%)
-- 평균 텍스트 길이: ${structure.avgTextLength || 0}자
-- 측정 가능성: ${structure.measurableRate || 0}% (루틴 ${structure.typeDistribution?.routine || 0}개 중 ${structure.measurableItems || 0}개)
+- 표현 명확도: ${structure.specificRate || 0}% (실천 항목 ${trackableCount}개 중 ${structure.specificItems || 0}개가 구체적)
+- 측정 가능성: ${structure.measurableRate || 0}% (실천 항목 ${trackableCount}개 중 ${structure.measurableItems || 0}개가 반복주기 설정됨)
 - 타입 분포: 루틴 ${structure.typeDistribution?.routine || 0}개, 미션 ${structure.typeDistribution?.mission || 0}개, 참고 ${structure.typeDistribution?.reference || 0}개
 
 [실천 현황]
@@ -661,10 +720,10 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 - 현재 스트릭: ${diagnosisData.currentStreak || 0}일
 
 분석 관점:
-1. 완성도와 구체성 평가
-2. 실천 가능성 평가 (구체적인 기준이 있는지)
-3. 달성 확인 가능성 (성공 여부를 판단할 수 있는지)
-4. 균형잡힌 목표 구성
+1. 완성도 평가 (항목 채움률)
+2. 표현 명확도 평가 (구체적 표현 또는 반복주기 설정 여부)
+3. 측정 가능성 평가 (반복주기가 설정되어 달성 여부 확인 가능한지)
+4. 균형잡힌 목표 구성 (참고 항목 제외 기준)
 
 JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함하세요.`
       break

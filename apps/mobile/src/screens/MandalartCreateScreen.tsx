@@ -354,6 +354,7 @@ export default function MandalartCreateScreen() {
           title: string
           type: string
           routine_frequency?: string
+          routine_weekdays?: number[]
           mission_completion_type?: string
         }> = []
 
@@ -367,13 +368,35 @@ export default function MandalartCreateScreen() {
             .filter((action) => action.title.trim())
             .forEach((action) => {
               const suggestion = suggestActionType(action.title)
+              const isHighConfidence = suggestion.confidence === 'high'
+
+              // Only auto-set frequency/weekdays if AI confidence is 'high'
+              // This ensures meaningful diagnosis results (not all 100%)
+              let routine_frequency: string | undefined = undefined
+              let routine_weekdays: number[] | undefined = undefined
+              let mission_completion_type: string | undefined = undefined
+
+              if (suggestion.type === 'routine') {
+                if (isHighConfidence && suggestion.routineFrequency) {
+                  routine_frequency = suggestion.routineFrequency
+                }
+                if (isHighConfidence && suggestion.routineWeekdays) {
+                  routine_weekdays = suggestion.routineWeekdays
+                }
+              } else if (suggestion.type === 'mission') {
+                if (isHighConfidence && suggestion.missionCompletionType) {
+                  mission_completion_type = suggestion.missionCompletionType
+                }
+              }
+
               actionsToInsert.push({
                 sub_goal_id: dbSubGoal.id,
                 position: action.position,
                 title: action.title.trim(),
                 type: suggestion.type,
-                routine_frequency: suggestion.routineFrequency,
-                mission_completion_type: suggestion.missionCompletionType,
+                routine_frequency,
+                routine_weekdays,
+                mission_completion_type,
               })
             })
         })

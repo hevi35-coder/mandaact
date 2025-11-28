@@ -191,13 +191,38 @@ export default function MandalartCreatePage() {
               })
               : undefined
 
+            // Only auto-set frequency/weekdays if AI confidence is 'high'
+            // This ensures meaningful diagnosis results (not all 100%)
+            const isHighConfidence = aiSuggestion?.confidence === 'high'
+
+            let routine_frequency: string | undefined = undefined
+            let routine_weekdays: number[] | undefined = undefined
+            let mission_completion_type: string | undefined = undefined
+
+            if (finalType === 'routine') {
+              // Only set frequency if high confidence and AI provided it
+              if (isHighConfidence && aiSuggestion?.routineFrequency) {
+                routine_frequency = aiSuggestion.routineFrequency
+              }
+              // Set weekdays if provided (e.g., "주말마다" → [0, 6])
+              if (isHighConfidence && aiSuggestion?.routineWeekdays) {
+                routine_weekdays = aiSuggestion.routineWeekdays
+              }
+            } else if (finalType === 'mission') {
+              // Only set completion type if high confidence
+              if (isHighConfidence && aiSuggestion?.missionCompletionType) {
+                mission_completion_type = aiSuggestion.missionCompletionType
+              }
+            }
+
             return {
               sub_goal_id: sg.id,
               position: action.position,
               title: action.title.trim(),
               type: finalType,
-              routine_frequency: finalType === 'routine' ? 'daily' : undefined,
-              mission_completion_type: finalType === 'mission' ? 'once' : undefined,
+              routine_frequency,
+              routine_weekdays,
+              mission_completion_type,
               ai_suggestion: aiSuggestionStr
             }
           })

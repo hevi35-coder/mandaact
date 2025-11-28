@@ -162,8 +162,11 @@ function SubGoalModal({
     }
 
     // Create mode: convert initialActions to LocalAction format
+    // Only auto-set frequency/completion_type when AI confidence is 'high'
     return initialActions.map((a, idx) => {
       const aiSuggestion = suggestActionType(a.title)
+      const isHighConfidence = aiSuggestion.confidence === 'high'
+
       return {
         id: `temp-${Date.now()}-${idx}`,
         tempId: `temp-${Date.now()}-${idx}`,
@@ -171,6 +174,12 @@ function SubGoalModal({
         type: a.type || aiSuggestion.type,
         position: idx + 1,
         ai_suggestion: aiSuggestion,
+        // Only set frequency/completion_type when confidence is high
+        routine_frequency: isHighConfidence ? aiSuggestion.routineFrequency : undefined,
+        routine_weekdays: isHighConfidence ? aiSuggestion.routineWeekdays : undefined,
+        routine_count_per_period: isHighConfidence ? aiSuggestion.routineCountPerPeriod : undefined,
+        mission_completion_type: isHighConfidence ? aiSuggestion.missionCompletionType : undefined,
+        mission_period_cycle: isHighConfidence ? aiSuggestion.missionPeriodCycle : undefined,
         sub_goal_id: '', // Will be set when saved
         created_at: getCurrentUTC(),
         updated_at: getCurrentUTC()

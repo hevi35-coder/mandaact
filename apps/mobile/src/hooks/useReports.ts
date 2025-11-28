@@ -1,18 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import Constants from 'expo-constants'
 
 // Query keys
 export const reportKeys = {
   all: ['reports'] as const,
-  weekly: (userId: string | undefined, weekStart?: string) =>
-    [...reportKeys.all, 'weekly', userId, weekStart] as const,
-  goalDiagnosis: (mandalartId: string | undefined) =>
-    [...reportKeys.all, 'goal-diagnosis', mandalartId] as const,
+  weekly: (userId: string | undefined) =>
+    [...reportKeys.all, 'weekly', userId] as const,
+  diagnosis: (userId: string | undefined) =>
+    [...reportKeys.all, 'diagnosis', userId] as const,
   history: (userId: string | undefined) =>
     [...reportKeys.all, 'history', userId] as const,
 }
 
-// Types
+// Types - Match ai_reports table structure
+export interface AIReport {
+  id: string
+  user_id: string
+  report_type: 'weekly' | 'diagnosis'
+  content: string
+  metadata: Record<string, unknown>
+  generated_at: string
+}
+
+// Legacy interface for backwards compatibility with ReportsScreen
 export interface WeeklyReport {
   id: string
   user_id: string
@@ -25,7 +36,7 @@ export interface WeeklyReport {
 
 export interface GoalDiagnosis {
   id: string
-  mandalart_id: string
+  mandalart_id?: string
   diagnosis_content: string
   smart_scores: {
     specific: number
@@ -37,56 +48,128 @@ export interface GoalDiagnosis {
   created_at: string
 }
 
-// Get week start date (Monday)
-function getWeekStart(date: Date = new Date()): string {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust to Monday
-  d.setDate(diff)
-  d.setHours(0, 0, 0, 0)
-  return d.toISOString().split('T')[0]
+// Get Supabase URL from environment
+function getSupabaseUrl(): string {
+  const extra = Constants.expoConfig?.extra
+  return extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || ''
 }
 
-// Fetch weekly report
-export function useWeeklyReport(userId: string | undefined, weekStart?: string) {
-  const targetWeek = weekStart || getWeekStart()
+// Transform AIReport to WeeklyReport for backwards compatibility
+function transformToWeeklyReport(report: AIReport): WeeklyReport {
+  // Extract week dates: last 7 days from generated_at (including generated date)
+  const generatedDate = new Date(report.generated_at)
+  const weekEnd = new Date(generatedDate) // End date is the generated date
+  const weekStart = new Date(generatedDate)
+  weekStart.setDate(weekStart.getDate() - 6) // 7 days including end date
 
+  // Extract summary from content (first line or first paragraph)
+  const lines = report.content.split('\n').filter(l => l.trim())
+  const summary = lines[0]?.replace(/^#+\s*/, '') || '주간 실천 리포트'
+
+  return {
+    id: report.id,
+    user_id: report.user_id,
+    week_start: weekStart.toISOString().split('T')[0],
+    week_end: weekEnd.toISOString().split('T')[0],
+    report_content: report.content,
+    summary,
+    created_at: report.generated_at,
+  }
+}
+
+// Transform AIReport to GoalDiagnosis for backwards compatibility
+function transformToGoalDiagnosis(report: AIReport): GoalDiagnosis {
+  // Try to extract SMART scores from content or metadata
+  const metadata = report.metadata || {}
+  const smartScores = (metadata.smart_scores as GoalDiagnosis['smart_scores']) || {
+    specific: 70,
+    measurable: 70,
+    achievable: 70,
+    relevant: 70,
+    timeBound: 70,
+  }
+
+  return {
+    id: report.id,
+    mandalart_id: metadata.mandalart_id as string | undefined,
+    diagnosis_content: report.content,
+    smart_scores: smartScores,
+    created_at: report.generated_at,
+  }
+}
+
+// Fetch weekly report (latest)
+export function useWeeklyReport(userId: string | undefined) {
   return useQuery({
-    queryKey: reportKeys.weekly(userId, targetWeek),
+    queryKey: reportKeys.weekly(userId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('weekly_reports')
+        .from('ai_reports')
         .select('*')
         .eq('user_id', userId!)
-        .eq('week_start', targetWeek)
+        .eq('report_type', 'weekly')
+        .order('generated_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
 
       if (error) throw error
-      return data as WeeklyReport | null
+      if (!data) return null
+
+      return transformToWeeklyReport(data as AIReport)
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 30, // 30 minutes
   })
 }
 
-// Generate weekly report
+// Generate weekly report using generate-report edge function
 export function useGenerateWeeklyReport() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ userId, weekStart }: { userId: string; weekStart?: string }) => {
-      const targetWeek = weekStart || getWeekStart()
+    mutationFn: async ({ userId }: { userId: string; weekStart?: string }) => {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session) {
+        throw new Error('No active session')
+      }
 
-      const { data, error } = await supabase.functions.invoke('generate-weekly-report', {
-        body: { user_id: userId, week_start: targetWeek },
-      })
+      const supabaseUrl = getSupabaseUrl()
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/generate-report`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sessionData.session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            report_type: 'weekly',
+          }),
+        }
+      )
 
-      if (error) throw error
-      return data as WeeklyReport
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Weekly report generation failed:', response.status, errorData)
+        throw new Error(errorData.error || `Failed to generate report: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      // Handle wrapped response format: { success: true, data: { report: ... } }
+      const report = result.data?.report || result.report
+
+      // Validate report content
+      if (!report || !report.content) {
+        console.error('Invalid report response:', result)
+        throw new Error('리포트 내용이 비어있습니다.')
+      }
+
+      return transformToWeeklyReport(report as AIReport)
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: reportKeys.weekly(variables.userId, variables.weekStart),
+        queryKey: reportKeys.weekly(variables.userId),
       })
       queryClient.invalidateQueries({
         queryKey: reportKeys.history(variables.userId),
@@ -95,43 +178,74 @@ export function useGenerateWeeklyReport() {
   })
 }
 
-// Fetch goal diagnosis
+// Fetch goal diagnosis (latest)
 export function useGoalDiagnosis(mandalartId: string | undefined) {
   return useQuery({
-    queryKey: reportKeys.goalDiagnosis(mandalartId),
+    queryKey: reportKeys.diagnosis(mandalartId),
     queryFn: async () => {
+      // Get user ID first
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user')
+
       const { data, error } = await supabase
-        .from('goal_diagnoses')
+        .from('ai_reports')
         .select('*')
-        .eq('mandalart_id', mandalartId!)
-        .order('created_at', { ascending: false })
+        .eq('user_id', user.id)
+        .eq('report_type', 'diagnosis')
+        .order('generated_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
       if (error) throw error
-      return data as GoalDiagnosis | null
+      if (!data) return null
+
+      return transformToGoalDiagnosis(data as AIReport)
     },
     enabled: !!mandalartId,
     staleTime: 1000 * 60 * 60, // 1 hour
   })
 }
 
-// Generate goal diagnosis
+// Generate goal diagnosis using generate-report edge function
 export function useGenerateGoalDiagnosis() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (mandalartId: string) => {
-      const { data, error } = await supabase.functions.invoke('generate-goal-diagnosis', {
-        body: { mandalart_id: mandalartId },
-      })
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session) {
+        throw new Error('No active session')
+      }
 
-      if (error) throw error
-      return data as GoalDiagnosis
+      const supabaseUrl = getSupabaseUrl()
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/generate-report`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sessionData.session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            report_type: 'diagnosis',
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Diagnosis generation failed:', response.status, errorData)
+        throw new Error(errorData.error || `Failed to generate diagnosis: ${response.status}`)
+      }
+
+      const result = await response.json()
+      // Handle wrapped response format
+      const report = result.data?.report || result.report
+      return transformToGoalDiagnosis(report as AIReport)
     },
-    onSuccess: (data, mandalartId) => {
+    onSuccess: (_data, mandalartId) => {
       queryClient.invalidateQueries({
-        queryKey: reportKeys.goalDiagnosis(mandalartId),
+        queryKey: reportKeys.diagnosis(mandalartId),
       })
     },
   })
@@ -143,14 +257,26 @@ export function useReportHistory(userId: string | undefined) {
     queryKey: reportKeys.history(userId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('weekly_reports')
-        .select('id, week_start, week_end, summary, created_at')
+        .from('ai_reports')
+        .select('id, report_type, content, metadata, generated_at')
         .eq('user_id', userId!)
-        .order('week_start', { ascending: false })
-        .limit(12) // Last 12 weeks
+        .eq('report_type', 'weekly')
+        .order('generated_at', { ascending: false })
+        .limit(12) // Last 12 reports
 
       if (error) throw error
-      return data as Pick<WeeklyReport, 'id' | 'week_start' | 'week_end' | 'summary' | 'created_at'>[]
+
+      return (data || []).map((report) => {
+        const transformed = transformToWeeklyReport(report as AIReport)
+        return {
+          id: transformed.id,
+          week_start: transformed.week_start,
+          week_end: transformed.week_end,
+          report_content: transformed.report_content,
+          summary: transformed.summary,
+          created_at: transformed.created_at,
+        }
+      })
     },
     enabled: !!userId,
   })

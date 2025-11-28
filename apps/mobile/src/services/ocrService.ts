@@ -102,6 +102,32 @@ export async function uploadImage(
   return publicUrl
 }
 
+// Raw response from edge function (different format from OCRResult)
+interface RawOCRResponse {
+  center_goal: string
+  sub_goals: Array<{
+    title: string
+    actions: string[]  // Edge function returns string array, not object array
+  }>
+}
+
+/**
+ * Convert raw edge function response to OCRResult format
+ */
+function convertToOCRResult(raw: RawOCRResponse): OCRResult {
+  return {
+    center_goal: raw.center_goal || '',
+    sub_goals: (raw.sub_goals || []).slice(0, 8).map((sg, index) => ({
+      position: index + 1,
+      title: sg.title || '',
+      actions: (sg.actions || []).slice(0, 8).map((actionTitle, actionIndex) => ({
+        position: actionIndex + 1,
+        title: typeof actionTitle === 'string' ? actionTitle : '',
+      })),
+    })),
+  }
+}
+
 /**
  * Call OCR Edge Function
  */
@@ -132,8 +158,10 @@ export async function processOCR(imageUrl: string): Promise<OCRResult> {
     throw new Error('OCR 처리 중 오류가 발생했습니다.')
   }
 
-  const result = await response.json()
-  return result
+  const rawResult: RawOCRResponse = await response.json()
+
+  // Convert raw response to expected OCRResult format
+  return convertToOCRResult(rawResult)
 }
 
 /**
@@ -235,6 +263,8 @@ export async function parseMandalartText(text: string): Promise<OCRResult> {
     throw new Error('텍스트 파싱 중 오류가 발생했습니다.')
   }
 
-  const result = await response.json()
-  return result
+  const rawResult: RawOCRResponse = await response.json()
+
+  // Convert raw response to expected OCRResult format
+  return convertToOCRResult(rawResult)
 }

@@ -8,6 +8,23 @@ import { getActionTypeLabel, formatTypeDetails } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
 import { Trash2, GripVertical, Check, X } from 'lucide-react'
 
+// Get type label with "미설정" for actions without frequency/completion_type
+function getTypeDisplayLabel(action: Action): string {
+  // Check if frequency/completion_type is properly set
+  if (action.type === 'routine' && !action.routine_frequency) {
+    return '미설정'
+  }
+  if (action.type === 'mission' && !action.mission_completion_type) {
+    return '미설정'
+  }
+
+  // Use formatTypeDetails for detailed display
+  const details = formatTypeDetails(action)
+  if (details) return details
+
+  return getActionTypeLabel(action.type)
+}
+
 interface ActionListItemProps {
   action: Action
   index: number
@@ -140,7 +157,7 @@ const ActionListItem = memo(({
             title={`${getActionTypeLabel(action.type)} - 클릭하여 편집`}
           >
             {getTypeIcon(action.type)}
-            <span>{formatTypeDetails(action) || getActionTypeLabel(action.type)}</span>
+            <span>{getTypeDisplayLabel(action)}</span>
           </button>
 
           {/* Delete Button */}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -14,9 +14,9 @@ import {
   FileText,
   Target,
   ChevronRight,
-  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
-  Calendar,
   TrendingUp,
   AlertCircle,
 } from 'lucide-react-native'
@@ -30,100 +30,224 @@ import {
   useGenerateGoalDiagnosis,
   useReportHistory,
 } from '../hooks/useReports'
+import { parseWeeklyReport, parseDiagnosisReport, type ReportSummary } from '../lib/reportParser'
 
-// Get week dates
-function getWeekDates(weekStart: string): { start: string; end: string } {
+// Get week dates for display
+function formatWeekDates(weekStart: string, weekEnd: string): string {
   const start = new Date(weekStart)
-  const end = new Date(start)
-  end.setDate(end.getDate() + 6)
-
-  const formatDate = (d: Date) => {
-    const month = d.getMonth() + 1
-    const day = d.getDate()
-    return `${month}/${day}`
-  }
-
-  return {
-    start: formatDate(start),
-    end: formatDate(end),
-  }
+  const end = new Date(weekEnd)
+  const formatDate = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`
+  return `${formatDate(start)} ~ ${formatDate(end)}`
 }
 
-// Simple markdown renderer
-function SimpleMarkdown({ content }: { content: string }) {
-  const lines = content.split('\n')
+// Report Card Component - Matches web design
+function ReportCard({
+  title,
+  subtitle,
+  icon: Icon,
+  date,
+  summary,
+  isExpanded,
+  onToggleExpand,
+  isLoading,
+  isGenerating,
+  generatingText,
+}: {
+  title: string
+  subtitle: string
+  icon: typeof TrendingUp
+  date?: string
+  summary: ReportSummary | null
+  isExpanded: boolean
+  onToggleExpand: () => void
+  isLoading?: boolean
+  isGenerating?: boolean
+  generatingText?: string
+}) {
+  if (isLoading) {
+    return (
+      <View className="bg-white rounded-2xl p-6 mb-4">
+        <View className="items-center py-8">
+          <ActivityIndicator size="large" color="#667eea" />
+          <Text className="text-gray-500 mt-4">불러오는 중...</Text>
+        </View>
+      </View>
+    )
+  }
 
   return (
-    <View className="gap-2">
-      {lines.map((line, index) => {
-        // Headers
-        if (line.startsWith('### ')) {
-          return (
-            <Text key={index} className="text-base font-semibold text-gray-900 mt-3">
-              {line.replace('### ', '')}
-            </Text>
-          )
-        }
-        if (line.startsWith('## ')) {
-          return (
-            <Text key={index} className="text-lg font-bold text-gray-900 mt-4">
-              {line.replace('## ', '')}
-            </Text>
-          )
-        }
-        if (line.startsWith('# ')) {
-          return (
-            <Text key={index} className="text-xl font-bold text-gray-900 mt-4">
-              {line.replace('# ', '')}
-            </Text>
-          )
-        }
-
-        // Bullet points
-        if (line.startsWith('- ') || line.startsWith('* ')) {
-          return (
-            <View key={index} className="flex-row pl-2">
-              <Text className="text-gray-400 mr-2">•</Text>
-              <Text className="text-sm text-gray-700 flex-1">{line.slice(2)}</Text>
+    <View className="bg-white rounded-2xl mb-4 overflow-hidden relative">
+      {/* Loading Overlay - shown when generating */}
+      {isGenerating && (
+        <View className="absolute inset-0 bg-white/80 z-10 items-center justify-center rounded-2xl">
+          <ActivityIndicator size="large" color="#667eea" />
+          <Text className="text-sm font-medium text-gray-700 mt-2">{generatingText || '생성 중...'}</Text>
+        </View>
+      )}
+      {/* Header */}
+      <View className="p-4 border-b border-gray-100">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center gap-2">
+            <Icon size={20} color="#667eea" />
+            <Text className="text-lg font-semibold text-gray-900">{title}</Text>
+          </View>
+          {date && (
+            <View className="bg-gray-100 px-3 py-1 rounded-full">
+              <Text className="text-xs text-gray-600">{date}</Text>
             </View>
-          )
-        }
+          )}
+        </View>
+        <Text className="text-sm text-gray-500 mt-1">{subtitle}</Text>
+      </View>
 
-        // Empty lines
-        if (line.trim() === '') {
-          return <View key={index} className="h-2" />
-        }
-
-        // Regular text
-        return (
-          <Text key={index} className="text-sm text-gray-700 leading-relaxed">
-            {line}
+      {/* Summary Content */}
+      {summary && (
+        <View className="p-4">
+          {/* Headline */}
+          <Text className="text-base font-semibold text-gray-900 leading-relaxed mb-4">
+            {summary.headline}
           </Text>
-        )
-      })}
+
+          {/* Key Metrics */}
+          {summary.metrics.length > 0 && (
+            <View className="gap-2 mb-4">
+              {summary.metrics.map((metric, idx) => (
+                <View key={idx} className="flex-row">
+                  <Text className="text-sm text-gray-500">{metric.label}: </Text>
+                  <Text className="text-sm font-medium text-gray-900">{metric.value}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Expandable Detail Section */}
+          {(summary.strengths.length > 0 || summary.actionPlan.length > 0 || summary.improvements.problem) && (
+            <Pressable
+              className="bg-primary/5 rounded-xl p-3 border border-primary/10"
+              onPress={onToggleExpand}
+            >
+              <View className="flex-row items-center justify-between">
+                <Text className="text-sm font-semibold text-primary">상세보기</Text>
+                {isExpanded ? (
+                  <ChevronUp size={16} color="#667eea" />
+                ) : (
+                  <ChevronDown size={16} color="#667eea" />
+                )}
+              </View>
+
+              {isExpanded && (
+                <View className="mt-4 gap-4">
+                  {/* Strengths */}
+                  {summary.strengths.length > 0 && (
+                    <View>
+                      <Text className="text-sm font-semibold text-gray-900 mb-2">💪 강점</Text>
+                      {summary.strengths.map((strength, idx) => (
+                        <Text key={idx} className="text-sm text-gray-600 mb-1">• {strength}</Text>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Improvements */}
+                  {(summary.improvements.problem || summary.improvements.insight || summary.improvements.items?.length) && (
+                    <View>
+                      <Text className="text-sm font-semibold text-gray-900 mb-2">⚡ 개선 포인트</Text>
+                      {summary.improvements.problem && (
+                        <Text className="text-sm text-gray-600 mb-1">• {summary.improvements.problem}</Text>
+                      )}
+                      {summary.improvements.insight && (
+                        <Text className="text-sm text-gray-600 mb-1">• {summary.improvements.insight}</Text>
+                      )}
+                      {summary.improvements.items?.map((item, idx) => (
+                        <Text key={idx} className="text-sm text-gray-600 mb-1">
+                          • <Text className="font-medium">{item.area}</Text>: {item.issue} → {item.solution}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Action Plan */}
+                  {summary.actionPlan.length > 0 && (
+                    <View>
+                      <Text className="text-sm font-semibold text-gray-900 mb-2">🎯 MandaAct의 제안</Text>
+                      {summary.actionPlan.map((step, idx) => (
+                        <Text key={idx} className="text-sm text-gray-600 mb-1">• {step}</Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+            </Pressable>
+          )}
+        </View>
+      )}
+
     </View>
   )
 }
 
-// SMART Score Bar
-function SmartScoreBar({ label, score }: { label: string; score: number }) {
-  const getColor = (s: number) => {
-    if (s >= 80) return 'bg-green-500'
-    if (s >= 60) return 'bg-amber-500'
-    return 'bg-red-400'
-  }
-
+// Empty State Component
+function EmptyReportState({
+  hasMandalarts,
+  onGenerate,
+  isGenerating,
+}: {
+  hasMandalarts: boolean
+  onGenerate: () => void
+  isGenerating: boolean
+}) {
   return (
-    <View className="mb-3">
-      <View className="flex-row justify-between mb-1">
-        <Text className="text-sm text-gray-600">{label}</Text>
-        <Text className="text-sm font-medium text-gray-900">{score}점</Text>
+    <View className="relative">
+      {/* Blurred Preview */}
+      <View className="opacity-30">
+        <View className="bg-white rounded-2xl p-4 mb-4">
+          <View className="flex-row items-center gap-2 mb-2">
+            <TrendingUp size={20} color="#667eea" />
+            <Text className="text-lg font-semibold text-gray-900">실천 리포트</Text>
+          </View>
+          <Text className="text-base font-semibold text-gray-900 mb-2">
+            화요일 오후에 집중된 실천 패턴이 관찰되며...
+          </Text>
+          <View className="gap-1">
+            <Text className="text-sm text-gray-500">총 실천 횟수: 6회</Text>
+            <Text className="text-sm text-gray-500">실천일수: 최근 7일 중 3일</Text>
+          </View>
+        </View>
       </View>
-      <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-        <View
-          className={`h-full rounded-full ${getColor(score)}`}
-          style={{ width: `${score}%` }}
-        />
+
+      {/* Overlay Card */}
+      <View className="absolute inset-0 items-center justify-center p-4">
+        <View className="bg-white rounded-2xl p-6 shadow-lg w-full max-w-sm border-2 border-gray-200">
+          <View className="items-center">
+            <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
+              <FileText size={32} color="#667eea" />
+            </View>
+            <Text className="text-xl font-semibold text-gray-900 mb-2">아직 리포트가 없어요</Text>
+            <Text className="text-sm text-gray-500 text-center mb-6">
+              {hasMandalarts ? (
+                '실천 데이터를 분석하여\n맞춤형 AI 리포트를 생성해드려요'
+              ) : (
+                '만다라트를 만들고 실천을 시작하면\n일주일 후부터 AI 리포트를 받을 수 있어요'
+              )}
+            </Text>
+
+            {hasMandalarts && (
+              <Pressable
+                className="bg-primary rounded-xl px-6 py-3 flex-row items-center"
+                onPress={onGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Sparkles size={18} color="white" />
+                )}
+                <Text className="text-white font-medium ml-2">
+                  {isGenerating ? '생성 중...' : '리포트 생성'}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
       </View>
     </View>
   )
@@ -132,25 +256,34 @@ function SmartScoreBar({ label, score }: { label: string; score: number }) {
 export default function ReportsScreen() {
   const { user } = useAuthStore()
   const [refreshing, setRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'weekly' | 'diagnosis'>('weekly')
-  const [selectedMandalartId, setSelectedMandalartId] = useState<string | null>(null)
+  const [isPracticeExpanded, setIsPracticeExpanded] = useState(false)
+  const [isDiagnosisExpanded, setIsDiagnosisExpanded] = useState(false)
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
 
   // Data fetching
   const { data: mandalarts = [] } = useActiveMandalarts(user?.id)
   const { data: weeklyReport, isLoading: weeklyLoading, refetch: refetchWeekly } = useWeeklyReport(user?.id)
   const { data: reportHistory = [] } = useReportHistory(user?.id)
-  const { data: diagnosis, isLoading: diagnosisLoading } = useGoalDiagnosis(selectedMandalartId || undefined)
+  const { data: diagnosis, isLoading: diagnosisLoading } = useGoalDiagnosis(
+    mandalarts.length > 0 ? mandalarts[0].id : undefined
+  )
 
   // Mutations
   const generateWeeklyMutation = useGenerateWeeklyReport()
   const generateDiagnosisMutation = useGenerateGoalDiagnosis()
 
-  // Set default mandalart if available
-  React.useEffect(() => {
-    if (mandalarts.length > 0 && !selectedMandalartId) {
-      setSelectedMandalartId(mandalarts[0].id)
-    }
-  }, [mandalarts, selectedMandalartId])
+  // Parse reports
+  const weeklySummary = useMemo(() => {
+    if (!weeklyReport?.report_content) return null
+    return parseWeeklyReport(weeklyReport.report_content)
+  }, [weeklyReport])
+
+  const diagnosisSummary = useMemo(() => {
+    if (!diagnosis?.diagnosis_content) return null
+    return parseDiagnosisReport(diagnosis.diagnosis_content)
+  }, [diagnosis])
+
+  const hasMandalarts = mandalarts.length > 0
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -158,27 +291,51 @@ export default function ReportsScreen() {
     setRefreshing(false)
   }, [refetchWeekly])
 
-  const handleGenerateWeekly = async () => {
+  const handleGenerateAll = async () => {
     if (!user?.id) return
 
     try {
+      // Generate diagnosis first (shown first on screen)
+      if (mandalarts.length > 0) {
+        await generateDiagnosisMutation.mutateAsync(mandalarts[0].id)
+      }
       await generateWeeklyMutation.mutateAsync({ userId: user.id })
     } catch {
       Alert.alert('오류', '리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
     }
   }
 
-  const handleGenerateDiagnosis = async () => {
-    if (!selectedMandalartId) return
+  const isGenerating = generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending
 
-    try {
-      await generateDiagnosisMutation.mutateAsync(selectedMandalartId)
-    } catch {
-      Alert.alert('오류', '진단 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
-    }
+  // No reports state
+  if (!weeklyLoading && !diagnosisLoading && !weeklyReport && !diagnosis) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <ScrollView
+          className="flex-1"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        >
+          {/* Header */}
+          <View className="px-4 pt-4 pb-2">
+            <View className="flex-row items-center">
+              <Text className="text-2xl font-bold text-gray-900">리포트</Text>
+              <Text className="text-sm text-gray-500 ml-3">맞춤형 분석과 코칭</Text>
+            </View>
+          </View>
+
+          <View className="px-4 mt-4">
+            <EmptyReportState
+              hasMandalarts={hasMandalarts}
+              onGenerate={handleGenerateAll}
+              isGenerating={isGenerating}
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    )
   }
-
-  const selectedMandalart = mandalarts.find(m => m.id === selectedMandalartId)
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -188,271 +345,54 @@ export default function ReportsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header - Web과 동일 */}
+        {/* Header */}
         <View className="px-4 pt-4 pb-2">
-          <View className="flex-row items-center">
-            <Text className="text-2xl font-bold text-gray-900">리포트</Text>
-            <Text className="text-sm text-gray-500 ml-3">맞춤형 분석과 코칭</Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <Text className="text-2xl font-bold text-gray-900">리포트</Text>
+              <Text className="text-sm text-gray-500 ml-3">맞춤형 분석과 코칭</Text>
+            </View>
           </View>
         </View>
 
-        {/* Tab Selector */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)} className="flex-row mx-4 mb-4 bg-gray-200 rounded-xl p-1">
-          <Pressable
-            className={`flex-1 py-2 rounded-lg ${activeTab === 'weekly' ? 'bg-white' : ''}`}
-            onPress={() => setActiveTab('weekly')}
-          >
-            <View className="flex-row items-center justify-center">
-              <FileText size={16} color={activeTab === 'weekly' ? '#667eea' : '#9ca3af'} />
-              <Text
-                className={`ml-1 text-sm font-medium ${
-                  activeTab === 'weekly' ? 'text-primary' : 'text-gray-500'
-                }`}
-              >
-                주간 리포트
+        {/* Generate Button */}
+        {hasMandalarts && (
+          <View className="px-4 mb-4">
+            <Pressable
+              className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex-row items-center justify-center"
+              onPress={handleGenerateAll}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <ActivityIndicator size="small" color="#667eea" />
+              ) : (
+                <Sparkles size={16} color="#667eea" />
+              )}
+              <Text className="text-primary font-semibold ml-2">
+                {isGenerating ? '생성 중...' : '새로 생성하기'}
               </Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            className={`flex-1 py-2 rounded-lg ${activeTab === 'diagnosis' ? 'bg-white' : ''}`}
-            onPress={() => setActiveTab('diagnosis')}
-          >
-            <View className="flex-row items-center justify-center">
-              <Target size={16} color={activeTab === 'diagnosis' ? '#667eea' : '#9ca3af'} />
-              <Text
-                className={`ml-1 text-sm font-medium ${
-                  activeTab === 'diagnosis' ? 'text-primary' : 'text-gray-500'
-                }`}
-              >
-                목표 진단
-              </Text>
-            </View>
-          </Pressable>
-        </Animated.View>
-
-        {/* Weekly Report Tab */}
-        {activeTab === 'weekly' && (
-          <Animated.View entering={FadeInUp.delay(200).duration(400)} className="px-4">
-            {weeklyLoading ? (
-              <View className="bg-white rounded-2xl p-8 items-center">
-                <ActivityIndicator size="large" color="#667eea" />
-                <Text className="text-gray-500 mt-4">리포트 불러오는 중...</Text>
-              </View>
-            ) : weeklyReport ? (
-              <>
-                {/* Report Header */}
-                <View className="bg-white rounded-2xl p-4 mb-4">
-                  <View className="flex-row items-center mb-2">
-                    <Calendar size={16} color="#667eea" />
-                    <Text className="text-sm text-gray-500 ml-2">
-                      {weeklyReport.week_start} ~ {weeklyReport.week_end}
-                    </Text>
-                  </View>
-                  <Text className="text-lg font-semibold text-gray-900">
-                    {weeklyReport.summary || '이번 주 실천 리포트'}
-                  </Text>
-                </View>
-
-                {/* Report Content */}
-                <View className="bg-white rounded-2xl p-4 mb-4">
-                  <SimpleMarkdown content={weeklyReport.report_content} />
-                </View>
-
-                {/* Regenerate Button */}
-                <Pressable
-                  className="bg-gray-100 rounded-xl p-4 flex-row items-center justify-center mb-4"
-                  onPress={handleGenerateWeekly}
-                  disabled={generateWeeklyMutation.isPending}
-                >
-                  {generateWeeklyMutation.isPending ? (
-                    <ActivityIndicator size="small" color="#667eea" />
-                  ) : (
-                    <Sparkles size={18} color="#667eea" />
-                  )}
-                  <Text className="text-primary font-medium ml-2">
-                    리포트 다시 생성
-                  </Text>
-                </Pressable>
-              </>
-            ) : (
-              <View className="bg-white rounded-2xl p-8 items-center">
-                <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
-                  <FileText size={32} color="#667eea" />
-                </View>
-                <Text className="text-lg font-semibold text-gray-900 mb-2">
-                  이번 주 리포트
-                </Text>
-                <Text className="text-sm text-gray-500 text-center mb-4">
-                  AI가 이번 주 실천 데이터를 분석하여{'\n'}
-                  맞춤 피드백을 제공합니다
-                </Text>
-                <Pressable
-                  className="bg-primary rounded-xl px-6 py-3 flex-row items-center"
-                  onPress={handleGenerateWeekly}
-                  disabled={generateWeeklyMutation.isPending}
-                >
-                  {generateWeeklyMutation.isPending ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <Sparkles size={18} color="white" />
-                  )}
-                  <Text className="text-white font-medium ml-2">
-                    리포트 생성하기
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-
-            {/* Report History */}
-            {reportHistory.length > 0 && (
-              <View className="mt-4">
-                <Text className="text-lg font-semibold text-gray-900 mb-3">
-                  지난 리포트
-                </Text>
-                <View className="bg-white rounded-2xl overflow-hidden">
-                  {reportHistory.slice(0, 4).map((report, index) => {
-                    const dates = getWeekDates(report.week_start)
-                    return (
-                      <Pressable
-                        key={report.id}
-                        className={`p-4 flex-row items-center ${
-                          index < Math.min(reportHistory.length, 4) - 1
-                            ? 'border-b border-gray-100'
-                            : ''
-                        }`}
-                      >
-                        <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center">
-                          <FileText size={18} color="#667eea" />
-                        </View>
-                        <View className="flex-1 ml-3">
-                          <Text className="text-sm font-medium text-gray-900">
-                            {dates.start} ~ {dates.end}
-                          </Text>
-                          <Text className="text-xs text-gray-500" numberOfLines={1}>
-                            {report.summary || '주간 실천 리포트'}
-                          </Text>
-                        </View>
-                        <ChevronRight size={18} color="#9ca3af" />
-                      </Pressable>
-                    )
-                  })}
-                </View>
-              </View>
-            )}
-          </Animated.View>
+            </Pressable>
+          </View>
         )}
 
-        {/* Goal Diagnosis Tab */}
-        {activeTab === 'diagnosis' && (
-          <Animated.View entering={FadeInUp.delay(200).duration(400)} className="px-4">
-            {/* Mandalart Selector */}
-            {mandalarts.length > 0 ? (
-              <>
-                <View className="bg-white rounded-2xl p-4 mb-4">
-                  <Text className="text-sm text-gray-500 mb-2">분석할 만다라트</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row gap-2">
-                      {mandalarts.map(m => (
-                        <Pressable
-                          key={m.id}
-                          className={`px-4 py-2 rounded-full ${
-                            selectedMandalartId === m.id
-                              ? 'bg-primary'
-                              : 'bg-gray-100'
-                          }`}
-                          onPress={() => setSelectedMandalartId(m.id)}
-                        >
-                          <Text
-                            className={`text-sm font-medium ${
-                              selectedMandalartId === m.id
-                                ? 'text-white'
-                                : 'text-gray-700'
-                            }`}
-                            numberOfLines={1}
-                          >
-                            {m.center_goal}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-
-                {diagnosisLoading ? (
-                  <View className="bg-white rounded-2xl p-8 items-center">
-                    <ActivityIndicator size="large" color="#667eea" />
-                    <Text className="text-gray-500 mt-4">진단 불러오는 중...</Text>
-                  </View>
-                ) : diagnosis ? (
-                  <>
-                    {/* SMART Scores */}
-                    <View className="bg-white rounded-2xl p-4 mb-4">
-                      <View className="flex-row items-center mb-4">
-                        <TrendingUp size={18} color="#667eea" />
-                        <Text className="text-lg font-semibold text-gray-900 ml-2">
-                          SMART 점수
-                        </Text>
-                      </View>
-                      <SmartScoreBar label="구체성 (Specific)" score={diagnosis.smart_scores.specific} />
-                      <SmartScoreBar label="측정가능 (Measurable)" score={diagnosis.smart_scores.measurable} />
-                      <SmartScoreBar label="달성가능 (Achievable)" score={diagnosis.smart_scores.achievable} />
-                      <SmartScoreBar label="관련성 (Relevant)" score={diagnosis.smart_scores.relevant} />
-                      <SmartScoreBar label="시한설정 (Time-bound)" score={diagnosis.smart_scores.timeBound} />
-                    </View>
-
-                    {/* Diagnosis Content */}
-                    <View className="bg-white rounded-2xl p-4 mb-4">
-                      <SimpleMarkdown content={diagnosis.diagnosis_content} />
-                    </View>
-
-                    {/* Regenerate Button */}
-                    <Pressable
-                      className="bg-gray-100 rounded-xl p-4 flex-row items-center justify-center mb-4"
-                      onPress={handleGenerateDiagnosis}
-                      disabled={generateDiagnosisMutation.isPending}
-                    >
-                      {generateDiagnosisMutation.isPending ? (
-                        <ActivityIndicator size="small" color="#667eea" />
-                      ) : (
-                        <Sparkles size={18} color="#667eea" />
-                      )}
-                      <Text className="text-primary font-medium ml-2">
-                        진단 다시 받기
-                      </Text>
-                    </Pressable>
-                  </>
-                ) : (
-                  <View className="bg-white rounded-2xl p-8 items-center">
-                    <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
-                      <Target size={32} color="#667eea" />
-                    </View>
-                    <Text className="text-lg font-semibold text-gray-900 mb-2">
-                      목표 진단
-                    </Text>
-                    <Text className="text-sm text-gray-500 text-center mb-4">
-                      AI가 만다라트 목표 구조를{'\n'}
-                      SMART 기준으로 분석합니다
-                    </Text>
-                    <Pressable
-                      className="bg-primary rounded-xl px-6 py-3 flex-row items-center"
-                      onPress={handleGenerateDiagnosis}
-                      disabled={generateDiagnosisMutation.isPending}
-                    >
-                      {generateDiagnosisMutation.isPending ? (
-                        <ActivityIndicator size="small" color="white" />
-                      ) : (
-                        <Sparkles size={18} color="white" />
-                      )}
-                      <Text className="text-white font-medium ml-2">
-                        진단 받기
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
-              </>
+        <View className="px-4">
+          {/* Goal Diagnosis Card - First (목표 설정) */}
+          <Animated.View entering={FadeInUp.duration(400)}>
+            {hasMandalarts ? (
+              <ReportCard
+                title="목표 진단"
+                subtitle="만다라트 계획 점검 및 개선 제안"
+                icon={Target}
+                date={diagnosis ? new Date(diagnosis.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : undefined}
+                summary={diagnosisSummary}
+                isExpanded={isDiagnosisExpanded}
+                onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
+                isLoading={diagnosisLoading}
+                isGenerating={generateDiagnosisMutation.isPending}
+                generatingText="새 진단 생성 중..."
+              />
             ) : (
-              <View className="bg-white rounded-2xl p-8 items-center">
+              <View className="bg-white rounded-2xl p-8 items-center mb-4">
                 <View className="w-16 h-16 bg-amber-50 rounded-full items-center justify-center mb-4">
                   <AlertCircle size={32} color="#f59e0b" />
                 </View>
@@ -466,7 +406,132 @@ export default function ReportsScreen() {
               </View>
             )}
           </Animated.View>
-        )}
+
+          {/* Practice Report Card - Second (실천 결과) */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <ReportCard
+              title="실천 리포트"
+              subtitle="최근 7일간 실천 데이터 분석 및 개선 제안"
+              icon={TrendingUp}
+              date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end) : undefined}
+              summary={weeklySummary}
+              isExpanded={isPracticeExpanded}
+              onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
+              isLoading={weeklyLoading}
+              isGenerating={generateWeeklyMutation.isPending}
+              generatingText="새 리포트 생성 중..."
+            />
+          </Animated.View>
+
+          {/* Report History */}
+          {reportHistory.length > 1 && (
+            <Animated.View entering={FadeInUp.delay(200).duration(400)} className="mt-4">
+              <Text className="text-lg font-semibold text-gray-900 mb-3">
+                지난 실천리포트
+              </Text>
+              <View className="bg-white rounded-2xl overflow-hidden">
+                {reportHistory.slice(1, 5).map((report, index) => {
+                  const isExpanded = expandedHistoryId === report.id
+                  const historySummary = report.report_content ? parseWeeklyReport(report.report_content) : null
+
+                  return (
+                    <View key={report.id}>
+                      <Pressable
+                        className={`p-4 flex-row items-center ${
+                          index < Math.min(reportHistory.length - 1, 4) - 1 && !isExpanded
+                            ? 'border-b border-gray-100'
+                            : ''
+                        }`}
+                        onPress={() => setExpandedHistoryId(isExpanded ? null : report.id)}
+                      >
+                        <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center">
+                          <FileText size={18} color="#667eea" />
+                        </View>
+                        <View className="flex-1 ml-3">
+                          <Text className="text-sm font-medium text-gray-900">
+                            {formatWeekDates(report.week_start, report.week_end)}
+                          </Text>
+                          <Text className="text-xs text-gray-500" numberOfLines={1}>
+                            {historySummary?.headline || report.summary || '주간 실천 리포트'}
+                          </Text>
+                        </View>
+                        {isExpanded ? (
+                          <ChevronUp size={18} color="#9ca3af" />
+                        ) : (
+                          <ChevronDown size={18} color="#9ca3af" />
+                        )}
+                      </Pressable>
+
+                      {/* Expanded Content */}
+                      {isExpanded && historySummary && (
+                        <View className={`px-4 pb-4 bg-gray-50 ${
+                          index < Math.min(reportHistory.length - 1, 4) - 1
+                            ? 'border-b border-gray-100'
+                            : ''
+                        }`}>
+                          {/* Headline */}
+                          <Text className="text-sm font-semibold text-gray-900 leading-relaxed mb-3">
+                            {historySummary.headline}
+                          </Text>
+
+                          {/* Metrics */}
+                          {historySummary.metrics.length > 0 && (
+                            <View className="gap-1 mb-3">
+                              {historySummary.metrics.map((metric, idx) => (
+                                <View key={idx} className="flex-row">
+                                  <Text className="text-sm text-gray-500">{metric.label}: </Text>
+                                  <Text className="text-sm font-medium text-gray-900">{metric.value}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          )}
+
+                          {/* Strengths */}
+                          {historySummary.strengths.length > 0 && (
+                            <View className="mb-3">
+                              <Text className="text-sm font-semibold text-gray-900 mb-1">💪 강점</Text>
+                              {historySummary.strengths.map((strength, idx) => (
+                                <Text key={idx} className="text-sm text-gray-600">• {strength}</Text>
+                              ))}
+                            </View>
+                          )}
+
+                          {/* Improvements */}
+                          {(historySummary.improvements.problem || historySummary.improvements.insight || historySummary.improvements.items?.length) && (
+                            <View className="mb-3">
+                              <Text className="text-sm font-semibold text-gray-900 mb-1">⚡ 개선 포인트</Text>
+                              {historySummary.improvements.problem && (
+                                <Text className="text-sm text-gray-600">• {historySummary.improvements.problem}</Text>
+                              )}
+                              {historySummary.improvements.insight && (
+                                <Text className="text-sm text-gray-600">• {historySummary.improvements.insight}</Text>
+                              )}
+                              {historySummary.improvements.items?.map((item, idx) => (
+                                <Text key={idx} className="text-sm text-gray-600">
+                                  • <Text className="font-medium">{item.area}</Text>: {item.issue} → {item.solution}
+                                </Text>
+                              ))}
+                            </View>
+                          )}
+
+                          {/* Action Plan */}
+                          {historySummary.actionPlan.length > 0 && (
+                            <View>
+                              <Text className="text-sm font-semibold text-gray-900 mb-1">🎯 MandaAct의 제안</Text>
+                              {historySummary.actionPlan.map((step, idx) => (
+                                <Text key={idx} className="text-sm text-gray-600">• {step}</Text>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  )
+                })}
+              </View>
+            </Animated.View>
+          )}
+        </View>
 
         {/* Bottom spacing */}
         <View className="h-8" />

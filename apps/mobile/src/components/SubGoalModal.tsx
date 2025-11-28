@@ -120,8 +120,17 @@ function ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number }
 }
 
 // Get type label with frequency/cycle info - uses formatTypeDetails from shared package
+// Shows "미설정" when type is set but frequency/completion_type is not configured
 function getTypeLabel(action: ActionData): string {
   if (!action.type) return '루틴'
+
+  // Check if frequency/completion_type is properly set
+  if (action.type === 'routine' && !action.routine_frequency) {
+    return '미설정'
+  }
+  if (action.type === 'mission' && !action.mission_completion_type) {
+    return '미설정'
+  }
 
   // Use formatTypeDetails for detailed display (e.g., "주1회", "매일", "1회 완료")
   const details = formatTypeDetails(action as any)
@@ -169,12 +178,18 @@ export default function SubGoalModal({
         if (existing) {
           // Apply AI suggestion for type if not set
           const suggestion = existing.type ? null : suggestActionType(existing.title)
+          const isHighConfidence = suggestion?.confidence === 'high'
+
           return {
             position: i + 1,
             title: existing.title,
             type: existing.type || suggestion?.type || 'routine',
-            routine_frequency: suggestion?.routineFrequency,
-            mission_completion_type: suggestion?.missionCompletionType,
+            // Only auto-set frequency/completion_type when AI confidence is 'high'
+            routine_frequency: isHighConfidence ? suggestion?.routineFrequency : undefined,
+            routine_weekdays: isHighConfidence ? suggestion?.routineWeekdays : undefined,
+            routine_count_per_period: isHighConfidence ? suggestion?.routineCountPerPeriod : undefined,
+            mission_completion_type: isHighConfidence ? suggestion?.missionCompletionType : undefined,
+            mission_period_cycle: isHighConfidence ? suggestion?.missionPeriodCycle : undefined,
           }
         }
         return {
@@ -226,11 +241,17 @@ export default function SubGoalModal({
     }
 
     // Apply AI suggestion if title changed and has content
+    // Only auto-set frequency/completion_type when AI confidence is 'high'
     if (trimmedTitle) {
       const suggestion = suggestActionType(trimmedTitle)
+      const isHighConfidence = suggestion.confidence === 'high'
+
       newActions[index].type = suggestion.type
-      newActions[index].routine_frequency = suggestion.routineFrequency
-      newActions[index].mission_completion_type = suggestion.missionCompletionType
+      newActions[index].routine_frequency = isHighConfidence ? suggestion.routineFrequency : undefined
+      newActions[index].routine_weekdays = isHighConfidence ? suggestion.routineWeekdays : undefined
+      newActions[index].routine_count_per_period = isHighConfidence ? suggestion.routineCountPerPeriod : undefined
+      newActions[index].mission_completion_type = isHighConfidence ? suggestion.missionCompletionType : undefined
+      newActions[index].mission_period_cycle = isHighConfidence ? suggestion.missionPeriodCycle : undefined
     }
 
     setActions(newActions)
