@@ -52,7 +52,6 @@
     "react-native-screens": "catalog:",
     "react-native-svg": "catalog:",
     "react-native-view-shot": "catalog:",
-    "react-native-worklets-core": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
   },
