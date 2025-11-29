@@ -283,6 +283,9 @@ export default function TodayScreen() {
           userId: user.id,
           isChecked: action.is_checked,
           checkId: action.check_id,
+          selectedDate,
+          actionType: action.type,
+          missionCompletionType: action.mission_completion_type,
         })
 
         // Refetch to update UI with new period_progress
@@ -293,7 +296,8 @@ export default function TodayScreen() {
           // Checking: Award XP
           try {
             // Award base XP (10) + streak bonus if applicable
-            const xpResult = await awardXP(user.id, 10)
+            // Pass selectedDate to ensure weekend bonus is calculated for the correct date
+            const xpResult = await awardXP(user.id, 10, selectedDate)
 
             // Show XP toast
             if (xpResult.multipliers.length > 0) {
@@ -353,9 +357,9 @@ export default function TodayScreen() {
             // Don't fail the whole operation if XP update fails
           }
         } else {
-          // Unchecking: Subtract XP
+          // Unchecking: Subtract XP (use selectedDate for correct weekend bonus calculation)
           try {
-            const result = await subtractXP(user.id, 10)
+            const result = await subtractXP(user.id, 10, selectedDate)
             if (result.finalXP > 0) {
               toast.info(`-${result.finalXP} XP`, '체크 해제')
               logger.info('XP subtracted', { xp: result.finalXP })
@@ -365,9 +369,20 @@ export default function TodayScreen() {
             // Don't fail the whole operation if XP update fails
           }
         }
-      } catch (err) {
-        logger.error('Check toggle error', err)
-        Alert.alert('오류', '체크 상태를 변경하는 중 오류가 발생했습니다.')
+      } catch (err: any) {
+        // Extract error message from various error formats
+        let errorMessage = 'Unknown error'
+        if (err?.message) {
+          errorMessage = err.message
+        } else if (err?.error?.message) {
+          errorMessage = err.error.message
+        } else if (err?.code) {
+          errorMessage = `Code: ${err.code}`
+        } else if (typeof err === 'object') {
+          errorMessage = JSON.stringify(err, null, 2)
+        }
+        logger.error('Check toggle error', { error: errorMessage, actionId: action.id, fullError: err })
+        Alert.alert('오류', `체크 상태를 변경하는 중 오류가 발생했습니다.\n${errorMessage}`)
       } finally {
         setCheckingActions((prev) => {
           const newSet = new Set(prev)

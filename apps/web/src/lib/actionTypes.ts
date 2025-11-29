@@ -97,12 +97,28 @@ export function suggestActionType(title: string): AISuggestion {
   const weekdayCombinationMatch = lower.match(/^(월|화|수|목|금|토|일){2,}/)
   const hasSpecificWeekdayPattern = weekdayCombinationMatch !== null
 
+  // Single weekday pattern (금요일 요가, 토요일 등산 등)
+  const singleWeekdayMatch = lower.match(/(월|화|수|목|금|토|일)요일/)
+  const hasSingleWeekdayPattern = singleWeekdayMatch !== null
+
+  // "줄이기" pattern → reference (mindset/lifestyle goal, not checkable)
+  const hasReducePattern = /줄이기|줄이$/.test(lower)
+
   // Priority 1: Reference/mindset (highest specificity)
   if (hasReferenceKeyword || isNegativeReference) {
     return {
       type: 'reference',
       confidence: 'high',
       reason: '마음가짐이나 원칙 관련 항목으로 보여요'
+    }
+  }
+
+  // Priority 1.1: "줄이기" pattern → reference (lifestyle goal, not daily checkable)
+  if (hasReducePattern) {
+    return {
+      type: 'reference',
+      confidence: 'high',
+      reason: '생활 습관 개선 목표로 보여요 (체크 없이 참고용)'
     }
   }
 
@@ -178,6 +194,20 @@ export function suggestActionType(title: string): AISuggestion {
       reason: '특정 요일 루틴으로 보여요',
       routineFrequency: 'weekly',
       routineWeekdays: selectedWeekdays
+    }
+  }
+
+  // Priority 2.6: Single weekday pattern (금요일 요가, 토요일 등산 등) → weekly routine with specific day
+  if (hasSingleWeekdayPattern && singleWeekdayMatch) {
+    const dayMap: Record<string, number> = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 0 }
+    const matchedDay = singleWeekdayMatch[1]
+    const selectedWeekday = dayMap[matchedDay]
+    return {
+      type: 'routine',
+      confidence: 'high',
+      reason: `${matchedDay}요일 루틴으로 보여요`,
+      routineFrequency: 'weekly',
+      routineWeekdays: [selectedWeekday]
     }
   }
 
@@ -460,6 +490,7 @@ export function shouldShowToday(action: {
   mission_completion_type?: MissionCompletionType
   mission_current_period_end?: string
   mission_status?: string
+  is_checked?: boolean  // Whether the action is checked on the target date
 }, targetDate?: Date): boolean {
   const checkDate = targetDate || new Date()
   const dayOfWeek = checkDate.getDay()
@@ -477,8 +508,14 @@ export function shouldShowToday(action: {
       return true
 
     case 'mission':
-      // Hide completed one-time missions
+      // Hide completed one-time missions ONLY if not checked on target date
+      // If checked on target date, show it (so user can see/uncheck it)
       if (action.mission_completion_type === 'once' && action.mission_status === 'completed') {
+        // If checked on target date, still show it
+        if (action.is_checked) {
+          return true
+        }
+        // Not checked on target date = hide completed mission
         return false
       }
 
@@ -558,7 +595,12 @@ export function formatTypeDetails(action: {
   }
 
   if (action.type === 'routine') {
-    const frequency = action.routine_frequency || 'daily'
+    const frequency = action.routine_frequency
+
+    // If frequency is not set, return "미설정"
+    if (!frequency) {
+      return '미설정'
+    }
 
     if (frequency === 'daily') {
       return '매일'

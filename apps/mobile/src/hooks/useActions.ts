@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { getDayBoundsUTC, getCurrentUTC, getPeriodBounds, getMissionPeriodBounds, getActionPeriodTarget, type RoutineFrequency } from '@mandaact/shared'
+import { getDayBoundsUTC, getPeriodBounds, getMissionPeriodBounds, getActionPeriodTarget, type RoutineFrequency } from '@mandaact/shared'
 import type { Action, SubGoal, Mandalart, CheckHistory } from '@mandaact/shared'
 import { format } from 'date-fns'
 
@@ -310,11 +310,18 @@ export function useToggleActionCheck() {
       userId,
       isChecked,
       checkId,
+      selectedDate,
+      // For mission status update
+      actionType,
+      missionCompletionType,
     }: {
       actionId: string
       userId: string
       isChecked: boolean
       checkId?: string
+      selectedDate: Date
+      actionType?: string
+      missionCompletionType?: string
     }) => {
       if (isChecked && checkId) {
         // Uncheck: Delete from check_history
@@ -323,27 +330,62 @@ export function useToggleActionCheck() {
           .delete()
           .eq('id', checkId)
 
-        if (deleteError) throw deleteError
+        if (deleteError) {
+          throw new Error(`Delete error: ${deleteError.message || deleteError.code || JSON.stringify(deleteError)}`)
+        }
+
+        // If mission (once type): Reset mission_status to 'active'
+        if (actionType === 'mission' && missionCompletionType === 'once') {
+          const { error: updateError } = await supabase
+            .from('actions')
+            .update({ mission_status: 'active' })
+            .eq('id', actionId)
+
+          if (updateError) {
+            console.warn('Failed to update mission_status:', updateError)
+          }
+        }
+
         return { actionId, isChecked: false }
       } else {
         // Check: Insert into check_history
+        // Use selectedDate for the timestamp, with noon time to avoid timezone issues
+        const checkDate = new Date(selectedDate)
+        checkDate.setHours(12, 0, 0, 0)
+        const checkedAt = checkDate.toISOString()
+
         const { data: checkData, error: insertError } = await supabase
           .from('check_history')
           .insert({
             action_id: actionId,
             user_id: userId,
-            checked_at: getCurrentUTC(),
+            checked_at: checkedAt,
           })
           .select()
           .single()
 
-        if (insertError) throw insertError
+        if (insertError) {
+          throw new Error(`Insert error: ${insertError.message || insertError.code || JSON.stringify(insertError)}`)
+        }
+
+        // If mission (once type): Update mission_status to 'completed'
+        if (actionType === 'mission' && missionCompletionType === 'once') {
+          const { error: updateError } = await supabase
+            .from('actions')
+            .update({ mission_status: 'completed' })
+            .eq('id', actionId)
+
+          if (updateError) {
+            console.warn('Failed to update mission_status:', updateError)
+          }
+        }
+
         return { actionId, isChecked: true, checkId: checkData.id }
       }
     },
-    onMutate: async ({ actionId, isChecked, userId }) => {
-      // Cancel outgoing refetches for today's actions
-      const dateStr = format(new Date(), 'yyyy-MM-dd')
+    onMutate: async ({ actionId, isChecked, userId, selectedDate }) => {
+      // Cancel outgoing refetches for the selected date's actions
+      const dateStr = format(selectedDate, 'yyyy-MM-dd')
       await queryClient.cancelQueries({
         queryKey: actionKeys.todayList(userId, dateStr),
       })
@@ -365,11 +407,11 @@ export function useToggleActionCheck() {
         )
       }
 
-      return { previousActions }
+      return { previousActions, dateStr }
     },
-    onError: (_err, { userId }, context) => {
+    onError: (_err, { userId, selectedDate }, context) => {
       // Rollback on error
-      const dateStr = format(new Date(), 'yyyy-MM-dd')
+      const dateStr = format(selectedDate, 'yyyy-MM-dd')
       if (context?.previousActions) {
         queryClient.setQueryData(
           actionKeys.todayList(userId, dateStr),
@@ -377,12 +419,20 @@ export function useToggleActionCheck() {
         )
       }
     },
-    onSettled: (_data, _error, { userId }) => {
+    onSettled: (_data, _error, { userId, selectedDate, actionType, missionCompletionType }) => {
       // Always refetch after error or success
-      const dateStr = format(new Date(), 'yyyy-MM-dd')
+      const dateStr = format(selectedDate, 'yyyy-MM-dd')
       queryClient.invalidateQueries({
         queryKey: actionKeys.todayList(userId, dateStr),
       })
+
+      // For mission (once type), also invalidate all action lists
+      // because mission_status change affects filtering on all dates
+      if (actionType === 'mission' && missionCompletionType === 'once') {
+        queryClient.invalidateQueries({
+          queryKey: actionKeys.lists(),
+        })
+      }
     },
   })
 }

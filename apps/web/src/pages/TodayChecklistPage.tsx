@@ -113,7 +113,19 @@ export default function TodayChecklistPage() {
 
         if (deleteError) throw deleteError
 
-        // Subtract XP when unchecking
+        // If mission (once type): Reset mission_status to 'active'
+        if (action.type === 'mission' && action.mission_completion_type === 'once') {
+          const { error: updateError } = await supabase
+            .from('actions')
+            .update({ mission_status: 'active' })
+            .eq('id', action.id)
+
+          if (updateError) {
+            console.warn('Failed to update mission_status:', updateError)
+          }
+        }
+
+        // Subtract XP when unchecking (use selectedDate for correct weekend bonus calculation)
         try {
           const { updateUserXP, getStreakStats } = await import('@/lib/stats')
           const { getActiveMultipliers, calculateTotalMultiplier } = await import('@/lib/xpMultipliers')
@@ -124,8 +136,8 @@ export default function TodayChecklistPage() {
           const streakBonus = streakStats.current >= 7 ? 5 : 0
           const subtotalXP = baseXP + streakBonus
 
-          // Apply multipliers
-          const multipliers = await getActiveMultipliers(user.id)
+          // Apply multipliers (pass selectedDate for weekend bonus calculation)
+          const multipliers = await getActiveMultipliers(user.id, selectedDate)
           const totalMultiplier = calculateTotalMultiplier(multipliers)
           const finalXP = Math.floor(subtotalXP * totalMultiplier)
 
@@ -138,11 +150,16 @@ export default function TodayChecklistPage() {
         refetch()
       } else {
         // Check: Validate with anti-cheat first
+        // Use selectedDate for the timestamp (noon time to avoid timezone issues)
+        const checkDate = new Date(selectedDate)
+        checkDate.setHours(12, 0, 0, 0)
+        const checkedAt = checkDate.toISOString()
+
         const { data: validationData, error: validationError } = await supabase
           .rpc('validate_and_record_check', {
             p_user_id: user.id,
             p_action_id: action.id,
-            p_checked_at: getCurrentUTC()
+            p_checked_at: checkedAt
           })
 
         if (validationError) {
@@ -178,18 +195,30 @@ export default function TodayChecklistPage() {
           return
         }
 
-        // Insert into check_history with current UTC timestamp
+        // Insert into check_history with selected date timestamp
         const { data: checkData, error: insertError } = await supabase
           .from('check_history')
           .insert({
             action_id: action.id,
             user_id: user.id,
-            checked_at: getCurrentUTC()
+            checked_at: checkedAt
           })
           .select()
           .single()
 
         if (insertError) throw insertError
+
+        // If mission (once type): Update mission_status to 'completed'
+        if (action.type === 'mission' && action.mission_completion_type === 'once') {
+          const { error: updateError } = await supabase
+            .from('actions')
+            .update({ mission_status: 'completed' })
+            .eq('id', action.id)
+
+          if (updateError) {
+            console.warn('Failed to update mission_status:', updateError)
+          }
+        }
 
         // Track action check event (Phase 8.1)
         trackActionChecked({
@@ -212,8 +241,8 @@ export default function TodayChecklistPage() {
             const streakBonus = streakStats.current >= 7 ? 5 : 0
             const subtotalXP = baseXP + streakBonus
 
-            // Apply multipliers
-            const multipliers = await getActiveMultipliers(user.id)
+            // Apply multipliers (pass selectedDate for weekend bonus calculation)
+            const multipliers = await getActiveMultipliers(user.id, selectedDate)
             const totalMultiplier = calculateTotalMultiplier(multipliers)
             const finalXP = Math.floor(subtotalXP * totalMultiplier)
 
