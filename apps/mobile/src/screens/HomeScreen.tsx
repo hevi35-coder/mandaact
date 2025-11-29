@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Modal, TextInput, Alert } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, { FadeInUp } from 'react-native-reanimated'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { CompositeNavigationProp } from '@react-navigation/native'
@@ -12,7 +11,6 @@ import {
   FileText,
   Award,
   HelpCircle,
-  Settings,
   Flame,
   Target,
   Trophy,
@@ -26,8 +24,10 @@ import {
   Pencil,
   Calendar,
 } from 'lucide-react-native'
+import { Header } from '../components'
 import { useAuthStore } from '../store/authStore'
-import { useUserGamification, use4WeekHeatmap, useProfileStats } from '../hooks/useStats'
+import { useQueryClient } from '@tanstack/react-query'
+import { useUserGamification, use4WeekHeatmap, useProfileStats, statsKeys } from '../hooks/useStats'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useBadgeDefinitions, useUserBadges, isBadgeUnlocked } from '../hooks/useBadges'
 import {
@@ -43,6 +43,7 @@ import {
   validateNickname,
   NICKNAME_DIALOG,
   NICKNAME_ERRORS,
+  formatUserDateTime,
 } from '@mandaact/shared'
 import { supabase } from '../lib/supabase'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
@@ -92,6 +93,7 @@ function BadgeMiniCard({
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
 
   // Collapsible states
   const [xpInfoOpen, setXpInfoOpen] = useState(false)
@@ -111,6 +113,16 @@ export default function HomeScreen() {
   const { data: userBadges = [] } = useUserBadges(user?.id)
 
   const isLoading = gamificationLoading || profileStatsLoading
+
+  // Invalidate and refetch data when screen is focused (e.g., returning from TodayScreen after checking)
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        // Invalidate all user stats queries to force fresh data
+        queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
+      }
+    }, [user?.id, queryClient])
+  )
 
   // Calculate XP progress
   const currentLevel = gamification?.current_level || 1
@@ -202,26 +214,38 @@ export default function HomeScreen() {
   }, [user, newNickname, nickname])
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1 px-4 pt-4">
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-6">
+    <View className="flex-1 bg-gray-50">
+      <Header />
+      <ScrollView className="flex-1 px-5 pt-5">
+        {/* Page Title - Center Aligned */}
+        <View className="items-center mb-5">
           <View className="flex-row items-center">
-            <Text className="text-3xl font-bold text-gray-900">홈</Text>
-            <Text className="text-gray-500 ml-3 text-sm">성장 대시보드</Text>
+            <Text
+              className="text-3xl text-gray-900"
+              style={{ fontFamily: 'Pretendard-Bold' }}
+            >
+              홈
+            </Text>
+            <Text
+              className="text-base text-gray-500 ml-3"
+              style={{ fontFamily: 'Pretendard-Medium' }}
+            >
+              성장 대시보드
+            </Text>
           </View>
-          <Pressable
-            onPress={() => navigation.navigate('Settings')}
-            className="p-2 rounded-full active:bg-gray-100"
-          >
-            <Settings size={24} color="#6b7280" />
-          </Pressable>
         </View>
 
         {/* Profile Card - matching web UserProfileCard */}
         <Animated.View
           entering={FadeInUp.delay(100).duration(400)}
-          className="bg-white rounded-2xl p-5 shadow-sm mb-4 border border-gray-200"
+          className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
+          }}
         >
           {isLoading ? (
             <ActivityIndicator size="small" color="#374151" />
@@ -484,7 +508,14 @@ export default function HomeScreen() {
         {/* Streak Card - Web Aligned Design */}
         <Animated.View
           entering={FadeInUp.delay(200).duration(400)}
-          className="bg-white rounded-2xl p-5 shadow-sm mb-4 border border-gray-200"
+          className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
+          }}
         >
           {/* Header */}
           <View className="flex-row items-center gap-2 mb-1">
@@ -502,24 +533,21 @@ export default function HomeScreen() {
                 {currentStreak}
               </Text>
               <Text className="text-sm font-semibold text-gray-500">일 연속</Text>
-              {currentStreak > 0 && lastCheckDate && (
-                <View className="mt-2 items-center">
-                  <Text className="text-xs text-gray-400">
-                    {new Date(lastCheckDate).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                    }).replace(/\. /g, '.').replace(/\.$/, '')}
-                  </Text>
-                  <Text className="text-xs text-gray-400">
-                    {new Date(lastCheckDate).toLocaleTimeString('ko-KR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    })}
-                  </Text>
-                </View>
-              )}
+              {currentStreak > 0 && lastCheckDate && (() => {
+                // Handle both Date object and string (React Query may serialize dates)
+                const isoString = lastCheckDate instanceof Date
+                  ? lastCheckDate.toISOString()
+                  : typeof lastCheckDate === 'string'
+                    ? lastCheckDate
+                    : String(lastCheckDate)
+                const formatted = formatUserDateTime(isoString)
+                return (
+                  <View className="mt-2 items-center">
+                    <Text className="text-xs text-gray-400">{formatted.date}</Text>
+                    <Text className="text-xs text-gray-400">{formatted.time}</Text>
+                  </View>
+                )
+              })()}
             </View>
 
             {/* Longest Streak */}
@@ -534,30 +562,25 @@ export default function HomeScreen() {
                 {longestStreak}
               </Text>
               <Text className="text-sm font-semibold text-gray-500">최장 기록</Text>
-              {longestStreak > 0 && longestStreakDate && (
-                <View className="mt-2 items-center">
-                  <Text className="text-xs text-gray-400">
-                    {new Date(longestStreakDate).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                    }).replace(/\. /g, '.').replace(/\.$/, '')}
-                  </Text>
-                  <Text className="text-xs text-gray-400">
-                    {new Date(longestStreakDate).toLocaleTimeString('ko-KR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    })}
-                  </Text>
-                </View>
-              )}
+              {longestStreak > 0 && longestStreakDate && (() => {
+                // Handle both Date object and string (React Query may serialize dates)
+                const isoString = longestStreakDate instanceof Date
+                  ? longestStreakDate.toISOString()
+                  : longestStreakDate
+                const formatted = formatUserDateTime(isoString)
+                return (
+                  <View className="mt-2 items-center">
+                    <Text className="text-xs text-gray-400">{formatted.date}</Text>
+                    <Text className="text-xs text-gray-400">{formatted.time}</Text>
+                  </View>
+                )
+              })()}
             </View>
           </View>
 
           {/* 4-Week Heatmap */}
           <View>
-            <View className="flex-row items-center gap-2 mb-3">
+            <View className="flex-row items-center gap-2 mb-4">
               <Calendar size={16} color="#6b7280" />
               <Text className="text-sm font-medium text-gray-700">최근 4주 활동</Text>
             </View>
@@ -569,9 +592,9 @@ export default function HomeScreen() {
             ) : (
               <>
                 {/* 28-day grid: 4 rows x 7 columns */}
-                <View className="mb-3">
+                <View className="mb-3" style={{ gap: 8 }}>
                   {[0, 1, 2, 3].map((rowIndex) => (
-                    <View key={rowIndex} className="flex-row justify-between mb-2">
+                    <View key={rowIndex} className="flex-row justify-between">
                       {fourWeekData.slice(rowIndex * 7, rowIndex * 7 + 7).map((day) => {
                         const isToday = day.date === todayStr
                         const intensity = day.percentage >= 80
@@ -584,23 +607,33 @@ export default function HomeScreen() {
                                 ? 'minimal'
                                 : 'none'
 
+                        // Color mapping matching web app (Tailwind green)
+                        const bgColor = intensity === 'high'
+                          ? '#22c55e' // green-500
+                          : intensity === 'medium'
+                            ? '#4ade80' // green-400
+                            : intensity === 'low'
+                              ? '#86efac' // green-300
+                              : intensity === 'minimal'
+                                ? '#bbf7d0' // green-200
+                                : '#e5e5e5' // neutral-200 (muted background)
+
                         return (
                           <View
                             key={day.date}
-                            style={{ width: 36, height: 36 }}
-                            className={`rounded-sm ${
-                              isToday ? 'border-2 border-primary' : ''
-                            } ${
-                              intensity === 'high'
-                                ? 'bg-green-500'
-                                : intensity === 'medium'
-                                  ? 'bg-green-400'
-                                  : intensity === 'low'
-                                    ? 'bg-green-300'
-                                    : intensity === 'minimal'
-                                      ? 'bg-green-200'
-                                      : 'bg-gray-200'
-                            }`}
+                            style={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: 6,
+                              backgroundColor: bgColor,
+                              borderWidth: isToday ? 2 : 0,
+                              borderColor: isToday ? '#1f2937' : 'transparent', // gray-800
+                              shadowColor: intensity !== 'none' ? '#22c55e' : '#000',
+                              shadowOffset: { width: 0, height: intensity !== 'none' ? 2 : 1 },
+                              shadowOpacity: intensity !== 'none' ? 0.15 : 0.05,
+                              shadowRadius: intensity !== 'none' ? 3 : 2,
+                              elevation: intensity !== 'none' ? 2 : 1,
+                            }}
                           />
                         )
                       })}
@@ -609,14 +642,14 @@ export default function HomeScreen() {
                 </View>
 
                 {/* Legend */}
-                <View className="flex-row items-center justify-center gap-2">
-                  <Text className="text-xs text-gray-400">0%</Text>
-                  <View className="w-3 h-3 bg-gray-200 rounded-sm" />
-                  <View className="w-3 h-3 bg-green-200 rounded-sm" />
-                  <View className="w-3 h-3 bg-green-300 rounded-sm" />
-                  <View className="w-3 h-3 bg-green-400 rounded-sm" />
-                  <View className="w-3 h-3 bg-green-500 rounded-sm" />
-                  <Text className="text-xs text-gray-400">100%</Text>
+                <View className="flex-row items-center justify-center gap-1.5">
+                  <Text className="text-xs text-gray-400 mr-1">0%</Text>
+                  <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#e5e5e5' }} />
+                  <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#bbf7d0' }} />
+                  <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#86efac' }} />
+                  <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#4ade80' }} />
+                  <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#22c55e' }} />
+                  <Text className="text-xs text-gray-400 ml-1">100%</Text>
                 </View>
               </>
             )}
@@ -624,20 +657,29 @@ export default function HomeScreen() {
 
           {/* Motivational Message */}
           {currentStreak === 0 ? (
-            <View className="mt-4 px-3 py-3 bg-gray-100 rounded-xl border-l-4 border-gray-400">
-              <Text className="text-sm text-gray-600 text-center">
+            <View className="mt-4 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-200">
+              <Text
+                className="text-sm text-gray-600 text-center"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
                 오늘부터 새로운 스트릭을 시작해보세요! 🌱
               </Text>
             </View>
           ) : currentStreak >= 7 ? (
-            <View className="mt-4 px-3 py-3 bg-orange-50 rounded-xl border-l-4 border-orange-500">
-              <Text className="text-sm text-gray-700 font-medium text-center">
+            <View className="mt-4 px-4 py-3 bg-orange-50 rounded-2xl border border-orange-200">
+              <Text
+                className="text-sm text-orange-700 text-center"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
                 대단해요! 꾸준함이 습관이 되고 있어요 🎉
               </Text>
             </View>
           ) : (
-            <View className="mt-4 px-3 py-3 bg-gray-100 rounded-xl border-l-4 border-gray-400">
-              <Text className="text-sm text-gray-600 text-center">
+            <View className="mt-4 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-200">
+              <Text
+                className="text-sm text-gray-600 text-center"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
                 7일 연속까지 {7 - currentStreak}일 남았어요. 계속 이대로! 💪
               </Text>
             </View>
@@ -646,7 +688,14 @@ export default function HomeScreen() {
 
         {/* Tutorial Banner */}
         <Pressable
-          className="bg-white border border-gray-300 rounded-2xl p-4 mb-4 flex-row items-center"
+          className="bg-white border border-gray-100 rounded-3xl p-5 mb-5 flex-row items-center"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
+          }}
           onPress={() => navigation.navigate('Tutorial')}
         >
           <View className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center">
@@ -741,6 +790,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   )
 }

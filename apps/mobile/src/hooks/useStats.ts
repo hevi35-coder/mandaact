@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { getDayBoundsUTC, getUserToday } from '@mandaact/shared'
+import { getDayBoundsUTC, getUserToday, utcToUserDate } from '@mandaact/shared'
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
 import { xpService } from '../lib/xp'
 import type { XPMultiplier, AwardXPResult, PerfectDayResult } from '../lib/xp'
@@ -46,14 +46,14 @@ export function useDailyStats(userId: string | undefined, date?: Date) {
   return useQuery({
     queryKey: statsKeys.daily(userId || '', dateStr),
     queryFn: async (): Promise<DailyStats> => {
-      // Get total actions from active mandalarts
+      // Get total actions from active mandalarts using INNER JOIN (same as web app)
       const { data: actionsData, error: actionsError } = await supabase
         .from('actions')
         .select(`
           id,
           type,
-          sub_goal:sub_goals (
-            mandalart:mandalarts (
+          sub_goal:sub_goals!inner(
+            mandalart:mandalarts!inner(
               user_id,
               is_active
             )
@@ -65,15 +65,9 @@ export function useDailyStats(userId: string | undefined, date?: Date) {
       if (actionsError) throw actionsError
 
       // Filter out reference type actions (they don't count towards completion)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const checkableActions = (actionsData || []).filter((action: any) =>
-        action.type !== 'reference' &&
-        action.sub_goal &&
-        Array.isArray(action.sub_goal) &&
-        action.sub_goal[0]?.mandalart
-      )
-
-      const total = checkableActions.length
+      const total = (actionsData || []).filter(
+        (action) => action.type !== 'reference'
+      ).length
 
       // Get checks for the date
       const { start: dayStart, end: dayEnd } = getDayBoundsUTC(dateStr)
@@ -172,14 +166,14 @@ export function useWeeklyStats(userId: string | undefined) {
         totalChecked += count || 0
       }
 
-      // Get total checkable actions (approximate as today's count * 7)
+      // Get total checkable actions using INNER JOIN (same as web app)
       const { data: actionsData, error: actionsError } = await supabase
         .from('actions')
         .select(`
           id,
           type,
-          sub_goal:sub_goals (
-            mandalart:mandalarts (
+          sub_goal:sub_goals!inner(
+            mandalart:mandalarts!inner(
               user_id,
               is_active
             )
@@ -190,15 +184,12 @@ export function useWeeklyStats(userId: string | undefined) {
 
       if (actionsError) throw actionsError
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const checkableActions = (actionsData || []).filter((action: any) =>
-        action.type !== 'reference' &&
-        action.sub_goal &&
-        Array.isArray(action.sub_goal) &&
-        action.sub_goal[0]?.mandalart
-      )
+      // Filter out reference type actions
+      const checkableActionsCount = (actionsData || []).filter(
+        (action) => action.type !== 'reference'
+      ).length
 
-      totalCheckable = checkableActions.length * 7
+      totalCheckable = checkableActionsCount * 7
 
       const percentage =
         totalCheckable > 0
@@ -248,10 +239,11 @@ export function useHeatmapData(userId: string | undefined, month: Date = new Dat
 
       if (error) throw error
 
-      // Count checks per day
+      // Count checks per day (using timezone-aware conversion)
       const checksByDay: Record<string, number> = {}
       checksData?.forEach((check) => {
-        const dateStr = format(new Date(check.checked_at), 'yyyy-MM-dd')
+        // Use utcToUserDate to convert UTC timestamp to KST date string
+        const dateStr = utcToUserDate(check.checked_at)
         checksByDay[dateStr] = (checksByDay[dateStr] || 0) + 1
       })
 
@@ -293,12 +285,14 @@ export function use4WeekHeatmap(userId: string | undefined) {
   return useQuery({
     queryKey: [...statsKeys.user(userId || ''), '4week-heatmap'] as const,
     queryFn: async (): Promise<FourWeekHeatmapData[]> => {
-      // Get date range for last 28 days
-      const endDate = new Date()
+      // Get date range for last 28 days using KST timezone
+      const todayStr = getUserToday() // KST today (YYYY-MM-DD)
+      const [year, month, day] = todayStr.split('-').map(Number)
+      const endDate = new Date(year, month - 1, day)
       const startDate = subDays(endDate, 27) // 28 days including today
 
       const startStr = format(startDate, 'yyyy-MM-dd')
-      const endStr = format(endDate, 'yyyy-MM-dd')
+      const endStr = todayStr // Use KST today directly
 
       // Get UTC bounds
       const { start: startUTC } = getDayBoundsUTC(startStr)
@@ -314,14 +308,15 @@ export function use4WeekHeatmap(userId: string | undefined) {
 
       if (checksError) throw checksError
 
-      // Get total checkable actions for percentage calculation
+      // Get total checkable actions using INNER JOIN (same as web app)
+      // !inner ensures only matching rows are returned, not nulls
       const { data: actionsData, error: actionsError } = await supabase
         .from('actions')
         .select(`
           id,
           type,
-          sub_goal:sub_goals (
-            mandalart:mandalarts (
+          sub_goal:sub_goals!inner(
+            mandalart:mandalarts!inner(
               user_id,
               is_active
             )
@@ -332,20 +327,16 @@ export function use4WeekHeatmap(userId: string | undefined) {
 
       if (actionsError) throw actionsError
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const checkableActions = (actionsData || []).filter((action: any) =>
-        action.type !== 'reference' &&
-        action.sub_goal &&
-        Array.isArray(action.sub_goal) &&
-        action.sub_goal[0]?.mandalart
-      )
+      // Filter out reference type actions (web app does this too)
+      const totalActions = (actionsData || []).filter(
+        (action) => action.type !== 'reference'
+      ).length
 
-      const totalActions = checkableActions.length
-
-      // Count checks per day
+      // Count checks per day (using timezone-aware conversion)
       const checksByDay: Record<string, number> = {}
       checksData?.forEach((check) => {
-        const dateStr = format(new Date(check.checked_at), 'yyyy-MM-dd')
+        // Use utcToUserDate to convert UTC timestamp to KST date string
+        const dateStr = utcToUserDate(check.checked_at)
         checksByDay[dateStr] = (checksByDay[dateStr] || 0) + 1
       })
 
@@ -363,7 +354,7 @@ export function use4WeekHeatmap(userId: string | undefined) {
       return result
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds - shorter to reflect check changes faster
   })
 }
 
@@ -404,11 +395,11 @@ export function useProfileStats(userId: string | undefined) {
 
       if (checksError) throw checksError
 
-      // Count unique dates (active days)
+      // Count unique dates (active days) using timezone-aware conversion
       const uniqueDates = new Set(
         checksData?.map((check) => {
-          const date = new Date(check.checked_at)
-          return format(date, 'yyyy-MM-dd')
+          // Use utcToUserDate to convert UTC timestamp to KST date string
+          return utcToUserDate(check.checked_at)
         }) || []
       )
 
@@ -431,13 +422,13 @@ export function useSubGoalProgress(userId: string | undefined) {
   return useQuery({
     queryKey: [...statsKeys.user(userId || ''), 'subgoal-progress', today] as const,
     queryFn: async (): Promise<SubGoalProgress[]> => {
-      // Get all sub-goals with actions from active mandalarts
+      // Get all sub-goals with actions from active mandalarts using INNER JOIN
       const { data: subGoalsData, error: subGoalsError } = await supabase
         .from('sub_goals')
         .select(`
           id,
           title,
-          mandalart:mandalarts (
+          mandalart:mandalarts!inner(
             id,
             title,
             user_id,
@@ -466,20 +457,22 @@ export function useSubGoalProgress(userId: string | undefined) {
 
       const checkedActionIds = new Set(checksData?.map((c) => c.action_id) || [])
 
-      // Build progress data
+      // Build progress data (with INNER JOIN, mandalart is always present)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const progress: SubGoalProgress[] = (subGoalsData || [])
-        .filter((sg: any) => sg.mandalart && Array.isArray(sg.mandalart) && sg.mandalart.length > 0)
         .map((sg: any) => {
           const checkableActions = (sg.actions || []).filter((a: any) => a.type !== 'reference')
           const completedToday = checkableActions.filter((a: any) => checkedActionIds.has(a.id)).length
           const totalActions = checkableActions.length
           const completionRate = totalActions > 0 ? Math.round((completedToday / totalActions) * 100) : 0
 
+          // Handle both array and object response (same as web app pattern)
+          const mandalart = Array.isArray(sg.mandalart) ? sg.mandalart[0] : sg.mandalart
+
           return {
             id: sg.id,
             title: sg.title,
-            mandalartTitle: sg.mandalart[0]?.title || '',
+            mandalartTitle: mandalart?.title || '',
             totalActions,
             completedToday,
             completionRate,
@@ -510,10 +503,11 @@ export function useXPUpdate() {
 
   const awardXP = async (
     userId: string,
-    baseXP: number = 10
+    baseXP: number = 10,
+    targetDate?: Date
   ): Promise<AwardXPResult> => {
-    // Use shared xpService
-    const result = await xpService.awardXP(userId, baseXP)
+    // Use shared xpService (pass targetDate for weekend bonus calculation)
+    const result = await xpService.awardXP(userId, baseXP, targetDate)
 
     // Invalidate gamification queries
     queryClient.invalidateQueries({ queryKey: statsKeys.gamification(userId) })
@@ -601,16 +595,17 @@ export function useXPUpdate() {
 
   /**
    * Subtract XP when unchecking (same calculation as awarding)
+   * @param targetDate - The date for which XP was awarded (affects weekend bonus calculation)
    */
-  const subtractXP = async (userId: string, baseXP: number = 10): Promise<{ finalXP: number }> => {
+  const subtractXP = async (userId: string, baseXP: number = 10, targetDate?: Date): Promise<{ finalXP: number }> => {
     try {
       // Get streak for bonus calculation (same as award)
       const streakStats = await xpService.getStreakStats(userId)
       const streakBonus = streakStats.current >= 7 ? 5 : 0
       const subtotalXP = baseXP + streakBonus
 
-      // Apply multipliers (same as award)
-      const multipliers = await xpService.getActiveMultipliers(userId)
+      // Apply multipliers (same as award, using targetDate for weekend bonus)
+      const multipliers = await xpService.getActiveMultipliers(userId, targetDate)
       const totalMultiplier = xpService.calculateTotalMultiplier(multipliers)
       const finalXP = Math.floor(subtotalXP * totalMultiplier)
 

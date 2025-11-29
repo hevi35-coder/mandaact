@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { getDayBoundsUTC, getPeriodBounds, getMissionPeriodBounds, getActionPeriodTarget, type RoutineFrequency } from '@mandaact/shared'
+import { getDayBoundsUTC, getPeriodBounds, getMissionPeriodBounds, getActionPeriodTarget, getCurrentUTC, type RoutineFrequency } from '@mandaact/shared'
 import type { Action, SubGoal, Mandalart, CheckHistory } from '@mandaact/shared'
 import { format } from 'date-fns'
 
@@ -348,18 +348,13 @@ export function useToggleActionCheck() {
 
         return { actionId, isChecked: false }
       } else {
-        // Check: Insert into check_history
-        // Use selectedDate for the timestamp, with noon time to avoid timezone issues
-        const checkDate = new Date(selectedDate)
-        checkDate.setHours(12, 0, 0, 0)
-        const checkedAt = checkDate.toISOString()
-
+        // Check: Insert into check_history with current UTC time (same as web app)
         const { data: checkData, error: insertError } = await supabase
           .from('check_history')
           .insert({
             action_id: actionId,
             user_id: userId,
-            checked_at: checkedAt,
+            checked_at: getCurrentUTC(),
           })
           .select()
           .single()
