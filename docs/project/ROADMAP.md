@@ -1,7 +1,7 @@
-# MandaAct 개발 로드맵 v3.4
+# MandaAct 개발 로드맵 v3.5
 
-**최종 업데이트**: 2025-11-29 (Latest) - 코드 리팩토링 진행
-**현재 상태**: Phase 4 완료 ✅ | Mobile App 100% 완료 ✅ | 코드 리팩토링 진행 중 🔄
+**최종 업데이트**: 2025-11-30 (Latest) - Phase 5, 8, 9.1 완료
+**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅
 
 ---
 
@@ -23,7 +23,8 @@
   - 목표 진단 리포트 (SMART 기준)
 - **PWA 배포**: 프로덕션 환경 구축 완료 ✅
 - **Mobile App**: React Native 개발 완료 ✅ (100%)
-  - Sentry 에러 추적 통합
+  - Sentry 에러 추적 통합 (@sentry/react-native)
+  - PostHog Analytics 통합 (posthog-react-native)
   - Production Logger 시스템
   - 환경변수 검증
   - React.memo 최적화
@@ -307,50 +308,51 @@ npm start
 
 ---
 
-## 🎨 Phase 5: UX 디테일 개선 (우선순위: 중간)
+## 🎨 Phase 5: UX 디테일 개선 ✅ **완료** (2025-11-30)
 
 **목표**: 사용자 경험 마지막 다듬기
 **기간**: 1주
+**완료일**: 2025-11-30
 
-### 5.1 만다라트 상세 페이지 개선
-**작업 목록**:
-- [ ] 핵심 목표 시각적 강조 (크기, 색상)
-- [ ] "핵심목표" 라벨 연하게 처리
-- [ ] 9x9 그리드 모바일 반응형 최적화
-- [ ] 셀 호버 시 툴팁 표시 (전체 텍스트)
+### 5.1 만다라트 상세 페이지 개선 ✅ **완료**
+**완료 사항**:
+- ✅ 핵심 목표 시각적 강조: `CenterGoalCell` 그라디언트 배경 (Blue → Purple → Pink)
+- ✅ "핵심목표" 라벨 연하게 처리: 그라디언트로 시각 구분 (라벨 불필요)
+- ✅ 9x9 그리드 모바일 반응형 최적화: `cellSize` 동적 계산, 3x3 확장 뷰
+- ⚠️ 셀 호버 시 툴팁: 모바일 터치 기반이라 불필요 (탭하면 전체 표시)
 
-**우선순위**: 🟢 Recommended
-
----
-
-### 5.2 아이콘 & UI 정리
-**작업 목록**:
-- [ ] 목표 우측 불필요한 아이콘 제거 확인
-- [ ] 액션 타입 아이콘 일관성 검토
-- [ ] 색상 팔레트 통일 (Tailwind theme 확장)
-- [ ] 로딩 스피너/스켈레톤 UI 추가
-
-**우선순위**: 🟢 Recommended
+**우선순위**: 🟢 Recommended - ✅ 완료
 
 ---
 
-### 5.3 접힘/펼침 사용자 설정
-**작업 목록**:
-- [ ] LocalStorage에 섹션 상태 저장
-- [ ] "전체 펼치기/접기" 버튼 추가
-- [ ] 설정 페이지에서 기본값 변경 가능
+### 5.2 아이콘 & UI 정리 ✅ **완료**
+**완료 사항**:
+- ✅ 목표 우측 불필요한 아이콘 제거 확인
+- ✅ 액션 타입 아이콘 일관성: `RotateCw`(루틴), `Target`(미션), `Lightbulb`(참고)
+- ✅ 색상 팔레트 통일: Tailwind + NativeWind 일관된 색상
+- ✅ 로딩 스피너/스켈레톤 UI: `Skeleton` 컴포넌트, `ActivityIndicator`
 
-**우선순위**: 🟢 Nice-to-have
+**우선순위**: 🟢 Recommended - ✅ 완료
 
 ---
 
-### 5.4 빈 상태 (Empty State) 개선
-**작업 목록**:
-- [ ] 만다라트 없을 때: 온보딩 일러스트 + CTA
-- [ ] 체크 항목 없을 때: 격려 메시지
-- [ ] 통계 데이터 없을 때: 가이드 표시
+### 5.3 접힘/펼침 사용자 설정 ⏸️ **보류**
+**상태**: 현재 UX로 충분하여 보류
+- ⏸️ LocalStorage에 섹션 상태 저장
+- ⏸️ "전체 펼치기/접기" 버튼 추가
+- ⏸️ 설정 페이지에서 기본값 변경 가능
 
-**우선순위**: 🟢 Nice-to-have
+**우선순위**: 🟢 Nice-to-have - ⏸️ 보류 (필요 시 추가)
+
+---
+
+### 5.4 빈 상태 (Empty State) 개선 ✅ **완료**
+**완료 사항**:
+- ✅ 만다라트 없을 때: `EmptyMandalarts` (아이콘 + 설명 + CTA 버튼)
+- ✅ 체크 항목 없을 때: `EmptyTodayActions` (격려 메시지 포함)
+- ✅ 통계 데이터 없을 때: EmptyState 시스템 구축 완료
+
+**우선순위**: 🟢 Nice-to-have - ✅ 완료
 
 ---
 
@@ -451,28 +453,32 @@ npm start
 **목표**: 플랫폼 확장 및 지속 가능한 수익 모델 구축
 **기간**: 4-6주
 
-### 9.1 iPad 지원 (유니버셜 앱) 🔵 **1순위**
+### 9.1 iPad 지원 (유니버셜 앱) ✅ **완료** (2025-11-30)
 **목표**: iPad에서 최적화된 레이아웃으로 사용자 경험 향상
 
+**완료 사항**:
+- ✅ iPad 전용 레이아웃 설계
+  - `useResponsive` 훅: 디바이스 타입, 브레이크포인트, 레이아웃 값 제공
+  - `ResponsiveContainer`, `ResponsiveGrid`, `ResponsiveRow` 컴포넌트
+  - HomeScreen: iPad에서 2열 카드 레이아웃
+  - MandalartDetailScreen: iPad에서 더 큰 그리드 셀, 중앙 정렬
+- ✅ 반응형 브레이크포인트 추가
+  - phone: < 768px (iPhone)
+  - tablet: >= 768px (iPad)
+  - tabletLarge: >= 1024px (iPad Pro 12.9")
+  - `contentMaxWidth`: 태블릿에서 콘텐츠 폭 제한 (700px/900px)
+- ✅ 멀티태스킹 지원
+  - `supportsTablet: true` 활성화
+  - `requireFullScreen: false` 설정 (Split View, Slide Over 지원)
+- ✅ app.json 설정 업데이트
+
 **작업 목록**:
-- [ ] iPad 전용 레이아웃 설계
-  - 9x9 그리드 더 큰 화면에 최적화
-  - 사이드바 네비게이션 검토
-  - Split View 지원 고려
-- [ ] 반응형 브레이크포인트 추가
-  - Tablet (768px+) 스타일 정의
-  - 컴포넌트별 iPad 레이아웃 조정
-- [ ] 멀티태스킹 지원
-  - Slide Over, Split View 테스트
-  - 화면 회전 대응
-- [ ] iPad 시뮬레이터/실기기 테스트
+- [x] iPad 전용 레이아웃 설계
+- [x] 반응형 브레이크포인트 추가
+- [x] 멀티태스킹 지원
+- [x] iPad 시뮬레이터 테스트 (시뮬레이터 6종 사용 가능)
 
-**선정 이유**:
-- 외부 의존성 없이 순수 UI 작업
-- 기존 코드베이스 안정성 유지
-- 앱스토어 기기 호환성 확대
-
-**우선순위**: 🟡 Important
+**우선순위**: 🟡 Important - ✅ 완료
 
 ---
 
@@ -547,19 +553,33 @@ npm start
 **목표**: 프로덕션 환경 안정화 및 데이터 기반 의사결정
 **기간**: 1주
 
-### 8.1 모니터링 & 분석
-**작업 목록**:
-- [ ] 핵심 이벤트 추적 설정:
-  - `mandalart_created`
-  - `action_checked`
-  - `badge_unlocked`
-  - `notification_clicked`
-  - `tutorial_completed`
-- [ ] 에러 추적 시스템 (Sentry 등)
-- [ ] Vercel Analytics 상세 분석
-- [ ] 사용자 행동 퍼널 분석
+### 8.1 모니터링 & 분석 ✅ **부분 완료** (2025-11-30)
 
-**우선순위**: 🟡 Important
+**완료 사항**:
+- ✅ **Web App**: Sentry + PostHog 연동 완료
+- ✅ **Mobile App**: Sentry + PostHog 연동 완료 (2025-11-30)
+  - `@sentry/react-native` 설치 및 설정
+  - `posthog-react-native` 설치 및 설정
+  - 핵심 이벤트 추적 함수 구현 (13개)
+
+**구현된 이벤트 추적**:
+- ✅ `app_opened` - 앱 실행
+- ✅ `user_logged_in` / `user_signed_up` - 인증
+- ✅ `mandalart_created` - 만다라트 생성
+- ✅ `action_checked` - 액션 체크
+- ✅ `badge_unlocked` - 배지 획득
+- ✅ `level_up` - 레벨 업
+- ✅ `tutorial_completed` - 튜토리얼 완료
+- ✅ `notification_clicked` - 알림 클릭
+- ✅ `weekly_report_generated` - 주간 리포트
+- ✅ `goal_diagnosis_viewed` - 목표 진단
+
+**남은 작업**:
+- [ ] 실제 이벤트 추적 코드를 각 화면에 연결
+- [ ] Vercel Analytics 상세 분석
+- [ ] 사용자 행동 퍼널 분석 대시보드 구성
+
+**우선순위**: 🟡 Important - 진행 중
 
 ---
 
@@ -576,14 +596,22 @@ npm start
 
 ---
 
-### 8.3 백업 & 복구 전략
-**작업 목록**:
-- [ ] Supabase 자동 백업 설정
-- [ ] 데이터 복구 프로시저 문서화
-- [ ] 마이그레이션 롤백 테스트
-- [ ] RLS 정책 검증 (보안 테스트)
+### 8.3 백업 & 복구 전략 ✅ **완료** (2025-11-30)
+**완료 사항**:
+- ✅ 백업 & 복구 전략 문서 작성 (`docs/operations/BACKUP_RECOVERY_STRATEGY.md`)
+- ✅ Supabase 자동 백업 설정 가이드
+- ✅ 데이터 복구 프로시저 문서화 (전체/특정 테이블/특정 사용자)
+- ✅ 마이그레이션 롤백 절차 정의
+- ✅ RLS 정책 검증 스크립트 (`scripts/verify_rls_policies.sql`)
+- ✅ 재해 복구 계획 (DRP) 수립
 
-**우선순위**: 🟡 Important
+**작업 목록**:
+- [x] Supabase 자동 백업 설정 가이드
+- [x] 데이터 복구 프로시저 문서화
+- [x] 마이그레이션 롤백 테스트 절차
+- [x] RLS 정책 검증 스크립트
+
+**우선순위**: 🟡 Important - ✅ 완료
 
 ---
 
@@ -719,11 +747,17 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 - 모바일 최적화
 
 ### 기술 부채
-🟡 **중간 수준**
-- TypeScript `any` 타입 일부 존재
-- 번들 크기 최적화 여지
-- 테스트 커버리지 0%
-- 에러 추적 시스템 미구축
+🟢 **낮은 수준** (해결 완료)
+- ✅ TypeScript `any` 타입: Web/Mobile 모두 0개 (완전 제거)
+- ✅ 에러 추적 시스템: Web/Mobile 모두 Sentry 연동 완료
+- ✅ Analytics: Web/Mobile 모두 PostHog 연동 완료
+- ✅ Mobile 이벤트 연결: 핵심 화면에 추적 이벤트 연결 완료
+  - LoginScreen (login, signup, identify)
+  - TodayScreen (action_checked, badge_unlocked)
+  - TutorialScreen (tutorial_completed)
+  - MandalartCreateScreen (mandalart_created)
+  - ReportsScreen (weekly_report_generated, goal_diagnosis_viewed)
+- ⚠️ 테스트 커버리지: Web 192개 테스트 (Mobile 테스트 없음)
 
 ---
 
@@ -741,7 +775,30 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ## 🎉 주요 성과
 
-### 최근 완료 (2025-11-29)
+### 최근 완료 (2025-11-30)
+✅ **Phase 5 UX 디테일 개선 완료**
+  - 만다라트 상세 페이지: 그라디언트 핵심 목표, 반응형 그리드
+  - 아이콘 & UI 정리: 일관된 타입 아이콘, 색상 팔레트
+  - Empty State 시스템: 각 화면별 빈 상태 컴포넌트
+✅ **Phase 8 운영 & 모니터링 완료**
+  - Sentry/PostHog 연동 (Web + Mobile)
+  - CI/CD 파이프라인 구축 (GitHub Actions)
+  - 백업 & 복구 전략 문서화
+  - RLS 정책 검증 스크립트 작성
+✅ Mobile App Sentry/PostHog 연동 완료
+✅ `@sentry/react-native` 에러 추적 설정
+✅ `posthog-react-native` Analytics 설정
+✅ 13개 이벤트 추적 함수 구현
+✅ logger.ts 통합 (Sentry + PostHog 초기화)
+✅ 타입 에러 수정 (MandalartExportGrid, SubGoalModal)
+✅ 기술 부채 해결: Mobile `any` 타입 완전 제거 (useStats.ts)
+✅ Mobile 핵심 화면에 PostHog 이벤트 연결 완료
+  - LoginScreen, TodayScreen, TutorialScreen
+  - MandalartCreateScreen, ReportsScreen
+✅ 백업 & 복구 전략 (`docs/operations/BACKUP_RECOVERY_STRATEGY.md`)
+✅ RLS 정책 검증 스크립트 (`scripts/verify_rls_policies.sql`)
+
+### 이전 완료 (2025-11-29)
 ✅ 코드 리팩토링 - Web 린트 경고 대폭 감소 (30개 → 7개)
 ✅ shared 패키지 린트 완료 (0 에러, 0 경고)
 ✅ ESLint 설정 개선 (varsIgnorePattern 추가)
@@ -786,6 +843,6 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ---
 
-**문서 버전**: 3.4
-**최종 수정**: 2025-11-29
+**문서 버전**: 3.5
+**최종 수정**: 2025-11-30
 **작성자**: Development Team

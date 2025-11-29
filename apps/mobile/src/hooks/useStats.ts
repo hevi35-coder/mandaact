@@ -367,6 +367,34 @@ export interface SubGoalProgress {
   completionRate: number
 }
 
+// Internal types for Supabase query responses
+interface ActionWithType {
+  id: string
+  type: string
+}
+
+interface MandalartInfo {
+  id: string
+  title: string
+  user_id: string
+  is_active: boolean
+}
+
+interface SubGoalWithRelations {
+  id: string
+  title: string
+  mandalart: MandalartInfo | MandalartInfo[]
+  actions: ActionWithType[] | null
+}
+
+interface ActionWithSubGoal {
+  id: string
+  type: string
+  sub_goal: Array<{
+    mandalart: MandalartInfo | MandalartInfo[] | null
+  }> | null
+}
+
 export interface ProfileStats {
   totalChecks: number
   activeDays: number
@@ -458,11 +486,11 @@ export function useSubGoalProgress(userId: string | undefined) {
       const checkedActionIds = new Set(checksData?.map((c) => c.action_id) || [])
 
       // Build progress data (with INNER JOIN, mandalart is always present)
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      const progress: SubGoalProgress[] = (subGoalsData || [])
-        .map((sg: any) => {
-          const checkableActions = (sg.actions || []).filter((a: any) => a.type !== 'reference')
-          const completedToday = checkableActions.filter((a: any) => checkedActionIds.has(a.id)).length
+      const progress: SubGoalProgress[] = ((subGoalsData || []) as SubGoalWithRelations[])
+        .map((sg) => {
+          const actions = sg.actions || []
+          const checkableActions = actions.filter((a) => a.type !== 'reference')
+          const completedToday = checkableActions.filter((a) => checkedActionIds.has(a.id)).length
           const totalActions = checkableActions.length
           const completionRate = totalActions > 0 ? Math.round((completedToday / totalActions) * 100) : 0
 
@@ -478,8 +506,7 @@ export function useSubGoalProgress(userId: string | undefined) {
             completionRate,
           }
         })
-        .filter((p: SubGoalProgress) => p.totalActions > 0)
-      /* eslint-enable @typescript-eslint/no-explicit-any */
+        .filter((p) => p.totalActions > 0)
 
       return progress
     },
@@ -567,8 +594,7 @@ export function useXPUpdate() {
         .eq('sub_goal.mandalart.user_id', userId)
         .eq('sub_goal.mandalart.is_active', true)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const checkableActions = (actionsData || []).filter((action: any) =>
+      const checkableActions = ((actionsData || []) as ActionWithSubGoal[]).filter((action) =>
         action.type !== 'reference' &&
         action.sub_goal &&
         Array.isArray(action.sub_goal) &&

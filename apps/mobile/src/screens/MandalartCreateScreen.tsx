@@ -34,7 +34,7 @@ import { runOCRFlowFromUri, parseMandalartText, type UploadProgress } from '../s
 import * as ImagePicker from 'expo-image-picker'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { suggestActionType } from '@mandaact/shared'
-import { logger } from '../lib/logger'
+import { logger, trackMandalartCreated } from '../lib'
 import CoreGoalModal from '../components/CoreGoalModal'
 import SubGoalModal from '../components/SubGoalModal'
 import { CenterGoalCell, SubGoalCell } from '../components'
@@ -415,6 +415,19 @@ export default function MandalartCreateScreen() {
 
       // Invalidate mandalart list cache so list screen refreshes
       await queryClient.invalidateQueries({ queryKey: mandalartKeys.lists() })
+
+      // Track mandalart creation
+      const subGoalsCount = mandalartData.sub_goals.filter(sg => sg.title.trim()).length
+      const actionsCount = mandalartData.sub_goals.reduce(
+        (count, sg) => count + sg.actions.filter(a => a.title.trim()).length,
+        0
+      )
+      trackMandalartCreated({
+        mandalart_id: mandalart.id,
+        input_method: inputMethod || 'manual',
+        sub_goals_count: subGoalsCount,
+        actions_count: actionsCount,
+      })
 
       Alert.alert('성공', '만다라트가 생성되었습니다!', [
         {

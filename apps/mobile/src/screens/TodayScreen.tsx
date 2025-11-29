@@ -48,7 +48,7 @@ import {
   type ActionType,
 } from '@mandaact/shared'
 import type { Action, Mandalart } from '@mandaact/shared'
-import { logger } from '../lib/logger'
+import { logger, trackActionChecked, trackBadgeUnlocked } from '../lib'
 import { badgeService } from '../lib/badge'
 import DatePickerModal from '../components/DatePickerModal'
 import ActionTypeSelector, { type ActionTypeData } from '../components/ActionTypeSelector'
@@ -152,7 +152,6 @@ export default function TodayScreen() {
 
     try {
       // Build updates object - use null for fields that need to be cleared in DB
-      // Cast as any to allow null values which Supabase needs to clear fields
       const updates: Record<string, unknown> = {
         type: data.type,
         routine_frequency: data.routine_frequency ?? null,
@@ -304,6 +303,14 @@ export default function TodayScreen() {
 
         // Award XP when checking, subtract when unchecking
         if (!wasChecked) {
+          // Track action checked event
+          trackActionChecked({
+            action_id: action.id,
+            action_type: action.type as 'routine' | 'mission' | 'reference',
+            sub_goal_id: action.sub_goal_id,
+            mandalart_id: action.sub_goal.mandalart.id,
+            checked_at: selectedDate,
+          })
           // Checking: Award XP
           try {
             // Award base XP (10) + streak bonus if applicable
@@ -318,7 +325,7 @@ export default function TodayScreen() {
               toast.success(`+${xpResult.finalXP} XP`, '실천 완료!')
             }
 
-            // Show level up toast
+            // Show level up toast (level tracking is done on server side)
             if (xpResult.leveledUp) {
               setTimeout(() => {
                 toast.success('🎉 레벨 업!', '축하합니다! 레벨이 올랐습니다!')
@@ -344,6 +351,14 @@ export default function TodayScreen() {
                   queryClient.invalidateQueries({ queryKey: badgeKeys.progress(user.id) })
 
                   for (const badge of newlyUnlocked) {
+                    // Track badge unlock event
+                    trackBadgeUnlocked({
+                      badge_id: badge.badgeKey,
+                      badge_title: badge.badgeTitle,
+                      badge_category: 'general', // Category not available in result
+                      xp_reward: badge.xpAwarded,
+                      current_level: 0, // Level not available here
+                    })
                     setTimeout(() => {
                       toast.success('🏆 새로운 배지 획득!', `${badge.badgeTitle} (+${badge.xpAwarded} XP)`)
                     }, 500 * newlyUnlocked.indexOf(badge))

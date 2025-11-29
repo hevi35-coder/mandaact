@@ -56,3 +56,12 @@ export type { BadgeDefinition, UserBadge, BadgeProgress } from './useBadges'
 
 // Notification hooks
 export { useNotifications } from './useNotifications'
+
+// Responsive hooks
+export {
+  useResponsive,
+  useResponsiveValue,
+  createResponsiveStyle,
+  BREAKPOINTS,
+} from './useResponsive'
+export type { DeviceType } from './useResponsive'

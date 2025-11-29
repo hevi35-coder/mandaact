@@ -132,8 +132,14 @@ function getTypeLabel(action: ActionData): string {
   }
 
   // Use formatTypeDetails for detailed display (e.g., "주1회", "매일", "1회 완료")
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const details = formatTypeDetails(action as unknown as Record<string, unknown>)
+  const details = formatTypeDetails({
+    type: action.type,
+    routine_frequency: action.routine_frequency,
+    routine_weekdays: action.routine_weekdays,
+    routine_count_per_period: action.routine_count_per_period,
+    mission_completion_type: action.mission_completion_type,
+    mission_period_cycle: action.mission_period_cycle,
+  })
   if (details) return details
 
   return getActionTypeLabel(action.type)

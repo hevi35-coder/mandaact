@@ -7,6 +7,8 @@ interface EnvConfig {
   SUPABASE_URL: string
   SUPABASE_ANON_KEY: string
   SENTRY_DSN?: string
+  POSTHOG_API_KEY?: string
+  POSTHOG_HOST?: string
   PROJECT_ID?: string
 }
 
@@ -25,6 +27,8 @@ export function getEnv(): EnvConfig {
     SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
     SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
     SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    POSTHOG_API_KEY: process.env.EXPO_PUBLIC_POSTHOG_API_KEY,
+    POSTHOG_HOST: process.env.EXPO_PUBLIC_POSTHOG_HOST,
     PROJECT_ID: process.env.EXPO_PUBLIC_PROJECT_ID,
   }
 
@@ -64,9 +68,17 @@ export function isSentryConfigured(): boolean {
   return !!process.env.EXPO_PUBLIC_SENTRY_DSN
 }
 
+/**
+ * Check if PostHog is configured
+ */
+export function isPostHogConfigured(): boolean {
+  return !!process.env.EXPO_PUBLIC_POSTHOG_API_KEY
+}
+
 export default {
   getEnv,
   validateEnv,
   isDev,
   isSentryConfigured,
+  isPostHogConfigured,
 }

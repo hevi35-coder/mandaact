@@ -21,6 +21,7 @@ import {
   Calendar,
 } from 'lucide-react-native'
 import { Header } from '../components'
+import { useResponsive } from '../hooks/useResponsive'
 import { useAuthStore } from '../store/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUserGamification, use4WeekHeatmap, useProfileStats, statsKeys } from '../hooks/useStats'
@@ -85,6 +86,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+  const { isTablet, contentMaxWidth, horizontalPadding } = useResponsive()
 
   // Scroll to top on tab re-press
   const scrollRef = useRef<ScrollView>(null)
@@ -220,7 +222,17 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       <Header />
-      <ScrollView ref={scrollRef} className="flex-1 px-5 pt-5">
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: 20,
+          ...(isTablet ? { alignItems: 'center' } : {}),
+        }}
+      >
+        {/* Responsive container for iPad */}
+        <View style={isTablet ? { width: '100%', maxWidth: contentMaxWidth } : undefined}>
         {/* Page Title - Center Aligned */}
         <View className="items-center mb-5">
           <View className="flex-row items-center">
@@ -239,11 +251,14 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* iPad: 2-column layout for cards */}
+        <View style={isTablet ? { flexDirection: 'row', gap: 20 } : undefined}>
         {/* Profile Card - matching web UserProfileCard */}
         <Animated.View
           entering={FadeInUp.delay(100).duration(400)}
           className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
           style={{
+            ...(isTablet ? { flex: 1 } : {}),
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.06,
@@ -555,6 +570,7 @@ export default function HomeScreen() {
           entering={FadeInUp.delay(200).duration(400)}
           className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
           style={{
+            ...(isTablet ? { flex: 1 } : {}),
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.06,
@@ -730,9 +746,12 @@ export default function HomeScreen() {
             </View>
           )}
         </Animated.View>
+        </View>
+        {/* End of iPad 2-column layout */}
 
         {/* Bottom spacing */}
         <View className="h-8" />
+        </View>
       </ScrollView>
 
       {/* Nickname Edit Modal */}

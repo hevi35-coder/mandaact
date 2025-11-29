@@ -24,5 +24,37 @@ export {
 export { logger, initSentry } from './logger'
 export type { LogLevel } from './logger'
 
+// Sentry
+export {
+  setSentryUser,
+  clearSentryUser,
+  captureError,
+  captureMessage,
+  setTag,
+  addBreadcrumb,
+  setNavigationRoute,
+} from './sentry'
+
+// PostHog Analytics
+export {
+  initPostHog,
+  getPostHog,
+  identifyUser,
+  resetUser,
+  trackEvent,
+  trackScreen,
+  trackMandalartCreated,
+  trackActionChecked,
+  trackBadgeUnlocked,
+  trackTutorialCompleted,
+  trackNotificationClicked,
+  trackLevelUp,
+  trackWeeklyReportGenerated,
+  trackGoalDiagnosisViewed,
+  trackAppOpened,
+  trackLogin,
+  trackSignup,
+} from './posthog'
+
 // Environment validation
 export { getEnv, validateEnv, isDev, isSentryConfigured } from './env'

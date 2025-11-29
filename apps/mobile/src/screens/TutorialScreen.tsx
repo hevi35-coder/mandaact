@@ -28,6 +28,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import type { RootStackParamList } from '../navigation/RootNavigator'
+import { trackTutorialCompleted } from '../lib'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -148,11 +149,21 @@ export default function TutorialScreen() {
   const handleComplete = async () => {
     // Mark tutorial as completed
     await AsyncStorage.setItem(TUTORIAL_COMPLETED_KEY, 'true')
+    trackTutorialCompleted({
+      completed_steps: TUTORIAL_STEPS.length,
+      total_steps: TUTORIAL_STEPS.length,
+      skipped: false,
+    })
     navigation.goBack()
   }
 
   const handleSkip = async () => {
     await AsyncStorage.setItem(TUTORIAL_COMPLETED_KEY, 'true')
+    trackTutorialCompleted({
+      completed_steps: currentStep + 1,
+      total_steps: TUTORIAL_STEPS.length,
+      skipped: true,
+    })
     navigation.goBack()
   }
 

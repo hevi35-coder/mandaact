@@ -6,8 +6,8 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  useWindowDimensions,
 } from 'react-native'
+import { useResponsive } from '../hooks/useResponsive'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -38,10 +38,10 @@ import { mandalartKeys } from '../hooks/useMandalarts'
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 type DetailRouteProp = RouteProp<RootStackParamList, 'MandalartDetail'>
 
-// Grid layout constants
-const CONTAINER_PADDING = 16 // 화면 좌우 패딩
-const CARD_PADDING = 12 // 카드 내부 패딩
-const CELL_GAP = 8 // 셀 사이 간격
+// Grid layout constants - will be overridden by responsive values
+const DEFAULT_CONTAINER_PADDING = 16 // 화면 좌우 패딩 (phone)
+const DEFAULT_CARD_PADDING = 12 // 카드 내부 패딩 (phone)
+const DEFAULT_CELL_GAP = 8 // 셀 사이 간격 (phone)
 
 // Sub-goal with actions type
 interface SubGoalWithActions extends SubGoal {
@@ -70,10 +70,16 @@ export default function MandalartDetailScreen() {
   const exportGridRef = useRef<View>(null)
   const queryClient = useQueryClient()
   const insets = useSafeAreaInsets()
-  const { width: screenWidth } = useWindowDimensions()
+  const { width: screenWidth, isTablet, contentMaxWidth } = useResponsive()
 
-  // Calculate cell size dynamically based on screen width
-  const gridWidth = screenWidth - (CONTAINER_PADDING * 2) - (CARD_PADDING * 2)
+  // Responsive layout values
+  const CONTAINER_PADDING = isTablet ? 32 : DEFAULT_CONTAINER_PADDING
+  const CARD_PADDING = isTablet ? 16 : DEFAULT_CARD_PADDING
+  const CELL_GAP = isTablet ? 12 : DEFAULT_CELL_GAP
+
+  // Calculate cell size dynamically based on screen width (with max width for tablets)
+  const effectiveWidth = isTablet ? Math.min(screenWidth, contentMaxWidth) : screenWidth
+  const gridWidth = effectiveWidth - (CONTAINER_PADDING * 2) - (CARD_PADDING * 2)
   const cellSize = Math.floor((gridWidth - (CELL_GAP * 2)) / 3) // 3 cells with 2 gaps
 
   // State
@@ -375,9 +381,14 @@ export default function MandalartDetailScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={isTablet ? { alignItems: 'center' } : undefined}
+      >
+        {/* Responsive container for iPad */}
+        <View style={isTablet ? { width: '100%', maxWidth: contentMaxWidth } : undefined}>
         {/* Header Bar - Same height for both views */}
-        <View className="mx-5 mt-5 flex-row items-center justify-between">
+        <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           {!expandedSubGoal ? (
             /* Main View: Core goal display (1-line, same height as expanded view buttons) */
             <Pressable
@@ -535,6 +546,8 @@ export default function MandalartDetailScreen() {
             </View>
           </View>
         </View>
+        </View>
+        {/* End of responsive container for iPad */}
       </ScrollView>
 
       {/* Hidden 9x9 Export Grid (rendered off-screen for high-resolution capture) */}

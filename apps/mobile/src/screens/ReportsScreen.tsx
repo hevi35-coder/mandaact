@@ -26,6 +26,7 @@ import MaskedView from '@react-native-masked-view/masked-view'
 import { Header } from '../components'
 
 import { useAuthStore } from '../store/authStore'
+import { trackWeeklyReportGenerated, trackGoalDiagnosisViewed } from '../lib'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import {
   useWeeklyReport,
@@ -478,8 +479,16 @@ export default function ReportsScreen() {
       // Generate diagnosis first (shown first on screen)
       if (mandalarts.length > 0) {
         await generateDiagnosisMutation.mutateAsync(mandalarts[0].id)
+        trackGoalDiagnosisViewed({
+          mandalart_id: mandalarts[0].id,
+          generated: true,
+        })
       }
       await generateWeeklyMutation.mutateAsync({ userId: user.id })
+      trackWeeklyReportGenerated({
+        week_start: new Date().toISOString().split('T')[0],
+        generated: true,
+      })
     } catch {
       Alert.alert('오류', '리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
     }

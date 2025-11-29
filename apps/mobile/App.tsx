@@ -21,10 +21,13 @@ import {
   addNotificationResponseListener,
   addNotificationReceivedListener,
 } from './src/services/notificationService'
-import { initSentry, logger } from './src/lib/logger'
+import { initSentry, logger, trackAppOpened } from './src/lib'
 
-// Initialize Sentry on app load
-initSentry()
+// Initialize Sentry and PostHog on app load
+initSentry().then(() => {
+  // Track app opened event
+  trackAppOpened()
+})
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync()

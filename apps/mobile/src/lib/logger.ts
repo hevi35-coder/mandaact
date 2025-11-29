@@ -1,13 +1,21 @@
 /**
- * Production-safe logger
- * Replaces console.log/error/warn with environment-aware logging
+ * Production-safe logger with Sentry integration
  *
- * Note: Sentry integration will be added in production builds
- * For now, this provides consistent logging without external dependencies
+ * 환경에 따라 적절한 로깅 수행
+ * - Development: Console 로깅
+ * - Production: Sentry 에러 추적
  */
 
-// Check if we're in development mode
-const __DEV__ = process.env.NODE_ENV !== 'production'
+import {
+  initSentry as initSentrySDK,
+  captureError,
+  captureMessage,
+  setSentryUser,
+  clearSentryUser,
+  addBreadcrumb as sentryAddBreadcrumb,
+  setTag,
+} from './sentry'
+import { initPostHog } from './posthog'
 
 // Log levels
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
@@ -16,12 +24,15 @@ interface LogContext {
   [key: string]: unknown
 }
 
-// Placeholder for future Sentry integration
-export function initSentry(): void {
-  if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[Logger] Running in development mode (Sentry disabled)')
-  }
+/**
+ * Sentry 및 PostHog 초기화
+ */
+export async function initSentry(): Promise<void> {
+  // Sentry 초기화
+  initSentrySDK()
+
+  // PostHog 초기화
+  await initPostHog()
 }
 
 /**
@@ -39,33 +50,43 @@ export const logger = {
   },
 
   /**
-   * Info level - logged in development
+   * Info level - logged in development, breadcrumb in production
    */
   info(message: string, context?: LogContext): void {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.log(`[INFO] ${message}`, context || '')
+    } else {
+      sentryAddBreadcrumb(message, 'info', 'info', context)
     }
   },
 
   /**
-   * Warning level - logged in development
+   * Warning level - logged in development, breadcrumb + message in production
    */
   warn(message: string, context?: LogContext): void {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.warn(`[WARN] ${message}`, context || '')
+    } else {
+      sentryAddBreadcrumb(message, 'warning', 'warning', context)
+      captureMessage(message, 'warning')
     }
   },
 
   /**
-   * Error level - always logged
+   * Error level - always logged, captured in Sentry
    */
   error(message: string, error?: unknown, context?: LogContext): void {
     const errorObj = error instanceof Error ? error : new Error(String(error))
 
     // eslint-disable-next-line no-console
     console.error(`[ERROR] ${message}`, errorObj, context || '')
+
+    // Production에서 Sentry로 캡처
+    if (!__DEV__) {
+      captureError(errorObj, { message, ...context })
+    }
   },
 
   /**
@@ -76,32 +97,49 @@ export const logger = {
 
     // eslint-disable-next-line no-console
     console.error('[EXCEPTION]', errorObj, context || '')
+
+    // Production에서 Sentry로 캡처
+    if (!__DEV__) {
+      captureError(errorObj, context)
+    }
   },
 
   /**
-   * Set user context for error tracking (no-op for now)
+   * Set user context for error tracking
    */
-  setUser(_user: { id: string; email?: string }): void {
-    // Will be implemented with Sentry in production
+  setUser(user: { id: string; email?: string }): void {
+    setSentryUser(user.id, user.email)
   },
 
   /**
-   * Clear user context (no-op for now)
+   * Clear user context (logout)
    */
   clearUser(): void {
-    // Will be implemented with Sentry in production
+    clearSentryUser()
   },
 
   /**
-   * Add a breadcrumb for debugging (no-op for now)
+   * Add a breadcrumb for debugging
    */
   addBreadcrumb(
-    _category: string,
-    _message: string,
-    _data?: LogContext,
-    _level?: string
+    category: string,
+    message: string,
+    data?: LogContext,
+    level: 'info' | 'warning' | 'error' = 'info'
   ): void {
-    // Will be implemented with Sentry in production
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log(`[BREADCRUMB:${category}] ${message}`, data || '')
+    } else {
+      sentryAddBreadcrumb(message, category, level, data)
+    }
+  },
+
+  /**
+   * Set a tag for error context
+   */
+  setTag(key: string, value: string): void {
+    setTag(key, value)
   },
 }
 

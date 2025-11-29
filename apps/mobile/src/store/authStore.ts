@@ -5,12 +5,16 @@ import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import { logger } from '../lib/logger'
 
+interface AuthResult {
+  user: User | null
+}
+
 interface AuthState {
   user: User | null
   loading: boolean
   initialized: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<AuthResult>
+  signUp: (email: string, password: string) => Promise<AuthResult>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   initialize: () => Promise<void>
@@ -32,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
           })
           if (error) throw error
           set({ user: data.user })
+          return { user: data.user }
         } finally {
           set({ loading: false })
         }
@@ -46,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
           })
           if (error) throw error
           set({ user: data.user })
+          return { user: data.user }
         } finally {
           set({ loading: false })
         }

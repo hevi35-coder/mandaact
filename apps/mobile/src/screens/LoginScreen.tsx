@@ -17,6 +17,7 @@ import MaskedView from '@react-native-masked-view/masked-view'
 import { X, Mail, Lock, Eye, EyeOff } from 'lucide-react-native'
 import { useAuthStore } from '../store/authStore'
 import { parseError, ERROR_MESSAGES } from '../lib/errorHandling'
+import { trackLogin, trackSignup, identifyUser } from '../lib'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -47,7 +48,12 @@ export default function LoginScreen() {
     }
 
     try {
-      await signIn(email.trim(), password)
+      const result = await signIn(email.trim(), password)
+      // Track login event and identify user
+      if (result?.user) {
+        trackLogin('email')
+        identifyUser(result.user.id, result.user.email ? { email: result.user.email } : undefined)
+      }
     } catch (error) {
       const errorMessage = parseError(error)
       Alert.alert('오류', errorMessage)
@@ -74,7 +80,12 @@ export default function LoginScreen() {
 
     setSignUpLoading(true)
     try {
-      await signUp(signUpEmail.trim(), signUpPassword)
+      const result = await signUp(signUpEmail.trim(), signUpPassword)
+      // Track signup event
+      if (result?.user) {
+        trackSignup('email')
+        identifyUser(result.user.id, result.user.email ? { email: result.user.email } : undefined)
+      }
       setIsSignUpModalOpen(false)
       setSignUpEmail('')
       setSignUpPassword('')
