@@ -18,6 +18,11 @@ import {
   Sparkles,
   ChevronRight,
   ChevronLeft,
+  Camera,
+  Image as ImageIcon,
+  FileText,
+  RotateCw,
+  Lightbulb,
 } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -59,13 +64,14 @@ const TUTORIAL_STEPS = [
     icon: Sparkles,
     iconColor: '#ec4899',
     iconBg: '#fce7f3',
-    title: '3가지 입력 방식',
+    title: '3가지 생성 방식',
     description: '편한 방법으로 만다라트를 만들어보세요.',
     bullets: [
-      '📸 이미지 업로드: 사진에서 텍스트 추출',
-      '📝 텍스트 붙여넣기: 복사한 텍스트로 생성',
-      '✏️ 직접 입력: 하나씩 직접 입력',
+      { icon: Camera, text: '이미지 업로드: 사진에서 텍스트 추출' },
+      { icon: ImageIcon, text: '텍스트 붙여넣기: 복사한 텍스트로 생성' },
+      { icon: FileText, text: '직접 입력: 하나씩 직접 입력' },
     ],
+    useIconBullets: true,
   },
   {
     id: 'daily',
@@ -73,26 +79,25 @@ const TUTORIAL_STEPS = [
     iconColor: '#22c55e',
     iconBg: '#dcfce7',
     title: '오늘의 실천',
-    description:
-      '오늘 해야 할 실천 항목을 확인하고\n완료하면 체크하세요.\n실천 유형에 따라 자동으로 표시됩니다.',
+    description: '오늘 할 일을 확인하고 체크하세요.',
     bullets: [
-      '🔄 루틴: 반복되는 습관 (체크 가능)',
-      '🎯 미션: 달성해야 할 목표 (체크 가능)',
-      '💡 참고: 마음가짐/참고사항 (체크 불가)',
+      { icon: RotateCw, text: '루틴: 반복되는 습관 (체크 가능)' },
+      { icon: Target, text: '미션: 달성해야 할 목표 (체크 가능)' },
+      { icon: Lightbulb, text: '참고: 마음가짐/참고사항 (체크 불가)' },
     ],
+    useIconBullets: true,
   },
   {
     id: 'gamification',
     icon: Award,
     iconColor: '#f59e0b',
     iconBg: '#fef3c7',
-    title: 'XP와 배지',
+    title: '레벨업',
     description:
-      '실천할 때마다 XP를 획득하고\n레벨업하세요.\n다양한 조건을 달성하면 배지도 획득!',
+      '실천할 때마다 XP를 획득합니다.\n레벨업도 하고 배지도 획득하세요!',
     bullets: [
       '다양한 보너스로 XP 최대 3.5배',
-      '스트릭 유지로 추가 보상',
-      '21가지 배지 수집',
+      '다양한 배지 수집',
     ],
   },
   {
@@ -100,13 +105,11 @@ const TUTORIAL_STEPS = [
     icon: TrendingUp,
     iconColor: '#06b6d4',
     iconBg: '#cffafe',
-    title: '통계와 리포트',
-    description:
-      '히트맵으로 활동 패턴을 확인하고\nAI 리포트로 맞춤 피드백을 받으세요.',
+    title: 'AI 리포트',
+    description: 'AI 리포트로 맞춤 피드백을 받으세요.',
     bullets: [
-      '스트릭 & 달성률 추적',
-      '4주 활동 히트맵',
-      'AI 주간 리포트',
+      '만다라트 목표 진단 및 개선 제안',
+      '7일간 실천 데이터 분석 및 개선 제안',
     ],
   },
   {
@@ -205,12 +208,23 @@ export default function TutorialScreen() {
               {/* Bullets */}
               {step.bullets && (
                 <View className="bg-gray-50 rounded-2xl p-4">
-                  {step.bullets.map((bullet, bIndex) => (
-                    <View key={bIndex} className="flex-row items-start mb-2">
-                      <Text className="text-primary mr-2">•</Text>
-                      <Text className="text-sm text-gray-700 flex-1">{bullet}</Text>
-                    </View>
-                  ))}
+                  {step.bullets.map((bullet, bIndex) => {
+                    if (step.useIconBullets && typeof bullet === 'object' && 'icon' in bullet) {
+                      const BulletIcon = bullet.icon
+                      return (
+                        <View key={bIndex} className="flex-row items-center mb-2">
+                          <BulletIcon size={16} color="#6b7280" />
+                          <Text className="text-sm text-gray-700 flex-1 ml-2">{bullet.text}</Text>
+                        </View>
+                      )
+                    }
+                    return (
+                      <View key={bIndex} className="flex-row items-start mb-2">
+                        <Text className="text-primary mr-2">•</Text>
+                        <Text className="text-sm text-gray-700 flex-1">{typeof bullet === 'string' ? bullet : ''}</Text>
+                      </View>
+                    )
+                  })}
                 </View>
               )}
             </View>
