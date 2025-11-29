@@ -1,16 +1,16 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Modal, TextInput, Alert } from 'react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { CompositeNavigationProp } from '@react-navigation/native'
+import { useScrollToTop } from '../navigation/RootNavigator'
 import {
   CalendarCheck,
   Grid3X3,
   FileText,
   Award,
-  HelpCircle,
   Flame,
   Target,
   Trophy,
@@ -94,6 +94,10 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+
+  // Scroll to top on tab re-press
+  const scrollRef = useRef<ScrollView>(null)
+  useScrollToTop('Home', scrollRef)
 
   // Collapsible states
   const [xpInfoOpen, setXpInfoOpen] = useState(false)
@@ -182,7 +186,7 @@ export default function HomeScreen() {
     try {
       // Check if nickname is already taken
       const { data: existing } = await supabase
-        .from('user_gamification')
+        .from('user_levels')
         .select('nickname')
         .ilike('nickname', newNickname)
         .neq('user_id', user.id)
@@ -196,11 +200,14 @@ export default function HomeScreen() {
 
       // Update nickname
       const { error: updateError } = await supabase
-        .from('user_gamification')
+        .from('user_levels')
         .update({ nickname: newNickname })
         .eq('user_id', user.id)
 
       if (updateError) throw updateError
+
+      // Refetch to update UI
+      await queryClient.refetchQueries({ queryKey: statsKeys.gamification(user.id) })
 
       // Close modal and show success
       setNicknameModalVisible(false)
@@ -216,7 +223,7 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       <Header />
-      <ScrollView className="flex-1 px-5 pt-5">
+      <ScrollView ref={scrollRef} className="flex-1 px-5 pt-5">
         {/* Page Title - Center Aligned */}
         <View className="items-center mb-5">
           <View className="flex-row items-center">
@@ -685,34 +692,6 @@ export default function HomeScreen() {
             </View>
           )}
         </Animated.View>
-
-        {/* Tutorial Banner */}
-        <Pressable
-          className="bg-white border border-gray-100 rounded-3xl p-5 mb-5 flex-row items-center"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-          onPress={() => navigation.navigate('Tutorial')}
-        >
-          <View className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center">
-            <HelpCircle size={20} color="#3b82f6" />
-          </View>
-          <View className="flex-1 ml-3">
-            <Text className="text-gray-900 font-semibold">튜토리얼</Text>
-            <Text className="text-gray-500 text-sm">사용법 다시 보기</Text>
-          </View>
-        </Pressable>
-
-        {/* App Info */}
-        <View className="items-center py-4">
-          <Text className="text-gray-400 text-xs">
-            {APP_NAME} - React Native 버전
-          </Text>
-        </View>
 
         {/* Bottom spacing */}
         <View className="h-8" />

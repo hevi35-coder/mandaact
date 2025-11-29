@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   RefreshControl,
   Switch,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useScrollToTop } from '../navigation/RootNavigator'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -17,6 +17,9 @@ import {
   Plus,
   Grid3X3,
 } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
+import { Header } from '../components'
 
 import {
   useMandalarts,
@@ -32,6 +35,11 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 export default function MandalartListScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
+
+  // Scroll to top on tab re-press
+  const scrollRef = useRef<ScrollView>(null)
+  useScrollToTop('Mandalart', scrollRef)
+
   const [refreshing, setRefreshing] = useState(false)
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
 
@@ -91,53 +99,83 @@ export default function MandalartListScreen() {
   // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#374151" />
-        <Text className="text-gray-500 mt-4">불러오는 중...</Text>
-      </SafeAreaView>
+      <View className="flex-1 bg-gray-50">
+        <Header />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#374151" />
+          <Text className="text-gray-500 mt-4">불러오는 중...</Text>
+        </View>
+      </View>
     )
   }
 
   // Error state
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center px-4">
-        <Text className="text-red-500 text-center">
-          데이터를 불러오는 중 오류가 발생했습니다.
-        </Text>
-        <Pressable
-          onPress={() => refetch()}
-          className="mt-4 bg-primary px-6 py-3 rounded-xl"
-        >
-          <Text className="text-white font-semibold">다시 시도</Text>
-        </Pressable>
-      </SafeAreaView>
+      <View className="flex-1 bg-gray-50">
+        <Header />
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-red-500 text-center">
+            데이터를 불러오는 중 오류가 발생했습니다.
+          </Text>
+          <Pressable
+            onPress={() => refetch()}
+            className="mt-4 bg-primary px-6 py-3 rounded-xl"
+          >
+            <Text className="text-white font-semibold">다시 시도</Text>
+          </Pressable>
+        </View>
+      </View>
     )
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50">
+      <Header />
       <ScrollView
-        className="flex-1 px-4 pt-4"
+        ref={scrollRef}
+        className="flex-1 px-5 pt-5"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header - Web과 동일 */}
-        <View className="mb-4">
-          <View className="flex-row items-center mb-3">
-            <Text className="text-2xl font-bold text-gray-900">만다라트</Text>
-            <Text className="text-sm text-gray-500 ml-3">
-              목표 관리 • {mandalarts.length}개
-            </Text>
+        {/* Page Title - Center Aligned */}
+        <View className="mb-5">
+          <View className="items-center mb-4">
+            <View className="flex-row items-center">
+              <Text
+                className="text-3xl text-gray-900"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
+                만다라트
+              </Text>
+              <Text
+                className="text-base text-gray-500 ml-3"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                목표 관리 • {mandalarts.length}개
+              </Text>
+            </View>
           </View>
           {/* 새로 만들기 버튼 - 웹과 동일하게 타이틀 아래 배치 */}
           <Pressable
             onPress={handleCreateNew}
-            className="flex-row items-center justify-center py-3 bg-white border border-gray-300 rounded-xl active:bg-gray-50"
+            className="flex-row items-center justify-center py-4 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.04,
+              shadowRadius: 8,
+              elevation: 2,
+            }}
           >
-            <Plus size={16} color="#667eea" />
-            <Text className="text-primary text-sm font-semibold ml-1.5">새로 만들기</Text>
+            <Plus size={18} color="#667eea" />
+            <Text
+              className="text-primary text-base ml-2"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              새로 만들기
+            </Text>
           </Pressable>
         </View>
 
@@ -145,28 +183,114 @@ export default function MandalartListScreen() {
         {mandalarts.length === 0 && (
           <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
-            className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
+            className="bg-white rounded-2xl p-6"
           >
-            <Grid3X3 size={48} color="#d1d5db" />
-            <Text className="text-lg font-semibold text-gray-900 mt-4 mb-2">
-              만다라트가 없습니다
-            </Text>
-            <Text className="text-gray-500 text-center mb-4">
-              새 만다라트를 생성해서{'\n'}목표 관리를 시작해보세요!
-            </Text>
-            <Pressable
-              onPress={handleCreateNew}
-              className="bg-primary px-6 py-3 rounded-xl flex-row items-center"
+            {/* Icon */}
+            <View className="items-center mb-4">
+              <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
+                <Grid3X3 size={28} color="#9ca3af" />
+              </View>
+            </View>
+
+            {/* Title & Description */}
+            <Text
+              className="text-lg text-gray-900 text-center mb-2"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
             >
-              <Plus size={18} color="white" />
-              <Text className="text-white font-semibold ml-2">새로 만들기</Text>
-            </Pressable>
+              아직 만다라트가 없어요
+            </Text>
+            <Text
+              className="text-sm text-gray-500 text-center mb-5"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              만다라트를 만들면{'\n'}체계적으로 목표를 관리할 수 있어요
+            </Text>
+
+            {/* Guide Box */}
+            <View className="bg-gray-50 rounded-xl p-4 mb-5">
+              <Text
+                className="text-sm text-gray-700 mb-3"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                만다라트 만드는 방법
+              </Text>
+              <View className="flex-row items-center mb-2">
+                <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
+                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  이미지 업로드
+                </Text>
+              </View>
+              <View className="flex-row items-center mb-2">
+                <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
+                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  텍스트 붙여넣기
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
+                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  직접 입력
+                </Text>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View className="flex-row gap-3">
+              <Pressable
+                className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
+                onPress={() => navigation.navigate('Tutorial')}
+              >
+                <Text
+                  className="text-sm text-gray-700 text-center"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  사용 가이드
+                </Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 rounded-xl overflow-hidden"
+                onPress={handleCreateNew}
+              >
+                <LinearGradient
+                  colors={['#667eea', '#9333ea']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ padding: 1, borderRadius: 12 }}
+                >
+                  <View className="bg-white rounded-xl py-3 items-center justify-center">
+                    <MaskedView
+                      maskElement={
+                        <Text
+                          className="text-sm text-center"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          만다라트 생성
+                        </Text>
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#667eea', '#9333ea']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <Text
+                          className="text-sm opacity-0"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          만다라트 생성
+                        </Text>
+                      </LinearGradient>
+                    </MaskedView>
+                  </View>
+                </LinearGradient>
+              </Pressable>
+            </View>
           </Animated.View>
         )}
 
         {/* Mandalart List */}
         {mandalarts.length > 0 && (
-          <View className="space-y-3 pb-4">
+          <View className="space-y-4 pb-5">
             {mandalarts.map((mandalart, index) => (
               <Animated.View
                 key={mandalart.id}
@@ -174,21 +298,32 @@ export default function MandalartListScreen() {
               >
                 <Pressable
                   onPress={() => handleViewDetail(mandalart)}
-                  className={`bg-white rounded-2xl p-4 ${
+                  className={`bg-white rounded-3xl p-5 border border-gray-100 ${
                     !mandalart.is_active ? 'opacity-60' : ''
                   }`}
-                  style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
+                    elevation: 3,
+                  }}
                 >
                   {/* Header Row - 웹과 동일: 타이틀 + 토글 */}
                   <View className="flex-row items-start justify-between gap-4">
                     <View className="flex-1">
                       <Text
-                        className="text-base font-semibold text-gray-900"
+                        className="text-lg text-gray-900"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
                         numberOfLines={1}
                       >
                         {mandalart.title}
                       </Text>
-                      <Text className="text-sm text-gray-500 mt-1" numberOfLines={2}>
+                      <Text
+                        className="text-base text-gray-500 mt-1"
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                        numberOfLines={2}
+                      >
                         핵심 목표: {mandalart.center_goal}
                       </Text>
                     </View>
@@ -216,6 +351,6 @@ export default function MandalartListScreen() {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }

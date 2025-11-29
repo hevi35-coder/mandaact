@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import {
   View,
   Text,
@@ -8,7 +8,10 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { RootStackParamList } from '../navigation/RootNavigator'
+import { useScrollToTop } from '../navigation/RootNavigator'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import {
   FileText,
@@ -20,6 +23,9 @@ import {
   TrendingUp,
   AlertCircle,
 } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
+import { Header } from '../components'
 
 import { useAuthStore } from '../store/authStore'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
@@ -66,45 +72,91 @@ function ReportCard({
 }) {
   if (isLoading) {
     return (
-      <View className="bg-white rounded-2xl p-6 mb-4">
+      <View
+        className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          elevation: 3,
+        }}
+      >
         <View className="items-center py-8">
           <ActivityIndicator size="large" color="#667eea" />
-          <Text className="text-gray-500 mt-4">불러오는 중...</Text>
+          <Text
+            className="text-base text-gray-500 mt-4"
+            style={{ fontFamily: 'Pretendard-Medium' }}
+          >
+            불러오는 중...
+          </Text>
         </View>
       </View>
     )
   }
 
   return (
-    <View className="bg-white rounded-2xl mb-4 overflow-hidden relative">
+    <View
+      className="bg-white rounded-3xl mb-5 overflow-hidden relative border border-gray-100"
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 3,
+      }}
+    >
       {/* Loading Overlay - shown when generating */}
       {isGenerating && (
-        <View className="absolute inset-0 bg-white/80 z-10 items-center justify-center rounded-2xl">
+        <View className="absolute inset-0 bg-white/80 z-10 items-center justify-center rounded-3xl">
           <ActivityIndicator size="large" color="#667eea" />
-          <Text className="text-sm font-medium text-gray-700 mt-2">{generatingText || '생성 중...'}</Text>
+          <Text
+            className="text-sm text-gray-700 mt-2"
+            style={{ fontFamily: 'Pretendard-Medium' }}
+          >
+            {generatingText || '생성 중...'}
+          </Text>
         </View>
       )}
       {/* Header */}
-      <View className="p-4 border-b border-gray-100">
+      <View className="p-5 border-b border-gray-100">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <Icon size={20} color="#667eea" />
-            <Text className="text-lg font-semibold text-gray-900">{title}</Text>
+            <Icon size={22} color="#667eea" />
+            <Text
+              className="text-lg text-gray-900"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              {title}
+            </Text>
           </View>
           {date && (
-            <View className="bg-gray-100 px-3 py-1 rounded-full">
-              <Text className="text-xs text-gray-600">{date}</Text>
+            <View className="bg-gray-100 px-3 py-1.5 rounded-full">
+              <Text
+                className="text-xs text-gray-600"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                {date}
+              </Text>
             </View>
           )}
         </View>
-        <Text className="text-sm text-gray-500 mt-1">{subtitle}</Text>
+        <Text
+          className="text-sm text-gray-500 mt-1"
+          style={{ fontFamily: 'Pretendard-Regular' }}
+        >
+          {subtitle}
+        </Text>
       </View>
 
       {/* Summary Content */}
       {summary && (
-        <View className="p-4">
+        <View className="p-5">
           {/* Headline */}
-          <Text className="text-base font-semibold text-gray-900 leading-relaxed mb-4">
+          <Text
+            className="text-base text-gray-900 leading-relaxed mb-4"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
             {summary.headline}
           </Text>
 
@@ -113,8 +165,18 @@ function ReportCard({
             <View className="gap-2 mb-4">
               {summary.metrics.map((metric, idx) => (
                 <View key={idx} className="flex-row">
-                  <Text className="text-sm text-gray-500">{metric.label}: </Text>
-                  <Text className="text-sm font-medium text-gray-900">{metric.value}</Text>
+                  <Text
+                    className="text-sm text-gray-500"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {metric.label}:{' '}
+                  </Text>
+                  <Text
+                    className="text-sm text-gray-900"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    {metric.value}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -123,11 +185,16 @@ function ReportCard({
           {/* Expandable Detail Section */}
           {(summary.strengths.length > 0 || summary.actionPlan.length > 0 || summary.improvements.problem) && (
             <Pressable
-              className="bg-primary/5 rounded-xl p-3 border border-primary/10"
+              className="bg-primary/5 rounded-2xl p-4 border border-primary/10"
               onPress={onToggleExpand}
             >
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-semibold text-primary">상세보기</Text>
+                <Text
+                  className="text-sm text-primary"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  상세보기
+                </Text>
                 {isExpanded ? (
                   <ChevronUp size={16} color="#667eea" />
                 ) : (
@@ -140,9 +207,20 @@ function ReportCard({
                   {/* Strengths */}
                   {summary.strengths.length > 0 && (
                     <View>
-                      <Text className="text-sm font-semibold text-gray-900 mb-2">💪 강점</Text>
+                      <Text
+                        className="text-sm text-gray-900 mb-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        💪 강점
+                      </Text>
                       {summary.strengths.map((strength, idx) => (
-                        <Text key={idx} className="text-sm text-gray-600 mb-1">• {strength}</Text>
+                        <Text
+                          key={idx}
+                          className="text-sm text-gray-600 mb-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          • {strength}
+                        </Text>
                       ))}
                     </View>
                   )}
@@ -150,16 +228,35 @@ function ReportCard({
                   {/* Improvements */}
                   {(summary.improvements.problem || summary.improvements.insight || summary.improvements.items?.length) && (
                     <View>
-                      <Text className="text-sm font-semibold text-gray-900 mb-2">⚡ 개선 포인트</Text>
+                      <Text
+                        className="text-sm text-gray-900 mb-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        ⚡ 개선 포인트
+                      </Text>
                       {summary.improvements.problem && (
-                        <Text className="text-sm text-gray-600 mb-1">• {summary.improvements.problem}</Text>
+                        <Text
+                          className="text-sm text-gray-600 mb-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          • {summary.improvements.problem}
+                        </Text>
                       )}
                       {summary.improvements.insight && (
-                        <Text className="text-sm text-gray-600 mb-1">• {summary.improvements.insight}</Text>
+                        <Text
+                          className="text-sm text-gray-600 mb-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          • {summary.improvements.insight}
+                        </Text>
                       )}
                       {summary.improvements.items?.map((item, idx) => (
-                        <Text key={idx} className="text-sm text-gray-600 mb-1">
-                          • <Text className="font-medium">{item.area}</Text>: {item.issue} → {item.solution}
+                        <Text
+                          key={idx}
+                          className="text-sm text-gray-600 mb-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          • <Text style={{ fontFamily: 'Pretendard-Medium' }}>{item.area}</Text>: {item.issue} → {item.solution}
                         </Text>
                       ))}
                     </View>
@@ -168,9 +265,20 @@ function ReportCard({
                   {/* Action Plan */}
                   {summary.actionPlan.length > 0 && (
                     <View>
-                      <Text className="text-sm font-semibold text-gray-900 mb-2">🎯 MandaAct의 제안</Text>
+                      <Text
+                        className="text-sm text-gray-900 mb-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        🎯 MandaAct의 제안
+                      </Text>
                       {summary.actionPlan.map((step, idx) => (
-                        <Text key={idx} className="text-sm text-gray-600 mb-1">• {step}</Text>
+                        <Text
+                          key={idx}
+                          className="text-sm text-gray-600 mb-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          • {step}
+                        </Text>
                       ))}
                     </View>
                   )}
@@ -190,71 +298,145 @@ function EmptyReportState({
   hasMandalarts,
   onGenerate,
   isGenerating,
+  navigation,
 }: {
   hasMandalarts: boolean
   onGenerate: () => void
   isGenerating: boolean
+  navigation: NativeStackNavigationProp<RootStackParamList>
 }) {
   return (
-    <View className="relative">
-      {/* Blurred Preview */}
-      <View className="opacity-30">
-        <View className="bg-white rounded-2xl p-4 mb-4">
-          <View className="flex-row items-center gap-2 mb-2">
-            <TrendingUp size={20} color="#667eea" />
-            <Text className="text-lg font-semibold text-gray-900">실천 리포트</Text>
+    <View className="bg-white rounded-2xl p-6">
+      {/* Icon */}
+      <View className="items-center mb-4">
+        <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
+          <FileText size={28} color="#9ca3af" />
+        </View>
+      </View>
+
+      {/* Title & Description */}
+      <Text
+        className="text-lg text-gray-900 text-center mb-2"
+        style={{ fontFamily: 'Pretendard-SemiBold' }}
+      >
+        아직 리포트가 없어요
+      </Text>
+      <Text
+        className="text-sm text-gray-500 text-center mb-5"
+        style={{ fontFamily: 'Pretendard-Regular' }}
+      >
+        만다라트를 만들고 실천을 시작하면{'\n'}일주일 후부터 AI 리포트를 받을 수 있어요
+      </Text>
+
+      {/* Guide Box */}
+      <View className="bg-gray-50 rounded-xl p-4 mb-5">
+        <Text
+          className="text-sm text-gray-700 mb-3"
+          style={{ fontFamily: 'Pretendard-SemiBold' }}
+        >
+          리포트 생성을 위한 단계
+        </Text>
+        <View className="flex-row items-center mb-2">
+          <View className="w-5 h-5 rounded-full border border-gray-300 items-center justify-center mr-2">
+            <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>1</Text>
           </View>
-          <Text className="text-base font-semibold text-gray-900 mb-2">
-            화요일 오후에 집중된 실천 패턴이 관찰되며...
+          <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+            만다라트 만들기
           </Text>
-          <View className="gap-1">
-            <Text className="text-sm text-gray-500">총 실천 횟수: 6회</Text>
-            <Text className="text-sm text-gray-500">실천일수: 최근 7일 중 3일</Text>
+        </View>
+        <View className="flex-row items-center">
+          <View className="w-5 h-5 rounded-full border border-gray-300 items-center justify-center mr-2">
+            <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>2</Text>
           </View>
+          <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+            매일 실천 기록하기
+          </Text>
         </View>
       </View>
 
-      {/* Overlay Card */}
-      <View className="absolute inset-0 items-center justify-center p-4">
-        <View className="bg-white rounded-2xl p-6 shadow-lg w-full max-w-sm border-2 border-gray-200">
-          <View className="items-center">
-            <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
-              <FileText size={32} color="#667eea" />
-            </View>
-            <Text className="text-xl font-semibold text-gray-900 mb-2">아직 리포트가 없어요</Text>
-            <Text className="text-sm text-gray-500 text-center mb-6">
-              {hasMandalarts ? (
-                '실천 데이터를 분석하여\n맞춤형 AI 리포트를 생성해드려요'
-              ) : (
-                '만다라트를 만들고 실천을 시작하면\n일주일 후부터 AI 리포트를 받을 수 있어요'
-              )}
+      {/* Action Buttons */}
+      {hasMandalarts ? (
+        <Pressable
+          className="flex-row items-center justify-center py-3 rounded-xl bg-gray-900"
+          onPress={onGenerate}
+          disabled={isGenerating}
+        >
+          {isGenerating ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Sparkles size={16} color="#ffffff" style={{ marginRight: 4 }} />
+          )}
+          <Text
+            className="text-sm text-white"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {isGenerating ? '생성 중...' : '리포트 생성'}
+          </Text>
+        </Pressable>
+      ) : (
+        <View className="flex-row gap-3">
+          <Pressable
+            className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
+            onPress={() => navigation.navigate('Tutorial')}
+          >
+            <Text
+              className="text-sm text-gray-700 text-center"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              사용 가이드
             </Text>
-
-            {hasMandalarts && (
-              <Pressable
-                className="bg-primary rounded-xl px-6 py-3 flex-row items-center"
-                onPress={onGenerate}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Sparkles size={18} color="white" />
-                )}
-                <Text className="text-white font-medium ml-2">
-                  {isGenerating ? '생성 중...' : '리포트 생성'}
-                </Text>
-              </Pressable>
-            )}
-          </View>
+          </Pressable>
+          <Pressable
+            className="flex-1 rounded-xl overflow-hidden"
+            onPress={() => navigation.navigate('CreateMandalart')}
+          >
+            <LinearGradient
+              colors={['#667eea', '#9333ea']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ padding: 1, borderRadius: 12 }}
+            >
+              <View className="bg-white rounded-xl py-3 items-center justify-center">
+                <MaskedView
+                  maskElement={
+                    <Text
+                      className="text-sm text-center"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      만다라트 생성
+                    </Text>
+                  }
+                >
+                  <LinearGradient
+                    colors={['#667eea', '#9333ea']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text
+                      className="text-sm opacity-0"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      만다라트 생성
+                    </Text>
+                  </LinearGradient>
+                </MaskedView>
+              </View>
+            </LinearGradient>
+          </Pressable>
         </View>
-      </View>
+      )}
     </View>
   )
 }
 
 export default function ReportsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const { user } = useAuthStore()
+
+  // Scroll to top on tab re-press
+  const scrollRef = useRef<ScrollView>(null)
+  useScrollToTop('Reports', scrollRef)
+
   const [refreshing, setRefreshing] = useState(false)
   const [isPracticeExpanded, setIsPracticeExpanded] = useState(false)
   const [isDiagnosisExpanded, setIsDiagnosisExpanded] = useState(false)
@@ -310,72 +492,105 @@ export default function ReportsScreen() {
   // No reports state
   if (!weeklyLoading && !diagnosisLoading && !weeklyReport && !diagnosis) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <View className="flex-1 bg-gray-50">
+        <Header />
         <ScrollView
-          className="flex-1"
+          ref={scrollRef}
+          className="flex-1 px-5 pt-5"
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
         >
-          {/* Header */}
-          <View className="px-4 pt-4 pb-2">
-            <View className="flex-row items-center">
-              <Text className="text-2xl font-bold text-gray-900">리포트</Text>
-              <Text className="text-sm text-gray-500 ml-3">맞춤형 분석과 코칭</Text>
+          {/* Page Title - Center Aligned */}
+          <View className="mb-5">
+            <View className="items-center">
+              <View className="flex-row items-center">
+                <Text
+                  className="text-3xl text-gray-900"
+                  style={{ fontFamily: 'Pretendard-Bold' }}
+                >
+                  리포트
+                </Text>
+                <Text
+                  className="text-base text-gray-500 ml-3"
+                  style={{ fontFamily: 'Pretendard-Medium' }}
+                >
+                  맞춤형 분석과 코칭
+                </Text>
+              </View>
             </View>
           </View>
 
-          <View className="px-4 mt-4">
-            <EmptyReportState
-              hasMandalarts={hasMandalarts}
-              onGenerate={handleGenerateAll}
-              isGenerating={isGenerating}
-            />
-          </View>
+          <EmptyReportState
+            hasMandalarts={hasMandalarts}
+            onGenerate={handleGenerateAll}
+            isGenerating={isGenerating}
+            navigation={navigation}
+          />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     )
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50">
+      <Header />
       <ScrollView
-        className="flex-1"
+        ref={scrollRef}
+        className="flex-1 px-5 pt-5"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
-        <View className="px-4 pt-4 pb-2">
-          <View className="flex-row items-center justify-between">
+        {/* Page Title - Center Aligned */}
+        <View className="mb-5">
+          <View className="items-center mb-4">
             <View className="flex-row items-center">
-              <Text className="text-2xl font-bold text-gray-900">리포트</Text>
-              <Text className="text-sm text-gray-500 ml-3">맞춤형 분석과 코칭</Text>
+              <Text
+                className="text-3xl text-gray-900"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
+                리포트
+              </Text>
+              <Text
+                className="text-base text-gray-500 ml-3"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                맞춤형 분석과 코칭
+              </Text>
             </View>
           </View>
-        </View>
 
-        {/* Generate Button */}
-        {hasMandalarts && (
-          <View className="px-4 mb-4">
+          {/* Generate Button - 웹과 동일하게 타이틀 아래 배치 */}
+          {hasMandalarts && (
             <Pressable
-              className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex-row items-center justify-center"
               onPress={handleGenerateAll}
               disabled={isGenerating}
+              className="flex-row items-center justify-center py-4 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.04,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
             >
               {isGenerating ? (
                 <ActivityIndicator size="small" color="#667eea" />
               ) : (
-                <Sparkles size={16} color="#667eea" />
+                <Sparkles size={18} color="#667eea" />
               )}
-              <Text className="text-primary font-semibold ml-2">
+              <Text
+                className="text-primary text-base ml-2"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
                 {isGenerating ? '생성 중...' : '새로 생성하기'}
               </Text>
             </Pressable>
-          </View>
-        )}
+          )}
+        </View>
 
-        <View className="px-4">
+        <View>
           {/* Goal Diagnosis Card - First (목표 설정) */}
           <Animated.View entering={FadeInUp.duration(400)}>
             {hasMandalarts ? (
@@ -392,14 +607,29 @@ export default function ReportsScreen() {
                 generatingText="새 진단 생성 중..."
               />
             ) : (
-              <View className="bg-white rounded-2xl p-8 items-center mb-4">
+              <View
+                className="bg-white rounded-3xl p-8 items-center mb-5 border border-gray-100"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 3,
+                }}
+              >
                 <View className="w-16 h-16 bg-amber-50 rounded-full items-center justify-center mb-4">
                   <AlertCircle size={32} color="#f59e0b" />
                 </View>
-                <Text className="text-lg font-semibold text-gray-900 mb-2">
+                <Text
+                  className="text-lg text-gray-900 mb-2"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
                   만다라트 필요
                 </Text>
-                <Text className="text-sm text-gray-500 text-center">
+                <Text
+                  className="text-sm text-gray-500 text-center"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
                   목표 진단을 받으려면{'\n'}
                   먼저 만다라트를 생성해주세요
                 </Text>
@@ -426,10 +656,22 @@ export default function ReportsScreen() {
           {/* Report History */}
           {reportHistory.length > 1 && (
             <Animated.View entering={FadeInUp.delay(200).duration(400)} className="mt-4">
-              <Text className="text-lg font-semibold text-gray-900 mb-3">
+              <Text
+                className="text-lg text-gray-900 mb-3"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
                 지난 실천리포트
               </Text>
-              <View className="bg-white rounded-2xl overflow-hidden">
+              <View
+                className="bg-white rounded-3xl overflow-hidden border border-gray-100"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 3,
+                }}
+              >
                 {reportHistory.slice(1, 5).map((report, index) => {
                   const isExpanded = expandedHistoryId === report.id
                   const historySummary = report.report_content ? parseWeeklyReport(report.report_content) : null
@@ -444,14 +686,21 @@ export default function ReportsScreen() {
                         }`}
                         onPress={() => setExpandedHistoryId(isExpanded ? null : report.id)}
                       >
-                        <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center">
-                          <FileText size={18} color="#667eea" />
+                        <View className="w-11 h-11 bg-gray-100 rounded-full items-center justify-center">
+                          <FileText size={20} color="#667eea" />
                         </View>
                         <View className="flex-1 ml-3">
-                          <Text className="text-sm font-medium text-gray-900">
+                          <Text
+                            className="text-sm text-gray-900"
+                            style={{ fontFamily: 'Pretendard-Medium' }}
+                          >
                             {formatWeekDates(report.week_start, report.week_end)}
                           </Text>
-                          <Text className="text-xs text-gray-500" numberOfLines={1}>
+                          <Text
+                            className="text-xs text-gray-500"
+                            style={{ fontFamily: 'Pretendard-Regular' }}
+                            numberOfLines={1}
+                          >
                             {historySummary?.headline || report.summary || '주간 실천 리포트'}
                           </Text>
                         </View>
@@ -470,7 +719,10 @@ export default function ReportsScreen() {
                             : ''
                         }`}>
                           {/* Headline */}
-                          <Text className="text-sm font-semibold text-gray-900 leading-relaxed mb-3">
+                          <Text
+                            className="text-sm text-gray-900 leading-relaxed mb-3"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
                             {historySummary.headline}
                           </Text>
 
@@ -479,8 +731,18 @@ export default function ReportsScreen() {
                             <View className="gap-1 mb-3">
                               {historySummary.metrics.map((metric, idx) => (
                                 <View key={idx} className="flex-row">
-                                  <Text className="text-sm text-gray-500">{metric.label}: </Text>
-                                  <Text className="text-sm font-medium text-gray-900">{metric.value}</Text>
+                                  <Text
+                                    className="text-sm text-gray-500"
+                                    style={{ fontFamily: 'Pretendard-Regular' }}
+                                  >
+                                    {metric.label}:{' '}
+                                  </Text>
+                                  <Text
+                                    className="text-sm text-gray-900"
+                                    style={{ fontFamily: 'Pretendard-Medium' }}
+                                  >
+                                    {metric.value}
+                                  </Text>
                                 </View>
                               ))}
                             </View>
@@ -489,9 +751,20 @@ export default function ReportsScreen() {
                           {/* Strengths */}
                           {historySummary.strengths.length > 0 && (
                             <View className="mb-3">
-                              <Text className="text-sm font-semibold text-gray-900 mb-1">💪 강점</Text>
+                              <Text
+                                className="text-sm text-gray-900 mb-1"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                              >
+                                💪 강점
+                              </Text>
                               {historySummary.strengths.map((strength, idx) => (
-                                <Text key={idx} className="text-sm text-gray-600">• {strength}</Text>
+                                <Text
+                                  key={idx}
+                                  className="text-sm text-gray-600"
+                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                >
+                                  • {strength}
+                                </Text>
                               ))}
                             </View>
                           )}
@@ -499,16 +772,35 @@ export default function ReportsScreen() {
                           {/* Improvements */}
                           {(historySummary.improvements.problem || historySummary.improvements.insight || historySummary.improvements.items?.length) && (
                             <View className="mb-3">
-                              <Text className="text-sm font-semibold text-gray-900 mb-1">⚡ 개선 포인트</Text>
+                              <Text
+                                className="text-sm text-gray-900 mb-1"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                              >
+                                ⚡ 개선 포인트
+                              </Text>
                               {historySummary.improvements.problem && (
-                                <Text className="text-sm text-gray-600">• {historySummary.improvements.problem}</Text>
+                                <Text
+                                  className="text-sm text-gray-600"
+                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                >
+                                  • {historySummary.improvements.problem}
+                                </Text>
                               )}
                               {historySummary.improvements.insight && (
-                                <Text className="text-sm text-gray-600">• {historySummary.improvements.insight}</Text>
+                                <Text
+                                  className="text-sm text-gray-600"
+                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                >
+                                  • {historySummary.improvements.insight}
+                                </Text>
                               )}
                               {historySummary.improvements.items?.map((item, idx) => (
-                                <Text key={idx} className="text-sm text-gray-600">
-                                  • <Text className="font-medium">{item.area}</Text>: {item.issue} → {item.solution}
+                                <Text
+                                  key={idx}
+                                  className="text-sm text-gray-600"
+                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                >
+                                  • <Text style={{ fontFamily: 'Pretendard-Medium' }}>{item.area}</Text>: {item.issue} → {item.solution}
                                 </Text>
                               ))}
                             </View>
@@ -517,9 +809,20 @@ export default function ReportsScreen() {
                           {/* Action Plan */}
                           {historySummary.actionPlan.length > 0 && (
                             <View>
-                              <Text className="text-sm font-semibold text-gray-900 mb-1">🎯 MandaAct의 제안</Text>
+                              <Text
+                                className="text-sm text-gray-900 mb-1"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                              >
+                                🎯 MandaAct의 제안
+                              </Text>
                               {historySummary.actionPlan.map((step, idx) => (
-                                <Text key={idx} className="text-sm text-gray-600">• {step}</Text>
+                                <Text
+                                  key={idx}
+                                  className="text-sm text-gray-600"
+                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                >
+                                  • {step}
+                                </Text>
                               ))}
                             </View>
                           )}
@@ -536,6 +839,6 @@ export default function ReportsScreen() {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }

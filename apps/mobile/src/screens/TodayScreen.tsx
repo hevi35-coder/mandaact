@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -8,8 +8,12 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { RootStackParamList } from '../navigation/RootNavigator'
+import { useScrollToTop } from '../navigation/RootNavigator'
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
+import { Header } from '../components'
 import {
   ChevronDown,
   ChevronRight,
@@ -21,7 +25,10 @@ import {
   Lightbulb,
   Calendar,
   Info,
+  ClipboardCheck,
 } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
 import { format, addDays, isSameDay, startOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
 import { useQueryClient } from '@tanstack/react-query'
@@ -32,7 +39,7 @@ import {
   useUpdateAction,
   ActionWithContext,
 } from '../hooks/useActions'
-import { useDailyStats, useXPUpdate } from '../hooks/useStats'
+import { useDailyStats, useXPUpdate, statsKeys } from '../hooks/useStats'
 import { badgeKeys } from '../hooks/useBadges'
 import { useToast } from '../components/Toast'
 import {
@@ -69,8 +76,14 @@ function ActionTypeIcon({
 }
 
 export default function TodayScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+
+  // Scroll to top on tab re-press
+  const scrollRef = useRef<ScrollView>(null)
+  useScrollToTop('Today', scrollRef)
+
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     new Set()
@@ -356,6 +369,9 @@ export default function TodayScreen() {
             logger.error('XP award error', xpError)
             // Don't fail the whole operation if XP update fails
           }
+
+          // Invalidate HomeScreen stats queries (streak, heatmap, profile stats)
+          queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
         } else {
           // Unchecking: Subtract XP (use selectedDate for correct weekend bonus calculation)
           try {
@@ -368,6 +384,9 @@ export default function TodayScreen() {
             logger.error('XP subtract error', xpError)
             // Don't fail the whole operation if XP update fails
           }
+
+          // Invalidate HomeScreen stats queries (streak, heatmap, profile stats)
+          queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
         }
       } catch (err: any) {
         // Extract error message from various error formats
@@ -397,49 +416,67 @@ export default function TodayScreen() {
   // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#374151" />
-        <Text className="text-gray-500 mt-4">불러오는 중...</Text>
-      </SafeAreaView>
+      <View className="flex-1 bg-gray-50">
+        <Header />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#374151" />
+          <Text className="text-gray-500 mt-4">불러오는 중...</Text>
+        </View>
+      </View>
     )
   }
 
   // Error state
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center px-4">
-        <Text className="text-red-500 text-center">
-          데이터를 불러오는 중 오류가 발생했습니다.
-        </Text>
-        <Pressable
-          onPress={() => refetch()}
-          className="mt-4 bg-primary px-6 py-3 rounded-xl"
-        >
-          <Text className="text-white font-semibold">다시 시도</Text>
-        </Pressable>
-      </SafeAreaView>
+      <View className="flex-1 bg-gray-50">
+        <Header />
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-red-500 text-center">
+            데이터를 불러오는 중 오류가 발생했습니다.
+          </Text>
+          <Pressable
+            onPress={() => refetch()}
+            className="mt-4 bg-primary px-6 py-3 rounded-xl"
+          >
+            <Text className="text-white font-semibold">다시 시도</Text>
+          </Pressable>
+        </View>
+      </View>
     )
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50">
+      <Header />
       <ScrollView
-        className="flex-1 px-4 pt-4"
+        ref={scrollRef}
+        className="flex-1 px-5 pt-5"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header - Web과 동일 */}
-        <View className="mb-4">
-          <View className="flex-row items-center justify-between">
+        {/* Page Title - Center Aligned */}
+        <View className="mb-5">
+          <View className="items-center mb-4">
             <View className="flex-row items-center">
-              <Text className="text-2xl font-bold text-gray-900">투데이</Text>
-              <Text className="text-sm text-gray-500 ml-3">오늘의 실천</Text>
+              <Text
+                className="text-3xl text-gray-900"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
+                투데이
+              </Text>
+              <Text
+                className="text-base text-gray-500 ml-3"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                오늘의 실천
+              </Text>
             </View>
           </View>
 
           {/* Date Navigation - Web 스타일 (이전/오늘/다음 + 날짜) */}
-          <View className="flex-row items-center justify-between mt-3">
+          <View className="flex-row items-center justify-between">
             <View className="flex-row items-center rounded-lg border border-gray-300 overflow-hidden bg-white">
               <Pressable
                 onPress={handlePreviousDay}
@@ -482,8 +519,14 @@ export default function TodayScreen() {
         {actions.length > 0 && (
           <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
-            className="bg-white rounded-2xl p-5 mb-4 border border-gray-200"
-            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
+            className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
           >
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center">
@@ -636,15 +679,106 @@ export default function TodayScreen() {
         {actions.length === 0 && (
           <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
-            className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
+            className="bg-white rounded-2xl p-6"
           >
-            <Text className="text-4xl mb-4">📋</Text>
-            <Text className="text-lg font-semibold text-gray-900 text-center mb-2">
-              오늘 실천할 항목이 없습니다
+            {/* Icon */}
+            <View className="items-center mb-4">
+              <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
+                <ClipboardCheck size={28} color="#9ca3af" />
+              </View>
+            </View>
+
+            {/* Title & Description */}
+            <Text
+              className="text-lg text-gray-900 text-center mb-2"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              아직 실천 항목이 없어요
             </Text>
-            <Text className="text-gray-500 text-center">
-              만다라트를 활성화하거나{'\n'}새로운 목표를 추가해보세요
+            <Text
+              className="text-sm text-gray-500 text-center mb-5"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              만다라트를 만들면{'\n'}매일 실천할 목표를 관리할 수 있어요
             </Text>
+
+            {/* Guide Box */}
+            <View className="bg-gray-50 rounded-xl p-4 mb-5">
+              <Text
+                className="text-sm text-gray-700 mb-3"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                실천을 시작하는 방법
+              </Text>
+              <View className="flex-row items-center mb-2">
+                <View className="w-5 h-5 rounded-full border border-gray-300 items-center justify-center mr-2">
+                  <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>1</Text>
+                </View>
+                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  만다라트 만들기
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="w-5 h-5 rounded-full border border-gray-300 items-center justify-center mr-2">
+                  <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>2</Text>
+                </View>
+                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  매일 체크하며 실천하기
+                </Text>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View className="flex-row gap-3">
+              <Pressable
+                className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
+                onPress={() => navigation.navigate('Tutorial')}
+              >
+                <Text
+                  className="text-sm text-gray-700 text-center"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  사용 가이드
+                </Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 rounded-xl overflow-hidden"
+                onPress={() => navigation.navigate('CreateMandalart')}
+              >
+                <LinearGradient
+                  colors={['#667eea', '#9333ea']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ padding: 1, borderRadius: 12 }}
+                >
+                  <View className="bg-white rounded-xl py-3 items-center justify-center">
+                    <MaskedView
+                      maskElement={
+                        <Text
+                          className="text-sm text-center"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          만다라트 생성
+                        </Text>
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#667eea', '#9333ea']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <Text
+                          className="text-sm opacity-0"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          만다라트 생성
+                        </Text>
+                      </LinearGradient>
+                    </MaskedView>
+                  </View>
+                </LinearGradient>
+              </Pressable>
+            </View>
           </Animated.View>
         )}
 
@@ -668,7 +802,7 @@ export default function TodayScreen() {
         {filteredActions.length > 0 && (
           <View className="space-y-4 pb-4">
             {Object.entries(actionsByMandalart).map(
-              ([mandalartId, { mandalart, actions: mandalartActions }]) => {
+              ([mandalartId, { mandalart, actions: mandalartActions }], index) => {
                 const isCollapsed = collapsedSections.has(mandalartId)
                 const mandalartNonRef = mandalartActions.filter(
                   (a) => a.type !== 'reference'
@@ -679,7 +813,11 @@ export default function TodayScreen() {
                 const mandalartTotal = mandalartNonRef.length
 
                 return (
-                  <View key={mandalartId} className="mb-4">
+                  <Animated.View
+                    key={mandalartId}
+                    entering={FadeInUp.delay(100 + index * 100).duration(400)}
+                    className="mb-4"
+                  >
                     {/* Section Header */}
                     <Pressable
                       onPress={() => toggleSection(mandalartId)}
@@ -711,13 +849,14 @@ export default function TodayScreen() {
                     {/* Actions in this Mandalart */}
                     {!isCollapsed && (
                       <View className="mt-2 space-y-2">
-                        {mandalartActions.map((action) => {
+                        {mandalartActions.map((action, actionIndex) => {
                           // Check if action can be checked (not reference AND date is today/yesterday)
                           const isCheckDisabled = action.type === 'reference' || !canCheck
 
                           return (
-                            <View
+                            <Animated.View
                               key={action.id}
+                              entering={FadeInUp.delay(50 + actionIndex * 50).duration(300)}
                               className={`flex-row items-center p-4 bg-white rounded-xl border ${
                                 action.is_checked
                                   ? 'border-gray-200 bg-gray-50'
@@ -800,12 +939,12 @@ export default function TodayScreen() {
                                     getActionTypeLabel(action.type)}
                                 </Text>
                               </Pressable>
-                            </View>
+                            </Animated.View>
                           )
                         })}
                       </View>
                     )}
-                  </View>
+                  </Animated.View>
                 )
               }
             )}
@@ -852,6 +991,6 @@ export default function TodayScreen() {
           onSave={handleTypeSave}
         />
       )}
-    </SafeAreaView>
+    </View>
   )
 }
