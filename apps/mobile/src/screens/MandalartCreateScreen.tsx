@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -23,9 +23,11 @@ import {
   PenLine,
   Check,
   Upload,
-  Plus,
   ChevronLeft,
 } from 'lucide-react-native'
+import { useQueryClient } from '@tanstack/react-query'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
 
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
@@ -36,7 +38,8 @@ import { suggestActionType } from '@mandaact/shared'
 import { logger } from '../lib/logger'
 import CoreGoalModal from '../components/CoreGoalModal'
 import SubGoalModal from '../components/SubGoalModal'
-import { LinearGradient } from 'expo-linear-gradient'
+import { CenterGoalCell, SubGoalCell } from '../components'
+import { mandalartKeys } from '../hooks/useMandalarts'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -56,9 +59,20 @@ interface MandalartData {
   }>
 }
 
+// Grid layout constants
+const CONTAINER_PADDING = 16
+const CARD_PADDING = 16
+const CELL_GAP = 8
+
 export default function MandalartCreateScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
+  const { width: screenWidth } = useWindowDimensions()
+
+  // Calculate cell size dynamically
+  const gridWidth = screenWidth - (CONTAINER_PADDING * 2) - (CARD_PADDING * 2)
+  const cellSize = Math.floor((gridWidth - (CELL_GAP * 2)) / 3)
 
   const [step, setStep] = useState<Step>('select')
   const [inputMethod, setInputMethod] = useState<InputMethod | null>(null)
@@ -229,22 +243,12 @@ export default function MandalartCreateScreen() {
   }, [])
 
   const handleSectionTap = useCallback((sectionPos: number) => {
-    const subGoal = mandalartData?.sub_goals.find(sg => sg.position === sectionPos)
-    const isEmpty = !subGoal?.title?.trim()
-
-    if (isEmpty) {
-      // Empty sub-goal: directly open modal
-      setSelectedSubGoalPosition(sectionPos)
-      setSubGoalModalOpen(true)
-    } else if (expandedSection === sectionPos) {
-      // Already expanded, open modal
-      setSelectedSubGoalPosition(sectionPos)
-      setSubGoalModalOpen(true)
-    } else {
-      // Expand section to show details
-      setExpandedSection(sectionPos)
-    }
-  }, [expandedSection, mandalartData])
+    // Always open modal directly when tapping a section
+    // After modal close, show expanded 3x3 grid view
+    setSelectedSubGoalPosition(sectionPos)
+    setSubGoalModalOpen(true)
+    setExpandedSection(sectionPos)
+  }, [])
 
   const handleGridBack = useCallback(() => {
     setExpandedSection(null)
@@ -410,6 +414,9 @@ export default function MandalartCreateScreen() {
         }
       }
 
+      // Invalidate mandalart list cache so list screen refreshes
+      await queryClient.invalidateQueries({ queryKey: mandalartKeys.lists() })
+
       Alert.alert('성공', '만다라트가 생성되었습니다!', [
         {
           text: '확인',
@@ -423,7 +430,7 @@ export default function MandalartCreateScreen() {
     } finally {
       setIsSaving(false)
     }
-  }, [user, mandalartData, title, inputMethod, navigation])
+  }, [user, mandalartData, title, inputMethod, navigation, queryClient])
 
   // Render method selection
   if (step === 'select') {
@@ -441,79 +448,126 @@ export default function MandalartCreateScreen() {
           </View>
         )}
 
-        {/* Header - Web과 동일 */}
-        <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
-          <Pressable onPress={handleBack} className="p-2 -ml-2">
+        {/* Header - Beautified */}
+        <View className="flex-row items-center px-5 h-16 border-b border-gray-100">
+          <Pressable onPress={handleBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
             <ArrowLeft size={24} color="#374151" />
           </Pressable>
           <View className="flex-row items-center ml-2">
-            <Text className="text-lg font-semibold text-gray-900">
+            <Text
+              className="text-xl text-gray-900"
+              style={{ fontFamily: 'Pretendard-Bold' }}
+            >
               만다라트 만들기
             </Text>
-            <Text className="text-sm text-gray-500 ml-2">새로운 목표 생성</Text>
+            <Text
+              className="text-base text-gray-500 ml-3"
+              style={{ fontFamily: 'Pretendard-Medium' }}
+            >
+              새로운 목표 생성
+            </Text>
           </View>
         </View>
 
-        <ScrollView className="flex-1 px-4 pt-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
+        <ScrollView className="flex-1 px-5 pt-5">
+          <Text
+            className="text-lg text-gray-900 mb-5"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
             생성 방식 선택
           </Text>
 
-          {/* Image OCR - Lucide 아이콘 */}
+          {/* Image OCR */}
           <Pressable
             onPress={() => handleSelectMethod('image')}
-            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center shadow-sm"
-            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
+            className="bg-white rounded-3xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
           >
-            <View className="w-12 h-12 rounded-xl bg-gray-100 items-center justify-center mr-4">
-              <ImageIcon size={24} color="#6b7280" />
+            <View className="w-14 h-14 rounded-2xl bg-gray-100 items-center justify-center mr-4">
+              <ImageIcon size={26} color="#6b7280" />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-gray-900">
+              <Text
+                className="text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
                 이미지 업로드
               </Text>
-              <Text className="text-sm text-gray-500 mt-1">
+              <Text
+                className="text-sm text-gray-500 mt-1"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
                 만들어둔 만다라트가 있다면 사진 찍어 업로드
               </Text>
             </View>
           </Pressable>
 
-          {/* Text Paste - Lucide 아이콘 */}
+          {/* Text Paste */}
           <Pressable
             onPress={() => handleSelectMethod('text')}
-            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center shadow-sm"
-            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
+            className="bg-white rounded-3xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
           >
-            <View className="w-12 h-12 rounded-xl bg-gray-100 items-center justify-center mr-4">
-              <FileText size={24} color="#6b7280" />
+            <View className="w-14 h-14 rounded-2xl bg-gray-100 items-center justify-center mr-4">
+              <FileText size={26} color="#6b7280" />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-gray-900">
+              <Text
+                className="text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
                 텍스트 붙여넣기
               </Text>
-              <Text className="text-sm text-gray-500 mt-1">
+              <Text
+                className="text-sm text-gray-500 mt-1"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
                 AI로 만든 텍스트가 있다면 복사해서 붙여넣기
               </Text>
             </View>
           </Pressable>
 
-          {/* Manual Input - Lucide 아이콘 */}
+          {/* Manual Input */}
           <Pressable
             onPress={() => {
               setInputMethod('manual')
               handleManualCreate()
             }}
-            className="bg-white rounded-2xl p-5 mb-3 border border-gray-200 flex-row items-center shadow-sm"
-            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
+            className="bg-white rounded-3xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
           >
-            <View className="w-12 h-12 rounded-xl bg-gray-100 items-center justify-center mr-4">
-              <PenLine size={24} color="#6b7280" />
+            <View className="w-14 h-14 rounded-2xl bg-gray-100 items-center justify-center mr-4">
+              <PenLine size={26} color="#6b7280" />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-gray-900">
+              <Text
+                className="text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
                 직접 입력
               </Text>
-              <Text className="text-sm text-gray-500 mt-1">
+              <Text
+                className="text-sm text-gray-500 mt-1"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
                 아직 없다면 빈 그리드에서 처음부터 작성
               </Text>
             </View>
@@ -525,7 +579,6 @@ export default function MandalartCreateScreen() {
 
   // Render image input with preview
   if (step === 'input' && inputMethod === 'image') {
-    const screenWidth = Dimensions.get('window').width
     const imageWidth = screenWidth - 32 // px-4 * 2
 
     return (
@@ -543,12 +596,15 @@ export default function MandalartCreateScreen() {
         )}
 
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-5 h-16 border-b border-gray-100">
           <View className="flex-row items-center">
-            <Pressable onPress={handleBack} className="p-2 -ml-2">
+            <Pressable onPress={handleBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
               <ArrowLeft size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900 ml-2">
+            <Text
+              className="text-xl text-gray-900 ml-2"
+              style={{ fontFamily: 'Pretendard-Bold' }}
+            >
               이미지 업로드
             </Text>
           </View>
@@ -556,15 +612,43 @@ export default function MandalartCreateScreen() {
             <Pressable
               onPress={handleProcessOCR}
               disabled={isProcessingOCR}
-              className="bg-primary px-4 py-2 rounded-lg"
+              className="rounded-2xl overflow-hidden"
             >
-              <Text className="text-white font-semibold">텍스트 추출</Text>
+              <LinearGradient
+                colors={['#667eea', '#9333ea']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ padding: 1, borderRadius: 16 }}
+              >
+                <View className="bg-white rounded-2xl px-5 py-2.5 items-center justify-center">
+                  <MaskedView
+                    maskElement={
+                      <Text style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                        텍스트 추출
+                      </Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#667eea', '#9333ea']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Text style={{ fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
+                        텍스트 추출
+                      </Text>
+                    </LinearGradient>
+                  </MaskedView>
+                </View>
+              </LinearGradient>
             </Pressable>
           )}
         </View>
 
-        <ScrollView className="flex-1 px-4 pt-4">
-          <Text className="text-sm text-gray-500 mb-3">
+        <ScrollView className="flex-1 px-5 pt-5">
+          <Text
+            className="text-sm text-gray-500 mb-4"
+            style={{ fontFamily: 'Pretendard-Regular' }}
+          >
             만다라트 이미지를 업로드하면 자동으로 텍스트를 추출합니다
           </Text>
 
@@ -572,53 +656,31 @@ export default function MandalartCreateScreen() {
             // Image upload area
             <Pressable
               onPress={handleImageSourceSelect}
-              className="border-2 border-dashed border-gray-300 rounded-xl p-8 items-center justify-center bg-white"
-              style={{ minHeight: 200 }}
+              className="border-2 border-dashed border-gray-300 rounded-3xl p-8 items-center justify-center bg-white active:bg-gray-50"
+              style={{ minHeight: 220 }}
             >
               <Upload size={48} color="#9ca3af" />
-              <Text className="text-gray-500 mt-4 text-center">
-                클릭하여 이미지 선택 (최대 5MB)
+              <Text
+                className="text-base text-gray-500 mt-4 text-center"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                탭하여 이미지 선택 (최대 5MB)
               </Text>
             </Pressable>
           ) : (
-            // Image preview
-            <View className="space-y-4">
-              <View className="bg-white rounded-xl overflow-hidden border border-gray-200">
-                <Image
-                  source={{ uri: selectedImageUri }}
-                  style={{ width: imageWidth, height: imageWidth * 0.75 }}
-                  resizeMode="contain"
-                />
-              </View>
-              <View className="flex-row gap-2">
-                <Pressable
-                  onPress={() => setSelectedImageUri(null)}
-                  disabled={isProcessingOCR}
-                  className="flex-1 bg-white border border-gray-300 py-3 rounded-xl items-center"
-                >
-                  <Text className="text-gray-700 font-medium">다시 선택</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleProcessOCR}
-                  disabled={isProcessingOCR}
-                  className="flex-1 bg-primary py-3 rounded-xl items-center"
-                >
-                  <Text className="text-white font-medium">
-                    {isProcessingOCR ? 'OCR 처리 중...' : '텍스트 추출'}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
+            // Image preview (larger size, no bottom buttons - use header button)
+            <Pressable
+              onPress={handleImageSourceSelect}
+              className="bg-white rounded-3xl overflow-hidden border border-gray-100 active:opacity-90"
+            >
+              <Image
+                source={{ uri: selectedImageUri }}
+                style={{ width: imageWidth, height: imageWidth }}
+                resizeMode="contain"
+              />
+            </Pressable>
           )}
 
-          {/* Other method button */}
-          <Pressable
-            onPress={handleBack}
-            disabled={isProcessingOCR}
-            className="mt-6 py-3 items-center"
-          >
-            <Text className="text-gray-500">다른 방법 선택</Text>
-          </Pressable>
         </ScrollView>
       </SafeAreaView>
     )
@@ -644,25 +706,56 @@ export default function MandalartCreateScreen() {
           className="flex-1"
         >
           {/* Header */}
-          <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
+          <View className="flex-row items-center justify-between px-5 h-16 border-b border-gray-100">
             <View className="flex-row items-center">
-              <Pressable onPress={handleBack} className="p-2 -ml-2">
+              <Pressable onPress={handleBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
                 <ArrowLeft size={24} color="#374151" />
               </Pressable>
-              <Text className="text-lg font-semibold text-gray-900 ml-2">
-                텍스트 입력
+              <Text
+                className="text-xl text-gray-900 ml-2"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
+                텍스트 붙여넣기
               </Text>
             </View>
             <Pressable
               onPress={handleTextParse}
-              className="bg-primary px-4 py-2 rounded-lg"
+              className="rounded-2xl overflow-hidden"
             >
-              <Text className="text-white font-semibold">분석</Text>
+              <LinearGradient
+                colors={['#667eea', '#9333ea']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ padding: 1, borderRadius: 16 }}
+              >
+                <View className="bg-white rounded-2xl px-5 py-2.5 items-center justify-center">
+                  <MaskedView
+                    maskElement={
+                      <Text style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                        텍스트 분석
+                      </Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#667eea', '#9333ea']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Text style={{ fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
+                        텍스트 분석
+                      </Text>
+                    </LinearGradient>
+                  </MaskedView>
+                </View>
+              </LinearGradient>
             </Pressable>
           </View>
 
-          <ScrollView className="flex-1 px-4 pt-4">
-            <Text className="text-sm text-gray-500 mb-3">
+          <ScrollView className="flex-1 px-5 pt-5">
+            <Text
+              className="text-sm text-gray-500 mb-4"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
               만다라트 텍스트를 붙여넣으면 자동으로 분석합니다
             </Text>
             <TextInput
@@ -690,8 +783,15 @@ export default function MandalartCreateScreen() {
               placeholderTextColor="#9ca3af"
               multiline
               textAlignVertical="top"
-              className="bg-white rounded-xl p-4 min-h-[300px] text-gray-900 border border-gray-200 text-sm"
-              style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}
+              className="bg-white rounded-3xl p-5 min-h-[300px] text-gray-900 border border-gray-100 text-base"
+              style={{
+                fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+                elevation: 3,
+              }}
             />
           </ScrollView>
         </KeyboardAvoidingView>
@@ -706,15 +806,39 @@ export default function MandalartCreateScreen() {
       const subGoal = getSubGoalByPosition(sectionPos)
 
       if (cellPos === 4) {
-        // Center: Sub-goal title
+        // Center: Sub-goal title (using same style as SubGoalCell 'center' variant)
         return (
-          <View className="flex-1 items-center justify-center p-1.5 bg-blue-50 border border-blue-200">
+          <View
+            className="flex-1 items-center justify-center p-2"
+            style={{
+              backgroundColor: '#eff6ff', // bg-blue-50
+              borderWidth: 1,
+              borderColor: '#bfdbfe', // border-blue-200
+            }}
+          >
             {subGoal?.title ? (
-              <Text className="text-xs font-semibold text-center" numberOfLines={3}>
+              <Text
+                className="text-center"
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Pretendard-SemiBold',
+                  color: '#1f2937',
+                }}
+                numberOfLines={3}
+              >
                 {subGoal.title}
               </Text>
             ) : (
-              <Text className="text-xs text-gray-400 text-center">세부목표</Text>
+              <Text
+                className="text-center"
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'Pretendard-Regular',
+                  color: '#9ca3af',
+                }}
+              >
+                세부목표
+              </Text>
             )}
           </View>
         )
@@ -751,127 +875,189 @@ export default function MandalartCreateScreen() {
         )}
 
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-5 h-16 border-b border-gray-100">
           <View className="flex-row items-center">
-            <Pressable onPress={handleBack} className="p-2 -ml-2">
+            <Pressable onPress={handleBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
               <ArrowLeft size={24} color="#374151" />
             </Pressable>
-            <Text className="text-lg font-semibold text-gray-900 ml-2">
+            <Text
+              className="text-xl text-gray-900 ml-2"
+              style={{ fontFamily: 'Pretendard-Bold' }}
+            >
               확인 및 수정
             </Text>
           </View>
           <Pressable
             onPress={handleSave}
             disabled={isSaving}
-            className="bg-primary px-4 py-2 rounded-lg flex-row items-center"
+            className="rounded-2xl overflow-hidden"
           >
-            <Check size={18} color="white" />
-            <Text className="text-white font-semibold ml-1">저장</Text>
+            <LinearGradient
+              colors={['#667eea', '#9333ea']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ padding: 1, borderRadius: 16 }}
+            >
+              <View className="bg-white rounded-2xl px-5 py-2.5 flex-row items-center justify-center">
+                <MaskedView
+                  maskElement={
+                    <View className="flex-row items-center">
+                      <Check size={18} color="#000" />
+                      <Text className="ml-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                        저장
+                      </Text>
+                    </View>
+                  }
+                >
+                  <LinearGradient
+                    colors={['#667eea', '#9333ea']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <View className="flex-row items-center opacity-0">
+                      <Check size={18} color="#000" />
+                      <Text className="ml-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                        저장
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </MaskedView>
+              </View>
+            </LinearGradient>
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1 px-4 pt-4">
+        <ScrollView className="flex-1 px-5 pt-5">
           {/* 3x3 Grid Card */}
-          <View className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-            <View className="mb-3">
-              <Text className="font-semibold text-gray-900">직접 입력</Text>
-              <Text className="text-sm text-gray-500 mt-0.5">
+          <View
+            className="bg-white rounded-3xl border border-gray-100 p-5 mb-5"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            <View className="mb-4">
+              <Text
+                className="text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                직접 입력
+              </Text>
+              <Text
+                className="text-sm text-gray-500 mt-1"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
                 셀을 탭하여 목표와 실천 항목을 입력하세요
               </Text>
             </View>
 
             {expandedSection === null ? (
-              // Collapsed: 3x3 Sub-goals overview
-              <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                {sectionPositions.map((sectionPos) => {
-                  const screenWidth = Dimensions.get('window').width
-                  const cellSize = (screenWidth - 32 - 32 - 16) / 3 // padding + card padding + gaps
+              // Collapsed: 3x3 Sub-goals overview - Row-based layout
+              <View>
+                {/* Row 1: positions 1, 2, 3 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
+                  {[1, 2, 3].map((sectionPos) => {
+                    const subGoal = getSubGoalByPosition(sectionPos)
+                    const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
 
-                  if (sectionPos === 0) {
-                    // Center: Core goal with gradient
                     return (
-                      <Pressable
-                        key="center"
-                        onPress={handleCoreGoalClick}
-                        style={{
-                          width: cellSize,
-                          height: cellSize,
-                          borderRadius: 12,
-                          overflow: 'hidden',
-                        }}
-                        className="active:opacity-80"
-                      >
-                        <LinearGradient
-                          colors={['#667eea', '#764ba2']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={{
-                            flex: 1,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: 8,
-                          }}
-                        >
-                          {mandalartData.center_goal ? (
-                            <Text className="text-sm font-bold text-center text-white" numberOfLines={3}>
-                              {mandalartData.center_goal}
-                            </Text>
-                          ) : (
-                            <Plus size={24} color="rgba(255,255,255,0.5)" />
-                          )}
-                        </LinearGradient>
-                      </Pressable>
+                      <SubGoalCell
+                        key={sectionPos}
+                        title={subGoal?.title || ''}
+                        size={cellSize}
+                        position={sectionPos}
+                        filledActions={filledActions}
+                        onPress={() => handleSectionTap(sectionPos)}
+                        variant="overview"
+                      />
                     )
-                  }
+                  })}
+                </View>
+                {/* Row 2: positions 4, 0 (center), 5 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                  {[4, 0, 5].map((sectionPos) => {
+                    if (sectionPos === 0) {
+                      // Center: Core goal with gradient (using shared component)
+                      return (
+                        <CenterGoalCell
+                          key="center"
+                          centerGoal={mandalartData.center_goal}
+                          size={cellSize}
+                          onPress={handleCoreGoalClick}
+                          showPlaceholder={true}
+                          numberOfLines={3}
+                        />
+                      )
+                    }
 
-                  const subGoal = getSubGoalByPosition(sectionPos)
-                  const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
+                    const subGoal = getSubGoalByPosition(sectionPos)
+                    const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
 
-                  return (
-                    <Pressable
-                      key={sectionPos}
-                      onPress={() => handleSectionTap(sectionPos)}
-                      style={{
-                        width: cellSize,
-                        height: cellSize,
-                        borderRadius: 12,
-                      }}
-                      className="bg-blue-50 border border-blue-200 items-center justify-center p-2 active:bg-blue-100"
-                    >
-                      <Text className="text-[10px] text-gray-400 mb-0.5">
-                        세부 {sectionPos}
-                      </Text>
-                      <Text className="text-xs font-medium text-center text-gray-900" numberOfLines={2}>
-                        {subGoal?.title || ''}
-                      </Text>
-                      {subGoal?.title && (
-                        <Text className="text-[10px] text-gray-400 mt-0.5">
-                          {filledActions}/8개
-                        </Text>
-                      )}
-                    </Pressable>
-                  )
-                })}
+                    return (
+                      <SubGoalCell
+                        key={sectionPos}
+                        title={subGoal?.title || ''}
+                        size={cellSize}
+                        position={sectionPos}
+                        filledActions={filledActions}
+                        onPress={() => handleSectionTap(sectionPos)}
+                        variant="overview"
+                      />
+                    )
+                  })}
+                </View>
+                {/* Row 3: positions 6, 7, 8 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                  {[6, 7, 8].map((sectionPos) => {
+                    const subGoal = getSubGoalByPosition(sectionPos)
+                    const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
+
+                    return (
+                      <SubGoalCell
+                        key={sectionPos}
+                        title={subGoal?.title || ''}
+                        size={cellSize}
+                        position={sectionPos}
+                        filledActions={filledActions}
+                        onPress={() => handleSectionTap(sectionPos)}
+                        variant="overview"
+                      />
+                    )
+                  })}
+                </View>
               </View>
             ) : (
               // Expanded: 3x3 grid of selected section's actions
               <View>
-                <View className="flex-row items-center justify-between mb-3">
+                <View className="flex-row items-center justify-between mb-4">
                   <Pressable
                     onPress={handleGridBack}
-                    className="flex-row items-center px-3 py-1.5 border border-gray-300 rounded-lg"
+                    className="flex-row items-center px-4 py-2.5 border border-gray-300 rounded-2xl active:bg-gray-50"
                   >
                     <ChevronLeft size={16} color="#6b7280" />
-                    <Text className="text-sm text-gray-600 ml-0.5">뒤로</Text>
+                    <Text
+                      className="text-sm text-gray-600 ml-0.5"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      뒤로
+                    </Text>
                   </Pressable>
                   <Pressable
                     onPress={() => {
                       setSelectedSubGoalPosition(expandedSection)
                       setSubGoalModalOpen(true)
                     }}
-                    className="px-3 py-1.5 bg-primary rounded-lg"
+                    className="px-4 py-2.5 bg-gray-900 rounded-2xl active:bg-gray-800"
                   >
-                    <Text className="text-sm text-white font-medium">수정</Text>
+                    <Text
+                      className="text-sm text-white"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      수정
+                    </Text>
                   </Pressable>
                 </View>
 
@@ -882,57 +1068,62 @@ export default function MandalartCreateScreen() {
                   }}
                   className="rounded-xl overflow-hidden border border-gray-200"
                 >
-                  <View className="flex-row flex-wrap">
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cellPos) => {
-                      const screenWidth = Dimensions.get('window').width
-                      const gridSize = screenWidth - 32 - 32 - 2 // padding + card padding + border
-                      const cellSize = gridSize / 3
-
-                      return (
+                  {/* Row-based 3x3 grid for expanded section */}
+                  <View>
+                    {/* Row 1 */}
+                    <View style={{ flexDirection: 'row' }}>
+                      {[0, 1, 2].map((cellPos) => (
                         <View
                           key={cellPos}
                           style={{
                             width: cellSize,
                             height: cellSize,
-                            borderRightWidth: (cellPos + 1) % 3 === 0 ? 0 : 1,
-                            borderBottomWidth: cellPos >= 6 ? 0 : 1,
+                            borderRightWidth: cellPos < 2 ? 1 : 0,
+                            borderBottomWidth: 1,
                             borderColor: '#e5e7eb',
                           }}
                         >
                           {renderExpandedCell(expandedSection, cellPos)}
                         </View>
-                      )
-                    })}
+                      ))}
+                    </View>
+                    {/* Row 2 */}
+                    <View style={{ flexDirection: 'row' }}>
+                      {[3, 4, 5].map((cellPos) => (
+                        <View
+                          key={cellPos}
+                          style={{
+                            width: cellSize,
+                            height: cellSize,
+                            borderRightWidth: cellPos < 5 ? 1 : 0,
+                            borderBottomWidth: 1,
+                            borderColor: '#e5e7eb',
+                          }}
+                        >
+                          {renderExpandedCell(expandedSection, cellPos)}
+                        </View>
+                      ))}
+                    </View>
+                    {/* Row 3 */}
+                    <View style={{ flexDirection: 'row' }}>
+                      {[6, 7, 8].map((cellPos) => (
+                        <View
+                          key={cellPos}
+                          style={{
+                            width: cellSize,
+                            height: cellSize,
+                            borderRightWidth: cellPos < 8 ? 1 : 0,
+                            borderColor: '#e5e7eb',
+                          }}
+                        >
+                          {renderExpandedCell(expandedSection, cellPos)}
+                        </View>
+                      ))}
+                    </View>
                   </View>
                 </Pressable>
               </View>
             )}
-          </View>
-
-          {/* Actions */}
-          <View className="flex-row mb-6" style={{ gap: 8 }}>
-            <Pressable
-              onPress={() => {
-                setStep('select')
-                setInputMethod(null)
-                setMandalartData(null)
-                setTitle('')
-                setExpandedSection(null)
-              }}
-              disabled={isSaving}
-              className="flex-1 bg-white border border-gray-300 py-3 rounded-xl items-center"
-            >
-              <Text className="text-gray-700 font-medium">취소</Text>
-            </Pressable>
-            <Pressable
-              onPress={handleSave}
-              disabled={isSaving}
-              className="flex-1 bg-primary py-3 rounded-xl items-center"
-            >
-              <Text className="text-white font-medium">
-                {isSaving ? '저장 중...' : '저장'}
-              </Text>
-            </Pressable>
           </View>
 
           <View className="h-8" />

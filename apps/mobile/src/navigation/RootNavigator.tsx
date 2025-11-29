@@ -1,10 +1,31 @@
-import React from 'react'
+import React, { createContext, useContext, useRef, useCallback } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { Home, CheckSquare, Grid3X3, FileText, Settings } from 'lucide-react-native'
+import { Home, CalendarCheck, Grid3X3, FileText, Settings } from 'lucide-react-native'
+import { ScrollView } from 'react-native'
+import type { EventEmitter } from '@react-navigation/native'
 
 import { useAuthStore } from '../store/authStore'
+
+// Context for scroll-to-top functionality
+type ScrollToTopContextType = {
+  registerScrollView: (tabName: string, ref: React.RefObject<ScrollView>) => void
+  unregisterScrollView: (tabName: string) => void
+}
+
+const ScrollToTopContext = createContext<ScrollToTopContextType | null>(null)
+
+export function useScrollToTop(tabName: string, scrollRef: React.RefObject<ScrollView>) {
+  const context = useContext(ScrollToTopContext)
+
+  React.useEffect(() => {
+    if (context && scrollRef.current) {
+      context.registerScrollView(tabName, scrollRef)
+      return () => context.unregisterScrollView(tabName)
+    }
+  }, [context, tabName, scrollRef])
+}
 
 // Screens
 import HomeScreen from '../screens/HomeScreen'
@@ -41,58 +62,101 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const Tab = createBottomTabNavigator<MainTabParamList>()
 
 function MainTabs() {
+  // Store refs to ScrollViews for each tab
+  const scrollViewRefs = useRef<Map<string, React.RefObject<ScrollView>>>(new Map())
+
+  const registerScrollView = useCallback((tabName: string, ref: React.RefObject<ScrollView>) => {
+    scrollViewRefs.current.set(tabName, ref)
+  }, [])
+
+  const unregisterScrollView = useCallback((tabName: string) => {
+    scrollViewRefs.current.delete(tabName)
+  }, [])
+
+  const scrollToTop = useCallback((tabName: string) => {
+    const ref = scrollViewRefs.current.get(tabName)
+    if (ref?.current) {
+      ref.current.scrollTo({ y: 0, animated: true })
+    }
+  }, [])
+
+  // Listener for tab press - scroll to top if already on that tab
+  const createTabPressListener = (tabName: string) => ({
+    tabPress: (e: { preventDefault: () => void; target?: string }) => {
+      // Scroll to top when pressing the current tab
+      scrollToTop(tabName)
+    },
+  })
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#667eea',
-        tabBarInactiveTintColor: '#9ca3af',
-        tabBarStyle: {
-          borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
-          paddingTop: 8,
-          paddingBottom: 8,
-          height: 60,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
-        },
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarLabel: '홈',
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+    <ScrollToTopContext.Provider value={{ registerScrollView, unregisterScrollView }}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: '#18181b',
+          tabBarInactiveTintColor: '#9ca3af',
+          tabBarStyle: {
+            borderTopWidth: 1,
+            borderTopColor: '#f3f4f6',
+            paddingTop: 10,
+            paddingBottom: 12,
+            height: 72,
+            backgroundColor: '#ffffff',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.03,
+            shadowRadius: 8,
+            elevation: 8,
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '600',
+            fontFamily: 'Pretendard-SemiBold',
+            marginTop: 2,
+          },
+          tabBarIconStyle: {
+            marginTop: 2,
+          },
         }}
-      />
-      <Tab.Screen
-        name="Today"
-        component={TodayScreen}
-        options={{
-          tabBarLabel: '투데이',
-          tabBarIcon: ({ color, size }) => <CheckSquare size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Mandalart"
-        component={MandalartListScreen}
-        options={{
-          tabBarLabel: '만다라트',
-          tabBarIcon: ({ color, size }) => <Grid3X3 size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Reports"
-        component={ReportsScreen}
-        options={{
-          tabBarLabel: '리포트',
-          tabBarIcon: ({ color, size }) => <FileText size={size} color={color} />,
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            tabBarLabel: '홈',
+            tabBarIcon: ({ color }) => <Home size={26} color={color} strokeWidth={1.8} />,
+          }}
+          listeners={createTabPressListener('Home')}
+        />
+        <Tab.Screen
+          name="Today"
+          component={TodayScreen}
+          options={{
+            tabBarLabel: '투데이',
+            tabBarIcon: ({ color }) => <CalendarCheck size={26} color={color} strokeWidth={1.8} />,
+          }}
+          listeners={createTabPressListener('Today')}
+        />
+        <Tab.Screen
+          name="Mandalart"
+          component={MandalartListScreen}
+          options={{
+            tabBarLabel: '만다라트',
+            tabBarIcon: ({ color }) => <Grid3X3 size={26} color={color} strokeWidth={1.8} />,
+          }}
+          listeners={createTabPressListener('Mandalart')}
+        />
+        <Tab.Screen
+          name="Reports"
+          component={ReportsScreen}
+          options={{
+            tabBarLabel: '리포트',
+            tabBarIcon: ({ color }) => <FileText size={26} color={color} strokeWidth={1.8} />,
+          }}
+          listeners={createTabPressListener('Reports')}
+        />
+      </Tab.Navigator>
+    </ScrollToTopContext.Provider>
   )
 }
 

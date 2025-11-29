@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Modal, TextInput, Alert } from 'react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -33,6 +34,7 @@ import { useBadgeDefinitions, useUserBadges, isBadgeUnlocked } from '../hooks/us
 import {
   APP_NAME,
   getXPForCurrentLevel,
+  getLevelFromXP,
   categorizeBadges,
   XP_EARNING_RULES,
   XP_MULTIPLIER_BONUSES,
@@ -46,6 +48,8 @@ import {
   formatUserDateTime,
 } from '@mandaact/shared'
 import { supabase } from '../lib/supabase'
+import { xpService } from '../lib/xp'
+import type { XPMultiplier } from '@mandaact/shared'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
 import type { BadgeDefinition } from '../hooks/useBadges'
 
@@ -103,6 +107,9 @@ export default function HomeScreen() {
   const [xpInfoOpen, setXpInfoOpen] = useState(false)
   const [badgeCollectionOpen, setBadgeCollectionOpen] = useState(false)
 
+  // Active multipliers state
+  const [activeMultipliers, setActiveMultipliers] = useState<XPMultiplier[]>([])
+
   // Nickname editing states
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false)
   const [newNickname, setNewNickname] = useState('')
@@ -124,13 +131,16 @@ export default function HomeScreen() {
       if (user?.id) {
         // Invalidate all user stats queries to force fresh data
         queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
+
+        // Load active multipliers
+        xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
       }
     }, [user?.id, queryClient])
   )
 
-  // Calculate XP progress
-  const currentLevel = gamification?.current_level || 1
+  // Calculate XP progress - use getLevelFromXP for accurate level calculation
   const totalXP = gamification?.total_xp || 0
+  const currentLevel = getLevelFromXP(totalXP) // Calculate from XP instead of using DB value
   const { current: xpProgress, required: xpRequired, percentage: xpPercentage } = getXPForCurrentLevel(totalXP, currentLevel)
   const nickname = gamification?.nickname || user?.email?.split('@')[0] || '새 사용자'
 
@@ -301,9 +311,16 @@ export default function HomeScreen() {
                 <View className="h-3 bg-gray-200 rounded-full overflow-hidden">
                   <Animated.View
                     entering={FadeInUp.delay(300).duration(300)}
-                    className="h-full bg-primary rounded-full"
+                    className="h-full rounded-full overflow-hidden"
                     style={{ width: `${xpPercentage}%` }}
-                  />
+                  >
+                    <LinearGradient
+                      colors={['#667eea', '#9333ea']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ flex: 1 }}
+                    />
+                  </Animated.View>
                 </View>
               </View>
 
@@ -330,8 +347,8 @@ export default function HomeScreen() {
                   className="flex-row items-center justify-between"
                 >
                   <View className="flex-row items-center">
-                    <Zap size={14} color="#667eea" />
-                    <Text className="text-xs font-semibold text-primary ml-1">
+                    <Zap size={14} color="#0a0a0a" />
+                    <Text className="text-xs font-semibold text-gray-900 ml-1">
                       XP 획득 방법
                     </Text>
                   </View>
@@ -366,8 +383,8 @@ export default function HomeScreen() {
                     {/* XP Multiplier Bonus */}
                     <View className="pt-3 border-t border-primary/10">
                       <View className="flex-row items-center mb-2">
-                        <Sparkles size={12} color="#667eea" />
-                        <Text className="text-xs font-semibold text-primary ml-1">
+                        <Sparkles size={12} color="#0a0a0a" />
+                        <Text className="text-xs font-semibold text-gray-900 ml-1">
                           XP 배율 보너스
                         </Text>
                       </View>
@@ -394,11 +411,45 @@ export default function HomeScreen() {
                       </Text>
                     </View>
 
+                    {/* Active Multipliers */}
+                    {activeMultipliers.length > 0 && (
+                      <View className="pt-3 border-t border-primary/10">
+                        <View className="flex-row items-center mb-2">
+                          <Sparkles size={12} color="#0a0a0a" />
+                          <Text className="text-xs font-semibold text-gray-900 ml-1">
+                            현재 활성 중인 배율
+                          </Text>
+                        </View>
+                        <View className="space-y-1">
+                          {activeMultipliers.map((multiplier, index) => {
+                            const colorClass = multiplier.type === 'weekend'
+                              ? 'text-blue-500'
+                              : multiplier.type === 'comeback'
+                                ? 'text-green-500'
+                                : multiplier.type === 'level_milestone'
+                                  ? 'text-yellow-500'
+                                  : 'text-purple-500'
+                            return (
+                              <View
+                                key={index}
+                                className="flex-row items-center justify-between p-1.5 bg-gray-50 rounded"
+                              >
+                                <Text className="text-xs text-gray-500">{multiplier.name}</Text>
+                                <Text className={`text-xs font-bold ${colorClass}`}>
+                                  ×{multiplier.multiplier}
+                                </Text>
+                              </View>
+                            )
+                          })}
+                        </View>
+                      </View>
+                    )}
+
                     {/* Fair XP Policy */}
                     <View className="pt-3 border-t border-primary/10">
                       <View className="flex-row items-center mb-2">
-                        <Info size={12} color="#667eea" />
-                        <Text className="text-xs font-semibold text-primary ml-1">
+                        <Info size={12} color="#0a0a0a" />
+                        <Text className="text-xs font-semibold text-gray-900 ml-1">
                           공정한 XP 정책
                         </Text>
                       </View>
@@ -423,8 +474,8 @@ export default function HomeScreen() {
                   className="flex-row items-center justify-between"
                 >
                   <View className="flex-row items-center">
-                    <Target size={14} color="#667eea" />
-                    <Text className="text-xs font-semibold text-primary ml-1">
+                    <Target size={14} color="#0a0a0a" />
+                    <Text className="text-xs font-semibold text-gray-900 ml-1">
                       배지 컬렉션
                     </Text>
                   </View>

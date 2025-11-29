@@ -135,6 +135,7 @@ export default function SubGoalEditModal({
 
   // Local state
   const [subGoalTitle, setSubGoalTitle] = useState('')
+  const [subGoalId, setSubGoalId] = useState<string>('') // Track the actual subGoal id
   const [actions, setActions] = useState<Action[]>([])
   const [isEditingSubGoalTitle, setIsEditingSubGoalTitle] = useState(false)
   const [editingActionId, setEditingActionId] = useState<string | null>(null)
@@ -160,18 +161,23 @@ export default function SubGoalEditModal({
 
   const weekdays = getWeekdayNames()
 
+  // Check if this is a new sub-goal (empty id means creating new)
+  const isNewSubGoal = subGoalId === ''
+
   useEffect(() => {
     if (visible && subGoal) {
       setSubGoalTitle(subGoal.title)
+      setSubGoalId(subGoal.id) // Initialize subGoalId from prop
       setActions([...subGoal.actions].sort((a, b) => a.position - b.position))
-      setIsEditingSubGoalTitle(false)
+      // Auto-start editing title for new sub-goals
+      setIsEditingSubGoalTitle(subGoal.id === '')
       setEditingActionId(null)
       setViewMode('list')
       setSelectedAction(null)
     }
   }, [visible, subGoal])
 
-  // Sub-goal title save
+  // Sub-goal title save (handles both create and update)
   const handleSubGoalTitleSave = useCallback(async () => {
     if (!subGoal || subGoalTitle.trim() === '') {
       toast.error('세부목표를 입력하세요')
@@ -180,16 +186,42 @@ export default function SubGoalEditModal({
 
     setIsSaving(true)
     try {
-      const { error } = await supabase
-        .from('sub_goals')
-        .update({ title: subGoalTitle.trim() })
-        .eq('id', subGoal.id)
+      if (isNewSubGoal) {
+        // Create new sub-goal
+        const { data, error } = await supabase
+          .from('sub_goals')
+          .insert({
+            mandalart_id: subGoal.mandalart_id,
+            position: subGoal.position,
+            title: subGoalTitle.trim(),
+          })
+          .select()
+          .single()
 
-      if (error) throw error
+        if (error) throw error
 
-      setIsEditingSubGoalTitle(false)
-      toast.success('저장되었습니다')
-      onSuccess?.()
+        // Update the local subGoalId state so we can add actions
+        if (data) {
+          setSubGoalId(data.id)
+        }
+
+        setIsEditingSubGoalTitle(false)
+        toast.success('세부목표가 생성되었습니다. 실천항목을 추가하세요.')
+        onSuccess?.()
+        // Don't close modal - allow user to add actions
+      } else {
+        // Update existing sub-goal
+        const { error } = await supabase
+          .from('sub_goals')
+          .update({ title: subGoalTitle.trim() })
+          .eq('id', subGoalId)
+
+        if (error) throw error
+
+        setIsEditingSubGoalTitle(false)
+        toast.success('저장되었습니다')
+        onSuccess?.()
+      }
     } catch (err) {
       console.error('SubGoal title save error:', err)
       toast.error('저장 중 오류가 발생했습니다')
@@ -197,7 +229,7 @@ export default function SubGoalEditModal({
     } finally {
       setIsSaving(false)
     }
-  }, [subGoal, subGoalTitle, toast, onSuccess])
+  }, [subGoal, subGoalTitle, toast, onSuccess, onClose, isNewSubGoal])
 
   // Action title save
   const handleActionTitleSave = useCallback(async (actionId: string) => {
@@ -403,6 +435,12 @@ export default function SubGoalEditModal({
   const handleActionAdd = useCallback(async () => {
     if (!subGoal) return
 
+    // New sub-goal: must save title first
+    if (isNewSubGoal) {
+      toast.error('먼저 세부목표 제목을 저장하세요')
+      return
+    }
+
     if (actions.length >= 8) {
       toast.error('실천항목은 최대 8개까지 추가할 수 있습니다')
       return
@@ -416,10 +454,11 @@ export default function SubGoalEditModal({
       const { data, error } = await supabase
         .from('actions')
         .insert({
-          sub_goal_id: subGoal.id,
+          sub_goal_id: subGoalId, // Use state instead of prop
           title: '새 실천항목',
           position: newPosition,
           type: 'routine',
+          routine_frequency: null, // 미설정 상태로 시작
         })
         .select()
         .single()
@@ -434,7 +473,7 @@ export default function SubGoalEditModal({
       console.error('Action add error:', err)
       toast.error('추가 중 오류가 발생했습니다')
     }
-  }, [subGoal, actions, toast, onSuccess])
+  }, [subGoal, subGoalId, actions, toast, onSuccess, isNewSubGoal])
 
   // Handle drag end - reorder actions
   const handleDragEnd = useCallback(async (reorderedActions: Action[]) => {
@@ -488,8 +527,11 @@ export default function SubGoalEditModal({
             >
               {/* Header - changes based on viewMode */}
               {viewMode === 'list' ? (
-                <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
-                  <Text className="text-lg font-semibold text-gray-900">
+                <View className="flex-row items-center justify-between p-5 border-b border-gray-100">
+                  <Text
+                    className="text-lg text-gray-900"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
                     세부목표 수정
                   </Text>
                   <Pressable onPress={onClose} className="p-1">
@@ -497,7 +539,7 @@ export default function SubGoalEditModal({
                   </Pressable>
                 </View>
               ) : (
-                <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
+                <View className="flex-row items-center justify-between p-5 border-b border-gray-100">
                   <Pressable
                     onPress={() => {
                       setViewMode('list')
@@ -507,7 +549,10 @@ export default function SubGoalEditModal({
                   >
                     <ChevronLeft size={24} color="#6b7280" />
                   </Pressable>
-                  <Text className="text-lg font-semibold text-gray-900">
+                  <Text
+                    className="text-lg text-gray-900"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
                     타입 설정
                   </Text>
                   <Pressable
@@ -526,14 +571,20 @@ export default function SubGoalEditModal({
 
               {/* Content based on viewMode */}
               {viewMode === 'list' ? (
-              <ScrollView style={{ padding: 16 }}>
-                <Text className="text-sm text-gray-500 mb-4">
+              <ScrollView style={{ padding: 20 }}>
+                <Text
+                  className="text-sm text-gray-500 mb-4"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
                   세부목표와 실천항목을 수정할 수 있습니다
                 </Text>
 
                 {/* Sub-goal Title */}
                 <View className="mb-6">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">
+                  <Text
+                    className="text-sm text-gray-700 mb-2"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
                     세부목표
                   </Text>
                   {isEditingSubGoalTitle ? (
@@ -542,7 +593,8 @@ export default function SubGoalEditModal({
                         value={subGoalTitle}
                         onChangeText={setSubGoalTitle}
                         placeholder="세부목표 제목을 입력하세요"
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-base"
+                        className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-base"
+                        style={{ fontFamily: 'Pretendard-Regular' }}
                         autoFocus
                         onSubmitEditing={handleSubGoalTitleSave}
                       />
@@ -570,9 +622,12 @@ export default function SubGoalEditModal({
                   ) : (
                     <Pressable
                       onPress={() => setIsEditingSubGoalTitle(true)}
-                      className="flex-row items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50"
+                      className="flex-row items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50"
                     >
-                      <Text className="flex-1 text-base text-gray-900">
+                      <Text
+                        className="flex-1 text-base text-gray-900"
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
                         {subGoalTitle}
                       </Text>
                       <Pencil size={16} color="#9ca3af" />
@@ -583,23 +638,34 @@ export default function SubGoalEditModal({
                 {/* Actions List */}
                 <View className="mb-4">
                   <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-sm font-medium text-gray-700">
+                    <Text
+                      className="text-sm text-gray-700"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
                       실천 항목 ({actions.length}/8)
                     </Text>
                     {actions.length < 8 && (
                       <Pressable
                         onPress={handleActionAdd}
-                        className="flex-row items-center px-3 py-1.5 border border-gray-300 rounded-lg"
+                        className="flex-row items-center px-3 py-2 border border-gray-200 rounded-xl bg-white"
                       >
                         <Plus size={16} color="#667eea" />
-                        <Text className="text-sm text-primary ml-1">추가</Text>
+                        <Text
+                          className="text-sm text-primary ml-1"
+                          style={{ fontFamily: 'Pretendard-Medium' }}
+                        >
+                          추가
+                        </Text>
                       </Pressable>
                     )}
                   </View>
 
                   {actions.length === 0 ? (
-                    <View className="py-8 border border-dashed border-gray-300 rounded-lg">
-                      <Text className="text-sm text-gray-400 text-center">
+                    <View className="py-8 border border-dashed border-gray-300 rounded-xl">
+                      <Text
+                        className="text-sm text-gray-400 text-center"
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
                         실천 항목이 없습니다.{'\n'}추가 버튼을 클릭하여 항목을 추가하세요.
                       </Text>
                     </View>
@@ -611,11 +677,14 @@ export default function SubGoalEditModal({
                         itemHeight={52}
                         onDragEnd={handleDragEnd}
                         renderItem={({ item: action, index: idx }) => (
-                          <View className="flex-row items-center bg-white border border-gray-200 rounded-lg p-2 mb-2">
+                          <View className="flex-row items-center bg-white border border-gray-200 rounded-xl p-3 mb-2">
                             {/* Handle + Position */}
                             <View className="flex-row items-center mr-2">
                               <GripVertical size={16} color="#9ca3af" />
-                              <Text className="text-sm text-gray-400 ml-1 w-5">
+                              <Text
+                                className="text-sm text-gray-400 ml-1 w-5"
+                                style={{ fontFamily: 'Pretendard-Regular' }}
+                              >
                                 {idx + 1}.
                               </Text>
                             </View>
@@ -627,7 +696,8 @@ export default function SubGoalEditModal({
                                   <TextInput
                                     value={editingActionTitle}
                                     onChangeText={setEditingActionTitle}
-                                    className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm"
+                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    style={{ fontFamily: 'Pretendard-Regular' }}
                                     autoFocus
                                     onSubmitEditing={() => handleActionTitleSave(action.id)}
                                   />
@@ -655,7 +725,10 @@ export default function SubGoalEditModal({
                                   }}
                                   className="py-1"
                                 >
-                                  <Text className="text-sm text-gray-900">
+                                  <Text
+                                    className="text-sm text-gray-900"
+                                    style={{ fontFamily: 'Pretendard-Regular' }}
+                                  >
                                     {action.title}
                                   </Text>
                                 </Pressable>
@@ -665,10 +738,13 @@ export default function SubGoalEditModal({
                             {/* Type Badge */}
                             <Pressable
                               onPress={() => openTypeSelector(action)}
-                              className="flex-row items-center px-2 py-1 bg-gray-100 rounded ml-2 active:bg-gray-200"
+                              className="flex-row items-center px-2.5 py-1.5 bg-gray-100 rounded-lg ml-2 active:bg-gray-200"
                             >
                               <ActionTypeIcon type={action.type} size={12} />
-                              <Text className="text-xs text-gray-600 ml-1">
+                              <Text
+                                className="text-xs text-gray-600 ml-1"
+                                style={{ fontFamily: 'Pretendard-Medium' }}
+                              >
                                 {formatTypeDetails(action) || getActionTypeLabel(action.type)}
                               </Text>
                             </Pressable>
@@ -692,23 +768,32 @@ export default function SubGoalEditModal({
               </ScrollView>
               ) : (
               /* Type Selector View */
-              <ScrollView style={{ padding: 16 }}>
+              <ScrollView style={{ padding: 20 }}>
                 {/* Action Title */}
                 {selectedAction && (
-                  <Text className="text-sm text-gray-500 mb-4">
+                  <Text
+                    className="text-sm text-gray-500 mb-4"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
                     "{selectedAction.title}"의 타입과 세부 설정을 선택하세요
                   </Text>
                 )}
 
                 {/* AI Suggestion */}
                 {aiSuggestion && (
-                  <View className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
-                    <Text className="text-sm font-medium text-blue-900">
+                  <View className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+                    <Text
+                      className="text-sm text-blue-900"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
                       💡 자동 추천: {getActionTypeLabel(aiSuggestion.type as ActionType)}
                     </Text>
                     <View className="flex-row items-center mt-1">
                       <Info size={12} color="#1e40af" />
-                      <Text className="text-xs text-blue-700 ml-1 flex-1">
+                      <Text
+                        className="text-xs text-blue-700 ml-1 flex-1"
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
                         {aiSuggestion.reason} (신뢰도: {getConfidenceLabel(aiSuggestion.confidence)})
                       </Text>
                     </View>
@@ -717,7 +802,10 @@ export default function SubGoalEditModal({
 
                 {/* Type Selection */}
                 <View className="mb-4">
-                  <Text className="text-sm font-semibold text-gray-700 mb-2">
+                  <Text
+                    className="text-sm text-gray-700 mb-2"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
                     실천 항목 타입
                   </Text>
                   <View style={{ gap: 8 }}>
@@ -725,7 +813,7 @@ export default function SubGoalEditModal({
                       <Pressable
                         key={option.type}
                         onPress={() => setSelectedType(option.type)}
-                        className={`flex-row items-center p-3 rounded-xl border ${
+                        className={`flex-row items-center p-4 rounded-2xl border ${
                           selectedType === option.type
                             ? 'border-gray-900 bg-gray-50'
                             : 'border-gray-200 bg-white'
@@ -744,10 +832,16 @@ export default function SubGoalEditModal({
                         </View>
                         <View className="mr-2">{option.icon}</View>
                         <View className="flex-1">
-                          <Text className="text-sm font-medium text-gray-900">
+                          <Text
+                            className="text-sm text-gray-900"
+                            style={{ fontFamily: 'Pretendard-Medium' }}
+                          >
                             {option.label}
                           </Text>
-                          <Text className="text-xs text-gray-500 mt-0.5">
+                          <Text
+                            className="text-xs text-gray-500 mt-0.5"
+                            style={{ fontFamily: 'Pretendard-Regular' }}
+                          >
                             {option.description}
                           </Text>
                         </View>
@@ -758,14 +852,22 @@ export default function SubGoalEditModal({
 
                 {/* Routine Settings */}
                 {selectedType === 'routine' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                    <Text className="text-base font-semibold text-gray-900 mb-3">
+                  <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+                    <Text
+                      className="text-base text-gray-900 mb-3"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
                       루틴 설정
                     </Text>
 
                     {/* Frequency Select - Button Style */}
                     <View className="mb-3">
-                      <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
+                      <Text
+                        className="text-sm text-gray-700 mb-2"
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        반복 주기
+                      </Text>
                       <View className="flex-row" style={{ gap: 8 }}>
                         {FREQUENCY_OPTIONS.map((option) => (
                           <Pressable
@@ -778,18 +880,19 @@ export default function SubGoalEditModal({
                               setShowCustomMonthlyInput(false)
                               setCustomMonthlyValue('')
                             }}
-                            className={`flex-1 py-2.5 rounded-lg border items-center ${
+                            className={`flex-1 py-2.5 rounded-xl border items-center ${
                               routineFrequency === option.value
                                 ? 'bg-gray-900 border-gray-900'
                                 : 'bg-white border-gray-300'
                             }`}
                           >
                             <Text
-                              className={`text-sm font-medium ${
+                              className={`text-sm ${
                                 routineFrequency === option.value
                                   ? 'text-white'
                                   : 'text-gray-700'
                               }`}
+                              style={{ fontFamily: 'Pretendard-Medium' }}
                             >
                               {option.label}
                             </Text>
@@ -945,20 +1048,28 @@ export default function SubGoalEditModal({
 
                 {/* Mission Settings */}
                 {selectedType === 'mission' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                    <Text className="text-base font-semibold text-gray-900 mb-3">
+                  <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+                    <Text
+                      className="text-base text-gray-900 mb-3"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
                       미션 설정
                     </Text>
 
                     {/* Completion Type */}
                     <View className="mb-3">
-                      <Text className="text-sm text-gray-700 mb-2">완료 방식</Text>
+                      <Text
+                        className="text-sm text-gray-700 mb-2"
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        완료 방식
+                      </Text>
                       <View style={{ gap: 8 }}>
                         {MISSION_COMPLETION_OPTIONS.map((option) => (
                           <Pressable
                             key={option.value}
                             onPress={() => setMissionCompletionType(option.value)}
-                            className={`flex-row items-center p-3 rounded-lg border ${
+                            className={`flex-row items-center p-4 rounded-xl border ${
                               missionCompletionType === option.value
                                 ? 'border-gray-900 bg-white'
                                 : 'border-gray-200 bg-white'
@@ -975,7 +1086,10 @@ export default function SubGoalEditModal({
                                 <View className="w-2 h-2 rounded-full bg-gray-900" />
                               )}
                             </View>
-                            <Text className="text-sm text-gray-700 flex-1">
+                            <Text
+                              className="text-sm text-gray-700 flex-1"
+                              style={{ fontFamily: 'Pretendard-Regular' }}
+                            >
                               {option.label}
                             </Text>
                           </Pressable>
@@ -986,24 +1100,30 @@ export default function SubGoalEditModal({
                     {/* Period Cycle (for periodic missions) */}
                     {missionCompletionType === 'periodic' && (
                       <View className="mt-3">
-                        <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
+                        <Text
+                          className="text-sm text-gray-700 mb-2"
+                          style={{ fontFamily: 'Pretendard-Medium' }}
+                        >
+                          반복 주기
+                        </Text>
                         <View className="flex-row flex-wrap" style={{ gap: 8 }}>
                           {PERIOD_CYCLE_OPTIONS.map((option) => (
                             <Pressable
                               key={option.value}
                               onPress={() => setMissionPeriodCycle(option.value)}
-                              className={`px-4 py-2 rounded-lg border ${
+                              className={`px-4 py-2.5 rounded-xl border ${
                                 missionPeriodCycle === option.value
                                   ? 'bg-gray-900 border-gray-900'
                                   : 'bg-white border-gray-300'
                               }`}
                             >
                               <Text
-                                className={`text-sm font-medium ${
+                                className={`text-sm ${
                                   missionPeriodCycle === option.value
                                     ? 'text-white'
                                     : 'text-gray-700'
                                 }`}
+                                style={{ fontFamily: 'Pretendard-Medium' }}
                               >
                                 {option.label}
                               </Text>
@@ -1017,10 +1137,13 @@ export default function SubGoalEditModal({
 
                 {/* Reference Info */}
                 {selectedType === 'reference' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
                     <View className="flex-row items-center">
                       <Info size={16} color="#6b7280" />
-                      <Text className="text-sm text-gray-500 ml-2">
+                      <Text
+                        className="text-sm text-gray-500 ml-2"
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
                         참고 타입은 달성률에 포함되지 않습니다
                       </Text>
                     </View>

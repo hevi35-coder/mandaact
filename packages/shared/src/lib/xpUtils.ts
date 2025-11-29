@@ -2,54 +2,61 @@
  * XP (Experience Points) calculation utilities
  * Shared between web and mobile apps
  *
- * XP Progression System:
- * - Level 1: 0 → 100 XP
- * - Level 2: 100 → 400 XP
- * - Level 3-5: Power 1.7 curve
- * - Level 6+: Logarithmic for smooth late game
+ * XP Progression System (Linear Increase +50 per level):
+ * - Each level requires 50 more XP than the previous
+ * - Level 1→2: 100 XP
+ * - Level 2→3: 150 XP (+50)
+ * - Level 3→4: 200 XP (+50)
+ * - Level 4→5: 250 XP (+50)
+ * - ...and so on
+ *
+ * Formula: Total XP for level n = 25*n² + 25*n - 50 (for n >= 2)
+ * Required XP for level n→n+1 = 50*n + 50
  */
 
 /**
  * Calculate the XP threshold to reach a specific level
  * This is the minimum XP required to BE at that level
+ *
+ * Level thresholds:
+ * - Level 1: 0 XP
+ * - Level 2: 100 XP (need 100)
+ * - Level 3: 250 XP (need 150)
+ * - Level 4: 450 XP (need 200)
+ * - Level 5: 700 XP (need 250)
+ * - Level 6: 1,000 XP (need 300)
+ * - Level 7: 1,350 XP (need 350)
+ * - Level 8: 1,750 XP (need 400)
+ * - Level 9: 2,200 XP (need 450)
+ * - Level 10: 2,700 XP (need 500)
  */
 export function calculateXPForLevel(level: number): number {
   if (level <= 1) {
     return 0 // Level 1 starts at 0 XP
-  } else if (level === 2) {
-    return 100
-  } else if (level === 3) {
-    return 400
-  } else if (level <= 6) {
-    // Power 1.7 inverse: XP = (level - 3)^1.7 * 100 + 400
-    return Math.floor(Math.pow(level - 3, 1.7) * 100) + 400
-  } else {
-    // Logarithmic inverse: XP = (e^((level - 6) / 8) - 1) * 150 + 2500
-    return Math.floor((Math.exp((level - 6) / 8) - 1) * 150) + 2500
   }
+  // Formula: 25*n² + 25*n - 50
+  // This creates: 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700...
+  return 25 * level * level + 25 * level - 50
 }
 
 /**
  * Calculate level from total XP
+ * Inverse of calculateXPForLevel
+ *
+ * Given: XP = 25*level² + 25*level - 50
+ * Rearrange: 25*level² + 25*level - (XP + 50) = 0
+ * Using quadratic formula: level = (-25 + sqrt(625 + 100*(XP+50))) / 50
  */
 export function getLevelFromXP(totalXP: number): number {
   if (totalXP < 100) {
-    // Level 1
     return 1
-  } else if (totalXP < 400) {
-    // Level 2: Keep fast initial progression
-    return 2
-  } else if (totalXP < 2500) {
-    // Levels 3-5: Medium progression (power 1.7)
-    // Adjusted XP = totalXP - 400 (starting from level 3)
-    const adjustedXP = totalXP - 400
-    return Math.floor(Math.pow(adjustedXP / 100, 1 / 1.7)) + 3
-  } else {
-    // Levels 6+: Logarithmic progression for smooth late game
-    // Adjusted XP = totalXP - 2500 (starting from level 6)
-    const adjustedXP = totalXP - 2500
-    return Math.floor(Math.log(adjustedXP / 150 + 1) * 8) + 6
   }
+  // Quadratic formula to find level from XP
+  // 25*level² + 25*level - (XP + 50) = 0
+  // level = (-25 + sqrt(625 + 100*XP + 5000)) / 50
+  // level = (-25 + sqrt(5625 + 100*XP)) / 50
+  const level = (-25 + Math.sqrt(5625 + 100 * totalXP)) / 50
+  return Math.floor(level)
 }
 
 /**

@@ -49,6 +49,13 @@ function BadgeCard({
           : 'bg-gray-50 border-gray-200'
       }`}
       onPress={onPress}
+      style={{
+        shadowColor: isUnlocked ? '#667eea' : '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isUnlocked ? 0.1 : 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+      }}
     >
       {/* Icon - Always show, grayscale when locked (like web) */}
       <View className="items-center mb-2">
@@ -63,15 +70,19 @@ function BadgeCard({
         )}
       </View>
       <Text
-        className={`text-xs font-semibold text-center ${
+        className={`text-xs text-center ${
           isUnlocked ? 'text-gray-900' : 'text-gray-400'
         }`}
+        style={{ fontFamily: 'Pretendard-SemiBold' }}
         numberOfLines={1}
       >
         {badge.name}
       </Text>
       {/* XP Reward */}
-      <Text className="text-[10px] text-primary font-mono mt-1">
+      <Text
+        className="text-xs text-primary mt-1"
+        style={{ fontFamily: 'Pretendard-Medium' }}
+      >
         +{badge.xp_reward} XP
       </Text>
       {/* Progress for locked badges */}
@@ -83,21 +94,32 @@ function BadgeCard({
               style={{ width: `${Math.min(progress.percentage, 100)}%` }}
             />
           </View>
-          <Text className="text-[10px] text-gray-400 text-center mt-1">
+          <Text
+            className="text-xs text-gray-400 text-center mt-1"
+            style={{ fontFamily: 'Pretendard-Regular' }}
+          >
             {progress.current}/{progress.target}
           </Text>
         </View>
       )}
       {/* Unlocked date */}
       {isUnlocked && unlockDate && (
-        <Text className="text-[10px] text-gray-400 text-center mt-1 pt-1 border-t border-gray-100">
+        <Text
+          className="text-xs text-gray-400 text-center mt-1 pt-1 border-t border-gray-100"
+          style={{ fontFamily: 'Pretendard-Regular' }}
+        >
           {format(new Date(unlockDate), 'M월 d일', { locale: ko })}
         </Text>
       )}
       {/* Repeatable badge indicator */}
       {badge.repeatable && (
         <View className="mt-1 px-2 py-0.5 bg-amber-50 rounded-full">
-          <Text className="text-[10px] text-amber-600">반복</Text>
+          <Text
+            className="text-xs text-amber-600"
+            style={{ fontFamily: 'Pretendard-Medium' }}
+          >
+            반복
+          </Text>
         </View>
       )}
     </Pressable>
@@ -140,8 +162,13 @@ function BadgeDetailModal({
         <View className="bg-white rounded-t-3xl">
           <SafeAreaView edges={['bottom']}>
             {/* Header */}
-            <View className="flex-row items-center justify-between p-4 border-b border-gray-100">
-              <Text className="text-lg font-semibold text-gray-900">뱃지 상세</Text>
+            <View className="flex-row items-center justify-between p-5 border-b border-gray-100">
+              <Text
+                className="text-lg text-gray-900"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                뱃지 상세
+              </Text>
               <Pressable onPress={onClose} className="p-2">
                 <X size={24} color="#9ca3af" />
               </Pressable>
@@ -159,24 +186,38 @@ function BadgeDetailModal({
               </View>
 
               {/* Badge Name */}
-              <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
+              <Text
+                className="text-2xl text-gray-900 text-center mb-2"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
                 {badge.name}
               </Text>
 
               {/* Description */}
-              <Text className="text-base text-gray-500 text-center mb-4">
+              <Text
+                className="text-base text-gray-500 text-center mb-4"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
                 {badge.description}
               </Text>
 
               {/* Unlock Status Box - like web */}
               {isUnlocked ? (
-                <View className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-4">
+                <View className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-4">
                   <View className="flex-row items-center mb-2">
                     <Trophy size={20} color="#d97706" />
-                    <Text className="text-amber-700 font-semibold ml-2">배지 획득 완료!</Text>
+                    <Text
+                      className="text-amber-700 ml-2"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      배지 획득 완료!
+                    </Text>
                   </View>
                   {unlockDate && (
-                    <Text className="text-amber-600 text-sm">
+                    <Text
+                      className="text-amber-600 text-sm"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
                       {format(new Date(unlockDate), 'yyyy년 M월 d일', { locale: ko })}
                       {badge.repeatable && repeatCount > 1 && (
                         <Text className="text-xs"> (최초 획득일)</Text>
@@ -189,27 +230,55 @@ function BadgeDetailModal({
                       <View className="flex-row items-center justify-between">
                         <View className="flex-row items-center">
                           <Repeat size={16} color="#d97706" />
-                          <Text className="text-amber-700 font-medium ml-2">누적 획득 횟수</Text>
+                          <Text
+                            className="text-amber-700 ml-2"
+                            style={{ fontFamily: 'Pretendard-Medium' }}
+                          >
+                            누적 획득 횟수
+                          </Text>
                         </View>
-                        <Text className="text-2xl font-bold text-amber-600">{repeatCount}회</Text>
+                        <Text
+                          className="text-2xl text-amber-600"
+                          style={{ fontFamily: 'Pretendard-Bold' }}
+                        >
+                          {repeatCount}회
+                        </Text>
                       </View>
                     </View>
                   )}
                 </View>
               ) : (
-                <View className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-4">
+                <View className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-4">
                   <View className="flex-row items-start mb-2">
                     <Lock size={20} color="#d97706" style={{ marginTop: 2 }} />
                     <View className="flex-1 ml-2">
-                      <Text className="text-amber-700 font-semibold mb-1">
+                      <Text
+                        className="text-amber-700 mb-1"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
                         {hintLevel === 'hidden' ? '비밀 배지' : '잠금 해제 조건'}
                       </Text>
                       {hintLevel === 'hidden' ? (
-                        <Text className="text-gray-500 italic">{crypticHint || '???'}</Text>
+                        <Text
+                          className="text-gray-500 italic"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {crypticHint || '???'}
+                        </Text>
                       ) : hintLevel === 'cryptic' ? (
-                        <Text className="text-gray-500 italic">"{crypticHint}"</Text>
+                        <Text
+                          className="text-gray-500 italic"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          "{crypticHint}"
+                        </Text>
                       ) : (
-                        <Text className="text-gray-700">{formattedCondition}</Text>
+                        <Text
+                          className="text-gray-700"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {formattedCondition}
+                        </Text>
                       )}
                     </View>
                   </View>
@@ -220,11 +289,17 @@ function BadgeDetailModal({
                       <View className="flex-row items-center justify-between mb-2">
                         <View className="flex-row items-center">
                           <Zap size={14} color="#667eea" />
-                          <Text className="text-gray-500 text-sm ml-1">
+                          <Text
+                            className="text-gray-500 text-sm ml-1"
+                            style={{ fontFamily: 'Pretendard-Regular' }}
+                          >
                             {getProgressMessage(progress.current, progress.target)}
                           </Text>
                         </View>
-                        <Text className="font-mono font-semibold text-gray-900">
+                        <Text
+                          className="text-gray-900"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
                           {progress.current} / {progress.target}
                         </Text>
                       </View>
@@ -240,16 +315,27 @@ function BadgeDetailModal({
               )}
 
               {/* XP Reward - Larger style like web */}
-              <View className="bg-primary/10 border-2 border-primary/20 rounded-xl p-4">
+              <View className="bg-primary/10 border-2 border-primary/20 rounded-2xl p-4">
                 <View className="flex-row items-center justify-center mb-1">
                   <Zap size={20} color="#667eea" />
-                  <Text className="text-gray-500 text-sm font-medium ml-2">획득 보상</Text>
+                  <Text
+                    className="text-gray-500 text-sm ml-2"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    획득 보상
+                  </Text>
                 </View>
-                <Text className="text-4xl font-bold text-primary text-center">
+                <Text
+                  className="text-4xl text-primary text-center"
+                  style={{ fontFamily: 'Pretendard-Bold' }}
+                >
                   +{badge.xp_reward.toLocaleString()} XP
                 </Text>
                 {badge.repeatable && (
-                  <Text className="text-xs text-primary/70 text-center mt-2">
+                  <Text
+                    className="text-xs text-primary/70 text-center mt-2"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
                     반복 획득 가능 (매회 동일 보상)
                   </Text>
                 )}
@@ -301,31 +387,67 @@ export default function BadgeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView
-        className="flex-1"
+        className="flex-1 px-5 pt-5"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
-        <View className="px-4 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-gray-900">뱃지</Text>
-          <Text className="text-sm text-gray-500 mt-1">
+        {/* Header - Center Aligned */}
+        <View className="items-center mb-5">
+          <Text
+            className="text-3xl text-gray-900"
+            style={{ fontFamily: 'Pretendard-Bold' }}
+          >
+            뱃지
+          </Text>
+          <Text
+            className="text-base text-gray-500 mt-1"
+            style={{ fontFamily: 'Pretendard-Regular' }}
+          >
             다양한 도전을 완료하고 뱃지를 수집하세요
           </Text>
         </View>
 
         {/* Summary Card */}
-        <View className="mx-4 mb-4 bg-gradient-to-r from-primary to-purple-500 rounded-2xl p-4">
+        <View
+          className="mb-5 bg-gradient-to-r from-primary to-purple-500 rounded-3xl p-5"
+          style={{
+            backgroundColor: '#667eea',
+            shadowColor: '#667eea',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 16,
+            elevation: 5,
+          }}
+        >
           <View className="flex-row items-center justify-between">
             <View>
-              <Text className="text-white/80 text-sm">수집한 뱃지</Text>
-              <Text className="text-white text-3xl font-bold">
+              <Text
+                className="text-white/80 text-sm"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                수집한 뱃지
+              </Text>
+              <Text
+                className="text-white text-3xl"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
                 {unlockedCount}
-                <Text className="text-lg font-normal text-white/70">/{totalBadges}</Text>
+                <Text
+                  className="text-lg text-white/70"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  /{totalBadges}
+                </Text>
               </Text>
             </View>
             <View className="w-20 h-20 bg-white/20 rounded-full items-center justify-center">
-              <Text className="text-white text-2xl font-bold">{unlockedPercentage}%</Text>
+              <Text
+                className="text-white text-2xl"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
+                {unlockedPercentage}%
+              </Text>
             </View>
           </View>
 
@@ -342,19 +464,28 @@ export default function BadgeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="px-4 mb-4"
+          className="mb-5"
+          style={{ marginHorizontal: -20, paddingHorizontal: 20 }}
         >
           <View className="flex-row gap-2">
             <Pressable
-              className={`px-4 py-2 rounded-full ${
-                !selectedCategory ? 'bg-primary' : 'bg-white'
+              className={`px-4 py-2.5 rounded-xl ${
+                !selectedCategory ? 'bg-gray-900' : 'bg-white'
               }`}
               onPress={() => setSelectedCategory(null)}
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.04,
+                shadowRadius: 4,
+                elevation: 1,
+              }}
             >
               <Text
-                className={`text-sm font-medium ${
+                className={`text-sm ${
                   !selectedCategory ? 'text-white' : 'text-gray-700'
                 }`}
+                style={{ fontFamily: 'Pretendard-Medium' }}
               >
                 전체
               </Text>
@@ -362,15 +493,23 @@ export default function BadgeScreen() {
             {Object.values(BADGE_CATEGORIES).map(cat => (
               <Pressable
                 key={cat.id}
-                className={`px-4 py-2 rounded-full ${
-                  selectedCategory === cat.id ? 'bg-primary' : 'bg-white'
+                className={`px-4 py-2.5 rounded-xl ${
+                  selectedCategory === cat.id ? 'bg-gray-900' : 'bg-white'
                 }`}
                 onPress={() => setSelectedCategory(cat.id)}
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.04,
+                  shadowRadius: 4,
+                  elevation: 1,
+                }}
               >
                 <Text
-                  className={`text-sm font-medium ${
+                  className={`text-sm ${
                     selectedCategory === cat.id ? 'text-white' : 'text-gray-700'
                   }`}
+                  style={{ fontFamily: 'Pretendard-Medium' }}
                 >
                   {cat.icon} {cat.name}
                 </Text>
@@ -386,18 +525,24 @@ export default function BadgeScreen() {
 
           return (
             <View key={categoryId} className="mb-6">
-              <View className="flex-row items-center px-4 mb-3">
+              <View className="flex-row items-center mb-3">
                 <Text className="text-lg">{category.icon}</Text>
-                <Text className="text-lg font-semibold text-gray-900 ml-2">
+                <Text
+                  className="text-lg text-gray-900 ml-2"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
                   {category.name}
                 </Text>
-                <Text className="text-sm text-gray-400 ml-2">
+                <Text
+                  className="text-sm text-gray-400 ml-2"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
                   {categoryBadges.filter(b => isBadgeUnlocked(b.id, userBadges)).length}/
                   {categoryBadges.length}
                 </Text>
               </View>
 
-              <View className="flex-row flex-wrap gap-2 px-4">
+              <View className="flex-row flex-wrap gap-2">
                 {categoryBadges.map(badge => (
                   <BadgeCard
                     key={badge.id}

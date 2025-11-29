@@ -14,6 +14,8 @@ import {
   KeyboardAvoidingView,
 } from 'react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
 // SafeAreaView removed - Header component handles safe area
 import {
   LogOut,
@@ -291,12 +293,29 @@ export default function SettingsScreen() {
             {user?.created_at && (
               <>
                 <Text className="text-gray-300 mx-2">·</Text>
-                <Text
-                  className="text-sm text-gray-500"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
+                <MaskedView
+                  maskElement={
+                    <Text
+                      className="text-sm"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      함께한 지 {Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))}일째
+                    </Text>
+                  }
                 >
-                  함께한 지 {Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))}일째
-                </Text>
+                  <LinearGradient
+                    colors={['#667eea', '#9333ea']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text
+                      className="text-sm opacity-0"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      함께한 지 {Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))}일째
+                    </Text>
+                  </LinearGradient>
+                </MaskedView>
               </>
             )}
           </View>
@@ -345,7 +364,7 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled}
                 onValueChange={handleToggleNotifications}
-                trackColor={{ false: '#d1d5db', true: '#18181b' }}
+                trackColor={{ false: '#d1d5db', true: '#667eea' }}
                 thumbColor="white"
               />
             )}
@@ -373,7 +392,7 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled && reminderEnabled}
                 onValueChange={(value) => { toggleReminder(value) }}
-                trackColor={{ false: '#d1d5db', true: '#18181b' }}
+                trackColor={{ false: '#d1d5db', true: '#667eea' }}
                 thumbColor="white"
                 disabled={!notificationsEnabled || notificationLoading}
               />
@@ -424,7 +443,7 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled && customMessageEnabled}
                 onValueChange={(value) => { toggleCustomMessage(value) }}
-                trackColor={{ false: '#d1d5db', true: '#18181b' }}
+                trackColor={{ false: '#d1d5db', true: '#667eea' }}
                 thumbColor="white"
                 disabled={!notificationsEnabled || notificationLoading}
               />
@@ -557,12 +576,12 @@ export default function SettingsScreen() {
           disabled={loading || isSigningOut}
         >
           {isSigningOut ? (
-            <ActivityIndicator size="small" color="#ef4444" />
+            <ActivityIndicator size="small" color="#9ca3af" />
           ) : (
-            <LogOut size={22} color="#ef4444" />
+            <LogOut size={22} color="#9ca3af" />
           )}
           <Text
-            className="ml-3 text-base text-red-500"
+            className="ml-3 text-base text-gray-400"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
             로그아웃
@@ -573,15 +592,15 @@ export default function SettingsScreen() {
         <View className="items-center pb-8">
           <Text
             className="text-xs text-gray-400"
-            style={{ fontFamily: 'Pretendard-Regular' }}
+            style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            {APP_NAME} for Mobile
+            목표를 실천으로, {APP_NAME}
           </Text>
           <Text
-            className="text-xs text-gray-400 mt-1"
+            className="text-xs text-gray-300 mt-1"
             style={{ fontFamily: 'Pretendard-Regular' }}
           >
-            Made with ❤️ using React Native
+            © 2025 {APP_NAME}
           </Text>
         </View>
       </ScrollView>

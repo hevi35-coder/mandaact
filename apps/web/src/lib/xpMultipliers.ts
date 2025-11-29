@@ -21,13 +21,14 @@ export interface XPMultiplier {
 
 /**
  * Get all active XP multipliers for a user
+ * @param targetDate - The date for which to check multipliers (e.g., for weekend bonus). Defaults to today.
  */
-export async function getActiveMultipliers(userId: string): Promise<XPMultiplier[]> {
+export async function getActiveMultipliers(userId: string, targetDate?: Date): Promise<XPMultiplier[]> {
   const multipliers: XPMultiplier[] = []
 
-  // 1. Weekend bonus (always check, no duration)
-  const today = new Date()
-  const dayOfWeek = today.getDay()
+  // 1. Weekend bonus - check the target date, not today
+  const dateToCheck = targetDate || new Date()
+  const dayOfWeek = dateToCheck.getDay()
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
 
   if (isWeekend) {

@@ -71,7 +71,7 @@ export interface XPService {
   getStreakStats: (userId: string) => Promise<StreakStats>
 
   // Multiplier functions
-  getActiveMultipliers: (userId: string) => Promise<XPMultiplier[]>
+  getActiveMultipliers: (userId: string, targetDate?: Date) => Promise<XPMultiplier[]>
   calculateTotalMultiplier: (multipliers: XPMultiplier[]) => number
 
   // Bonus functions
@@ -83,7 +83,7 @@ export interface XPService {
   checkComebackBonus: (userId: string) => Promise<boolean>
 
   // Combined award function
-  awardXP: (userId: string, baseXP?: number) => Promise<AwardXPResult>
+  awardXP: (userId: string, baseXP?: number, targetDate?: Date) => Promise<AwardXPResult>
 }
 
 // ============================================================================
@@ -283,13 +283,14 @@ export function createXPService(supabase: SupabaseClient): XPService {
 
   /**
    * Get active XP multipliers for a user
+   * @param targetDate - The date for which to check multipliers (e.g., for weekend bonus). Defaults to today.
    */
-  async function getActiveMultipliers(userId: string): Promise<XPMultiplier[]> {
+  async function getActiveMultipliers(userId: string, targetDate?: Date): Promise<XPMultiplier[]> {
     const multipliers: XPMultiplier[] = []
 
-    // 1. Weekend bonus (always check, no DB query needed)
-    const today = new Date()
-    const dayOfWeek = today.getDay()
+    // 1. Weekend bonus - check the target date, not today
+    const dateToCheck = targetDate || new Date()
+    const dayOfWeek = dateToCheck.getDay()
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
 
     if (isWeekend) {
@@ -532,8 +533,9 @@ export function createXPService(supabase: SupabaseClient): XPService {
   /**
    * Award XP with streak bonus and multipliers
    * Also checks and activates level milestone bonus on level up
+   * @param targetDate - The date for which XP is being awarded (affects weekend bonus). Defaults to today.
    */
-  async function awardXP(userId: string, baseXP: number = 10): Promise<AwardXPResult> {
+  async function awardXP(userId: string, baseXP: number = 10, targetDate?: Date): Promise<AwardXPResult> {
     // Check comeback bonus first (before awarding XP)
     await checkComebackBonus(userId)
 
@@ -542,8 +544,8 @@ export function createXPService(supabase: SupabaseClient): XPService {
     const streakBonus = streakStats.current >= 7 ? 5 : 0
     const subtotalXP = baseXP + streakBonus
 
-    // Apply multipliers
-    const multipliers = await getActiveMultipliers(userId)
+    // Apply multipliers (pass targetDate for weekend bonus calculation)
+    const multipliers = await getActiveMultipliers(userId, targetDate)
     const totalMultiplier = calculateTotalMultiplier(multipliers)
     const finalXP = Math.floor(subtotalXP * totalMultiplier)
 

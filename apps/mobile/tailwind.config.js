@@ -7,6 +7,29 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      fontFamily: {
+        // Pretendard font family
+        pretendard: ['Pretendard-Regular'],
+        'pretendard-medium': ['Pretendard-Medium'],
+        'pretendard-semibold': ['Pretendard-SemiBold'],
+        'pretendard-bold': ['Pretendard-Bold'],
+      },
+      fontSize: {
+        // Custom typography scale for better readability
+        // Minimum size is 12px (xs) for accessibility
+        'xs': ['12px', { lineHeight: '16px' }],
+        'sm': ['14px', { lineHeight: '20px' }],
+        'base': ['16px', { lineHeight: '24px' }],
+        'lg': ['18px', { lineHeight: '28px' }],
+        'xl': ['20px', { lineHeight: '28px' }],
+        '2xl': ['24px', { lineHeight: '32px' }],
+        '3xl': ['30px', { lineHeight: '36px' }],
+        '4xl': ['36px', { lineHeight: '40px' }],
+      },
+      borderRadius: {
+        '3xl': '24px',
+        '4xl': '32px',
+      },
       colors: {
         // Primary - match web (dark theme)
         primary: {

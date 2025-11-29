@@ -656,49 +656,47 @@ export async function getPerfectDaysCount(userId: string): Promise<number> {
 
 /**
  * Level calculation from XP
- * Hybrid logarithmic curve for balanced progression:
- * - Levels 1-2: Fast start (quadratic, same as before)
- * - Levels 3-5: Medium progression (power 1.7)
- * - Levels 6+: Smooth growth (logarithmic)
+ * Linear progression with +50 XP increase per level:
+ * - Level 1→2: 100 XP
+ * - Level 2→3: 150 XP (+50)
+ * - Level 3→4: 200 XP (+50)
+ * - ...and so on
+ *
+ * Formula: Total XP for level n = 25*n² + 25*n - 50 (for n >= 2)
  */
 export function calculateLevelFromXP(totalXP: number): number {
   if (totalXP < 100) {
-    // Level 1
     return 1
-  } else if (totalXP < 400) {
-    // Level 2: Keep fast initial progression
-    return 2
-  } else if (totalXP < 2500) {
-    // Levels 3-5: Medium progression (power 1.7)
-    // Adjusted XP = totalXP - 400 (starting from level 3)
-    const adjustedXP = totalXP - 400
-    return Math.floor(Math.pow(adjustedXP / 100, 1 / 1.7)) + 3
-  } else {
-    // Levels 6+: Logarithmic progression for smooth late game
-    // Adjusted XP = totalXP - 2500 (starting from level 6)
-    const adjustedXP = totalXP - 2500
-    return Math.floor(Math.log(adjustedXP / 150 + 1) * 8) + 6
   }
+  // Quadratic formula to find level from XP
+  // 25*level² + 25*level - (XP + 50) = 0
+  // level = (-25 + sqrt(5625 + 100*XP)) / 50
+  const level = (-25 + Math.sqrt(5625 + 100 * totalXP)) / 50
+  return Math.floor(level)
 }
 
 /**
- * Calculate XP needed for next level
- * Inverse of the hybrid level formula
+ * Calculate XP threshold to reach a specific level
+ * This is the minimum XP required to BE at that level
+ *
+ * Level thresholds:
+ * - Level 1: 0 XP
+ * - Level 2: 100 XP (need 100)
+ * - Level 3: 250 XP (need 150)
+ * - Level 4: 450 XP (need 200)
+ * - Level 5: 700 XP (need 250)
+ * - Level 6: 1,000 XP (need 300)
+ * - Level 7: 1,350 XP (need 350)
+ * - Level 8: 1,750 XP (need 400)
+ * - Level 9: 2,200 XP (need 450)
+ * - Level 10: 2,700 XP (need 500)
  */
-export function getXPForNextLevel(currentLevel: number): number {
-  if (currentLevel <= 0) {
-    return 0 // Level 0 starts at 0 XP
-  } else if (currentLevel === 1) {
-    return 100
-  } else if (currentLevel === 2) {
-    return 400
-  } else if (currentLevel <= 5) {
-    // Power 1.7 inverse: XP = (level - 3)^1.7 * 100 + 400
-    return Math.floor(Math.pow(currentLevel - 3, 1.7) * 100) + 400
-  } else {
-    // Logarithmic inverse: XP = (e^((level - 6) / 8) - 1) * 150 + 2500
-    return Math.floor((Math.exp((currentLevel - 6) / 8) - 1) * 150) + 2500
+export function getXPForNextLevel(level: number): number {
+  if (level <= 1) {
+    return 0 // Level 1 starts at 0 XP
   }
+  // Formula: 25*n² + 25*n - 50
+  return 25 * level * level + 25 * level - 50
 }
 
 /**
@@ -712,8 +710,8 @@ export function getXPProgress(totalXP: number): {
   progressPercentage: number
 } {
   const currentLevel = calculateLevelFromXP(totalXP)
-  const currentLevelXP = getXPForNextLevel(currentLevel - 1)
-  const nextLevelXP = getXPForNextLevel(currentLevel)
+  const currentLevelXP = getXPForNextLevel(currentLevel)
+  const nextLevelXP = getXPForNextLevel(currentLevel + 1)
   const progressXP = totalXP - currentLevelXP
   const neededXP = nextLevelXP - currentLevelXP
   const progressPercentage = Math.round((progressXP / neededXP) * 100)

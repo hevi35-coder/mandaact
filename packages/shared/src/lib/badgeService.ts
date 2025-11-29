@@ -182,6 +182,12 @@ export function createBadgeService(supabase: SupabaseClient): BadgeService {
     achievementId: string,
     xpReward: number
   ): Promise<boolean> {
+    // Validate inputs
+    if (!userId || !achievementId) {
+      console.error('unlockAchievement: Missing userId or achievementId', { userId, achievementId })
+      return false
+    }
+
     try {
       // Insert into user_achievements
       const { error: insertError } = await supabase
@@ -260,6 +266,12 @@ export function createBadgeService(supabase: SupabaseClient): BadgeService {
 
       // Evaluate each badge using JavaScript logic (same as web)
       for (const badge of allBadges) {
+        // Skip if badge has no id or unlock_condition
+        if (!badge.id || !badge.unlock_condition) {
+          console.warn('Skipping badge with missing id or unlock_condition:', badge)
+          continue
+        }
+
         // Skip if already unlocked and not repeatable
         if (unlockedBadgeIds.has(badge.id) && !badge.is_repeatable) {
           continue

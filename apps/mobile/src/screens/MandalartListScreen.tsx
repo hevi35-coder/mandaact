@@ -160,7 +160,7 @@ export default function MandalartListScreen() {
           {/* 새로 만들기 버튼 - 웹과 동일하게 타이틀 아래 배치 */}
           <Pressable
             onPress={handleCreateNew}
-            className="flex-row items-center justify-center py-4 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+            className="rounded-2xl overflow-hidden"
             style={{
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },
@@ -169,13 +169,44 @@ export default function MandalartListScreen() {
               elevation: 2,
             }}
           >
-            <Plus size={18} color="#667eea" />
-            <Text
-              className="text-primary text-base ml-2"
-              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            <LinearGradient
+              colors={['#667eea', '#9333ea']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ padding: 1, borderRadius: 16 }}
             >
-              새로 만들기
-            </Text>
+              <View className="bg-white rounded-2xl py-4 items-center justify-center">
+                <MaskedView
+                  maskElement={
+                    <View className="flex-row items-center">
+                      <Plus size={18} color="#000" />
+                      <Text
+                        className="text-base ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        새로 만들기
+                      </Text>
+                    </View>
+                  }
+                >
+                  <LinearGradient
+                    colors={['#667eea', '#9333ea']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <View className="flex-row items-center opacity-0">
+                      <Plus size={18} color="#000" />
+                      <Text
+                        className="text-base ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        새로 만들기
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </MaskedView>
+              </View>
+            </LinearGradient>
           </Pressable>
         </View>
 
@@ -328,17 +359,27 @@ export default function MandalartListScreen() {
                       </Text>
                     </View>
 
-                    {/* Toggle Switch Only */}
-                    <View className="pt-0.5">
+                    {/* Toggle Switch with Status Label */}
+                    <View className="items-center pt-0.5">
                       {togglingIds.has(mandalart.id) ? (
                         <ActivityIndicator size="small" color="#374151" />
                       ) : (
-                        <Switch
-                          value={mandalart.is_active}
-                          onValueChange={() => handleToggleActive(mandalart)}
-                          trackColor={{ false: '#d1d5db', true: '#18181b' }}
-                          thumbColor="white"
-                        />
+                        <>
+                          <Switch
+                            value={mandalart.is_active}
+                            onValueChange={() => handleToggleActive(mandalart)}
+                            trackColor={{ false: '#d1d5db', true: '#667eea' }}
+                            thumbColor="white"
+                          />
+                          <Text
+                            className={`text-xs mt-1 ${
+                              mandalart.is_active ? 'text-indigo-500' : 'text-gray-400'
+                            }`}
+                            style={{ fontFamily: 'Pretendard-Medium' }}
+                          >
+                            {mandalart.is_active ? '활성' : '비활성'}
+                          </Text>
+                        </>
                       )}
                     </View>
                   </View>

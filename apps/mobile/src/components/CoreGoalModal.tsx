@@ -9,6 +9,8 @@ import {
   Platform,
 } from 'react-native'
 import { X, Check } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
 
 interface CoreGoalModalProps {
   visible: boolean
@@ -71,10 +73,36 @@ export default function CoreGoalModal({
               </View>
               <Pressable
                 onPress={handleSave}
-                className="bg-primary px-4 py-2 rounded-lg flex-row items-center"
+                className="rounded-lg overflow-hidden"
               >
-                <Check size={18} color="white" />
-                <Text className="text-white font-semibold ml-1">완료</Text>
+                <LinearGradient
+                  colors={['#667eea', '#9333ea']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ padding: 1, borderRadius: 8 }}
+                >
+                  <View className="bg-white rounded-lg px-4 py-2 flex-row items-center justify-center">
+                    <MaskedView
+                      maskElement={
+                        <View className="flex-row items-center">
+                          <Check size={18} color="#000" />
+                          <Text className="font-semibold ml-1">완료</Text>
+                        </View>
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#667eea', '#9333ea']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <View className="flex-row items-center opacity-0">
+                          <Check size={18} color="#000" />
+                          <Text className="font-semibold ml-1">완료</Text>
+                        </View>
+                      </LinearGradient>
+                    </MaskedView>
+                  </View>
+                </LinearGradient>
               </Pressable>
             </View>
 

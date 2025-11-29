@@ -488,11 +488,23 @@ export default function TodayScreen() {
                 onPress={handleToday}
                 className="px-4 py-2 border-r border-gray-300 active:bg-gray-100"
               >
-                <Text
-                  className={`text-sm font-medium ${isToday ? 'text-blue-600' : 'text-gray-700'}`}
-                >
-                  오늘
-                </Text>
+                {isToday ? (
+                  <MaskedView
+                    maskElement={
+                      <Text className="text-sm font-medium">오늘</Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#667eea', '#9333ea']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Text className="text-sm font-medium opacity-0">오늘</Text>
+                    </LinearGradient>
+                  </MaskedView>
+                ) : (
+                  <Text className="text-sm font-medium text-gray-700">오늘</Text>
+                )}
               </Pressable>
               <Pressable
                 onPress={handleNextDay}
@@ -507,10 +519,38 @@ export default function TodayScreen() {
               onPress={() => setDatePickerVisible(true)}
               className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-2 active:bg-gray-50"
             >
-              <Calendar size={16} color="#6b7280" />
-              <Text className="text-sm text-gray-700 ml-2">
-                {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
-              </Text>
+              {isToday ? (
+                <MaskedView
+                  maskElement={
+                    <View className="flex-row items-center">
+                      <Calendar size={16} color="#000" />
+                      <Text className="text-sm ml-2">
+                        {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                      </Text>
+                    </View>
+                  }
+                >
+                  <LinearGradient
+                    colors={['#667eea', '#9333ea']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <View className="flex-row items-center opacity-0">
+                      <Calendar size={16} color="#000" />
+                      <Text className="text-sm ml-2">
+                        {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </MaskedView>
+              ) : (
+                <>
+                  <Calendar size={16} color="#6b7280" />
+                  <Text className="text-sm text-gray-700 ml-2">
+                    {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                  </Text>
+                </>
+              )}
             </Pressable>
           </View>
         </View>
@@ -546,9 +586,16 @@ export default function TodayScreen() {
             <View className="h-3 bg-gray-200 rounded-full overflow-hidden">
               <Animated.View
                 entering={FadeInUp.delay(300).duration(300)}
-                className="h-full bg-gray-900 rounded-full"
+                className="h-full rounded-full overflow-hidden"
                 style={{ width: `${progressPercentage}%` }}
-              />
+              >
+                <LinearGradient
+                  colors={['#667eea', '#9333ea']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ flex: 1 }}
+                />
+              </Animated.View>
             </View>
 
             {/* Info Text */}

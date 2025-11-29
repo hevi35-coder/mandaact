@@ -1,0 +1,23 @@
+{
+  // 터미널 한글 지원 설정
+  "terminal.integrated.fontFamily": "D2Coding, 'Noto Sans Mono CJK KR', 'Sarasa Mono K', Menlo, Monaco, 'Courier New', monospace",
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.lineHeight": 1.2,
+
+  // 터미널 환경 변수 설정
+  "terminal.integrated.env.osx": {
+    "LANG": "ko_KR.UTF-8",
+    "LC_ALL": "ko_KR.UTF-8"
+  },
+
+  // 터미널 유니코드 지원
+  "terminal.integrated.unicode.version": "11",
+
+  // 파일 인코딩 설정
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": false,
+
+  // Git 한글 설정을 위한 추가 설정
+  "git.enabled": true,
+  "git.autorefresh": true
+}

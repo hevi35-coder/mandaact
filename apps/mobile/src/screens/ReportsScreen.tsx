@@ -21,7 +21,6 @@ import {
   ChevronUp,
   Sparkles,
   TrendingUp,
-  AlertCircle,
 } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
@@ -122,7 +121,7 @@ function ReportCard({
       <View className="p-5 border-b border-gray-100">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <Icon size={22} color="#667eea" />
+            <Icon size={22} color="#6b7280" />
             <Text
               className="text-lg text-gray-900"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
@@ -489,8 +488,10 @@ export default function ReportsScreen() {
 
   const isGenerating = generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending
 
-  // No reports state
-  if (!weeklyLoading && !diagnosisLoading && !weeklyReport && !diagnosis) {
+  // True empty state - no mandalarts AND no existing reports/diagnosis
+  const showEmptyState = !weeklyLoading && !diagnosisLoading && !weeklyReport && !diagnosis && !hasMandalarts
+
+  if (showEmptyState) {
     return (
       <View className="flex-1 bg-gray-50">
         <Header />
@@ -566,7 +567,7 @@ export default function ReportsScreen() {
             <Pressable
               onPress={handleGenerateAll}
               disabled={isGenerating}
-              className="flex-row items-center justify-center py-4 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+              className="rounded-2xl overflow-hidden"
               style={{
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
@@ -575,17 +576,56 @@ export default function ReportsScreen() {
                 elevation: 2,
               }}
             >
-              {isGenerating ? (
-                <ActivityIndicator size="small" color="#667eea" />
-              ) : (
-                <Sparkles size={18} color="#667eea" />
-              )}
-              <Text
-                className="text-primary text-base ml-2"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              <LinearGradient
+                colors={['#667eea', '#9333ea']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ padding: 1, borderRadius: 16 }}
               >
-                {isGenerating ? '생성 중...' : '새로 생성하기'}
-              </Text>
+                <View className="bg-white rounded-2xl py-4 items-center justify-center">
+                  {isGenerating ? (
+                    <View className="flex-row items-center">
+                      <ActivityIndicator size="small" color="#667eea" />
+                      <Text
+                        className="text-primary text-base ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        생성 중...
+                      </Text>
+                    </View>
+                  ) : (
+                    <MaskedView
+                      maskElement={
+                        <View className="flex-row items-center">
+                          <Sparkles size={18} color="#000" />
+                          <Text
+                            className="text-base ml-2"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            새로 생성하기
+                          </Text>
+                        </View>
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#667eea', '#9333ea']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <View className="flex-row items-center opacity-0">
+                          <Sparkles size={18} color="#000" />
+                          <Text
+                            className="text-base ml-2"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            새로 생성하기
+                          </Text>
+                        </View>
+                      </LinearGradient>
+                    </MaskedView>
+                  )}
+                </View>
+              </LinearGradient>
             </Pressable>
           )}
         </View>
@@ -593,7 +633,8 @@ export default function ReportsScreen() {
         <View>
           {/* Goal Diagnosis Card - First (목표 설정) */}
           <Animated.View entering={FadeInUp.duration(400)}>
-            {hasMandalarts ? (
+            {/* Case 1: Has mandalarts - show normal ReportCard */}
+            {hasMandalarts && (
               <ReportCard
                 title="목표 진단"
                 subtitle="만다라트 계획 점검 및 개선 제안"
@@ -606,9 +647,63 @@ export default function ReportsScreen() {
                 isGenerating={generateDiagnosisMutation.isPending}
                 generatingText="새 진단 생성 중..."
               />
-            ) : (
+            )}
+
+            {/* Case 2: No mandalarts but has existing diagnosis - show existing diagnosis */}
+            {!hasMandalarts && diagnosis && (
+              <>
+                <ReportCard
+                  title="목표 진단"
+                  subtitle="만다라트 계획 점검 및 개선 제안"
+                  icon={Target}
+                  date={new Date(diagnosis.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                  summary={diagnosisSummary}
+                  isExpanded={isDiagnosisExpanded}
+                  onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
+                  isLoading={diagnosisLoading}
+                  isGenerating={false}
+                />
+                {/* Notice for new diagnosis */}
+                <View
+                  className="bg-white rounded-2xl p-4 mb-5 flex-row items-center border border-gray-100"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3">
+                    <Target size={20} color="#6b7280" />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className="text-sm text-gray-700"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      새 진단을 받으려면 만다라트를 생성하거나 활성화하세요
+                    </Text>
+                  </View>
+                  <Pressable
+                    className="px-3 py-1.5 bg-gray-900 rounded-lg"
+                    onPress={() => navigation.navigate('CreateMandalart')}
+                  >
+                    <Text
+                      className="text-xs text-white"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      생성
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            {/* Case 3: No mandalarts and no diagnosis - show "mandalart needed" card */}
+            {!hasMandalarts && !diagnosis && (
               <View
-                className="bg-white rounded-3xl p-8 items-center mb-5 border border-gray-100"
+                className="bg-white rounded-3xl p-6 items-center mb-5 border border-gray-100"
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
@@ -617,8 +712,8 @@ export default function ReportsScreen() {
                   elevation: 3,
                 }}
               >
-                <View className="w-16 h-16 bg-amber-50 rounded-full items-center justify-center mb-4">
-                  <AlertCircle size={32} color="#f59e0b" />
+                <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center mb-4">
+                  <Target size={28} color="#6b7280" />
                 </View>
                 <Text
                   className="text-lg text-gray-900 mb-2"
@@ -627,12 +722,61 @@ export default function ReportsScreen() {
                   만다라트 필요
                 </Text>
                 <Text
-                  className="text-sm text-gray-500 text-center"
+                  className="text-sm text-gray-500 text-center mb-5"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  목표 진단을 받으려면{'\n'}
-                  먼저 만다라트를 생성해주세요
+                  목표 진단을 받으려면{'\n'}만다라트를 생성하거나 활성화해주세요
                 </Text>
+                <View className="flex-row gap-3 w-full">
+                  <Pressable
+                    className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
+                    onPress={() => navigation.navigate('Tutorial')}
+                  >
+                    <Text
+                      className="text-sm text-gray-700 text-center"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      사용 가이드
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    className="flex-1 rounded-xl overflow-hidden"
+                    onPress={() => navigation.navigate('CreateMandalart')}
+                  >
+                    <LinearGradient
+                      colors={['#667eea', '#9333ea']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ padding: 1, borderRadius: 12 }}
+                    >
+                      <View className="bg-white rounded-xl py-3 items-center justify-center">
+                        <MaskedView
+                          maskElement={
+                            <Text
+                              className="text-sm text-center"
+                              style={{ fontFamily: 'Pretendard-SemiBold' }}
+                            >
+                              만다라트 생성
+                            </Text>
+                          }
+                        >
+                          <LinearGradient
+                            colors={['#667eea', '#9333ea']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                          >
+                            <Text
+                              className="text-sm opacity-0"
+                              style={{ fontFamily: 'Pretendard-SemiBold' }}
+                            >
+                              만다라트 생성
+                            </Text>
+                          </LinearGradient>
+                        </MaskedView>
+                      </View>
+                    </LinearGradient>
+                  </Pressable>
+                </View>
               </View>
             )}
           </Animated.View>
