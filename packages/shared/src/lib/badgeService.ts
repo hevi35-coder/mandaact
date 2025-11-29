@@ -9,14 +9,17 @@
 import type { Achievement, AchievementUnlockCondition } from '../types'
 
 // Type definitions for Supabase client (simplified)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyResult = any
+
 interface SupabaseClient {
   from: (table: string) => {
-    select: (columns?: string, options?: { count?: 'exact'; head?: boolean }) => any
-    insert: (data: any) => any
-    update: (data: any) => any
-    delete: () => any
+    select: (columns?: string, options?: { count?: 'exact'; head?: boolean }) => AnyResult
+    insert: (data: AnyResult) => AnyResult
+    update: (data: AnyResult) => AnyResult
+    delete: () => AnyResult
   }
-  rpc: (fn: string, params?: any) => Promise<{ data: any; error: any }>
+  rpc: (fn: string, params?: AnyResult) => Promise<{ data: AnyResult; error: AnyResult }>
 }
 
 // ============================================================================
@@ -88,7 +91,7 @@ export function createBadgeService(supabase: SupabaseClient): BadgeService {
 
       case 'streak': {
         // Get streak stats from user_levels or calculate
-        const { data: streakData, error } = await supabase
+        const { error } = await supabase
           .from('user_levels')
           .select('user_id')
           .eq('user_id', userId)

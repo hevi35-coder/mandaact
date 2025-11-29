@@ -25,12 +25,9 @@ import {
   type MissionPeriodCycle,
   suggestActionType,
   getActionTypeLabel,
-  getRoutineFrequencyLabel,
-  getPeriodCycleLabel,
   getWeekdayNames,
   getInitialPeriod,
 } from '@mandaact/shared'
-import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 
 export interface ActionTypeData {
@@ -103,7 +100,7 @@ const PERIOD_CYCLE_OPTIONS: { value: MissionPeriodCycle; label: string }[] = [
 
 export default function ActionTypeSelector({
   visible,
-  actionId,
+  actionId: _actionId,
   actionTitle,
   initialData,
   onClose,

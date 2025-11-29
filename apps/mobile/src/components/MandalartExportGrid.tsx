@@ -85,7 +85,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   textShadowRadius: 2,
                 }}
                 numberOfLines={3}
-                // @ts-ignore - Android specific prop for word-based line breaking
+                // @ts-expect-error - Android specific prop for word-based line breaking
                 textBreakStrategy="balanced"
               >
                 {mandalart.center_goal}
@@ -119,7 +119,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                     lineHeight: fontSize.subGoal * 1.25,
                   }}
                   numberOfLines={3}
-                  // @ts-ignore - Android specific prop for word-based line breaking
+                  // @ts-expect-error - Android specific prop for word-based line breaking
                   textBreakStrategy="balanced"
                 >
                   {subGoal.title}
@@ -158,7 +158,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   lineHeight: fontSize.subGoal * 1.25,
                 }}
                 numberOfLines={3}
-                // @ts-ignore - Android specific prop for word-based line breaking
+                // @ts-expect-error - Android specific prop for word-based line breaking
                 textBreakStrategy="balanced"
               >
                 {subGoal.title}
@@ -195,7 +195,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   lineHeight: fontSize.action * 1.25,
                 }}
                 numberOfLines={3}
-                // @ts-ignore - Android specific prop for word-based line breaking
+                // @ts-expect-error - Android specific prop for word-based line breaking
                 textBreakStrategy="balanced"
               >
                 {action.title}

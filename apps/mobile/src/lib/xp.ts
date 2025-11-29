@@ -7,7 +7,8 @@ import { createXPService } from '@mandaact/shared'
 import { supabase } from './supabase'
 
 // Create XP service instance with mobile's supabase client
-export const xpService = createXPService(supabase as any)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const xpService = createXPService(supabase as unknown as Parameters<typeof createXPService>[0])
 
 // Re-export types for convenience
 export type {

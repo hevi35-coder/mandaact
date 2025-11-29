@@ -33,8 +33,6 @@ import {
   getActionTypeLabel,
   formatTypeDetails,
   suggestActionType,
-  getRoutineFrequencyLabel,
-  getPeriodCycleLabel,
   getWeekdayNames,
   getInitialPeriod,
   type Action,

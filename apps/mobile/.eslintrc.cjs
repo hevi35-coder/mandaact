@@ -1,20 +1,23 @@
 module.exports = {
   root: true,
-  env: { browser: true, es2020: true },
+  env: {
+    'react-native/react-native': true,
+    es2020: true
+  },
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  ignorePatterns: ['node_modules', '.expo', 'dist', '.eslintrc.cjs', 'babel.config.js', 'metro.config.js', 'tailwind.config.js'],
   parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh'],
+  plugins: ['react-native'],
   rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-require-imports': 'off', // Allow require() for React Native assets
+    'react-native/no-unused-styles': 'warn',
+    'react-native/split-platform-components': 'off',
+    'react-native/no-inline-styles': 'off', // NativeWind uses className, not inline styles
   },
   overrides: [
     {

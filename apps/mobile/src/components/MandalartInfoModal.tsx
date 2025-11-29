@@ -39,8 +39,6 @@ export default function MandalartInfoModal({
     }
   }, [visible, mandalart])
 
-  if (!mandalart) return null
-
   const handleSave = useCallback(async () => {
     if (!mandalart) return
 
@@ -75,6 +73,8 @@ export default function MandalartInfoModal({
       setIsSaving(false)
     }
   }, [mandalart, title, centerGoal, toast, onSuccess, onClose])
+
+  if (!mandalart) return null
 
   return (
     <Modal

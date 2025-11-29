@@ -12,14 +12,12 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { useScrollToTop } from '../navigation/RootNavigator'
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
+import Animated, { FadeInUp } from 'react-native-reanimated'
 import { Header } from '../components'
 import {
   ChevronDown,
   ChevronRight,
-  ChevronLeft,
   Check,
-  Square,
   RotateCw,
   Target,
   Lightbulb,
@@ -130,7 +128,7 @@ export default function TodayScreen() {
     error,
     refetch,
   } = useTodayActions(user?.id, selectedDate)
-  const { data: dailyStats, refetch: refetchStats } = useDailyStats(user?.id)
+  const { data: _dailyStats, refetch: refetchStats } = useDailyStats(user?.id)
 
   // Mutations
   const toggleCheck = useToggleActionCheck()
@@ -388,16 +386,17 @@ export default function TodayScreen() {
           // Invalidate HomeScreen stats queries (streak, heatmap, profile stats)
           queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Extract error message from various error formats
         let errorMessage = 'Unknown error'
-        if (err?.message) {
-          errorMessage = err.message
-        } else if (err?.error?.message) {
-          errorMessage = err.error.message
-        } else if (err?.code) {
-          errorMessage = `Code: ${err.code}`
-        } else if (typeof err === 'object') {
+        const errObj = err as Record<string, unknown>
+        if (errObj?.message && typeof errObj.message === 'string') {
+          errorMessage = errObj.message
+        } else if (errObj?.error && typeof errObj.error === 'object' && (errObj.error as Record<string, unknown>)?.message) {
+          errorMessage = String((errObj.error as Record<string, unknown>).message)
+        } else if (errObj?.code) {
+          errorMessage = `Code: ${errObj.code}`
+        } else if (typeof err === 'object' && err !== null) {
           errorMessage = JSON.stringify(err, null, 2)
         }
         logger.error('Check toggle error', { error: errorMessage, actionId: action.id, fullError: err })

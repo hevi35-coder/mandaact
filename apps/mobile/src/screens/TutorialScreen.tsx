@@ -5,7 +5,6 @@ import {
   Pressable,
   Dimensions,
   ScrollView,
-  Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -177,7 +176,7 @@ export default function TutorialScreen() {
         showsHorizontalScrollIndicator={false}
         className="flex-1"
       >
-        {TUTORIAL_STEPS.map((step, index) => {
+        {TUTORIAL_STEPS.map((step, _index) => {
           const IconComponent = step.icon
           return (
             <View

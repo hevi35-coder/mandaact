@@ -217,7 +217,7 @@ export async function retryWithBackoff<T>(
 // Log error (for debugging and analytics)
 export function logError(error: unknown, context?: Record<string, unknown>): void {
   // Import logger lazily to avoid circular dependency at module load time
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const { logger } = require('./logger')
   logger.error('Application error', error, {
     ...context,

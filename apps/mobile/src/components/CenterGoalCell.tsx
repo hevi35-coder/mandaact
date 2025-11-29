@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { Text, Pressable, StyleSheet } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Plus } from 'lucide-react-native'
 

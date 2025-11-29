@@ -16,7 +16,6 @@ import Animated, { FadeInUp } from 'react-native-reanimated'
 import {
   FileText,
   Target,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
   Sparkles,

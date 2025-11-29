@@ -168,7 +168,7 @@ describe('MandalartGrid', () => {
 
   it('applies forDownload styling when forDownload is true', () => {
     const data = createTestData()
-    const { container } = render(<MandalartGrid mode="view" data={data} forDownload />)
+    render(<MandalartGrid mode="view" data={data} forDownload />)
 
     // Check for larger text sizes (download mode uses larger fonts)
     const centerGoal = screen.getByText('핵심 목표')
@@ -177,7 +177,7 @@ describe('MandalartGrid', () => {
 
   it('applies forMobile styling when forMobile is true', () => {
     const data = createTestData()
-    const { container } = render(<MandalartGrid mode="view" data={data} forMobile />)
+    render(<MandalartGrid mode="view" data={data} forMobile />)
 
     // Check for smaller text sizes (mobile mode uses text-lg for center goal)
     const centerGoal = screen.getByText('핵심 목표')

@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState, useMemo } from 'react'
+import React, { useRef, useCallback, useState } from 'react'
 import {
   View,
   Text,
@@ -48,8 +48,8 @@ interface SubGoalWithActions extends SubGoal {
   actions: Action[]
 }
 
-// Action type icon component
-function ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number }) {
+// Action type icon component (unused but kept for future use)
+function _ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number }) {
   switch (type) {
     case 'routine':
       return <RotateCw size={size} color="#3b82f6" />
@@ -158,7 +158,7 @@ export default function MandalartDetailScreen() {
   }, [])
 
   // Handle delete/deactivate success
-  const handleDeleteSuccess = useCallback(async (action: 'deactivate' | 'delete') => {
+  const handleDeleteSuccess = useCallback(async (_action: 'deactivate' | 'delete') => {
     await queryClient.invalidateQueries({ queryKey: mandalartKeys.all })
     navigation.goBack()
   }, [queryClient, navigation])

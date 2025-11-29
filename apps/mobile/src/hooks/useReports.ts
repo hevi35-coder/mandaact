@@ -127,7 +127,7 @@ export function useGenerateWeeklyReport() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ userId }: { userId: string; weekStart?: string }) => {
+    mutationFn: async ({ userId: _userId }: { userId: string; weekStart?: string }) => {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) {
         throw new Error('No active session')
@@ -211,7 +211,7 @@ export function useGenerateGoalDiagnosis() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (mandalartId: string) => {
+    mutationFn: async (_mandalartId: string) => {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) {
         throw new Error('No active session')

@@ -28,7 +28,6 @@ import {
   getActionTypeLabel,
   formatTypeDetails,
   getWeekdayNames,
-  getInitialPeriod,
   type ActionType,
   type RoutineFrequency,
   type MissionCompletionType,
@@ -133,7 +132,8 @@ function getTypeLabel(action: ActionData): string {
   }
 
   // Use formatTypeDetails for detailed display (e.g., "주1회", "매일", "1회 완료")
-  const details = formatTypeDetails(action as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const details = formatTypeDetails(action as unknown as Record<string, unknown>)
   if (details) return details
 
   return getActionTypeLabel(action.type)

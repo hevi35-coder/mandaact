@@ -8,16 +8,22 @@ import { format } from 'date-fns'
 import { utcToUserDate, getUserToday } from './timezone'
 
 // Type definitions for Supabase client (simplified)
-interface SupabaseClient {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyResult = any
+
+export interface SupabaseClientLike {
   from: (table: string) => {
-    select: (columns?: string) => any
-    insert: (data: any) => any
-    update: (data: any) => any
-    delete: () => any
-    upsert: (data: any) => any
+    select: (columns?: string) => AnyResult
+    insert: (data: AnyResult) => AnyResult
+    update: (data: AnyResult) => AnyResult
+    delete: () => AnyResult
+    upsert: (data: AnyResult) => AnyResult
   }
-  rpc: (fn: string, params?: any) => Promise<{ data: any; error: any }>
+  rpc: (fn: string, params?: AnyResult) => Promise<{ data: AnyResult; error: AnyResult }>
 }
+
+// Alias for backward compatibility
+type SupabaseClient = SupabaseClientLike
 
 // ============================================================================
 // Types

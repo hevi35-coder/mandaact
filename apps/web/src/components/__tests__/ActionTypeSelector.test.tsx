@@ -94,7 +94,7 @@ describe('ActionTypeSelector', () => {
   })
 
   it('allows selecting routine type and configuring daily frequency', async () => {
-    const user = userEvent.setup()
+    const _user = userEvent.setup()
 
     renderWithProviders(
       <ActionTypeSelector

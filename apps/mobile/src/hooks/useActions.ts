@@ -310,7 +310,7 @@ export function useToggleActionCheck() {
       userId,
       isChecked,
       checkId,
-      selectedDate,
+      selectedDate: _selectedDate,
       // For mission status update
       actionType,
       missionCompletionType,

@@ -19,14 +19,10 @@ import {
   MissionPeriodCycle,
   suggestActionType,
   getActionTypeLabel,
-  getRoutineFrequencyLabel,
-  getPeriodCycleLabel,
   getWeekdayNames,
   getInitialPeriod,
 } from '@/lib/actionTypes'
 import { getTypeIcon } from '@/lib/iconUtils'
-import { VALIDATION_MESSAGES } from '@/lib/notificationMessages'
-import { showWarning } from '@/lib/notificationUtils'
 
 // Constants for button selections
 const FREQUENCY_OPTIONS = [
@@ -95,7 +91,7 @@ function ActionTypeSelector({
   const [routineCountPerPeriod, setRoutineCountPerPeriod] = useState<number>(
     initialData?.routine_count_per_period || 1
   )
-  const [isCustomMonthlyCount, setIsCustomMonthlyCount] = useState(false)
+  const [_isCustomMonthlyCount, setIsCustomMonthlyCount] = useState(false)
 
   // Mission settings
   const [missionCompletionType, setMissionCompletionType] = useState<MissionCompletionType>(

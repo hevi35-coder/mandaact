@@ -2,9 +2,8 @@ import React, { createContext, useContext, useRef, useCallback } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { Home, CalendarCheck, Grid3X3, FileText, Settings } from 'lucide-react-native'
+import { Home, CalendarCheck, Grid3X3, FileText } from 'lucide-react-native'
 import { ScrollView } from 'react-native'
-import type { EventEmitter } from '@react-navigation/native'
 
 import { useAuthStore } from '../store/authStore'
 
@@ -82,7 +81,7 @@ function MainTabs() {
 
   // Listener for tab press - scroll to top if already on that tab
   const createTabPressListener = (tabName: string) => ({
-    tabPress: (e: { preventDefault: () => void; target?: string }) => {
+    tabPress: (_e: { preventDefault: () => void; target?: string }) => {
       // Scroll to top when pressing the current tab
       scrollToTop(tabName)
     },

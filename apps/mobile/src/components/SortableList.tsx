@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
-import { View, StyleSheet, LayoutChangeEvent } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import {
   GestureDetector,
   Gesture,
-  GestureHandlerRootView,
 } from 'react-native-gesture-handler'
 import Animated, {
   useSharedValue,
@@ -38,7 +37,7 @@ function DraggableItem({
   children,
   index,
   itemHeight,
-  itemCount,
+  itemCount: _itemCount,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -163,7 +162,7 @@ export default function SortableList<T>({
     setDragOffset(translationY)
   }, [])
 
-  const handleDragEnd = useCallback((index: number) => {
+  const handleDragEnd = useCallback((_index: number) => {
     if (draggedIndex === null) {
       setIsDragging(false)
       return

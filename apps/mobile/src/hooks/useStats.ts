@@ -458,7 +458,7 @@ export function useSubGoalProgress(userId: string | undefined) {
       const checkedActionIds = new Set(checksData?.map((c) => c.action_id) || [])
 
       // Build progress data (with INNER JOIN, mandalart is always present)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      /* eslint-disable @typescript-eslint/no-explicit-any */
       const progress: SubGoalProgress[] = (subGoalsData || [])
         .map((sg: any) => {
           const checkableActions = (sg.actions || []).filter((a: any) => a.type !== 'reference')
@@ -479,6 +479,7 @@ export function useSubGoalProgress(userId: string | undefined) {
           }
         })
         .filter((p: SubGoalProgress) => p.totalActions > 0)
+      /* eslint-enable @typescript-eslint/no-explicit-any */
 
       return progress
     },

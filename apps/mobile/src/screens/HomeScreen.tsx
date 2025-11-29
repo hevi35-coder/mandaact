@@ -8,10 +8,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { CompositeNavigationProp } from '@react-navigation/native'
 import { useScrollToTop } from '../navigation/RootNavigator'
 import {
-  CalendarCheck,
-  Grid3X3,
-  FileText,
-  Award,
   Flame,
   Target,
   Trophy,
@@ -21,7 +17,6 @@ import {
   Sparkles,
   Info,
   X,
-  Lock,
   Pencil,
   Calendar,
 } from 'lucide-react-native'
@@ -29,19 +24,11 @@ import { Header } from '../components'
 import { useAuthStore } from '../store/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUserGamification, use4WeekHeatmap, useProfileStats, statsKeys } from '../hooks/useStats'
-import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useBadgeDefinitions, useUserBadges, isBadgeUnlocked } from '../hooks/useBadges'
 import {
-  APP_NAME,
   getXPForCurrentLevel,
   getLevelFromXP,
   categorizeBadges,
-  XP_EARNING_RULES,
-  XP_MULTIPLIER_BONUSES,
-  XP_MULTIPLIER_EXAMPLE,
-  FAIR_XP_POLICIES,
-  FAIR_BADGE_POLICIES,
-  XP_MULTIPLIER_COLORS,
   validateNickname,
   NICKNAME_DIALOG,
   NICKNAME_ERRORS,

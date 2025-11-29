@@ -249,6 +249,9 @@ importers:
       '@types/react':
         specifier: ^18.3.5
         version: 18.3.27
+      eslint-plugin-react-native:
+        specifier: ^5.0.0
+        version: 5.0.0(eslint@8.57.1)
       react-native-worklets:
         specifier: ^0.6.1
         version: 0.6.1(@babel/core@7.28.5)(react-native@0.76.1(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1)
@@ -4038,6 +4041,14 @@ packages:
     engines: {node: '>=10'}
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0
+
+  eslint-plugin-react-native-globals@0.1.2:
+    resolution: {integrity: sha512-9aEPf1JEpiTjcFAmmyw8eiIXmcNZOqaZyHO77wgm0/dWfT/oxC1SrIq8ET38pMxHYrcB6Uew+TzUVsBeczF88g==}
+
+  eslint-plugin-react-native@5.0.0:
+    resolution: {integrity: sha512-VyWlyCC/7FC/aONibOwLkzmyKg4j9oI8fzrk9WYNs4I8/m436JuOTAFwLvEn1CVvc7La4cPfbCyspP4OYpP52Q==}
+    peerDependencies:
+      eslint: ^3.17.0 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9
 
   eslint-plugin-react-perf@3.3.3:
     resolution: {integrity: sha512-EzPdxsRJg5IllCAH9ny/3nK7sv9251tvKmi/d3Ouv5KzI8TB3zNhzScxL9wnh9Hvv8GYC5LEtzTauynfOEYiAw==}
@@ -11636,6 +11647,13 @@ snapshots:
   eslint-plugin-react-hooks@4.6.2(eslint@8.57.1):
     dependencies:
       eslint: 8.57.1
+
+  eslint-plugin-react-native-globals@0.1.2: {}
+
+  eslint-plugin-react-native@5.0.0(eslint@8.57.1):
+    dependencies:
+      eslint: 8.57.1
+      eslint-plugin-react-native-globals: 0.1.2
 
   eslint-plugin-react-perf@3.3.3(eslint@8.57.1):
     dependencies:

@@ -8,7 +8,7 @@ import {
   Modal,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { X, Lock, Award, Sparkles, Zap, Trophy, Repeat } from 'lucide-react-native'
+import { X, Lock, Zap, Trophy, Repeat } from 'lucide-react-native'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
@@ -146,7 +146,7 @@ function BadgeDetailModal({
 }) {
   if (!badge) return null
 
-  const category = BADGE_CATEGORIES[badge.category]
+  const _category = BADGE_CATEGORIES[badge.category]
   const hintLevel = badge.hint_level || 'full'
   const crypticHint = getBadgeHint(badge.key || '', hintLevel)
   const formattedCondition = formatUnlockCondition(
@@ -358,7 +358,7 @@ export default function BadgeScreen() {
   const { data: badges = [] } = useBadgeDefinitions()
   const { data: userBadges = [], refetch: refetchUserBadges } = useUserBadges(user?.id)
   const { data: badgeProgress = [] } = useBadgeProgress(user?.id)
-  const { data: gamification } = useUserGamification(user?.id)
+  const { data: _gamification } = useUserGamification(user?.id)
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)

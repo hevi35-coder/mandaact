@@ -4,10 +4,7 @@ import {
   getCompletionStats,
   getUserLevel,
   checkAndUnlockAchievements,
-  type StreakStats,
-  type CompletionStats,
 } from '@/lib/stats'
-import type { Achievement } from '@/types'
 
 /**
  * Query key factory for stats

@@ -592,7 +592,7 @@ export function getPeriodBounds(
       label = '오늘'
       break
 
-    case 'weekly':
+    case 'weekly': {
       // Week starts on Monday (1), ends on Sunday (0)
       // Calculate days since Monday
       const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
@@ -600,6 +600,7 @@ export function getPeriodBounds(
       endDate = new Date(year, month, dayOfMonth - daysSinceMonday + 6)
       label = '이번 주'
       break
+    }
 
     case 'monthly':
       startDate = new Date(year, month, 1)
@@ -655,13 +656,14 @@ export function getMissionPeriodBounds(
       label = '오늘'
       break
 
-    case 'weekly':
+    case 'weekly': {
       // Week starts on Monday (1), ends on Sunday (0)
       const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
       startDate = new Date(year, month, dayOfMonth - daysSinceMonday)
       endDate = new Date(year, month, dayOfMonth - daysSinceMonday + 6)
       label = '이번 주'
       break
+    }
 
     case 'monthly':
       startDate = new Date(year, month, 1)
@@ -669,7 +671,7 @@ export function getMissionPeriodBounds(
       label = '이번 달'
       break
 
-    case 'quarterly':
+    case 'quarterly': {
       // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
       const quarter = Math.floor(month / 3)
       const quarterStartMonth = quarter * 3
@@ -677,6 +679,7 @@ export function getMissionPeriodBounds(
       endDate = new Date(year, quarterStartMonth + 3, 0) // Last day of quarter
       label = '이번 분기'
       break
+    }
 
     case 'yearly':
       startDate = new Date(year, 0, 1) // Jan 1

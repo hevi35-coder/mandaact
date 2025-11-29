@@ -17,7 +17,6 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import {
   ArrowLeft,
-  Camera,
   Image as ImageIcon,
   FileText,
   PenLine,
@@ -31,7 +30,7 @@ import MaskedView from '@react-native-masked-view/masked-view'
 
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
-import { runOCRFlowFromUri, parseMandalartText, type OCRResult, type UploadProgress } from '../services/ocrService'
+import { runOCRFlowFromUri, parseMandalartText, type UploadProgress } from '../services/ocrService'
 import * as ImagePicker from 'expo-image-picker'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { suggestActionType } from '@mandaact/shared'
@@ -300,7 +299,7 @@ export default function MandalartCreateScreen() {
   }, [mandalartData])
 
   // Section positions for 3x3 grid (position 0 = center)
-  const sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
+  const _sectionPositions = [1, 2, 3, 4, 0, 5, 6, 7, 8]
 
   const handleSave = useCallback(async () => {
     if (!user || !mandalartData) return

@@ -19,7 +19,7 @@ let mockMandalarts: any[] = [{ id: 'mandalart-1' }]
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    from: vi.fn((table: string) => ({
+    from: vi.fn((_table: string) => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       limit: vi.fn(() => Promise.resolve({

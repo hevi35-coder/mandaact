@@ -3,11 +3,11 @@
  * Uses dependency injection from @mandaact/shared
  */
 
-import { createXPService } from '@mandaact/shared'
+import { createXPService, SupabaseClientLike } from '@mandaact/shared'
 import { supabase } from './supabase'
 
 // Create XP service instance with web's supabase client
-export const xpService = createXPService(supabase as any)
+export const xpService = createXPService(supabase as unknown as SupabaseClientLike)
 
 // Re-export types for convenience
 export type {

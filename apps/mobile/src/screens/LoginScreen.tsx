@@ -21,9 +21,9 @@ import { parseError, ERROR_MESSAGES } from '../lib/errorHandling'
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [_confirmPassword, _setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [_showConfirmPassword, _setShowConfirmPassword] = useState(false)
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
