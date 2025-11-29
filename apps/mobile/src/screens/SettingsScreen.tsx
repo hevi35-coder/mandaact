@@ -304,7 +304,7 @@ export default function SettingsScreen() {
                   }
                 >
                   <LinearGradient
-                    colors={['#667eea', '#9333ea']}
+                    colors={['#2563eb', '#9333ea', '#db2777']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
@@ -359,12 +359,12 @@ export default function SettingsScreen() {
               )}
             </View>
             {notificationLoading ? (
-              <ActivityIndicator size="small" color="#667eea" />
+              <ActivityIndicator size="small" color="#2563eb" />
             ) : (
               <Switch
                 value={notificationsEnabled}
                 onValueChange={handleToggleNotifications}
-                trackColor={{ false: '#d1d5db', true: '#667eea' }}
+                trackColor={{ false: '#d1d5db', true: '#2563eb' }}
                 thumbColor="white"
               />
             )}
@@ -392,7 +392,7 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled && reminderEnabled}
                 onValueChange={(value) => { toggleReminder(value) }}
-                trackColor={{ false: '#d1d5db', true: '#667eea' }}
+                trackColor={{ false: '#d1d5db', true: '#2563eb' }}
                 thumbColor="white"
                 disabled={!notificationsEnabled || notificationLoading}
               />
@@ -443,7 +443,7 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled && customMessageEnabled}
                 onValueChange={(value) => { toggleCustomMessage(value) }}
-                trackColor={{ false: '#d1d5db', true: '#667eea' }}
+                trackColor={{ false: '#d1d5db', true: '#2563eb' }}
                 thumbColor="white"
                 disabled={!notificationsEnabled || notificationLoading}
               />
@@ -629,7 +629,7 @@ export default function SettingsScreen() {
                 알림 시간 설정
               </Text>
               <Pressable onPress={handleSaveTime} className="p-2">
-                <Check size={24} color="#667eea" />
+                <Check size={24} color="#2563eb" />
               </Pressable>
             </View>
 
@@ -661,7 +661,7 @@ export default function SettingsScreen() {
                         className="text-2xl"
                         style={{
                           fontFamily: selectedHour === hour ? 'Pretendard-Bold' : 'Pretendard-Regular',
-                          color: selectedHour === hour ? '#667eea' : '#9ca3af',
+                          color: selectedHour === hour ? '#2563eb' : '#9ca3af',
                         }}
                       >
                         {hour.toString().padStart(2, '0')}
@@ -706,7 +706,7 @@ export default function SettingsScreen() {
                         className="text-2xl"
                         style={{
                           fontFamily: selectedMinute === minute ? 'Pretendard-Bold' : 'Pretendard-Regular',
-                          color: selectedMinute === minute ? '#667eea' : '#9ca3af',
+                          color: selectedMinute === minute ? '#2563eb' : '#9ca3af',
                         }}
                       >
                         {minute.toString().padStart(2, '0')}
@@ -771,9 +771,9 @@ export default function SettingsScreen() {
                   disabled={isSavingNickname}
                 >
                   {isSavingNickname ? (
-                    <ActivityIndicator size="small" color="#667eea" />
+                    <ActivityIndicator size="small" color="#2563eb" />
                   ) : (
-                    <Check size={24} color="#667eea" />
+                    <Check size={24} color="#2563eb" />
                   )}
                 </Pressable>
               </View>

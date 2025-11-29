@@ -66,7 +66,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#667eea',
+      lightColor: '#2563eb',
     })
 
     await Notifications.setNotificationChannelAsync('reminders', {
@@ -74,7 +74,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       description: '오늘의 실천을 완료하도록 알려드립니다.',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#667eea',
+      lightColor: '#2563eb',
     })
   }
 

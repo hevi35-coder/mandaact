@@ -32,7 +32,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
 
     // Font sizes optimized for 1080px grid - large enough for phone wallpaper
     const fontSize = {
-      coreGoal: 32, // Center goal - bold
+      coreGoal: 28, // Center goal - same as sub-goal
       subGoal: 28,  // Sub-goal titles - semibold
       action: 24,   // Action items - minimum readable on wallpaper
       title: 48,    // Mandalart title at top
@@ -68,7 +68,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
           return (
             <LinearGradient
               key={`${sectionPos}-${cellPos}`}
-              colors={['#667eea', '#9333ea']}
+              colors={['#2563eb', '#9333ea', '#db2777']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[cellStyle, { alignItems: 'center', justifyContent: 'center', padding: 12 }]}
@@ -294,7 +294,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
             }
           >
             <LinearGradient
-              colors={['#667eea', '#9333ea']}
+              colors={['#2563eb', '#9333ea', '#db2777']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >

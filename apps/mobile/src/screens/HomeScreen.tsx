@@ -315,7 +315,7 @@ export default function HomeScreen() {
                     style={{ width: `${xpPercentage}%` }}
                   >
                     <LinearGradient
-                      colors={['#667eea', '#9333ea']}
+                      colors={['#2563eb', '#9333ea', '#db2777']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={{ flex: 1 }}
@@ -353,9 +353,9 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   {xpInfoOpen ? (
-                    <ChevronUp size={14} color="#667eea" />
+                    <ChevronUp size={14} color="#2563eb" />
                   ) : (
-                    <ChevronDown size={14} color="#667eea" />
+                    <ChevronDown size={14} color="#2563eb" />
                   )}
                 </Pressable>
 
@@ -484,9 +484,9 @@ export default function HomeScreen() {
                       {unlockedCount}/{totalBadges}
                     </Text>
                     {badgeCollectionOpen ? (
-                      <ChevronUp size={14} color="#667eea" />
+                      <ChevronUp size={14} color="#2563eb" />
                     ) : (
-                      <ChevronDown size={14} color="#667eea" />
+                      <ChevronDown size={14} color="#2563eb" />
                     )}
                   </View>
                 </Pressable>
@@ -495,7 +495,7 @@ export default function HomeScreen() {
                   <View className="mt-3">
                     {badgesLoading ? (
                       <View className="py-4 items-center">
-                        <ActivityIndicator size="small" color="#667eea" />
+                        <ActivityIndicator size="small" color="#2563eb" />
                         <Text className="text-xs text-gray-400 mt-2">배지 로딩 중...</Text>
                       </View>
                     ) : (
@@ -539,7 +539,7 @@ export default function HomeScreen() {
                         {/* Fair Badge Policy */}
                         <View className="pt-3 border-t border-primary/10">
                           <View className="flex-row items-center mb-2">
-                            <Info size={12} color="#667eea" />
+                            <Info size={12} color="#2563eb" />
                             <Text className="text-xs font-semibold text-primary ml-1">
                               공정한 배지 정책
                             </Text>
@@ -645,7 +645,7 @@ export default function HomeScreen() {
 
             {fourWeekLoading ? (
               <View className="py-4 items-center">
-                <ActivityIndicator size="small" color="#667eea" />
+                <ActivityIndicator size="small" color="#2563eb" />
               </View>
             ) : (
               <>

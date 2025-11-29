@@ -649,7 +649,7 @@ export default function SubGoalEditModal({
                         onPress={handleActionAdd}
                         className="flex-row items-center px-3 py-2 border border-gray-200 rounded-xl bg-white"
                       >
-                        <Plus size={16} color="#667eea" />
+                        <Plus size={16} color="#2563eb" />
                         <Text
                           className="text-sm text-primary ml-1"
                           style={{ fontFamily: 'Pretendard-Medium' }}

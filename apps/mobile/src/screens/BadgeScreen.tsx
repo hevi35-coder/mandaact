@@ -50,7 +50,7 @@ function BadgeCard({
       }`}
       onPress={onPress}
       style={{
-        shadowColor: isUnlocked ? '#667eea' : '#000',
+        shadowColor: isUnlocked ? '#2563eb' : '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: isUnlocked ? 0.1 : 0.04,
         shadowRadius: 8,
@@ -288,7 +288,7 @@ function BadgeDetailModal({
                     <View className="mt-3 pt-3 border-t border-amber-200">
                       <View className="flex-row items-center justify-between mb-2">
                         <View className="flex-row items-center">
-                          <Zap size={14} color="#667eea" />
+                          <Zap size={14} color="#2563eb" />
                           <Text
                             className="text-gray-500 text-sm ml-1"
                             style={{ fontFamily: 'Pretendard-Regular' }}
@@ -317,7 +317,7 @@ function BadgeDetailModal({
               {/* XP Reward - Larger style like web */}
               <View className="bg-primary/10 border-2 border-primary/20 rounded-2xl p-4">
                 <View className="flex-row items-center justify-center mb-1">
-                  <Zap size={20} color="#667eea" />
+                  <Zap size={20} color="#2563eb" />
                   <Text
                     className="text-gray-500 text-sm ml-2"
                     style={{ fontFamily: 'Pretendard-Medium' }}
@@ -412,8 +412,8 @@ export default function BadgeScreen() {
         <View
           className="mb-5 bg-gradient-to-r from-primary to-purple-500 rounded-3xl p-5"
           style={{
-            backgroundColor: '#667eea',
-            shadowColor: '#667eea',
+            backgroundColor: '#2563eb',
+            shadowColor: '#2563eb',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.3,
             shadowRadius: 16,

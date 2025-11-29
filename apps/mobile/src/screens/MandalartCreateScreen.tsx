@@ -440,7 +440,7 @@ export default function MandalartCreateScreen() {
         {progress && (
           <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
-              <ActivityIndicator size="large" color="#667eea" />
+              <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
                 {progress.message}
               </Text>
@@ -587,7 +587,7 @@ export default function MandalartCreateScreen() {
         {(progress || isProcessingOCR) && (
           <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
-              <ActivityIndicator size="large" color="#667eea" />
+              <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
                 {progress?.message || 'OCR 처리 중...'}
               </Text>
@@ -615,7 +615,7 @@ export default function MandalartCreateScreen() {
               className="rounded-2xl overflow-hidden"
             >
               <LinearGradient
-                colors={['#667eea', '#9333ea']}
+                colors={['#2563eb', '#9333ea', '#db2777']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ padding: 1, borderRadius: 16 }}
@@ -629,7 +629,7 @@ export default function MandalartCreateScreen() {
                     }
                   >
                     <LinearGradient
-                      colors={['#667eea', '#9333ea']}
+                      colors={['#2563eb', '#9333ea', '#db2777']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                     >
@@ -693,7 +693,7 @@ export default function MandalartCreateScreen() {
         {progress && (
           <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
-              <ActivityIndicator size="large" color="#667eea" />
+              <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
                 {progress.message}
               </Text>
@@ -723,7 +723,7 @@ export default function MandalartCreateScreen() {
               className="rounded-2xl overflow-hidden"
             >
               <LinearGradient
-                colors={['#667eea', '#9333ea']}
+                colors={['#2563eb', '#9333ea', '#db2777']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ padding: 1, borderRadius: 16 }}
@@ -737,7 +737,7 @@ export default function MandalartCreateScreen() {
                     }
                   >
                     <LinearGradient
-                      colors={['#667eea', '#9333ea']}
+                      colors={['#2563eb', '#9333ea', '#db2777']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                     >
@@ -866,7 +866,7 @@ export default function MandalartCreateScreen() {
         {isSaving && (
           <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
-              <ActivityIndicator size="large" color="#667eea" />
+              <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
                 저장 중...
               </Text>
@@ -893,7 +893,7 @@ export default function MandalartCreateScreen() {
             className="rounded-2xl overflow-hidden"
           >
             <LinearGradient
-              colors={['#667eea', '#9333ea']}
+              colors={['#2563eb', '#9333ea', '#db2777']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{ padding: 1, borderRadius: 16 }}
@@ -910,7 +910,7 @@ export default function MandalartCreateScreen() {
                   }
                 >
                   <LinearGradient
-                    colors={['#667eea', '#9333ea']}
+                    colors={['#2563eb', '#9333ea', '#db2777']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >

@@ -495,7 +495,7 @@ export default function TodayScreen() {
                     }
                   >
                     <LinearGradient
-                      colors={['#667eea', '#9333ea']}
+                      colors={['#2563eb', '#9333ea', '#db2777']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                     >
@@ -531,7 +531,7 @@ export default function TodayScreen() {
                   }
                 >
                   <LinearGradient
-                    colors={['#667eea', '#9333ea']}
+                    colors={['#2563eb', '#9333ea', '#db2777']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
@@ -590,7 +590,7 @@ export default function TodayScreen() {
                 style={{ width: `${progressPercentage}%` }}
               >
                 <LinearGradient
-                  colors={['#667eea', '#9333ea']}
+                  colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={{ flex: 1 }}
@@ -793,7 +793,7 @@ export default function TodayScreen() {
                 onPress={() => navigation.navigate('CreateMandalart')}
               >
                 <LinearGradient
-                  colors={['#667eea', '#9333ea']}
+                  colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={{ padding: 1, borderRadius: 12 }}
@@ -810,7 +810,7 @@ export default function TodayScreen() {
                       }
                     >
                       <LinearGradient
-                        colors={['#667eea', '#9333ea']}
+                        colors={['#2563eb', '#9333ea', '#db2777']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                       >

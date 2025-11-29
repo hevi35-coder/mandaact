@@ -82,7 +82,7 @@ function ReportCard({
         }}
       >
         <View className="items-center py-8">
-          <ActivityIndicator size="large" color="#667eea" />
+          <ActivityIndicator size="large" color="#2563eb" />
           <Text
             className="text-base text-gray-500 mt-4"
             style={{ fontFamily: 'Pretendard-Medium' }}
@@ -108,7 +108,7 @@ function ReportCard({
       {/* Loading Overlay - shown when generating */}
       {isGenerating && (
         <View className="absolute inset-0 bg-white/80 z-10 items-center justify-center rounded-3xl">
-          <ActivityIndicator size="large" color="#667eea" />
+          <ActivityIndicator size="large" color="#2563eb" />
           <Text
             className="text-sm text-gray-700 mt-2"
             style={{ fontFamily: 'Pretendard-Medium' }}
@@ -195,9 +195,9 @@ function ReportCard({
                   상세보기
                 </Text>
                 {isExpanded ? (
-                  <ChevronUp size={16} color="#667eea" />
+                  <ChevronUp size={16} color="#2563eb" />
                 ) : (
-                  <ChevronDown size={16} color="#667eea" />
+                  <ChevronDown size={16} color="#2563eb" />
                 )}
               </View>
 
@@ -390,7 +390,7 @@ function EmptyReportState({
             onPress={() => navigation.navigate('CreateMandalart')}
           >
             <LinearGradient
-              colors={['#667eea', '#9333ea']}
+              colors={['#2563eb', '#9333ea', '#db2777']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{ padding: 1, borderRadius: 12 }}
@@ -407,7 +407,7 @@ function EmptyReportState({
                   }
                 >
                   <LinearGradient
-                    colors={['#667eea', '#9333ea']}
+                    colors={['#2563eb', '#9333ea', '#db2777']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
@@ -577,7 +577,7 @@ export default function ReportsScreen() {
               }}
             >
               <LinearGradient
-                colors={['#667eea', '#9333ea']}
+                colors={['#2563eb', '#9333ea', '#db2777']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ padding: 1, borderRadius: 16 }}
@@ -585,7 +585,7 @@ export default function ReportsScreen() {
                 <View className="bg-white rounded-2xl py-4 items-center justify-center">
                   {isGenerating ? (
                     <View className="flex-row items-center">
-                      <ActivityIndicator size="small" color="#667eea" />
+                      <ActivityIndicator size="small" color="#2563eb" />
                       <Text
                         className="text-primary text-base ml-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
@@ -608,7 +608,7 @@ export default function ReportsScreen() {
                       }
                     >
                       <LinearGradient
-                        colors={['#667eea', '#9333ea']}
+                        colors={['#2563eb', '#9333ea', '#db2777']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                       >
@@ -744,7 +744,7 @@ export default function ReportsScreen() {
                     onPress={() => navigation.navigate('CreateMandalart')}
                   >
                     <LinearGradient
-                      colors={['#667eea', '#9333ea']}
+                      colors={['#2563eb', '#9333ea', '#db2777']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={{ padding: 1, borderRadius: 12 }}
@@ -761,7 +761,7 @@ export default function ReportsScreen() {
                           }
                         >
                           <LinearGradient
-                            colors={['#667eea', '#9333ea']}
+                            colors={['#2563eb', '#9333ea', '#db2777']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                           >
@@ -831,7 +831,7 @@ export default function ReportsScreen() {
                         onPress={() => setExpandedHistoryId(isExpanded ? null : report.id)}
                       >
                         <View className="w-11 h-11 bg-gray-100 rounded-full items-center justify-center">
-                          <FileText size={20} color="#667eea" />
+                          <FileText size={20} color="#2563eb" />
                         </View>
                         <View className="flex-1 ml-3">
                           <Text

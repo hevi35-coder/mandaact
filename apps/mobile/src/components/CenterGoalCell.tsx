@@ -20,7 +20,7 @@ interface CenterGoalCellProps {
  * Shared component for displaying the center goal cell with gradient background.
  * Used in MandalartCreateScreen and MandalartDetailScreen for consistent UI.
  *
- * Gradient: Blue (#667eea) to Purple (#764ba2) at 135deg
+ * Gradient: Blue (#2563eb) to Purple (#9333ea) to Pink (#db2777) at 135deg
  */
 export default function CenterGoalCell({
   centerGoal,
@@ -31,7 +31,7 @@ export default function CenterGoalCell({
 }: CenterGoalCellProps) {
   const content = (
     <LinearGradient
-      colors={['#667eea', '#764ba2']}
+      colors={['#2563eb', '#9333ea', '#db2777']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[

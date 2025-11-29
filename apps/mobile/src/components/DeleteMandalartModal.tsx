@@ -216,14 +216,14 @@ export default function DeleteMandalartModal({
                 className="rounded-xl overflow-hidden mb-3"
               >
                 <LinearGradient
-                  colors={['#667eea', '#9333ea']}
+                  colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={{ padding: 1, borderRadius: 12 }}
                 >
                   <View className="bg-white rounded-xl py-4 items-center justify-center">
                     {processingAction === 'deactivate' ? (
-                      <ActivityIndicator size="small" color="#667eea" />
+                      <ActivityIndicator size="small" color="#2563eb" />
                     ) : (
                       <MaskedView
                         maskElement={
@@ -236,7 +236,7 @@ export default function DeleteMandalartModal({
                         }
                       >
                         <LinearGradient
-                          colors={['#667eea', '#9333ea']}
+                          colors={['#2563eb', '#9333ea', '#db2777']}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 0 }}
                         >

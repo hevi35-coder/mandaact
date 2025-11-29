@@ -76,7 +76,7 @@ export default function CoreGoalModal({
                 className="rounded-lg overflow-hidden"
               >
                 <LinearGradient
-                  colors={['#667eea', '#9333ea']}
+                  colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={{ padding: 1, borderRadius: 8 }}
@@ -91,7 +91,7 @@ export default function CoreGoalModal({
                       }
                     >
                       <LinearGradient
-                        colors={['#667eea', '#9333ea']}
+                        colors={['#2563eb', '#9333ea', '#db2777']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                       >

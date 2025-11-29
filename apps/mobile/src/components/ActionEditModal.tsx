@@ -33,7 +33,7 @@ const ACTION_TYPES: { type: ActionType; label: string; description: string; icon
     type: 'routine',
     label: '루틴',
     description: '매일/매주 반복하는 습관',
-    icon: <RotateCw size={20} color="#667eea" />,
+    icon: <RotateCw size={20} color="#2563eb" />,
   },
   {
     type: 'mission',
@@ -134,11 +134,11 @@ export default function ActionEditModal({
                 className="p-2"
               >
                 {updateAction.isPending ? (
-                  <ActivityIndicator size="small" color="#667eea" />
+                  <ActivityIndicator size="small" color="#2563eb" />
                 ) : (
                   <Check
                     size={24}
-                    color={title.trim() ? '#667eea' : '#d1d5db'}
+                    color={title.trim() ? '#2563eb' : '#d1d5db'}
                   />
                 )}
               </Pressable>
@@ -196,7 +196,7 @@ export default function ActionEditModal({
                         </Text>
                       </View>
                       {actionType === type.type && (
-                        <Check size={20} color="#667eea" />
+                        <Check size={20} color="#2563eb" />
                       )}
                     </Pressable>
                   ))}

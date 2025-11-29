@@ -312,7 +312,7 @@ export default function MandalartDetailScreen() {
       {isExporting && (
         <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
           <View className="bg-white rounded-3xl p-6 items-center">
-            <ActivityIndicator size="large" color="#667eea" />
+            <ActivityIndicator size="large" color="#2563eb" />
             <Text
               className="text-gray-900 mt-4"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
@@ -490,7 +490,7 @@ export default function MandalartDetailScreen() {
             }}
           >
             <View className="flex-row items-center mb-3">
-              <Lightbulb size={20} color="#667eea" />
+              <Lightbulb size={20} color="#2563eb" />
               <Text
                 className="text-base text-gray-900 ml-2"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}

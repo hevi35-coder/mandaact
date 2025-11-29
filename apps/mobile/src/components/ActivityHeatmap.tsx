@@ -18,7 +18,7 @@ const LEVEL_COLORS = {
   1: '#c7d2fe', // indigo-200
   2: '#a5b4fc', // indigo-300
   3: '#818cf8', // indigo-400
-  4: '#667eea', // primary
+  4: '#2563eb', // primary (blue-600)
 }
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -145,7 +145,7 @@ export default function ActivityHeatmap({
                     style={{
                       backgroundColor: LEVEL_COLORS[level],
                       borderWidth: isToday ? 2 : 0,
-                      borderColor: '#667eea',
+                      borderColor: '#2563eb',
                     }}
                   >
                     <Text

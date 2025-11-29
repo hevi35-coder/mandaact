@@ -34,7 +34,7 @@ const TUTORIAL_STEPS = [
   {
     id: 'welcome',
     icon: Target,
-    iconColor: '#667eea',
+    iconColor: '#2563eb',
     iconBg: '#eff6ff',
     title: 'MandaAct에 오신 것을\n환영합니다!',
     description:

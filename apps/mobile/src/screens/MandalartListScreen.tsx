@@ -170,7 +170,7 @@ export default function MandalartListScreen() {
             }}
           >
             <LinearGradient
-              colors={['#667eea', '#9333ea']}
+              colors={['#2563eb', '#9333ea', '#db2777']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{ padding: 1, borderRadius: 16 }}
@@ -190,7 +190,7 @@ export default function MandalartListScreen() {
                   }
                 >
                   <LinearGradient
-                    colors={['#667eea', '#9333ea']}
+                    colors={['#2563eb', '#9333ea', '#db2777']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
@@ -283,7 +283,7 @@ export default function MandalartListScreen() {
                 onPress={handleCreateNew}
               >
                 <LinearGradient
-                  colors={['#667eea', '#9333ea']}
+                  colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={{ padding: 1, borderRadius: 12 }}
@@ -300,7 +300,7 @@ export default function MandalartListScreen() {
                       }
                     >
                       <LinearGradient
-                        colors={['#667eea', '#9333ea']}
+                        colors={['#2563eb', '#9333ea', '#db2777']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                       >
@@ -368,7 +368,7 @@ export default function MandalartListScreen() {
                           <Switch
                             value={mandalart.is_active}
                             onValueChange={() => handleToggleActive(mandalart)}
-                            trackColor={{ false: '#d1d5db', true: '#667eea' }}
+                            trackColor={{ false: '#d1d5db', true: '#2563eb' }}
                             thumbColor="white"
                           />
                           <Text
