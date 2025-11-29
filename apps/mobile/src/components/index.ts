@@ -61,3 +61,6 @@ export {
   ResponsiveGrid,
   ResponsiveRow,
 } from './ResponsiveContainer'
+
+// Full 9x9 Mandalart Grid (for iPad)
+export { default as MandalartFullGrid } from './MandalartFullGrid'

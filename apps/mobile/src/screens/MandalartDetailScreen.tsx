@@ -29,7 +29,7 @@ import MandalartExportGrid from '../components/MandalartExportGrid'
 import MandalartInfoModal from '../components/MandalartInfoModal'
 import SubGoalEditModal from '../components/SubGoalEditModal'
 import DeleteMandalartModal from '../components/DeleteMandalartModal'
-import { CenterGoalCell, SubGoalCell } from '../components'
+import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import type { Action, SubGoal, ActionType } from '@mandaact/shared'
 import { logger } from '../lib/logger'
@@ -70,7 +70,7 @@ export default function MandalartDetailScreen() {
   const exportGridRef = useRef<View>(null)
   const queryClient = useQueryClient()
   const insets = useSafeAreaInsets()
-  const { width: screenWidth, isTablet, contentMaxWidth } = useResponsive()
+  const { width: screenWidth, height: screenHeight, isTablet, contentMaxWidth } = useResponsive()
 
   // Responsive layout values
   const CONTAINER_PADDING = isTablet ? 32 : DEFAULT_CONTAINER_PADDING
@@ -383,169 +383,208 @@ export default function MandalartDetailScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={isTablet ? { alignItems: 'center' } : undefined}
+        contentContainerStyle={isTablet ? { alignItems: 'center', paddingVertical: 24 } : undefined}
       >
         {/* Responsive container for iPad */}
         <View style={isTablet ? { width: '100%', maxWidth: contentMaxWidth } : undefined}>
-        {/* Header Bar - Same height for both views */}
-        <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          {!expandedSubGoal ? (
-            /* Main View: Core goal display (1-line, same height as expanded view buttons) */
-            <Pressable
-              onPress={handleCenterGoalTap}
-              className="flex-1 flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.04,
-                shadowRadius: 8,
-                elevation: 2,
-              }}
-            >
-              <Text
-                className="text-base text-gray-700 flex-1"
-                style={{ fontFamily: 'Pretendard-Medium' }}
-                numberOfLines={1}
-              >
-                {mandalart.center_goal}
-              </Text>
-            </Pressable>
-          ) : (
-            /* Expanded View: Back and Edit buttons */
-            <>
-            <Pressable
-              onPress={() => setExpandedSubGoal(null)}
-              className="flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.04,
-                shadowRadius: 8,
-                elevation: 2,
-              }}
-            >
-              <ArrowLeft size={16} color="#374151" />
-              <Text
-                className="text-base text-gray-700 ml-1"
-                style={{ fontFamily: 'Pretendard-Medium' }}
-              >
-                뒤로
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleEditSubGoal}
-              className="px-5 py-3 bg-gray-900 rounded-2xl active:bg-gray-800"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
-              }}
-            >
-              <Text
-                className="text-base text-white"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                수정
-              </Text>
-            </Pressable>
-            </>
-          )}
-        </View>
 
-        {/* 3x3 Grid - Row-based layout for reliable 3x3 display */}
-        <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 16 }} ref={gridRef} collapsable={false}>
-          <View
-            className="bg-white rounded-3xl border border-gray-100"
-            style={{
-              padding: CARD_PADDING,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 3,
-            }}
-          >
-            {/* Row 1: positions 0, 1, 2 → indices 1, 2, 3 */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
-              {[1, 2, 3].map((pos) =>
-                expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
-              )}
-            </View>
-            {/* Row 2: positions 3, 4, 5 → indices 4, 0, 5 (center is 0) */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
-              {[4, 0, 5].map((pos) =>
-                expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
-              )}
-            </View>
-            {/* Row 3: positions 6, 7, 8 → indices 6, 7, 8 */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
-              {[6, 7, 8].map((pos) =>
-                expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
-              )}
-            </View>
-          </View>
-        </View>
+        {/* iPad: Full 9x9 Grid */}
+        {isTablet ? (
+          (() => {
+            // Calculate optimal grid size for iPad
+            const headerHeight = 64 + insets.top // Header with safe area
+            const verticalPadding = 48 // Top and bottom padding
+            const availableHeight = screenHeight - headerHeight - verticalPadding
+            const availableWidth = screenWidth - (CONTAINER_PADDING * 2)
+            // Use the smaller dimension to keep grid square, with some max limit
+            const gridSize = Math.min(availableWidth, availableHeight, 800)
 
-        {/* Usage Instructions */}
-        <View className="px-5 py-5 pb-8">
-          <View
-            className="bg-white rounded-3xl p-6 border border-gray-100"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 3,
-            }}
-          >
-            <View className="flex-row items-center mb-3">
-              <Lightbulb size={20} color="#2563eb" />
-              <Text
-                className="text-base text-gray-900 ml-2"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                사용 방법
-              </Text>
+            return (
+              <View style={{ alignItems: 'center', paddingHorizontal: CONTAINER_PADDING }} ref={gridRef} collapsable={false}>
+                <MandalartFullGrid
+                  mandalart={{
+                    id: mandalart.id,
+                    center_goal: mandalart.center_goal,
+                    sub_goals: mandalart.sub_goals as SubGoalWithActions[],
+                  }}
+                  gridSize={gridSize}
+                  onCenterGoalPress={handleCenterGoalTap}
+                  onSubGoalPress={(subGoal) => {
+                    setSelectedSubGoal(subGoal)
+                    setEditModalVisible(true)
+                  }}
+                  onActionPress={(subGoal, _action) => {
+                    setSelectedSubGoal(subGoal)
+                    setEditModalVisible(true)
+                  }}
+                />
+              </View>
+            )
+          })()
+        ) : (
+          /* Phone: Original 3x3 Grid with drill-down */
+          <>
+            {/* Header Bar - Same height for both views */}
+            <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              {!expandedSubGoal ? (
+                /* Main View: Core goal display (1-line, same height as expanded view buttons) */
+                <Pressable
+                  onPress={handleCenterGoalTap}
+                  className="flex-1 flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <Text
+                    className="text-base text-gray-700 flex-1"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                    numberOfLines={1}
+                  >
+                    {mandalart.center_goal}
+                  </Text>
+                </Pressable>
+              ) : (
+                /* Expanded View: Back and Edit buttons */
+                <>
+                <Pressable
+                  onPress={() => setExpandedSubGoal(null)}
+                  className="flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <ArrowLeft size={16} color="#374151" />
+                  <Text
+                    className="text-base text-gray-700 ml-1"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    뒤로
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleEditSubGoal}
+                  className="px-5 py-3 bg-gray-900 rounded-2xl active:bg-gray-800"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
+                  <Text
+                    className="text-base text-white"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
+                    수정
+                  </Text>
+                </Pressable>
+                </>
+              )}
             </View>
-            <Text
-              className="text-sm text-gray-500 mb-2"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              • 각 영역을 탭하여 상세보기 및 수정이 가능합니다.
-            </Text>
-            <View className="flex-row items-center">
-              <Text
-                className="text-sm text-gray-500"
-                style={{ fontFamily: 'Pretendard-Regular' }}
+
+            {/* 3x3 Grid - Row-based layout for reliable 3x3 display */}
+            <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 16 }} ref={gridRef} collapsable={false}>
+              <View
+                className="bg-white rounded-3xl border border-gray-100"
+                style={{
+                  padding: CARD_PADDING,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 3,
+                }}
               >
-                • 타입 구분:{' '}
-              </Text>
-              <RotateCw size={14} color="#3b82f6" />
-              <Text
-                className="text-sm text-gray-500 ml-1 mr-2"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                루틴
-              </Text>
-              <Target size={14} color="#10b981" />
-              <Text
-                className="text-sm text-gray-500 ml-1 mr-2"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                미션
-              </Text>
-              <Lightbulb size={14} color="#f59e0b" />
-              <Text
-                className="text-sm text-gray-500 ml-1"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                참고
-              </Text>
+                {/* Row 1: positions 0, 1, 2 → indices 1, 2, 3 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
+                  {[1, 2, 3].map((pos) =>
+                    expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
+                  )}
+                </View>
+                {/* Row 2: positions 3, 4, 5 → indices 4, 0, 5 (center is 0) */}
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                  {[4, 0, 5].map((pos) =>
+                    expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
+                  )}
+                </View>
+                {/* Row 3: positions 6, 7, 8 → indices 6, 7, 8 */}
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                  {[6, 7, 8].map((pos) =>
+                    expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
+                  )}
+                </View>
+              </View>
             </View>
-          </View>
-        </View>
+
+            {/* Usage Instructions (Phone only) */}
+            <View className="px-5 py-5 pb-8">
+              <View
+                className="bg-white rounded-3xl p-6 border border-gray-100"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 3,
+                }}
+              >
+                <View className="flex-row items-center mb-3">
+                  <Lightbulb size={20} color="#2563eb" />
+                  <Text
+                    className="text-base text-gray-900 ml-2"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
+                    사용 방법
+                  </Text>
+                </View>
+                <Text
+                  className="text-sm text-gray-500 mb-2"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  • 각 영역을 탭하여 상세보기 및 수정이 가능합니다.
+                </Text>
+                <View className="flex-row items-center">
+                  <Text
+                    className="text-sm text-gray-500"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    • 타입 구분:{' '}
+                  </Text>
+                  <RotateCw size={14} color="#3b82f6" />
+                  <Text
+                    className="text-sm text-gray-500 ml-1 mr-2"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    루틴
+                  </Text>
+                  <Target size={14} color="#10b981" />
+                  <Text
+                    className="text-sm text-gray-500 ml-1 mr-2"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    미션
+                  </Text>
+                  <Lightbulb size={14} color="#f59e0b" />
+                  <Text
+                    className="text-sm text-gray-500 ml-1"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    참고
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </>
+        )}
         </View>
         {/* End of responsive container for iPad */}
       </ScrollView>
