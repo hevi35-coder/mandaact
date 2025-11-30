@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native'
 import { X, Check } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useToast } from './Toast'
 import type { Mandalart } from '@mandaact/shared'
@@ -27,6 +28,7 @@ export default function MandalartInfoModal({
   onClose,
   onSuccess,
 }: MandalartInfoModalProps) {
+  const { t } = useTranslation()
   const toast = useToast()
   const [title, setTitle] = useState('')
   const [centerGoal, setCenterGoal] = useState('')
@@ -43,11 +45,11 @@ export default function MandalartInfoModal({
     if (!mandalart) return
 
     if (title.trim() === '') {
-      toast.error('제목을 입력하세요')
+      toast.error(t('mandalart.create.validation.enterTitle'))
       return
     }
     if (centerGoal.trim() === '') {
-      toast.error('핵심 목표를 입력하세요')
+      toast.error(t('mandalart.create.validation.enterCoreGoal'))
       return
     }
 
@@ -63,12 +65,12 @@ export default function MandalartInfoModal({
 
       if (error) throw error
 
-      toast.success('저장되었습니다')
+      toast.success(t('common.success'))
       onSuccess?.()
       onClose()
     } catch (err) {
       console.error('Save error:', err)
-      toast.error('저장 중 오류가 발생했습니다')
+      toast.error(t('mandalart.create.errors.save'))
     } finally {
       setIsSaving(false)
     }
@@ -105,7 +107,7 @@ export default function MandalartInfoModal({
                   className="text-lg text-gray-900"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  만다라트 정보 수정
+                  {t('mandalart.modal.coreGoal.title')}
                 </Text>
               </View>
               <Pressable
@@ -122,7 +124,7 @@ export default function MandalartInfoModal({
                       className="text-white ml-1"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      완료
+                      {t('common.done')}
                     </Text>
                   </>
                 )}
@@ -137,12 +139,12 @@ export default function MandalartInfoModal({
                   className="text-sm text-gray-700 mb-2"
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
-                  만다라트 제목
+                  {t('mandalart.modal.coreGoal.mandalartTitle')}
                 </Text>
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
-                  placeholder="예: 올해 목표, 건강한 삶"
+                  placeholder={t('mandalart.modal.coreGoal.titlePlaceholder')}
                   className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                   placeholderTextColor="#9ca3af"
@@ -155,12 +157,12 @@ export default function MandalartInfoModal({
                   className="text-sm text-gray-700 mb-2"
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
-                  핵심 목표
+                  {t('mandalart.modal.coreGoal.coreGoalLabel')}
                 </Text>
                 <TextInput
                   value={centerGoal}
                   onChangeText={setCenterGoal}
-                  placeholder="이루고 싶은 핵심 목표를 입력하세요"
+                  placeholder={t('mandalart.modal.coreGoal.coreGoalPlaceholder')}
                   className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-base text-gray-900"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                   placeholderTextColor="#9ca3af"

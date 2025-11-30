@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -25,8 +25,6 @@ import {
   type MissionCompletionType,
   type MissionPeriodCycle,
   suggestActionType,
-  getActionTypeLabel,
-  getWeekdayNames,
   getInitialPeriod,
 } from '@mandaact/shared'
 import { logger } from '../lib/logger'
@@ -145,7 +143,16 @@ export default function ActionTypeSelector({
   const [showMonthlyCustomInput, setShowMonthlyCustomInput] = useState(false)
   const [monthlyCustomValue, setMonthlyCustomValue] = useState('')
 
-  const weekdays = getWeekdayNames()
+  // Translated weekday names
+  const weekdays = useMemo(() => [
+    { value: 1, label: t('actionType.weekdayShort.mon'), short: t('actionType.weekdayShort.mon') },
+    { value: 2, label: t('actionType.weekdayShort.tue'), short: t('actionType.weekdayShort.tue') },
+    { value: 3, label: t('actionType.weekdayShort.wed'), short: t('actionType.weekdayShort.wed') },
+    { value: 4, label: t('actionType.weekdayShort.thu'), short: t('actionType.weekdayShort.thu') },
+    { value: 5, label: t('actionType.weekdayShort.fri'), short: t('actionType.weekdayShort.fri') },
+    { value: 6, label: t('actionType.weekdayShort.sat'), short: t('actionType.weekdayShort.sat') },
+    { value: 0, label: t('actionType.weekdayShort.sun'), short: t('actionType.weekdayShort.sun') },
+  ], [t])
 
   // Initialize from AI suggestion
   useEffect(() => {
@@ -261,6 +268,20 @@ export default function ActionTypeSelector({
     }
   }
 
+  // Get translated reason based on suggestion type
+  const getTranslatedReason = (type: string) => {
+    switch (type) {
+      case 'routine':
+        return t('actionType.selector.reasonRoutine')
+      case 'mission':
+        return t('actionType.selector.reasonMission')
+      case 'reference':
+        return t('actionType.selector.reasonReference')
+      default:
+        return t('actionType.selector.reasonRoutine')
+    }
+  }
+
   return (
     <Modal
       visible={visible}
@@ -311,7 +332,7 @@ export default function ActionTypeSelector({
                   <View className="flex-row items-center mt-1">
                     <Info size={12} color="#1e40af" />
                     <Text className="text-xs text-blue-700 ml-1 flex-1">
-                      {aiSuggestion.reason} ({t('actionType.selector.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
+                      {getTranslatedReason(aiSuggestion.type)} ({t('actionType.selector.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
                     </Text>
                   </View>
                 </View>

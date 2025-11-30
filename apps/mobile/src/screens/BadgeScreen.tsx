@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { X, Lock, Zap, Trophy, Repeat } from 'lucide-react-native'
 import { format } from 'date-fns'
-import { ko } from 'date-fns/locale'
+import { ko, enUS } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 
 import { useAuthStore } from '../store/authStore'
 import {
@@ -27,7 +28,105 @@ import {
   type BadgeDefinition,
 } from '../hooks/useBadges'
 import { useUserGamification } from '../hooks/useStats'
-import { formatUnlockCondition, getProgressMessage, getBadgeHint } from '@mandaact/shared'
+import { getBadgeHint } from '@mandaact/shared'
+
+// Types for unlock condition
+interface UnlockCondition {
+  type: string
+  days?: number
+  count?: number
+  threshold?: number
+  period?: string
+  [key: string]: unknown
+}
+
+// Local translated version of formatUnlockCondition
+function useFormatUnlockCondition() {
+  const { t } = useTranslation()
+
+  return (condition: UnlockCondition, hintLevel?: 'full' | 'cryptic' | 'hidden', badgeKey?: string): string => {
+    if (hintLevel === 'hidden') {
+      return t('badges.unlockConditions.secretBadge')
+    }
+
+    if (hintLevel === 'cryptic') {
+      return t('badges.unlockConditions.conditionSecret')
+    }
+
+    // Special cases for badges with trigger-based unlock conditions
+    if (!condition.type || Object.keys(condition).length === 0) {
+      switch (badgeKey) {
+        case 'first_mandalart':
+          return t('badges.unlockConditions.firstMandalart')
+        case 'level_10':
+          return t('badges.unlockConditions.level10')
+        case 'monthly_champion':
+          return t('badges.unlockConditions.monthlyChampion')
+        default:
+          return t('badges.unlockConditions.defaultTrigger')
+      }
+    }
+
+    // Full transparency - format the condition
+    switch (condition.type) {
+      case 'streak':
+        return t('badges.unlockConditions.streak', { days: condition.days })
+      case 'total_checks':
+        return t('badges.unlockConditions.totalChecks', { count: condition.count })
+      case 'perfect_day':
+        return t('badges.unlockConditions.perfectDay', { count: condition.count || 1 })
+      case 'perfect_week':
+        return t('badges.unlockConditions.perfectWeek', { threshold: condition.threshold || 80, count: condition.count })
+      case 'perfect_month':
+        return t('badges.unlockConditions.perfectMonth', { threshold: condition.threshold })
+      case 'balanced':
+        return t('badges.unlockConditions.balanced', { threshold: condition.threshold })
+      case 'time_pattern':
+        if (condition.period === 'morning') {
+          return t('badges.unlockConditions.morningPattern', { threshold: condition.threshold })
+        }
+        return t('badges.unlockConditions.timePattern')
+      case 'weekend_completion':
+        return t('badges.unlockConditions.weekendCompletion')
+      case 'monthly_completion':
+        return t('badges.unlockConditions.monthlyCompletion', { threshold: condition.threshold })
+      case 'perfect_week_in_month':
+        return t('badges.unlockConditions.perfectWeekInMonth')
+      case 'monthly_streak':
+        return t('badges.unlockConditions.monthlyStreak', { days: condition.days })
+      default:
+        return t('badges.unlockConditions.defaultTrigger')
+    }
+  }
+}
+
+// Local translated version of getProgressMessage
+function useGetProgressMessage() {
+  const { t } = useTranslation()
+
+  return (progress: number, target: number): string => {
+    const percentage = (progress / target) * 100
+
+    if (percentage >= 100) {
+      return t('badges.progressMessages.achieved')
+    }
+
+    if (percentage >= 80) {
+      const remaining = target - progress
+      return t('badges.progressMessages.almostThere', { remaining })
+    }
+
+    if (percentage >= 50) {
+      return t('badges.progressMessages.halfWay')
+    }
+
+    if (percentage >= 25) {
+      return t('badges.progressMessages.goodProgress', { progress, target })
+    }
+
+    return t('badges.progressMessages.justStarted', { progress, target })
+  }
+}
 
 // Badge Card Component
 function BadgeCard({
@@ -36,12 +135,18 @@ function BadgeCard({
   unlockDate,
   progress,
   onPress,
+  dateLocale,
+  dateFormat,
+  repeatableLabel,
 }: {
   badge: BadgeDefinition
   isUnlocked: boolean
   unlockDate: string | null
   progress?: { current: number; target: number; percentage: number }
   onPress: () => void
+  dateLocale: typeof ko | typeof enUS
+  dateFormat: string
+  repeatableLabel: string
 }) {
   return (
     <Pressable
@@ -110,7 +215,7 @@ function BadgeCard({
           className="text-xs text-gray-400 text-center mt-1 pt-1 border-t border-gray-100"
           style={{ fontFamily: 'Pretendard-Regular' }}
         >
-          {format(new Date(unlockDate), 'M월 d일', { locale: ko })}
+          {format(new Date(unlockDate), dateFormat, { locale: dateLocale })}
         </Text>
       )}
       {/* Repeatable badge indicator */}
@@ -120,7 +225,7 @@ function BadgeCard({
             className="text-xs text-amber-600"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            반복
+            {repeatableLabel}
           </Text>
         </View>
       )}
@@ -137,6 +242,12 @@ function BadgeDetailModal({
   repeatCount = 0,
   visible,
   onClose,
+  t,
+  dateLocale,
+  dateFormatFull,
+  timesLabel,
+  formatUnlockCondition,
+  getProgressMessage,
 }: {
   badge: BadgeDefinition | null
   isUnlocked: boolean
@@ -145,6 +256,12 @@ function BadgeDetailModal({
   repeatCount?: number
   visible: boolean
   onClose: () => void
+  t: (key: string, options?: Record<string, unknown>) => string
+  dateLocale: typeof ko | typeof enUS
+  dateFormatFull: string
+  timesLabel: string
+  formatUnlockCondition: (condition: UnlockCondition, hintLevel?: 'full' | 'cryptic' | 'hidden', badgeKey?: string) => string
+  getProgressMessage: (progress: number, target: number) => string
 }) {
   if (!badge) return null
 
@@ -169,7 +286,7 @@ function BadgeDetailModal({
                 className="text-lg text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                뱃지 상세
+                {t('badges.detail.title')}
               </Text>
               <Pressable onPress={onClose} className="p-2">
                 <X size={24} color="#9ca3af" />
@@ -212,7 +329,7 @@ function BadgeDetailModal({
                       className="text-amber-700 ml-2"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      배지 획득 완료!
+                      {t('badges.detail.unlocked')}
                     </Text>
                   </View>
                   {unlockDate && (
@@ -220,9 +337,9 @@ function BadgeDetailModal({
                       className="text-amber-600 text-sm"
                       style={{ fontFamily: 'Pretendard-Regular' }}
                     >
-                      {format(new Date(unlockDate), 'yyyy년 M월 d일', { locale: ko })}
+                      {format(new Date(unlockDate), dateFormatFull, { locale: dateLocale })}
                       {badge.repeatable && repeatCount > 1 && (
-                        <Text className="text-xs"> (최초 획득일)</Text>
+                        <Text className="text-xs"> {t('badges.detail.firstUnlockDate')}</Text>
                       )}
                     </Text>
                   )}
@@ -236,14 +353,14 @@ function BadgeDetailModal({
                             className="text-amber-700 ml-2"
                             style={{ fontFamily: 'Pretendard-Medium' }}
                           >
-                            누적 획득 횟수
+                            {t('badges.detail.totalCount')}
                           </Text>
                         </View>
                         <Text
                           className="text-2xl text-amber-600"
                           style={{ fontFamily: 'Pretendard-Bold' }}
                         >
-                          {repeatCount}회
+                          {repeatCount}{timesLabel}
                         </Text>
                       </View>
                     </View>
@@ -258,7 +375,7 @@ function BadgeDetailModal({
                         className="text-amber-700 mb-1"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        {hintLevel === 'hidden' ? '비밀 배지' : '잠금 해제 조건'}
+                        {hintLevel === 'hidden' ? t('badges.detail.secretBadge') : t('badges.detail.unlockCondition')}
                       </Text>
                       {hintLevel === 'hidden' ? (
                         <Text
@@ -324,7 +441,7 @@ function BadgeDetailModal({
                     className="text-gray-500 text-sm ml-2"
                     style={{ fontFamily: 'Pretendard-Medium' }}
                   >
-                    획득 보상
+                    {t('badges.detail.reward')}
                   </Text>
                 </View>
                 <Text
@@ -338,7 +455,7 @@ function BadgeDetailModal({
                     className="text-xs text-primary/70 text-center mt-2"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    반복 획득 가능 (매회 동일 보상)
+                    {t('badges.detail.repeatableNote')}
                   </Text>
                 )}
               </View>
@@ -351,14 +468,26 @@ function BadgeDetailModal({
 }
 
 export default function BadgeScreen() {
+  const { t, i18n } = useTranslation()
   const { user } = useAuthStore()
   const [refreshing, setRefreshing] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<BadgeDefinition | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
+  // Get locale for date formatting
+  const dateLocale = i18n.language === 'ko' ? ko : enUS
+  const dateFormat = i18n.language === 'ko' ? 'M월 d일' : 'MMM d'
+  const dateFormatFull = i18n.language === 'ko' ? 'yyyy년 M월 d일' : 'MMMM d, yyyy'
+  const repeatableLabel = t('badges.repeatable')
+  const timesLabel = i18n.language === 'ko' ? '회' : 'x'
+
   // Get translated badge categories
   const translatedCategories = useTranslatedBadgeCategories()
   const translateBadge = useTranslateBadge()
+
+  // Get translated formatting functions
+  const formatUnlockCondition = useFormatUnlockCondition()
+  const getProgressMessage = useGetProgressMessage()
 
   // Data fetching
   const { data: badges = [] } = useBadgeDefinitions()
@@ -372,8 +501,9 @@ export default function BadgeScreen() {
     setRefreshing(false)
   }, [refetchUserBadges])
 
-  // Organize badges by category
-  const badgesByCategory = getBadgesByCategory(badges)
+  // Organize badges by category and translate them
+  const translatedBadges = useMemo(() => badges.map(translateBadge), [badges, translateBadge])
+  const badgesByCategory = getBadgesByCategory(translatedBadges)
 
   // Get progress for a badge
   const getProgress = (badgeId: string) => {
@@ -404,13 +534,13 @@ export default function BadgeScreen() {
             className="text-3xl text-gray-900"
             style={{ fontFamily: 'Pretendard-Bold' }}
           >
-            뱃지
+            {t('badges.title')}
           </Text>
           <Text
             className="text-base text-gray-500 mt-1"
             style={{ fontFamily: 'Pretendard-Regular' }}
           >
-            다양한 도전을 완료하고 뱃지를 수집하세요
+            {t('badges.subtitle')}
           </Text>
         </View>
 
@@ -432,7 +562,7 @@ export default function BadgeScreen() {
                 className="text-white/80 text-sm"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                수집한 뱃지
+                {t('badges.collected')}
               </Text>
               <Text
                 className="text-white text-3xl"
@@ -493,7 +623,7 @@ export default function BadgeScreen() {
                 }`}
                 style={{ fontFamily: 'Pretendard-Medium' }}
               >
-                전체
+                {t('common.all')}
               </Text>
             </Pressable>
             {Object.values(translatedCategories).map(cat => (
@@ -557,6 +687,9 @@ export default function BadgeScreen() {
                     unlockDate={getBadgeUnlockDate(badge.id, userBadges)}
                     progress={getProgress(badge.id)}
                     onPress={() => setSelectedBadge(badge)}
+                    dateLocale={dateLocale}
+                    dateFormat={dateFormat}
+                    repeatableLabel={repeatableLabel}
                   />
                 ))}
               </View>
@@ -577,6 +710,12 @@ export default function BadgeScreen() {
         repeatCount={selectedBadge ? getBadgeRepeatCount(selectedBadge.id, userBadges) : 0}
         visible={!!selectedBadge}
         onClose={() => setSelectedBadge(null)}
+        t={t}
+        dateLocale={dateLocale}
+        dateFormatFull={dateFormatFull}
+        timesLabel={timesLabel}
+        formatUnlockCondition={formatUnlockCondition}
+        getProgressMessage={getProgressMessage}
       />
     </SafeAreaView>
   )

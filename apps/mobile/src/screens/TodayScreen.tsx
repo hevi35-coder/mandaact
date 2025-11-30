@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { useScrollToTop } from '../navigation/RootNavigator'
 import Animated, { FadeInUp } from 'react-native-reanimated'
+import { useTranslation } from 'react-i18next'
 import { Header } from '../components'
 import {
   ChevronDown,
@@ -31,6 +32,8 @@ import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { format, addDays, isSameDay, startOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
+import { enUS } from 'date-fns/locale/en-US'
+import i18n from '../i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import {
@@ -55,6 +58,14 @@ import { badgeService } from '../lib/badge'
 import DatePickerModal from '../components/DatePickerModal'
 import ActionTypeSelector, { type ActionTypeData } from '../components/ActionTypeSelector'
 
+// Helper function to format date based on current language
+function formatLocalizedDate(date: Date, language: string): string {
+  if (language === 'ko') {
+    return format(date, 'M월 d일 (EEE)', { locale: ko })
+  }
+  return format(date, 'MMM d (EEE)', { locale: enUS })
+}
+
 // Action type icon component - colors match web exactly
 function ActionTypeIcon({
   type,
@@ -75,7 +86,82 @@ function ActionTypeIcon({
   }
 }
 
+// Weekday number to translation key mapping
+const weekdayKeyMap: Record<number, string> = {
+  0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat'
+}
+
+// Helper function to format type details with i18n
+function formatTypeDetailsLocalized(
+  action: {
+    type: ActionType
+    routine_frequency?: string
+    routine_weekdays?: number[]
+    routine_count_per_period?: number
+    mission_completion_type?: string
+    mission_period_cycle?: string
+  },
+  t: (key: string, params?: Record<string, unknown>) => string
+): string {
+  if (action.type === 'reference') {
+    return ''
+  }
+
+  if (action.type === 'routine') {
+    const frequency = action.routine_frequency
+    const weekdays = action.routine_weekdays || []
+    const count = action.routine_count_per_period || 1
+
+    if (frequency === 'daily') {
+      return t('actionType.format.daily')
+    }
+
+    if (frequency === 'weekly') {
+      if (weekdays.length > 0) {
+        // Sort weekdays: 1,2,3,4,5,6,0 (Mon-Sun)
+        const sortedDays = [...weekdays].sort((a, b) => {
+          const orderA = a === 0 ? 7 : a
+          const orderB = b === 0 ? 7 : b
+          return orderA - orderB
+        })
+        const dayNames = sortedDays.map(d => t(`actionType.weekdayShort.${weekdayKeyMap[d]}`)).join(', ')
+        if (count && count > 0) {
+          return t('actionType.format.timesPerWeekWithDays', { count, days: dayNames })
+        }
+        return t('actionType.format.weekdays', { days: dayNames })
+      }
+      return t('actionType.format.timesPerWeek', { count })
+    }
+
+    if (frequency === 'monthly') {
+      return t('actionType.format.timesPerMonth', { count })
+    }
+  }
+
+  if (action.type === 'mission') {
+    const completionType = action.mission_completion_type
+    const periodCycle = action.mission_period_cycle
+
+    if (completionType === 'once') {
+      return t('actionType.format.onceComplete')
+    }
+
+    if (completionType === 'periodic') {
+      if (periodCycle === 'quarterly') {
+        return t('actionType.format.periodicQuarterly')
+      }
+      if (periodCycle === 'yearly') {
+        return t('actionType.format.periodicYearly')
+      }
+      return t('actionType.format.periodicMonthly')
+    }
+  }
+
+  return ''
+}
+
 export default function TodayScreen() {
+  const { t } = useTranslation()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
@@ -175,12 +261,12 @@ export default function TodayScreen() {
         updates: updates as Partial<Action>,
       })
 
-      toast.success('타입 변경 완료', '실천 항목 타입이 변경되었습니다')
+      toast.success(t('today.typeChanged'), t('today.typeChangedDesc'))
       // Await refetch to ensure data is updated before modal closes
       await refetch()
     } catch (error) {
       logger.error('Error saving action type', error)
-      toast.error('오류', '타입 변경 중 오류가 발생했습니다')
+      toast.error(t('common.error'), t('today.typeChangeError'))
     }
   }, [selectedActionForTypeEdit, updateAction, refetch, toast])
 
@@ -326,15 +412,15 @@ export default function TodayScreen() {
             // Show XP toast
             if (xpResult.multipliers.length > 0) {
               const totalMultiplier = xpResult.multipliers.reduce((sum, m) => sum + m.multiplier, 0)
-              toast.success(`+${xpResult.finalXP} XP`, `×${totalMultiplier.toFixed(1)} 배율 적용!`)
+              toast.success(t('today.xp.earned', { xp: xpResult.finalXP }), t('today.xp.multiplier', { multiplier: totalMultiplier.toFixed(1) }))
             } else {
-              toast.success(`+${xpResult.finalXP} XP`, '실천 완료!')
+              toast.success(t('today.xp.earned', { xp: xpResult.finalXP }), t('today.xp.completed'))
             }
 
             // Show level up toast (level tracking is done on server side)
             if (xpResult.leveledUp) {
               setTimeout(() => {
-                toast.success('🎉 레벨 업!', '축하합니다! 레벨이 올랐습니다!')
+                toast.success(`🎉 ${t('today.xp.levelUp')}`, t('today.xp.levelUpDesc'))
               }, 1500)
             }
 
@@ -345,7 +431,7 @@ export default function TodayScreen() {
                 const perfectResult = await checkPerfectDay(user.id, checkDate)
 
                 if (perfectResult.is_perfect_day && perfectResult.xp_awarded > 0) {
-                  toast.success('⭐ 완벽한 하루!', `+${perfectResult.xp_awarded} XP 보너스!`)
+                  toast.success(`⭐ ${t('today.xp.perfectDay')}`, t('today.xp.perfectDayBonus', { xp: perfectResult.xp_awarded }))
                   logger.info('Perfect day bonus awarded', { xp: perfectResult.xp_awarded })
                 }
 
@@ -366,7 +452,7 @@ export default function TodayScreen() {
                       current_level: 0, // Level not available here
                     })
                     setTimeout(() => {
-                      toast.success('🏆 새로운 배지 획득!', `${badge.badgeTitle} (+${badge.xpAwarded} XP)`)
+                      toast.success(`🏆 ${t('today.xp.newBadge')}`, `${badge.badgeTitle} (+${badge.xpAwarded} XP)`)
                     }, 500 * newlyUnlocked.indexOf(badge))
                     logger.info('Badge unlocked', { badge: badge.badgeTitle, xp: badge.xpAwarded })
                   }
@@ -375,7 +461,7 @@ export default function TodayScreen() {
                 // Check for perfect week bonus (80%+ weekly completion)
                 const weekResult = await checkPerfectWeek(user.id)
                 if (weekResult.activated) {
-                  toast.success('🌟 완벽한 주!', '7일간 XP 2배 보너스 활성화!')
+                  toast.success(`🌟 ${t('today.xp.perfectWeek')}`, t('today.xp.perfectWeekBonus'))
                   logger.info('Perfect week bonus activated', { percentage: weekResult.percentage })
                 }
               } catch (bonusError) {
@@ -396,7 +482,7 @@ export default function TodayScreen() {
           try {
             const result = await subtractXP(user.id, 10, selectedDate)
             if (result.finalXP > 0) {
-              toast.info(`-${result.finalXP} XP`, '체크 해제')
+              toast.info(t('today.xp.subtracted', { xp: result.finalXP }), t('today.xp.unchecked'))
               logger.info('XP subtracted', { xp: result.finalXP })
             }
           } catch (xpError) {
@@ -421,7 +507,7 @@ export default function TodayScreen() {
           errorMessage = JSON.stringify(err, null, 2)
         }
         logger.error('Check toggle error', { error: errorMessage, actionId: action.id, fullError: err })
-        Alert.alert('오류', `체크 상태를 변경하는 중 오류가 발생했습니다.\n${errorMessage}`)
+        Alert.alert(t('common.error'), `${t('errors.generic')}\n${errorMessage}`)
       } finally {
         setCheckingActions((prev) => {
           const newSet = new Set(prev)
@@ -440,7 +526,7 @@ export default function TodayScreen() {
         <Header />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#374151" />
-          <Text className="text-gray-500 mt-4">불러오는 중...</Text>
+          <Text className="text-gray-500 mt-4">{t('common.loading')}</Text>
         </View>
       </View>
     )
@@ -453,13 +539,13 @@ export default function TodayScreen() {
         <Header />
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-red-500 text-center">
-            데이터를 불러오는 중 오류가 발생했습니다.
+            {t('errors.generic')}
           </Text>
           <Pressable
             onPress={() => refetch()}
             className="mt-4 bg-primary px-6 py-3 rounded-xl"
           >
-            <Text className="text-white font-semibold">다시 시도</Text>
+            <Text className="text-white font-semibold">{t('common.retry')}</Text>
           </Pressable>
         </View>
       </View>
@@ -484,13 +570,13 @@ export default function TodayScreen() {
                 className="text-3xl text-gray-900"
                 style={{ fontFamily: 'Pretendard-Bold' }}
               >
-                투데이
+                {t('today.title')}
               </Text>
               <Text
                 className="text-base text-gray-500 ml-3"
                 style={{ fontFamily: 'Pretendard-Medium' }}
               >
-                오늘의 실천
+                {t('today.subtitle')}
               </Text>
             </View>
           </View>
@@ -502,7 +588,7 @@ export default function TodayScreen() {
                 onPress={handlePreviousDay}
                 className="px-3 py-2 border-r border-gray-300 active:bg-gray-100"
               >
-                <Text className="text-sm text-gray-700">이전</Text>
+                <Text className="text-sm text-gray-700">{t('common.previous')}</Text>
               </Pressable>
               <Pressable
                 onPress={handleToday}
@@ -511,7 +597,7 @@ export default function TodayScreen() {
                 {isToday ? (
                   <MaskedView
                     maskElement={
-                      <Text className="text-sm font-medium">오늘</Text>
+                      <Text className="text-sm font-medium">{t('common.today')}</Text>
                     }
                   >
                     <LinearGradient
@@ -519,18 +605,18 @@ export default function TodayScreen() {
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                     >
-                      <Text className="text-sm font-medium opacity-0">오늘</Text>
+                      <Text className="text-sm font-medium opacity-0">{t('common.today')}</Text>
                     </LinearGradient>
                   </MaskedView>
                 ) : (
-                  <Text className="text-sm font-medium text-gray-700">오늘</Text>
+                  <Text className="text-sm font-medium text-gray-700">{t('common.today')}</Text>
                 )}
               </Pressable>
               <Pressable
                 onPress={handleNextDay}
                 className="px-3 py-2 active:bg-gray-100"
               >
-                <Text className="text-sm text-gray-700">다음</Text>
+                <Text className="text-sm text-gray-700">{t('common.next')}</Text>
               </Pressable>
             </View>
 
@@ -545,7 +631,7 @@ export default function TodayScreen() {
                     <View className="flex-row items-center">
                       <Calendar size={16} color="#000" />
                       <Text className="text-sm ml-2">
-                        {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                        {formatLocalizedDate(selectedDate, i18n.language)}
                       </Text>
                     </View>
                   }
@@ -558,7 +644,7 @@ export default function TodayScreen() {
                     <View className="flex-row items-center opacity-0">
                       <Calendar size={16} color="#000" />
                       <Text className="text-sm ml-2">
-                        {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                        {formatLocalizedDate(selectedDate, i18n.language)}
                       </Text>
                     </View>
                   </LinearGradient>
@@ -567,7 +653,7 @@ export default function TodayScreen() {
                 <>
                   <Calendar size={16} color="#6b7280" />
                   <Text className="text-sm text-gray-700 ml-2">
-                    {format(selectedDate, 'M월 d일 (EEE)', { locale: ko })}
+                    {formatLocalizedDate(selectedDate, i18n.language)}
                   </Text>
                 </>
               )}
@@ -591,7 +677,7 @@ export default function TodayScreen() {
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center">
                 <Text className="text-base font-semibold text-gray-900">
-                  오늘의 달성율
+                  {t('today.achievementRate')}
                 </Text>
                 <Text className="text-lg font-bold text-gray-900 ml-3">
                   {progressPercentage}%
@@ -622,7 +708,7 @@ export default function TodayScreen() {
             <View className="flex-row items-center mt-3">
               <Info size={12} color="#9ca3af" />
               <Text className="text-xs text-gray-400 ml-1">
-                오늘과 어제 날짜만 달성(체크) 가능합니다
+                {t('today.dateRestriction')}
               </Text>
             </View>
 
@@ -632,7 +718,7 @@ export default function TodayScreen() {
                 onPress={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
                 className="flex-row items-center justify-between"
               >
-                <Text className="text-sm font-medium text-gray-900">타입 필터</Text>
+                <Text className="text-sm font-medium text-gray-900">{t('today.typeFilter')}</Text>
                 {typeFilterCollapsed ? (
                   <ChevronRight size={16} color="#6b7280" />
                 ) : (
@@ -658,7 +744,7 @@ export default function TodayScreen() {
                           activeFilters.size === 0 ? 'text-white' : 'text-gray-700'
                         }`}
                       >
-                        전체
+                        {t('common.all')}
                       </Text>
                     </Pressable>
 
@@ -680,7 +766,7 @@ export default function TodayScreen() {
                           activeFilters.has('routine') ? 'text-white' : 'text-gray-700'
                         }`}
                       >
-                        루틴
+                        {t('actionType.routine')}
                       </Text>
                     </Pressable>
 
@@ -702,7 +788,7 @@ export default function TodayScreen() {
                           activeFilters.has('mission') ? 'text-white' : 'text-gray-700'
                         }`}
                       >
-                        미션
+                        {t('actionType.mission')}
                       </Text>
                     </Pressable>
 
@@ -724,7 +810,7 @@ export default function TodayScreen() {
                           activeFilters.has('reference') ? 'text-white' : 'text-gray-700'
                         }`}
                       >
-                        참고
+                        {t('actionType.reference')}
                       </Text>
                     </Pressable>
                   </View>
@@ -733,7 +819,7 @@ export default function TodayScreen() {
                   <View className="flex-row items-center mt-3">
                     <Info size={12} color="#9ca3af" />
                     <Text className="text-xs text-gray-400 ml-1">
-                      참고 타입은 달성율에 포함되지 않습니다
+                      {t('today.referenceNote')}
                     </Text>
                   </View>
                 </View>
@@ -760,13 +846,13 @@ export default function TodayScreen() {
               className="text-lg text-gray-900 text-center mb-2"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
             >
-              아직 실천 항목이 없어요
+              {t('today.empty.title')}
             </Text>
             <Text
               className="text-sm text-gray-500 text-center mb-5"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
-              만다라트를 만들면{'\n'}매일 실천할 목표를 관리할 수 있어요
+              {t('today.empty.description')}
             </Text>
 
             {/* Guide Box */}
@@ -775,14 +861,14 @@ export default function TodayScreen() {
                 className="text-sm text-gray-700 mb-3"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                실천을 시작하는 방법
+                {t('today.empty.howTo.title')}
               </Text>
               <View className="flex-row items-center mb-2">
                 <View className="w-5 h-5 rounded-full border border-gray-300 items-center justify-center mr-2">
                   <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>1</Text>
                 </View>
                 <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-                  만다라트 만들기
+                  {t('today.empty.howTo.step1')}
                 </Text>
               </View>
               <View className="flex-row items-center">
@@ -790,7 +876,7 @@ export default function TodayScreen() {
                   <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>2</Text>
                 </View>
                 <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-                  매일 체크하며 실천하기
+                  {t('today.empty.howTo.step2')}
                 </Text>
               </View>
             </View>
@@ -805,7 +891,7 @@ export default function TodayScreen() {
                   className="text-sm text-gray-700 text-center"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  사용 가이드
+                  {t('today.empty.guide')}
                 </Text>
               </Pressable>
               <Pressable
@@ -825,7 +911,7 @@ export default function TodayScreen() {
                           className="text-sm text-center"
                           style={{ fontFamily: 'Pretendard-SemiBold' }}
                         >
-                          만다라트 생성
+                          {t('today.empty.create')}
                         </Text>
                       }
                     >
@@ -838,7 +924,7 @@ export default function TodayScreen() {
                           className="text-sm opacity-0"
                           style={{ fontFamily: 'Pretendard-SemiBold' }}
                         >
-                          만다라트 생성
+                          {t('today.empty.create')}
                         </Text>
                       </LinearGradient>
                     </MaskedView>
@@ -857,10 +943,10 @@ export default function TodayScreen() {
           >
             <Text className="text-4xl mb-4">🔍</Text>
             <Text className="text-lg font-semibold text-gray-900 text-center mb-2">
-              필터에 맞는 항목이 없습니다
+              {t('today.noFilterResult')}
             </Text>
             <Text className="text-gray-500 text-center">
-              다른 타입 필터를 선택해보세요
+              {t('today.tryOtherFilter')}
             </Text>
           </Animated.View>
         )}
@@ -912,7 +998,7 @@ export default function TodayScreen() {
                       className="text-sm text-gray-500 mt-1"
                       numberOfLines={1}
                     >
-                      핵심 목표: {mandalart.center_goal}
+                      {t('today.coreGoal')}: {mandalart.center_goal}
                     </Text>
                   </View>
                   {isCollapsed ? (
@@ -998,7 +1084,7 @@ export default function TodayScreen() {
                                     : 'text-gray-600'
                                 }`}
                               >
-                                {action.period_progress.periodLabel} {action.period_progress.checkCount}/{action.period_progress.target}
+                                {t(`actionType.periodLabel.${action.period_progress.periodLabel}`, { defaultValue: action.period_progress.periodLabel })} {action.period_progress.checkCount}/{action.period_progress.target}
                                 {action.period_progress.isCompleted && ' ✓'}
                               </Text>
                             </View>
@@ -1011,8 +1097,8 @@ export default function TodayScreen() {
                           >
                             <ActionTypeIcon type={action.type} size={14} />
                             <Text className="text-xs text-gray-600 ml-1">
-                              {formatTypeDetails(action) ||
-                                getActionTypeLabel(action.type)}
+                              {formatTypeDetailsLocalized(action, t) ||
+                                t(`actionType.${action.type}`)}
                             </Text>
                           </Pressable>
                         </Animated.View>

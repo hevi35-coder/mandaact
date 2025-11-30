@@ -6,6 +6,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { CompositeNavigationProp } from '@react-navigation/native'
+import { useTranslation } from 'react-i18next'
 import { useScrollToTop } from '../navigation/RootNavigator'
 import {
   Flame,
@@ -25,7 +26,7 @@ import { useResponsive } from '../hooks/useResponsive'
 import { useAuthStore } from '../store/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUserGamification, use4WeekHeatmap, useProfileStats, statsKeys } from '../hooks/useStats'
-import { useBadgeDefinitions, useUserBadges, isBadgeUnlocked } from '../hooks/useBadges'
+import { useBadgeDefinitions, useUserBadges, isBadgeUnlocked, useTranslateBadge } from '../hooks/useBadges'
 import {
   getXPForCurrentLevel,
   getLevelFromXP,
@@ -52,12 +53,15 @@ function BadgeMiniCard({
   isUnlocked,
   isSecret,
   onPress,
+  translateBadge,
 }: {
   badge: BadgeDefinition
   isUnlocked: boolean
   isSecret: boolean
   onPress: () => void
+  translateBadge: (badge: BadgeDefinition) => BadgeDefinition
 }) {
+  const translatedBadge = translateBadge(badge)
   return (
     <Pressable
       className={`flex-1 p-3 rounded-xl items-center justify-center min-h-[90px] ${
@@ -68,7 +72,7 @@ function BadgeMiniCard({
       onPress={onPress}
     >
       <Text className={`text-2xl mb-1 ${isUnlocked ? '' : 'opacity-30'}`}>
-        {badge.icon}
+        {translatedBadge.icon}
       </Text>
       <Text
         className={`text-xs font-medium text-center ${
@@ -76,13 +80,14 @@ function BadgeMiniCard({
         }`}
         numberOfLines={1}
       >
-        {isSecret && !isUnlocked ? '???' : badge.name}
+        {isSecret && !isUnlocked ? '???' : translatedBadge.name}
       </Text>
     </Pressable>
   )
 }
 
 export default function HomeScreen() {
+  const { t } = useTranslation()
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
@@ -104,6 +109,9 @@ export default function HomeScreen() {
   const [newNickname, setNewNickname] = useState('')
   const [nicknameError, setNicknameError] = useState('')
   const [nicknameSaving, setNicknameSaving] = useState(false)
+
+  // Translation for badges
+  const translateBadge = useTranslateBadge()
 
   // Data fetching
   const { data: gamification, isLoading: gamificationLoading } = useUserGamification(user?.id)
@@ -210,7 +218,7 @@ export default function HomeScreen() {
 
       // Close modal and show success
       setNicknameModalVisible(false)
-      Alert.alert('완료', '닉네임이 변경되었습니다.')
+      Alert.alert(t('common.confirm'), t('home.nickname.changed'))
     } catch (err) {
       console.error('Nickname update error:', err)
       setNicknameError(NICKNAME_ERRORS.UPDATE_ERROR)
@@ -240,13 +248,13 @@ export default function HomeScreen() {
               className="text-3xl text-gray-900"
               style={{ fontFamily: 'Pretendard-Bold' }}
             >
-              홈
+              {t('home.title')}
             </Text>
             <Text
               className="text-base text-gray-500 ml-3"
               style={{ fontFamily: 'Pretendard-Medium' }}
             >
-              성장 대시보드
+              {t('home.subtitle')}
             </Text>
           </View>
         </View>
@@ -276,7 +284,7 @@ export default function HomeScreen() {
                   <View className="flex-row items-center gap-2 mb-1">
                     <Trophy size={24} color="#eab308" />
                     <Text className="text-2xl font-bold text-gray-900">
-                      레벨 {currentLevel}
+                      {t('home.level')} {currentLevel}
                     </Text>
                   </View>
                   <View className="flex-row items-center">
@@ -290,7 +298,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <View className="items-end">
-                  <Text className="text-sm text-gray-400">총 XP</Text>
+                  <Text className="text-sm text-gray-400">{t('home.totalXP')}</Text>
                   <Text className="text-2xl font-bold text-primary">
                     {totalXP.toLocaleString()}
                   </Text>
@@ -303,7 +311,7 @@ export default function HomeScreen() {
                   <View className="flex-row items-center">
                     <Zap size={14} color="#6b7280" />
                     <Text className="text-sm text-gray-500 ml-1">
-                      레벨 {currentLevel + 1}까지
+                      {t('home.toNextLevel', { level: currentLevel + 1 })}
                     </Text>
                   </View>
                   <Text className="text-sm font-mono font-semibold text-gray-900">
@@ -332,13 +340,13 @@ export default function HomeScreen() {
                   <Text className="text-2xl font-bold text-primary">
                     {totalChecks.toLocaleString()}
                   </Text>
-                  <Text className="text-xs text-gray-500">총 실천 횟수</Text>
+                  <Text className="text-xs text-gray-500">{t('home.totalChecks')}</Text>
                 </View>
                 <View className="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center">
                   <Text className="text-2xl font-bold text-primary">
                     {activeDays.toLocaleString()}
                   </Text>
-                  <Text className="text-xs text-gray-500">누적 실천일수</Text>
+                  <Text className="text-xs text-gray-500">{t('home.activeDays')}</Text>
                 </View>
               </View>
 
@@ -351,7 +359,7 @@ export default function HomeScreen() {
                   <View className="flex-row items-center">
                     <Zap size={14} color="#0a0a0a" />
                     <Text className="text-xs font-semibold text-gray-900 ml-1">
-                      XP 획득 방법
+                      {t('home.xpMethods.title')}
                     </Text>
                   </View>
                   {xpInfoOpen ? (
@@ -366,19 +374,19 @@ export default function HomeScreen() {
                     {/* Basic XP Rules */}
                     <View>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 실천 1회: <Text className="font-semibold text-gray-900">+10 XP</Text>
+                        • {t('home.xpMethods.checkOnce')}: <Text className="font-semibold text-gray-900">+10 XP</Text>
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 스트릭 (7일+): <Text className="font-semibold text-gray-900">+5 XP</Text> 추가
+                        • {t('home.xpMethods.streakBonus')}: <Text className="font-semibold text-gray-900">+5 XP</Text>
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 완벽한 하루 (100%): <Text className="font-semibold text-gray-900">+50 XP</Text>
+                        • {t('home.xpMethods.perfectDay')}: <Text className="font-semibold text-gray-900">+50 XP</Text>
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 완벽한 주 (80%+): <Text className="font-semibold text-gray-900">+200 XP</Text>
+                        • {t('home.xpMethods.perfectWeek')}: <Text className="font-semibold text-gray-900">+200 XP</Text>
                       </Text>
                       <Text className="text-xs text-gray-500">
-                        • 배지 획득: 배지별 상이
+                        • {t('home.xpMethods.badge')}: {t('home.xpMethods.badgeVaries')}
                       </Text>
                     </View>
 
@@ -387,29 +395,29 @@ export default function HomeScreen() {
                       <View className="flex-row items-center mb-2">
                         <Sparkles size={12} color="#0a0a0a" />
                         <Text className="text-xs font-semibold text-gray-900 ml-1">
-                          XP 배율 보너스
+                          {t('home.xpMultiplier.title')}
                         </Text>
                       </View>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 주말 (토·일): <Text className="font-semibold text-blue-500">1.5배</Text>
+                        • {t('home.xpMultiplier.weekend')}: <Text className="font-semibold text-blue-500">1.5x</Text>
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 복귀 환영 (3일 부재 후): <Text className="font-semibold text-green-500">1.5배</Text>{' '}
-                        <Text className="text-[10px]">(3일간)</Text>
+                        • {t('home.xpMultiplier.comeback')}: <Text className="font-semibold text-green-500">1.5x</Text>{' '}
+                        <Text className="text-[10px]">{t('home.xpMultiplier.for3Days')}</Text>
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 레벨 달성 축하 (5, 10, 15...): <Text className="font-semibold text-yellow-500">2배</Text>{' '}
-                        <Text className="text-[10px]">(7일간)</Text>
+                        • {t('home.xpMultiplier.levelMilestone')}: <Text className="font-semibold text-yellow-500">2x</Text>{' '}
+                        <Text className="text-[10px]">{t('home.xpMultiplier.for7Days')}</Text>
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 완벽한 주 달성 후: <Text className="font-semibold text-purple-500">2배</Text>{' '}
-                        <Text className="text-[10px]">(7일간)</Text>
+                        • {t('home.xpMultiplier.perfectWeek')}: <Text className="font-semibold text-purple-500">2x</Text>{' '}
+                        <Text className="text-[10px]">{t('home.xpMultiplier.for7Days')}</Text>
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 배율은 중복 적용 시 합산됩니다
+                        • {t('home.xpMultiplier.stackNote')}
                       </Text>
                       <Text className="text-xs text-gray-400 ml-3">
-                        (예: 1.5배 + 2배 = 3.5배)
+                        {t('home.xpMultiplier.stackExample')}
                       </Text>
                     </View>
 
@@ -419,7 +427,7 @@ export default function HomeScreen() {
                         <View className="flex-row items-center mb-2">
                           <Sparkles size={12} color="#0a0a0a" />
                           <Text className="text-xs font-semibold text-gray-900 ml-1">
-                            현재 활성 중인 배율
+                            {t('home.xpMultiplier.activeMultipliers')}
                           </Text>
                         </View>
                         <View className="space-y-1">
@@ -431,12 +439,13 @@ export default function HomeScreen() {
                                 : multiplier.type === 'level_milestone'
                                   ? 'text-yellow-500'
                                   : 'text-purple-500'
+                            const translatedName = t(`home.xpMultiplier.names.${multiplier.type}`, { defaultValue: multiplier.name })
                             return (
                               <View
                                 key={index}
                                 className="flex-row items-center justify-between p-1.5 bg-gray-50 rounded"
                               >
-                                <Text className="text-xs text-gray-500">{multiplier.name}</Text>
+                                <Text className="text-xs text-gray-500">{translatedName}</Text>
                                 <Text className={`text-xs font-bold ${colorClass}`}>
                                   ×{multiplier.multiplier}
                                 </Text>
@@ -452,17 +461,17 @@ export default function HomeScreen() {
                       <View className="flex-row items-center mb-2">
                         <Info size={12} color="#0a0a0a" />
                         <Text className="text-xs font-semibold text-gray-900 ml-1">
-                          공정한 XP 정책
+                          {t('home.fairXP.title')}
                         </Text>
                       </View>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 각 실천은 하루 3회까지 체크/해제 가능
+                        • {t('home.fairXP.dailyLimit')}
                       </Text>
                       <Text className="text-xs text-gray-500 mb-1">
-                        • 동일 실천은 10초 후 재체크 가능
+                        • {t('home.fairXP.cooldown')}
                       </Text>
                       <Text className="text-xs text-gray-500">
-                        • 짧은 시간 내 과도한 체크 시 제한
+                        • {t('home.fairXP.spamLimit')}
                       </Text>
                     </View>
                   </View>
@@ -478,7 +487,7 @@ export default function HomeScreen() {
                   <View className="flex-row items-center">
                     <Target size={14} color="#0a0a0a" />
                     <Text className="text-xs font-semibold text-gray-900 ml-1">
-                      배지 컬렉션
+                      {t('home.badges.title')}
                     </Text>
                   </View>
                   <View className="flex-row items-center">
@@ -498,7 +507,7 @@ export default function HomeScreen() {
                     {badgesLoading ? (
                       <View className="py-4 items-center">
                         <ActivityIndicator size="small" color="#2563eb" />
-                        <Text className="text-xs text-gray-400 mt-2">배지 로딩 중...</Text>
+                        <Text className="text-xs text-gray-400 mt-2">{t('home.badges.loading')}</Text>
                       </View>
                     ) : (
                       <View className="space-y-4">
@@ -514,7 +523,7 @@ export default function HomeScreen() {
                               <View className="flex-row items-center mb-2">
                                 <Text className="text-base mr-1">{category.icon}</Text>
                                 <Text className="text-sm font-bold text-gray-900">
-                                  {category.title}
+                                  {t(`badges.categories.${category.key}`, { defaultValue: category.title })}
                                 </Text>
                                 <Text className="text-xs text-gray-400 ml-auto">
                                   {categoryUnlocked}/{categoryTotal}
@@ -530,6 +539,7 @@ export default function HomeScreen() {
                                       isUnlocked={isBadgeUnlocked(badge.id, userBadges)}
                                       isSecret={category.key === 'secret'}
                                       onPress={() => navigation.navigate('Badges')}
+                                      translateBadge={translateBadge}
                                     />
                                   </View>
                                 ))}
@@ -543,17 +553,17 @@ export default function HomeScreen() {
                           <View className="flex-row items-center mb-2">
                             <Info size={12} color="#2563eb" />
                             <Text className="text-xs font-semibold text-primary ml-1">
-                              공정한 배지 정책
+                              {t('home.badges.fairPolicy.title')}
                             </Text>
                           </View>
                           <Text className="text-xs text-gray-500 mb-1">
-                            • 최소 16개 실천 항목 (5자 이상)
+                            • {t('home.badges.fairPolicy.minActions')}
                           </Text>
                           <Text className="text-xs text-gray-500 mb-1">
-                            • 정상적인 체크 패턴 (자동화 감지)
+                            • {t('home.badges.fairPolicy.normalPattern')}
                           </Text>
                           <Text className="text-xs text-gray-500">
-                            • 빈 만다라트 생성 불가
+                            • {t('home.badges.fairPolicy.noEmpty')}
                           </Text>
                         </View>
                       </View>
@@ -581,9 +591,9 @@ export default function HomeScreen() {
           {/* Header */}
           <View className="flex-row items-center gap-2 mb-1">
             <Flame size={20} color="#f97316" />
-            <Text className="text-lg font-bold text-orange-500">스트릭</Text>
+            <Text className="text-lg font-bold text-orange-500">{t('home.streak.title')}</Text>
           </View>
-          <Text className="text-sm text-gray-500 mb-4">연속 실천 기록</Text>
+          <Text className="text-sm text-gray-500 mb-4">{t('home.streak.subtitle')}</Text>
 
           {/* Current Streak & Longest Streak - Side by Side */}
           <View className="flex-row gap-3 mb-4">
@@ -593,7 +603,7 @@ export default function HomeScreen() {
               <Text className="text-4xl font-bold text-orange-500 my-1">
                 {currentStreak}
               </Text>
-              <Text className="text-sm font-semibold text-gray-500">일 연속</Text>
+              <Text className="text-sm font-semibold text-gray-500">{t('home.streak.consecutive')}</Text>
               {currentStreak > 0 && lastCheckDate && (() => {
                 // Handle both Date object and string (React Query may serialize dates)
                 const isoString = lastCheckDate instanceof Date
@@ -615,14 +625,14 @@ export default function HomeScreen() {
             <View className="flex-1 p-4 rounded-xl border border-gray-200 bg-gray-50 items-center relative">
               {isNewRecord && (
                 <View className="absolute -top-2 -right-2 px-2 py-1 bg-yellow-100 rounded-full border border-yellow-300">
-                  <Text className="text-xs font-bold text-yellow-700">신기록!</Text>
+                  <Text className="text-xs font-bold text-yellow-700">{t('home.streak.newRecord')}</Text>
                 </View>
               )}
               <Trophy size={32} color="#eab308" />
               <Text className="text-4xl font-bold text-gray-900 my-1">
                 {longestStreak}
               </Text>
-              <Text className="text-sm font-semibold text-gray-500">최장 기록</Text>
+              <Text className="text-sm font-semibold text-gray-500">{t('home.streak.longest')}</Text>
               {longestStreak > 0 && longestStreakDate && (() => {
                 // Handle both Date object and string (React Query may serialize dates)
                 const isoString = longestStreakDate instanceof Date
@@ -643,7 +653,7 @@ export default function HomeScreen() {
           <View>
             <View className="flex-row items-center gap-2 mb-4">
               <Calendar size={16} color="#6b7280" />
-              <Text className="text-sm font-medium text-gray-700">최근 4주 활동</Text>
+              <Text className="text-sm font-medium text-gray-700">{t('home.streak.recent4Weeks')}</Text>
             </View>
 
             {fourWeekLoading ? (
@@ -723,7 +733,7 @@ export default function HomeScreen() {
                 className="text-sm text-gray-600 text-center"
                 style={{ fontFamily: 'Pretendard-Medium' }}
               >
-                오늘부터 새로운 스트릭을 시작해보세요! 🌱
+                {t('home.streak.startNew')} 🌱
               </Text>
             </View>
           ) : currentStreak >= 7 ? (
@@ -732,7 +742,7 @@ export default function HomeScreen() {
                 className="text-sm text-orange-700 text-center"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                대단해요! 꾸준함이 습관이 되고 있어요 🎉
+                {t('home.streak.amazing')} 🎉
               </Text>
             </View>
           ) : (
@@ -741,7 +751,7 @@ export default function HomeScreen() {
                 className="text-sm text-gray-600 text-center"
                 style={{ fontFamily: 'Pretendard-Medium' }}
               >
-                7일 연속까지 {7 - currentStreak}일 남았어요. 계속 이대로! 💪
+                {t('home.streak.keepGoing', { days: 7 - currentStreak })} 💪
               </Text>
             </View>
           )}

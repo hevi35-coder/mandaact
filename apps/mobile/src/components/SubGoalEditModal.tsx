@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -25,15 +25,13 @@ import {
   ChevronLeft,
   Info,
 } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useToast } from './Toast'
 import { ActionTypeData } from './ActionTypeSelector'
 import SortableList from './SortableList'
 import {
-  getActionTypeLabel,
-  formatTypeDetails,
   suggestActionType,
-  getWeekdayNames,
   getInitialPeriod,
   type Action,
   type SubGoal,
@@ -68,60 +66,9 @@ function ActionTypeIcon({ type, size = 14 }: { type: ActionType; size?: number }
   }
 }
 
-// Type selector constants
-const TYPE_OPTIONS: { type: ActionType; label: string; description: string; icon: React.ReactNode }[] = [
-  {
-    type: 'routine',
-    label: '루틴',
-    description: '매일, 매주, 매월 등 반복적으로 실천하는 항목',
-    icon: <RotateCw size={20} color="#3b82f6" />,
-  },
-  {
-    type: 'mission',
-    label: '미션',
-    description: '끝이 있는 목표 (책 1권 읽기, 자격증 취득 등)',
-    icon: <Target size={20} color="#10b981" />,
-  },
-  {
-    type: 'reference',
-    label: '참고',
-    description: '마음가짐, 가치관 등 체크가 필요없는 참고 항목',
-    icon: <Lightbulb size={20} color="#f59e0b" />,
-  },
-]
-
-const FREQUENCY_OPTIONS: { value: RoutineFrequency; label: string }[] = [
-  { value: 'daily', label: '매일' },
-  { value: 'weekly', label: '매주' },
-  { value: 'monthly', label: '매월' },
-]
-
+// Type selector constants - will be created with translation in component
 const WEEKLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
 const MONTHLY_COUNT_OPTIONS = [1, 2, 3, 5, 10, 20, 30]
-
-const MISSION_COMPLETION_OPTIONS: { value: MissionCompletionType; label: string }[] = [
-  { value: 'once', label: '1회 완료 (예: 자격증 취득, 책 읽기)' },
-  { value: 'periodic', label: '주기적 목표 (예: 월간 매출 목표, 분기별 평가)' },
-]
-
-const PERIOD_CYCLE_OPTIONS: { value: MissionPeriodCycle; label: string }[] = [
-  { value: 'daily', label: '매일' },
-  { value: 'weekly', label: '매주' },
-  { value: 'monthly', label: '매월' },
-  { value: 'quarterly', label: '분기별' },
-  { value: 'yearly', label: '매년' },
-]
-
-const getConfidenceLabel = (confidence: string) => {
-  switch (confidence) {
-    case 'high':
-      return '높음'
-    case 'medium':
-      return '중간'
-    default:
-      return '낮음'
-  }
-}
 
 export default function SubGoalEditModal({
   visible,
@@ -129,7 +76,125 @@ export default function SubGoalEditModal({
   onClose,
   onSuccess,
 }: SubGoalEditModalProps) {
+  const { t } = useTranslation()
   const toast = useToast()
+
+  // Translated constants
+  const TYPE_OPTIONS = useMemo(() => [
+    {
+      type: 'routine' as ActionType,
+      label: t('actionType.routine'),
+      description: t('actionType.selector.routineDesc'),
+      icon: <RotateCw size={20} color="#3b82f6" />,
+    },
+    {
+      type: 'mission' as ActionType,
+      label: t('actionType.mission'),
+      description: t('actionType.selector.missionDesc'),
+      icon: <Target size={20} color="#10b981" />,
+    },
+    {
+      type: 'reference' as ActionType,
+      label: t('actionType.reference'),
+      description: t('actionType.selector.referenceDesc'),
+      icon: <Lightbulb size={20} color="#f59e0b" />,
+    },
+  ], [t])
+
+  const FREQUENCY_OPTIONS = useMemo(() => [
+    { value: 'daily' as RoutineFrequency, label: t('actionType.daily') },
+    { value: 'weekly' as RoutineFrequency, label: t('actionType.weekly') },
+    { value: 'monthly' as RoutineFrequency, label: t('actionType.monthly') },
+  ], [t])
+
+  const MISSION_COMPLETION_OPTIONS = useMemo(() => [
+    { value: 'once' as MissionCompletionType, label: t('actionType.selector.onceDesc') },
+    { value: 'periodic' as MissionCompletionType, label: t('actionType.selector.periodicDesc') },
+  ], [t])
+
+  const PERIOD_CYCLE_OPTIONS = useMemo(() => [
+    { value: 'daily' as MissionPeriodCycle, label: t('actionType.daily') },
+    { value: 'weekly' as MissionPeriodCycle, label: t('actionType.weekly') },
+    { value: 'monthly' as MissionPeriodCycle, label: t('actionType.monthly') },
+    { value: 'quarterly' as MissionPeriodCycle, label: t('actionType.quarterly') },
+    { value: 'yearly' as MissionPeriodCycle, label: t('actionType.yearly') },
+  ], [t])
+
+  const weekdays = useMemo(() => [
+    { value: 1, label: t('actionType.weekdayShort.mon'), short: t('actionType.weekdayShort.mon') },
+    { value: 2, label: t('actionType.weekdayShort.tue'), short: t('actionType.weekdayShort.tue') },
+    { value: 3, label: t('actionType.weekdayShort.wed'), short: t('actionType.weekdayShort.wed') },
+    { value: 4, label: t('actionType.weekdayShort.thu'), short: t('actionType.weekdayShort.thu') },
+    { value: 5, label: t('actionType.weekdayShort.fri'), short: t('actionType.weekdayShort.fri') },
+    { value: 6, label: t('actionType.weekdayShort.sat'), short: t('actionType.weekdayShort.sat') },
+    { value: 0, label: t('actionType.weekdayShort.sun'), short: t('actionType.weekdayShort.sun') },
+  ], [t])
+
+  const getConfidenceLabel = (confidence: string) => {
+    switch (confidence) {
+      case 'high':
+        return t('mandalart.subGoalEdit.confidenceHigh')
+      case 'medium':
+        return t('mandalart.subGoalEdit.confidenceMedium')
+      default:
+        return t('mandalart.subGoalEdit.confidenceLow')
+    }
+  }
+
+  // Get translated action type label
+  const getTranslatedTypeLabel = (type: ActionType) => {
+    return t(`actionType.${type}`)
+  }
+
+  // Get translated type details string
+  const getTranslatedTypeDetails = (action: Action): string => {
+    if (action.type === 'routine') {
+      if (action.routine_frequency === 'daily') {
+        return t('actionType.daily')
+      }
+      if (action.routine_frequency === 'weekly') {
+        if (action.routine_weekdays && action.routine_weekdays.length > 0) {
+          const dayNames = action.routine_weekdays.map(d => {
+            const dayMap: Record<number, string> = {
+              0: t('actionType.weekdayShort.sun'),
+              1: t('actionType.weekdayShort.mon'),
+              2: t('actionType.weekdayShort.tue'),
+              3: t('actionType.weekdayShort.wed'),
+              4: t('actionType.weekdayShort.thu'),
+              5: t('actionType.weekdayShort.fri'),
+              6: t('actionType.weekdayShort.sat'),
+            }
+            return dayMap[d] || ''
+          }).join(', ')
+          return dayNames
+        }
+        if (action.routine_count_per_period) {
+          return t('actionType.format.timesPerWeek', { count: action.routine_count_per_period })
+        }
+        return t('actionType.weekly')
+      }
+      if (action.routine_frequency === 'monthly') {
+        if (action.routine_count_per_period) {
+          return t('actionType.format.timesPerMonth', { count: action.routine_count_per_period })
+        }
+        return t('actionType.monthly')
+      }
+      return t('mandalart.subGoalEdit.notSet')
+    }
+    if (action.type === 'mission') {
+      if (action.mission_completion_type === 'once') {
+        return t('actionType.selector.onceDesc')
+      }
+      if (action.mission_completion_type === 'periodic') {
+        return t(`actionType.${action.mission_period_cycle || 'monthly'}`)
+      }
+      return t('mandalart.subGoalEdit.notSet')
+    }
+    if (action.type === 'reference') {
+      return t('actionType.reference')
+    }
+    return t('mandalart.subGoalEdit.notSet')
+  }
 
   // Local state
   const [subGoalTitle, setSubGoalTitle] = useState('')
@@ -157,8 +222,6 @@ export default function SubGoalEditModal({
   const [showCustomMonthlyInput, setShowCustomMonthlyInput] = useState(false)
   const [customMonthlyValue, setCustomMonthlyValue] = useState('')
 
-  const weekdays = getWeekdayNames()
-
   // Check if this is a new sub-goal (empty id means creating new)
   const isNewSubGoal = subGoalId === ''
 
@@ -178,7 +241,7 @@ export default function SubGoalEditModal({
   // Sub-goal title save (handles both create and update)
   const handleSubGoalTitleSave = useCallback(async () => {
     if (!subGoal || subGoalTitle.trim() === '') {
-      toast.error('세부목표를 입력하세요')
+      toast.error(t('mandalart.subGoalEdit.toast.enterSubGoal'))
       return
     }
 
@@ -204,7 +267,7 @@ export default function SubGoalEditModal({
         }
 
         setIsEditingSubGoalTitle(false)
-        toast.success('세부목표가 생성되었습니다. 실천항목을 추가하세요.')
+        toast.success(t('mandalart.subGoalEdit.toast.subGoalCreated'))
         onSuccess?.()
         // Don't close modal - allow user to add actions
       } else {
@@ -217,12 +280,12 @@ export default function SubGoalEditModal({
         if (error) throw error
 
         setIsEditingSubGoalTitle(false)
-        toast.success('저장되었습니다')
+        toast.success(t('mandalart.subGoalEdit.toast.saved'))
         onSuccess?.()
       }
     } catch (err) {
       console.error('SubGoal title save error:', err)
-      toast.error('저장 중 오류가 발생했습니다')
+      toast.error(t('mandalart.subGoalEdit.toast.saveError'))
       setSubGoalTitle(subGoal.title)
     } finally {
       setIsSaving(false)
@@ -232,7 +295,7 @@ export default function SubGoalEditModal({
   // Action title save
   const handleActionTitleSave = useCallback(async (actionId: string) => {
     if (editingActionTitle.trim() === '') {
-      toast.error('제목을 입력하세요')
+      toast.error(t('mandalart.subGoalEdit.toast.enterTitle'))
       return
     }
 
@@ -257,11 +320,11 @@ export default function SubGoalEditModal({
 
       if (error) throw error
 
-      toast.success('저장되었습니다')
+      toast.success(t('mandalart.subGoalEdit.toast.saved'))
       onSuccess?.()
     } catch (err) {
       console.error('Action title save error:', err)
-      toast.error('저장 중 오류가 발생했습니다')
+      toast.error(t('mandalart.subGoalEdit.toast.saveError'))
       onSuccess?.()
     }
   }, [editingActionTitle, toast, onSuccess])
@@ -373,11 +436,11 @@ export default function SubGoalEditModal({
 
       if (error) throw error
 
-      toast.success('타입이 변경되었습니다')
+      toast.success(t('mandalart.subGoalEdit.toast.typeChanged'))
       onSuccess?.()
     } catch (err) {
       console.error('Type update error:', err)
-      toast.error('타입 변경 중 오류가 발생했습니다')
+      toast.error(t('mandalart.subGoalEdit.toast.typeChangeError'))
       onSuccess?.() // Refresh to get correct data
     }
   }, [selectedAction, selectedType, routineFrequency, routineWeekdays, routineCountPerPeriod, missionCompletionType, missionPeriodCycle, aiSuggestion, toast, onSuccess])
@@ -385,12 +448,12 @@ export default function SubGoalEditModal({
   // Action delete
   const handleActionDelete = useCallback((action: Action) => {
     Alert.alert(
-      '실천항목 삭제',
-      `"${action.title}"을(를) 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`,
+      t('mandalart.subGoalEdit.deleteAction.title'),
+      t('mandalart.subGoalEdit.deleteAction.message', { title: action.title }),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('mandalart.subGoalEdit.deleteAction.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('mandalart.subGoalEdit.deleteAction.delete'),
           style: 'destructive',
           onPress: async () => {
             const remainingActions = actions.filter((a) => a.id !== action.id)
@@ -416,11 +479,11 @@ export default function SubGoalEditModal({
                   )
               )
 
-              toast.success('삭제되었습니다')
+              toast.success(t('mandalart.subGoalEdit.toast.deleted'))
               onSuccess?.()
             } catch (err) {
               console.error('Action delete error:', err)
-              toast.error('삭제 중 오류가 발생했습니다')
+              toast.error(t('mandalart.subGoalEdit.toast.deleteError'))
               onSuccess?.()
             }
           },
@@ -435,12 +498,12 @@ export default function SubGoalEditModal({
 
     // New sub-goal: must save title first
     if (isNewSubGoal) {
-      toast.error('먼저 세부목표 제목을 저장하세요')
+      toast.error(t('mandalart.subGoalEdit.toast.saveSubGoalFirst'))
       return
     }
 
     if (actions.length >= 8) {
-      toast.error('실천항목은 최대 8개까지 추가할 수 있습니다')
+      toast.error(t('mandalart.subGoalEdit.toast.maxActions'))
       return
     }
 
@@ -453,10 +516,10 @@ export default function SubGoalEditModal({
         .from('actions')
         .insert({
           sub_goal_id: subGoalId, // Use state instead of prop
-          title: '새 실천항목',
+          title: t('mandalart.subGoalEdit.newAction'),
           position: newPosition,
           type: 'routine',
-          routine_frequency: null, // 미설정 상태로 시작
+          routine_frequency: null,
         })
         .select()
         .single()
@@ -469,7 +532,7 @@ export default function SubGoalEditModal({
       onSuccess?.()
     } catch (err) {
       console.error('Action add error:', err)
-      toast.error('추가 중 오류가 발생했습니다')
+      toast.error(t('mandalart.subGoalEdit.toast.addError'))
     }
   }, [subGoal, subGoalId, actions, toast, onSuccess, isNewSubGoal])
 
@@ -495,7 +558,7 @@ export default function SubGoalEditModal({
       onSuccess?.()
     } catch (err) {
       console.error('Reorder action error:', err)
-      toast.error('순서 변경 중 오류가 발생했습니다')
+      toast.error(t('mandalart.subGoalEdit.toast.reorderError'))
       onSuccess?.()
     }
   }, [toast, onSuccess])
@@ -530,7 +593,7 @@ export default function SubGoalEditModal({
                     className="text-lg text-gray-900"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    세부목표 수정
+                    {t('mandalart.subGoalEdit.title')}
                   </Text>
                   <Pressable onPress={onClose} className="p-1">
                     <X size={24} color="#6b7280" />
@@ -551,7 +614,7 @@ export default function SubGoalEditModal({
                     className="text-lg text-gray-900"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    타입 설정
+                    {t('mandalart.subGoalEdit.typeSettings')}
                   </Text>
                   <Pressable
                     onPress={handleTypeSelectorSave}
@@ -574,7 +637,7 @@ export default function SubGoalEditModal({
                   className="text-sm text-gray-500 mb-4"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  세부목표와 실천항목을 수정할 수 있습니다
+                  {t('mandalart.subGoalEdit.description')}
                 </Text>
 
                 {/* Sub-goal Title */}
@@ -583,14 +646,14 @@ export default function SubGoalEditModal({
                     className="text-sm text-gray-700 mb-2"
                     style={{ fontFamily: 'Pretendard-Medium' }}
                   >
-                    세부목표
+                    {t('mandalart.subGoalEdit.subGoalLabel')}
                   </Text>
                   {isEditingSubGoalTitle ? (
                     <View className="flex-row items-center" style={{ gap: 8 }}>
                       <TextInput
                         value={subGoalTitle}
                         onChangeText={setSubGoalTitle}
-                        placeholder="세부목표 제목을 입력하세요"
+                        placeholder={t('mandalart.subGoalEdit.subGoalPlaceholder')}
                         className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-base"
                         style={{ fontFamily: 'Pretendard-Regular' }}
                         autoFocus
@@ -640,7 +703,7 @@ export default function SubGoalEditModal({
                       className="text-sm text-gray-700"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      실천 항목 ({actions.length}/8)
+                      {t('mandalart.subGoalEdit.actions')} ({actions.length}/8)
                     </Text>
                     {actions.length < 8 && (
                       <Pressable
@@ -652,7 +715,7 @@ export default function SubGoalEditModal({
                           className="text-sm text-primary ml-1"
                           style={{ fontFamily: 'Pretendard-Medium' }}
                         >
-                          추가
+                          {t('mandalart.subGoalEdit.add')}
                         </Text>
                       </Pressable>
                     )}
@@ -664,7 +727,7 @@ export default function SubGoalEditModal({
                         className="text-sm text-gray-400 text-center"
                         style={{ fontFamily: 'Pretendard-Regular' }}
                       >
-                        실천 항목이 없습니다.{'\n'}추가 버튼을 클릭하여 항목을 추가하세요.
+                        {t('mandalart.subGoalEdit.noActions')}
                       </Text>
                     </View>
                   ) : (
@@ -743,7 +806,7 @@ export default function SubGoalEditModal({
                                 className="text-xs text-gray-600 ml-1"
                                 style={{ fontFamily: 'Pretendard-Medium' }}
                               >
-                                {formatTypeDetails(action) || getActionTypeLabel(action.type)}
+                                {getTranslatedTypeDetails(action)}
                               </Text>
                             </Pressable>
 
@@ -773,7 +836,7 @@ export default function SubGoalEditModal({
                     className="text-sm text-gray-500 mb-4"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    "{selectedAction.title}"의 타입과 세부 설정을 선택하세요
+                    {t('mandalart.subGoalEdit.selectTypeDesc', { title: selectedAction.title })}
                   </Text>
                 )}
 
@@ -784,7 +847,7 @@ export default function SubGoalEditModal({
                       className="text-sm text-blue-900"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      💡 자동 추천: {getActionTypeLabel(aiSuggestion.type as ActionType)}
+                      💡 {t('mandalart.subGoalEdit.autoSuggestion')}: {getTranslatedTypeLabel(aiSuggestion.type as ActionType)}
                     </Text>
                     <View className="flex-row items-center mt-1">
                       <Info size={12} color="#1e40af" />
@@ -792,7 +855,7 @@ export default function SubGoalEditModal({
                         className="text-xs text-blue-700 ml-1 flex-1"
                         style={{ fontFamily: 'Pretendard-Regular' }}
                       >
-                        {aiSuggestion.reason} (신뢰도: {getConfidenceLabel(aiSuggestion.confidence)})
+                        {aiSuggestion.reason} ({t('mandalart.subGoalEdit.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
                       </Text>
                     </View>
                   </View>
@@ -804,7 +867,7 @@ export default function SubGoalEditModal({
                     className="text-sm text-gray-700 mb-2"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    실천 항목 타입
+                    {t('mandalart.subGoalEdit.actionType')}
                   </Text>
                   <View style={{ gap: 8 }}>
                     {TYPE_OPTIONS.map((option) => (
@@ -855,7 +918,7 @@ export default function SubGoalEditModal({
                       className="text-base text-gray-900 mb-3"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      루틴 설정
+                      {t('mandalart.modal.routine.title')}
                     </Text>
 
                     {/* Frequency Select - Button Style */}
@@ -864,7 +927,7 @@ export default function SubGoalEditModal({
                         className="text-sm text-gray-700 mb-2"
                         style={{ fontFamily: 'Pretendard-Medium' }}
                       >
-                        반복 주기
+                        {t('mandalart.modal.routine.repeatCycle')}
                       </Text>
                       <View className="flex-row" style={{ gap: 8 }}>
                         {FREQUENCY_OPTIONS.map((option) => (
@@ -903,7 +966,7 @@ export default function SubGoalEditModal({
                     {routineFrequency === 'weekly' && (
                       <View className="mb-3">
                         <Text className="text-sm text-gray-700 mb-2">
-                          주중 실천 요일 선택 (선택사항)
+                          {t('mandalart.modal.routine.weekdayLabel')}
                         </Text>
                         <View className="flex-row flex-wrap" style={{ gap: 8 }}>
                           {weekdays.map((day) => (
@@ -931,14 +994,14 @@ export default function SubGoalEditModal({
                         <View className="flex-row items-center mt-2">
                           <Info size={12} color="#9ca3af" />
                           <Text className="text-xs text-gray-400 ml-1">
-                            요일을 선택하지 않으면 주간 횟수 기반으로 설정됩니다
+                            {t('mandalart.subGoalEdit.weekdayNote')}
                           </Text>
                         </View>
 
                         {/* Weekly Count (when no weekdays selected) */}
                         {routineWeekdays.length === 0 && (
                           <View className="mt-3">
-                            <Text className="text-sm text-gray-700 mb-2">주간 목표 횟수</Text>
+                            <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.weeklyGoal')}</Text>
                             <View className="flex-row" style={{ gap: 8 }}>
                               {WEEKLY_COUNT_OPTIONS.map((count) => (
                                 <Pressable
@@ -970,7 +1033,7 @@ export default function SubGoalEditModal({
                     {/* Monthly Count */}
                     {routineFrequency === 'monthly' && (
                       <View className="mb-3">
-                        <Text className="text-sm text-gray-700 mb-2">월간 목표 횟수</Text>
+                        <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.monthlyGoal')}</Text>
                         <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
                           {MONTHLY_COUNT_OPTIONS.map((count) => (
                             <Pressable
@@ -1036,7 +1099,7 @@ export default function SubGoalEditModal({
                         <View className="flex-row items-center mt-2">
                           <Info size={12} color="#9ca3af" />
                           <Text className="text-xs text-gray-400 ml-1">
-                            매일 실천하는 항목은 반복 주기를 '매일'로 선택하세요
+                            {t('mandalart.modal.routine.dailyHint')}
                           </Text>
                         </View>
                       </View>
@@ -1051,7 +1114,7 @@ export default function SubGoalEditModal({
                       className="text-base text-gray-900 mb-3"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      미션 설정
+                      {t('mandalart.modal.mission.title')}
                     </Text>
 
                     {/* Completion Type */}
@@ -1060,7 +1123,7 @@ export default function SubGoalEditModal({
                         className="text-sm text-gray-700 mb-2"
                         style={{ fontFamily: 'Pretendard-Medium' }}
                       >
-                        완료 방식
+                        {t('mandalart.modal.mission.completionType')}
                       </Text>
                       <View style={{ gap: 8 }}>
                         {MISSION_COMPLETION_OPTIONS.map((option) => (
@@ -1102,7 +1165,7 @@ export default function SubGoalEditModal({
                           className="text-sm text-gray-700 mb-2"
                           style={{ fontFamily: 'Pretendard-Medium' }}
                         >
-                          반복 주기
+                          {t('mandalart.modal.mission.periodCycle')}
                         </Text>
                         <View className="flex-row flex-wrap" style={{ gap: 8 }}>
                           {PERIOD_CYCLE_OPTIONS.map((option) => (
@@ -1142,7 +1205,7 @@ export default function SubGoalEditModal({
                         className="text-sm text-gray-500 ml-2"
                         style={{ fontFamily: 'Pretendard-Regular' }}
                       >
-                        참고 타입은 달성률에 포함되지 않습니다
+                        {t('mandalart.modal.referenceInfo')}
                       </Text>
                     </View>
                   </View>

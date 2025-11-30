@@ -27,6 +27,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { useTranslation } from 'react-i18next'
 
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
@@ -65,6 +66,7 @@ const CARD_PADDING = 16
 const CELL_GAP = 8
 
 export default function MandalartCreateScreen() {
+  const { t } = useTranslation()
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
@@ -113,18 +115,18 @@ export default function MandalartCreateScreen() {
 
   // Image picker handler (opens action sheet)
   const handleImageSourceSelect = useCallback(() => {
-    Alert.alert('이미지 선택', '어디서 이미지를 가져올까요?', [
+    Alert.alert(t('mandalart.create.imageUpload.selectImage'), '', [
       {
-        text: '카메라',
+        text: t('mandalart.create.imageUpload.camera'),
         onPress: () => handleImagePick('camera'),
       },
       {
-        text: '갤러리',
+        text: t('mandalart.create.imageUpload.gallery'),
         onPress: () => handleImagePick('library'),
       },
-      { text: '취소', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
     ])
-  }, [])
+  }, [t])
 
   // Pick image and show preview (without OCR yet)
   const handleImagePick = useCallback(
@@ -136,7 +138,7 @@ export default function MandalartCreateScreen() {
         if (source === 'camera') {
           const { status } = await ImagePicker.requestCameraPermissionsAsync()
           if (status !== 'granted') {
-            Alert.alert('권한 필요', '카메라 접근 권한이 필요합니다.')
+            Alert.alert(t('mandalart.create.imageUpload.permissionRequired'), t('mandalart.create.imageUpload.cameraPermission'))
             return
           }
           result = await ImagePicker.launchCameraAsync({
@@ -147,7 +149,7 @@ export default function MandalartCreateScreen() {
         } else {
           const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
           if (status !== 'granted') {
-            Alert.alert('권한 필요', '갤러리 접근 권한이 필요합니다.')
+            Alert.alert(t('mandalart.create.imageUpload.permissionRequired'), t('mandalart.create.imageUpload.galleryPermission'))
             return
           }
           result = await ImagePicker.launchImageLibraryAsync({
@@ -162,10 +164,10 @@ export default function MandalartCreateScreen() {
         }
       } catch (err) {
         logger.error('Image pick error', err)
-        Alert.alert('오류', '이미지 선택 중 오류가 발생했습니다.')
+        Alert.alert(t('common.error'), t('mandalart.create.errors.imageSelect'))
       }
     },
-    [user]
+    [user, t]
   )
 
   // Process OCR from selected image
@@ -173,7 +175,7 @@ export default function MandalartCreateScreen() {
     if (!user || !selectedImageUri) return
 
     setIsProcessingOCR(true)
-    setProgress({ stage: 'processing', message: 'OCR 처리 중...' })
+    setProgress({ stage: 'processing', message: t('mandalart.create.imageUpload.processing') })
 
     try {
       const result = await runOCRFlowFromUri(user.id, selectedImageUri, setProgress)
@@ -187,20 +189,23 @@ export default function MandalartCreateScreen() {
       }
     } catch (err) {
       logger.error('OCR error', err)
-      Alert.alert('오류', err instanceof Error ? err.message : 'OCR 처리 중 오류가 발생했습니다.')
+      const errorMessage = err instanceof Error ? err.message : 'unknownError'
+      // Try to translate the error key, fallback to raw message
+      const translatedError = t(`mandalart.create.ocr.${errorMessage}`, errorMessage)
+      Alert.alert(t('common.error'), translatedError)
     } finally {
       setIsProcessingOCR(false)
       setProgress(null)
     }
-  }, [user, selectedImageUri])
+  }, [user, selectedImageUri, t])
 
   const handleTextParse = useCallback(async () => {
     if (!pasteText.trim()) {
-      Alert.alert('오류', '텍스트를 입력해주세요.')
+      Alert.alert(t('common.error'), t('mandalart.create.textPaste.enterText'))
       return
     }
 
-    setProgress({ stage: 'processing', message: '텍스트 분석 중...' })
+    setProgress({ stage: 'processing', message: t('mandalart.create.textPaste.processing') })
 
     try {
       const result = await parseMandalartText(pasteText)
@@ -212,11 +217,14 @@ export default function MandalartCreateScreen() {
       setStep('preview')
     } catch (err) {
       logger.error('Parse error', err)
-      Alert.alert('오류', '텍스트 파싱 중 오류가 발생했습니다.')
+      const errorMessage = err instanceof Error ? err.message : 'unknownError'
+      // Try to translate the error key, fallback to generic parse error
+      const translatedError = t(`mandalart.create.ocr.${errorMessage}`, t('mandalart.create.textPaste.parseError'))
+      Alert.alert(t('common.error'), translatedError)
     } finally {
       setProgress(null)
     }
-  }, [pasteText])
+  }, [pasteText, t])
 
   const handleManualCreate = useCallback(() => {
     // For manual, start with empty template
@@ -307,12 +315,12 @@ export default function MandalartCreateScreen() {
     if (!user || !mandalartData) return
 
     if (!title.trim()) {
-      Alert.alert('오류', '제목을 입력해주세요.')
+      Alert.alert(t('common.error'), t('mandalart.create.validation.enterTitle'))
       return
     }
 
     if (!mandalartData.center_goal.trim()) {
-      Alert.alert('오류', '핵심 목표를 입력해주세요.')
+      Alert.alert(t('common.error'), t('mandalart.create.validation.enterCoreGoal'))
       return
     }
 
@@ -431,20 +439,20 @@ export default function MandalartCreateScreen() {
         actions_count: actionsCount,
       })
 
-      Alert.alert('성공', '만다라트가 생성되었습니다!', [
+      Alert.alert(t('mandalart.create.success.title'), t('mandalart.create.success.created'), [
         {
-          text: '확인',
+          text: t('common.confirm'),
           onPress: () => navigation.goBack(),
         },
       ])
     } catch (err) {
       logger.error('Save error', err)
-      Alert.alert('오류', '저장 중 오류가 발생했습니다.')
+      Alert.alert(t('common.error'), t('mandalart.create.errors.save'))
       setStep('preview')
     } finally {
       setIsSaving(false)
     }
-  }, [user, mandalartData, title, inputMethod, navigation, queryClient])
+  }, [user, mandalartData, title, inputMethod, navigation, queryClient, t])
 
   // Render method selection
   if (step === 'select') {
@@ -456,7 +464,7 @@ export default function MandalartCreateScreen() {
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
               <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
-                {progress.message}
+                {t(`mandalart.create.ocr.${progress.message}`, progress.message)}
               </Text>
             </View>
           </View>
@@ -472,13 +480,13 @@ export default function MandalartCreateScreen() {
               className="text-xl text-gray-900"
               style={{ fontFamily: 'Pretendard-Bold' }}
             >
-              만다라트 만들기
+              {t('mandalart.create.title')}
             </Text>
             <Text
               className="text-base text-gray-500 ml-3"
               style={{ fontFamily: 'Pretendard-Medium' }}
             >
-              새로운 목표 생성
+              {t('mandalart.create.subtitle')}
             </Text>
           </View>
         </View>
@@ -488,7 +496,7 @@ export default function MandalartCreateScreen() {
             className="text-lg text-gray-900 mb-5"
             style={{ fontFamily: 'Pretendard-SemiBold' }}
           >
-            생성 방식 선택
+            {t('mandalart.create.selectMethod')}
           </Text>
 
           {/* Image OCR */}
@@ -511,13 +519,13 @@ export default function MandalartCreateScreen() {
                 className="text-base text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                이미지 업로드
+                {t('mandalart.create.imageUpload.title')}
               </Text>
               <Text
                 className="text-sm text-gray-500 mt-1"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                만들어둔 만다라트가 있다면 사진 찍어 업로드
+                {t('mandalart.create.imageUpload.description')}
               </Text>
             </View>
           </Pressable>
@@ -542,13 +550,13 @@ export default function MandalartCreateScreen() {
                 className="text-base text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                텍스트 붙여넣기
+                {t('mandalart.create.textPaste.title')}
               </Text>
               <Text
                 className="text-sm text-gray-500 mt-1"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                AI로 만든 텍스트가 있다면 복사해서 붙여넣기
+                {t('mandalart.create.textPaste.description')}
               </Text>
             </View>
           </Pressable>
@@ -576,13 +584,13 @@ export default function MandalartCreateScreen() {
                 className="text-base text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                직접 입력
+                {t('mandalart.create.manualInput.title')}
               </Text>
               <Text
                 className="text-sm text-gray-500 mt-1"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                아직 없다면 빈 그리드에서 처음부터 작성
+                {t('mandalart.create.manualInput.description')}
               </Text>
             </View>
           </Pressable>
@@ -606,7 +614,7 @@ export default function MandalartCreateScreen() {
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
               <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
-                {progress?.message || 'OCR 처리 중...'}
+                {progress?.message ? t(`mandalart.create.ocr.${progress.message}`, progress.message) : t('mandalart.create.imageUpload.processing')}
               </Text>
             </View>
           </View>
@@ -622,7 +630,7 @@ export default function MandalartCreateScreen() {
               className="text-xl text-gray-900 ml-2"
               style={{ fontFamily: 'Pretendard-Bold' }}
             >
-              이미지 업로드
+              {t('mandalart.create.imageUpload.title')}
             </Text>
           </View>
           {selectedImageUri && (
@@ -641,7 +649,7 @@ export default function MandalartCreateScreen() {
                   <MaskedView
                     maskElement={
                       <Text style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                        텍스트 추출
+                        {t('mandalart.create.imageUpload.extractText')}
                       </Text>
                     }
                   >
@@ -651,7 +659,7 @@ export default function MandalartCreateScreen() {
                       end={{ x: 1, y: 0 }}
                     >
                       <Text style={{ fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
-                        텍스트 추출
+                        {t('mandalart.create.imageUpload.extractText')}
                       </Text>
                     </LinearGradient>
                   </MaskedView>
@@ -666,7 +674,7 @@ export default function MandalartCreateScreen() {
             className="text-sm text-gray-500 mb-4"
             style={{ fontFamily: 'Pretendard-Regular' }}
           >
-            만다라트 이미지를 업로드하면 자동으로 텍스트를 추출합니다
+            {t('mandalart.create.imageUpload.hint')}
           </Text>
 
           {!selectedImageUri ? (
@@ -681,7 +689,7 @@ export default function MandalartCreateScreen() {
                 className="text-base text-gray-500 mt-4 text-center"
                 style={{ fontFamily: 'Pretendard-Medium' }}
               >
-                탭하여 이미지 선택 (최대 5MB)
+                {t('mandalart.create.imageUpload.tapToSelect')}
               </Text>
             </Pressable>
           ) : (
@@ -712,7 +720,7 @@ export default function MandalartCreateScreen() {
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
               <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
-                {progress.message}
+                {t(`mandalart.create.ocr.${progress.message}`, progress.message)}
               </Text>
             </View>
           </View>
@@ -732,7 +740,7 @@ export default function MandalartCreateScreen() {
                 className="text-xl text-gray-900 ml-2"
                 style={{ fontFamily: 'Pretendard-Bold' }}
               >
-                텍스트 붙여넣기
+                {t('mandalart.create.textPaste.title')}
               </Text>
             </View>
             <Pressable
@@ -749,7 +757,7 @@ export default function MandalartCreateScreen() {
                   <MaskedView
                     maskElement={
                       <Text style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                        텍스트 분석
+                        {t('mandalart.create.textPaste.analyze')}
                       </Text>
                     }
                   >
@@ -759,7 +767,7 @@ export default function MandalartCreateScreen() {
                       end={{ x: 1, y: 0 }}
                     >
                       <Text style={{ fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
-                        텍스트 분석
+                        {t('mandalart.create.textPaste.analyze')}
                       </Text>
                     </LinearGradient>
                   </MaskedView>
@@ -773,30 +781,12 @@ export default function MandalartCreateScreen() {
               className="text-sm text-gray-500 mb-4"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
-              만다라트 텍스트를 붙여넣으면 자동으로 분석합니다
+              {t('mandalart.create.textPaste.hint')}
             </Text>
             <TextInput
               value={pasteText}
               onChangeText={setPasteText}
-              placeholder={`(예시) 핵심 목표: 건강한 삶
-
-1. 운동
-   - 매일 30분 걷기
-   - 주 3회 근력 운동
-   - 스트레칭 루틴
-   - 요가 수업
-   - 등산 가기
-   - 수영 배우기
-   - 홈트레이닝
-   - 자전거 타기
-
-2. 식습관
-   - 아침 거르지 않기
-   - 물 2L 마시기
-   - 채소 위주 식단
-   - 가공식품 줄이기
-
-... (총 8개 세부 목표, 각 8개 실천 항목)`}
+              placeholder={t('mandalart.create.textPaste.placeholder')}
               placeholderTextColor="#9ca3af"
               multiline
               textAlignVertical="top"
@@ -854,7 +844,7 @@ export default function MandalartCreateScreen() {
                   color: '#9ca3af',
                 }}
               >
-                세부목표
+                {t('mandalart.create.preview.subGoal')}
               </Text>
             )}
           </View>
@@ -871,7 +861,7 @@ export default function MandalartCreateScreen() {
                 {action.title}
               </Text>
             ) : (
-              <Text className="text-[10px] text-gray-300 text-center">실천 {actionIndex + 1}</Text>
+              <Text className="text-[10px] text-gray-300 text-center">{t('mandalart.create.preview.action')} {actionIndex + 1}</Text>
             )}
           </View>
         )
@@ -885,7 +875,7 @@ export default function MandalartCreateScreen() {
             <View className="bg-white rounded-2xl p-6 mx-4 items-center">
               <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-900 font-semibold mt-4">
-                저장 중...
+                {t('mandalart.create.preview.saving')}
               </Text>
             </View>
           </View>
@@ -901,7 +891,7 @@ export default function MandalartCreateScreen() {
               className="text-xl text-gray-900 ml-2"
               style={{ fontFamily: 'Pretendard-Bold' }}
             >
-              확인 및 수정
+              {t('mandalart.create.preview.title')}
             </Text>
           </View>
           <Pressable
@@ -921,7 +911,7 @@ export default function MandalartCreateScreen() {
                     <View className="flex-row items-center">
                       <Check size={18} color="#000" />
                       <Text className="ml-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                        저장
+                        {t('common.save')}
                       </Text>
                     </View>
                   }
@@ -934,7 +924,7 @@ export default function MandalartCreateScreen() {
                     <View className="flex-row items-center opacity-0">
                       <Check size={18} color="#000" />
                       <Text className="ml-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                        저장
+                        {t('common.save')}
                       </Text>
                     </View>
                   </LinearGradient>
@@ -990,7 +980,7 @@ export default function MandalartCreateScreen() {
                       className="text-base text-gray-900 text-center"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      셀을 탭하여 수정하세요
+                      {t('mandalart.create.preview.tapToModify')}
                     </Text>
                   </View>
                   <MandalartFullGrid
@@ -1026,13 +1016,13 @@ export default function MandalartCreateScreen() {
                 className="text-base text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                직접 입력
+                {t('mandalart.create.manualInput.title')}
               </Text>
               <Text
                 className="text-sm text-gray-500 mt-1"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                셀을 탭하여 목표와 실천 항목을 입력하세요
+                {t('mandalart.create.manualInput.tapToEdit')}
               </Text>
             </View>
 
@@ -1124,7 +1114,7 @@ export default function MandalartCreateScreen() {
                       className="text-sm text-gray-600 ml-0.5"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      뒤로
+                      {t('mandalart.create.preview.back')}
                     </Text>
                   </Pressable>
                   <Pressable
@@ -1138,7 +1128,7 @@ export default function MandalartCreateScreen() {
                       className="text-sm text-white"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      수정
+                      {t('common.edit')}
                     </Text>
                   </Pressable>
                 </View>

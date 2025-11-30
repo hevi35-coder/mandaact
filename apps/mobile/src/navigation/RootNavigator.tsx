@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Home, CalendarCheck, Grid3X3, FileText } from 'lucide-react-native'
 import { ScrollView, useWindowDimensions, Platform } from 'react-native'
+import { useTranslation } from 'react-i18next'
 
 import { useAuthStore } from '../store/authStore'
 
@@ -61,6 +62,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const Tab = createBottomTabNavigator<MainTabParamList>()
 
 function MainTabs() {
+  const { t } = useTranslation()
+
   // Store refs to ScrollViews for each tab
   const scrollViewRefs = useRef<Map<string, React.RefObject<ScrollView>>>(new Map())
 
@@ -122,7 +125,7 @@ function MainTabs() {
           name="Home"
           component={HomeScreen}
           options={{
-            tabBarLabel: '홈',
+            tabBarLabel: t('nav.home'),
             tabBarIcon: ({ color }) => <Home size={26} color={color} strokeWidth={1.8} />,
           }}
           listeners={createTabPressListener('Home')}
@@ -131,7 +134,7 @@ function MainTabs() {
           name="Today"
           component={TodayScreen}
           options={{
-            tabBarLabel: '투데이',
+            tabBarLabel: t('nav.today'),
             tabBarIcon: ({ color }) => <CalendarCheck size={26} color={color} strokeWidth={1.8} />,
           }}
           listeners={createTabPressListener('Today')}
@@ -140,7 +143,7 @@ function MainTabs() {
           name="Mandalart"
           component={MandalartListScreen}
           options={{
-            tabBarLabel: '만다라트',
+            tabBarLabel: t('nav.mandalart'),
             tabBarIcon: ({ color }) => <Grid3X3 size={26} color={color} strokeWidth={1.8} />,
           }}
           listeners={createTabPressListener('Mandalart')}
@@ -149,7 +152,7 @@ function MainTabs() {
           name="Reports"
           component={ReportsScreen}
           options={{
-            tabBarLabel: '리포트',
+            tabBarLabel: t('reports.title'),
             tabBarIcon: ({ color }) => <FileText size={26} color={color} strokeWidth={1.8} />,
           }}
           listeners={createTabPressListener('Reports')}

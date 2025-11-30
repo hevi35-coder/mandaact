@@ -10,6 +10,7 @@ import {
 import { X, AlertTriangle, Info } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useToast } from './Toast'
 import type { Mandalart, SubGoal, Action } from '@mandaact/shared'
@@ -31,6 +32,7 @@ export default function DeleteMandalartModal({
   onClose,
   onSuccess,
 }: DeleteMandalartModalProps) {
+  const { t } = useTranslation()
   const toast = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingAction, setProcessingAction] = useState<'deactivate' | 'delete' | null>(null)
@@ -66,12 +68,12 @@ export default function DeleteMandalartModal({
 
       if (error) throw error
 
-      toast.success('만다라트가 비활성화되었습니다')
+      toast.success(t('mandalart.delete.deactivated'))
       onSuccess('deactivate')
       onClose()
     } catch (err) {
       console.error('Deactivate error:', err)
-      toast.error('비활성화 중 오류가 발생했습니다')
+      toast.error(t('mandalart.delete.deactivateError'))
     } finally {
       setIsProcessing(false)
       setProcessingAction(null)
@@ -92,12 +94,12 @@ export default function DeleteMandalartModal({
 
       if (error) throw error
 
-      toast.success('만다라트가 삭제되었습니다')
+      toast.success(t('mandalart.delete.deleted'))
       onSuccess('delete')
       onClose()
     } catch (err) {
       console.error('Delete error:', err)
-      toast.error('삭제 중 오류가 발생했습니다')
+      toast.error(t('mandalart.delete.deleteError'))
     } finally {
       setIsProcessing(false)
       setProcessingAction(null)
@@ -125,7 +127,7 @@ export default function DeleteMandalartModal({
                 className="text-lg text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                만다라트 삭제
+                {t('mandalart.delete.title')}
               </Text>
             </View>
           </View>
@@ -138,7 +140,7 @@ export default function DeleteMandalartModal({
                 className="text-sm text-red-700 ml-2 flex-1"
                 style={{ fontFamily: 'Pretendard-Medium' }}
               >
-                경고: 이 작업은 되돌릴 수 없습니다
+                {t('mandalart.delete.warning')}
               </Text>
             </View>
 
@@ -148,26 +150,26 @@ export default function DeleteMandalartModal({
                 className="text-sm text-gray-500 mb-2"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                삭제되는 데이터
+                {t('mandalart.delete.dataToDelete')}
               </Text>
               <View className="bg-gray-50 rounded-xl p-3 border border-gray-200">
                 <Text
                   className="text-sm text-gray-700 mb-1"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  • 모든 체크 기록
+                  • {t('mandalart.delete.allCheckHistory')}
                 </Text>
                 <Text
                   className="text-sm text-gray-700 mb-1"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  • {stats.subGoalCount}개의 세부 목표
+                  • {t('mandalart.delete.subGoalCount', { count: stats.subGoalCount })}
                 </Text>
                 <Text
                   className="text-sm text-gray-700"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  • {stats.actionCount}개의 실천 항목
+                  • {t('mandalart.delete.actionCount', { count: stats.actionCount })}
                 </Text>
               </View>
             </View>
@@ -178,20 +180,20 @@ export default function DeleteMandalartModal({
                 className="text-sm text-gray-500 mb-2"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                유지되는 데이터
+                {t('mandalart.delete.dataToKeep')}
               </Text>
               <View className="bg-gray-50 rounded-xl p-3 border border-gray-200">
                 <Text
                   className="text-sm text-gray-700 mb-1"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  • 획득한 XP 및 레벨 (변동 없음)
+                  • {t('mandalart.delete.xpAndLevel')}
                 </Text>
                 <Text
                   className="text-sm text-gray-700"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  • 해금된 배지 (영구 보존)
+                  • {t('mandalart.delete.unlockedBadges')}
                 </Text>
               </View>
             </View>
@@ -203,7 +205,7 @@ export default function DeleteMandalartModal({
                 className="text-sm text-blue-700 ml-2 flex-1"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                비활성화를 권장합니다. 데이터는 보존되며 언제든 복구 가능합니다.
+                {t('mandalart.delete.recommendation')}
               </Text>
             </View>
 
@@ -231,7 +233,7 @@ export default function DeleteMandalartModal({
                             className="text-base"
                             style={{ fontFamily: 'Pretendard-SemiBold' }}
                           >
-                            비활성화 (권장)
+                            {t('mandalart.delete.deactivate')}
                           </Text>
                         }
                       >
@@ -244,7 +246,7 @@ export default function DeleteMandalartModal({
                             className="text-base opacity-0"
                             style={{ fontFamily: 'Pretendard-SemiBold' }}
                           >
-                            비활성화 (권장)
+                            {t('mandalart.delete.deactivate')}
                           </Text>
                         </LinearGradient>
                       </MaskedView>
@@ -266,7 +268,7 @@ export default function DeleteMandalartModal({
                     className="text-gray-700 text-base"
                     style={{ fontFamily: 'Pretendard-Medium' }}
                   >
-                    영구 삭제
+                    {t('mandalart.delete.permanentDelete')}
                   </Text>
                 )}
               </Pressable>

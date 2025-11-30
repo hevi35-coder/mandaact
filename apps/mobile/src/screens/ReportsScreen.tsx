@@ -145,7 +145,7 @@ function ReportCard({
             className="text-sm text-gray-700 mt-2"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            {generatingText || '생성 중...'}
+            {generatingText}
           </Text>
         </View>
       )}
@@ -325,22 +325,24 @@ function ReportCard({
 }
 
 // Empty State Component
-// 정책: Case 2 (리포트 없음 + 실천 있음) → 첫 리포트 생성 버튼
-//       Case 3 (리포트 없음 + 실천 없음) → 안내 메시지만
+// Policy: Case 2 (no reports + has practice) → show first report button
+//         Case 3 (no reports + no practice) → show guidance only
 function EmptyReportState({
   hasMandalarts,
   hasChecks,
   onGenerate,
   isGenerating,
   navigation,
+  t,
 }: {
   hasMandalarts: boolean
   hasChecks: boolean
   onGenerate: () => void
   isGenerating: boolean
   navigation: NativeStackNavigationProp<RootStackParamList>
+  t: (key: string, params?: Record<string, unknown>) => string
 }) {
-  // Case 2: 리포트 없음 + 실천 있음 → 첫 리포트 생성 가능
+  // Case 2: no reports + has practice → can generate first report
   const canGenerateFirst = hasMandalarts && hasChecks
 
   return (
@@ -352,20 +354,20 @@ function EmptyReportState({
         </View>
       </View>
 
-      {/* Title & Description - 조건에 따라 다른 메시지 */}
+      {/* Title & Description - different messages based on condition */}
       {canGenerateFirst ? (
         <>
           <Text
             className="text-lg text-gray-900 text-center mb-2"
             style={{ fontFamily: 'Pretendard-SemiBold' }}
           >
-            첫 리포트를 받아보세요!
+            {t('reports.empty.firstReportTitle')}
           </Text>
           <Text
             className="text-sm text-gray-500 text-center mb-5"
             style={{ fontFamily: 'Pretendard-Regular' }}
           >
-            실천 기록을 바탕으로{'\n'}AI가 맞춤형 분석을 제공합니다
+            {t('reports.empty.firstReportDesc')}
           </Text>
         </>
       ) : (
@@ -374,25 +376,25 @@ function EmptyReportState({
             className="text-lg text-gray-900 text-center mb-2"
             style={{ fontFamily: 'Pretendard-SemiBold' }}
           >
-            아직 리포트가 없어요
+            {t('reports.empty.title')}
           </Text>
           <Text
             className="text-sm text-gray-500 text-center mb-5"
             style={{ fontFamily: 'Pretendard-Regular' }}
           >
-            실천을 시작하면 매주 월요일{'\n'}AI 리포트가 자동으로 생성됩니다
+            {t('reports.empty.description')}
           </Text>
         </>
       )}
 
-      {/* Guide Box - 실천 없는 경우만 표시 */}
+      {/* Guide Box - show only when no practice records */}
       {!hasChecks && (
         <View className="bg-gray-50 rounded-xl p-4 mb-5">
           <Text
             className="text-sm text-gray-700 mb-3"
             style={{ fontFamily: 'Pretendard-SemiBold' }}
           >
-            리포트 생성을 위한 단계
+            {t('reports.empty.stepsTitle')}
           </Text>
           <View className="flex-row items-center mb-2">
             <View className={`w-5 h-5 rounded-full items-center justify-center mr-2 ${hasMandalarts ? 'bg-primary' : 'border border-gray-300'}`}>
@@ -401,7 +403,7 @@ function EmptyReportState({
               </Text>
             </View>
             <Text className={`text-sm ${hasMandalarts ? 'text-gray-400 line-through' : 'text-gray-600'}`} style={{ fontFamily: 'Pretendard-Regular' }}>
-              만다라트 만들기
+              {t('reports.empty.step1')}
             </Text>
           </View>
           <View className="flex-row items-center">
@@ -409,7 +411,7 @@ function EmptyReportState({
               <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>2</Text>
             </View>
             <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-              실천 기록하기 (1회 이상)
+              {t('reports.empty.step2')}
             </Text>
           </View>
         </View>
@@ -417,7 +419,7 @@ function EmptyReportState({
 
       {/* Action Buttons */}
       {canGenerateFirst ? (
-        // Case 2: 첫 리포트 생성 버튼
+        // Case 2: First report generation button
         <Pressable
           onPress={onGenerate}
           disabled={isGenerating}
@@ -437,7 +439,7 @@ function EmptyReportState({
                     className="text-primary text-sm ml-2"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    생성 중...
+                    {t('reports.generating')}
                   </Text>
                 </View>
               ) : (
@@ -449,7 +451,7 @@ function EmptyReportState({
                         className="text-sm ml-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        첫 리포트 생성하기
+                        {t('reports.empty.generateFirst')}
                       </Text>
                     </View>
                   }
@@ -465,7 +467,7 @@ function EmptyReportState({
                         className="text-sm ml-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        첫 리포트 생성하기
+                        {t('reports.empty.generateFirst')}
                       </Text>
                     </View>
                   </LinearGradient>
@@ -475,7 +477,7 @@ function EmptyReportState({
           </LinearGradient>
         </Pressable>
       ) : hasMandalarts ? (
-        // Case 3-a: 만다라트 있음 + 실천 없음 → 실천하러 가기
+        // Case 3-a: Has mandalart + no practice → go to practice
         <View className="flex-row gap-3">
           <Pressable
             className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
@@ -485,7 +487,7 @@ function EmptyReportState({
               className="text-sm text-gray-700 text-center"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
             >
-              사용 가이드
+              {t('common.userGuide')}
             </Text>
           </Pressable>
           <Pressable
@@ -505,7 +507,7 @@ function EmptyReportState({
                       className="text-sm text-center"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      실천하러 가기
+                      {t('reports.empty.goPractice')}
                     </Text>
                   }
                 >
@@ -518,7 +520,7 @@ function EmptyReportState({
                       className="text-sm opacity-0"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      실천하러 가기
+                      {t('reports.empty.goPractice')}
                     </Text>
                   </LinearGradient>
                 </MaskedView>
@@ -527,7 +529,7 @@ function EmptyReportState({
           </Pressable>
         </View>
       ) : (
-        // Case 3-b: 만다라트 없음 → 만다라트 생성
+        // Case 3-b: No mandalart → create mandalart
         <View className="flex-row gap-3">
           <Pressable
             className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
@@ -537,7 +539,7 @@ function EmptyReportState({
               className="text-sm text-gray-700 text-center"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
             >
-              사용 가이드
+              {t('common.userGuide')}
             </Text>
           </Pressable>
           <Pressable
@@ -557,7 +559,7 @@ function EmptyReportState({
                       className="text-sm text-center"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      만다라트 생성
+                      {t('reports.empty.createMandalart')}
                     </Text>
                   }
                 >
@@ -570,7 +572,7 @@ function EmptyReportState({
                       className="text-sm opacity-0"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      만다라트 생성
+                      {t('reports.empty.createMandalart')}
                     </Text>
                   </LinearGradient>
                 </MaskedView>
@@ -703,6 +705,7 @@ export default function ReportsScreen() {
             onGenerate={handleGenerateAll}
             isGenerating={isGenerating}
             navigation={navigation}
+            t={t}
           />
         </ScrollView>
       </View>
@@ -727,13 +730,13 @@ export default function ReportsScreen() {
                 className="text-3xl text-gray-900"
                 style={{ fontFamily: 'Pretendard-Bold' }}
               >
-                리포트
+                {t('reports.title')}
               </Text>
               <Text
                 className="text-base text-gray-500 ml-3"
                 style={{ fontFamily: 'Pretendard-Medium' }}
               >
-                맞춤형 분석과 코칭
+                {t('reports.subtitle')}
               </Text>
             </View>
           </View>
@@ -766,7 +769,7 @@ export default function ReportsScreen() {
                         className="text-primary text-base ml-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        생성 중...
+                        {t('reports.generating')}
                       </Text>
                     </View>
                   ) : (
@@ -778,7 +781,7 @@ export default function ReportsScreen() {
                             className="text-base ml-2"
                             style={{ fontFamily: 'Pretendard-SemiBold' }}
                           >
-                            첫 리포트 생성하기
+                            {t('reports.empty.generateFirst')}
                           </Text>
                         </View>
                       }
@@ -794,7 +797,7 @@ export default function ReportsScreen() {
                             className="text-base ml-2"
                             style={{ fontFamily: 'Pretendard-SemiBold' }}
                           >
-                            첫 리포트 생성하기
+                            {t('reports.empty.generateFirst')}
                           </Text>
                         </View>
                       </LinearGradient>
@@ -868,26 +871,26 @@ export default function ReportsScreen() {
                 {/* Case 1: Has mandalarts - show normal ReportCard */}
                 {hasMandalarts && (
                   <ReportCard
-                    title="목표 진단"
-                    subtitle="만다라트 계획 점검 및 개선 제안"
+                    title={t('reports.goalDiagnosis')}
+                    subtitle={t('reports.goalDiagnosisSubtitle')}
                     icon={Target}
-                    date={diagnosis ? new Date(diagnosis.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : undefined}
+                    date={diagnosis ? new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' }) : undefined}
                     summary={diagnosisSummary}
                     isExpanded={isDiagnosisExpanded}
                     onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
                     isLoading={diagnosisLoading}
                     isGenerating={generateDiagnosisMutation.isPending}
-                    generatingText="새 진단 생성 중..."
+                    generatingText={t('reports.card.newDiagnosisGenerating')}
                   />
                 )}
 
                 {/* Case 2: No mandalarts but has existing diagnosis */}
                 {!hasMandalarts && diagnosis && (
                   <ReportCard
-                    title="목표 진단"
-                    subtitle="만다라트 계획 점검 및 개선 제안"
+                    title={t('reports.goalDiagnosis')}
+                    subtitle={t('reports.goalDiagnosisSubtitle')}
                     icon={Target}
-                    date={new Date(diagnosis.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                    date={new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' })}
                     summary={diagnosisSummary}
                     isExpanded={isDiagnosisExpanded}
                     onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
@@ -915,13 +918,13 @@ export default function ReportsScreen() {
                       className="text-lg text-gray-900 mb-2"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      만다라트 필요
+                      {t('reports.mandalartNeeded')}
                     </Text>
                     <Text
                       className="text-sm text-gray-500 text-center"
                       style={{ fontFamily: 'Pretendard-Regular' }}
                     >
-                      목표 진단을 받으려면{'\n'}만다라트를 생성하거나 활성화해주세요
+                      {t('reports.mandalartNeededDesc')}
                     </Text>
                   </View>
                 )}
@@ -932,8 +935,8 @@ export default function ReportsScreen() {
             <View style={{ flex: 1 }}>
               <Animated.View entering={FadeInUp.delay(100).duration(400)}>
                 <ReportCard
-                  title="실천 리포트"
-                  subtitle="최근 7일간 실천 데이터 분석 및 개선 제안"
+                  title={t('reports.practiceReport')}
+                  subtitle={t('reports.practiceReportSubtitle')}
                   icon={TrendingUp}
                   date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, isEnglish) : undefined}
                   summary={weeklySummary}
@@ -941,7 +944,7 @@ export default function ReportsScreen() {
                   onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
                   isLoading={weeklyLoading}
                   isGenerating={generateWeeklyMutation.isPending}
-                  generatingText="새 리포트 생성 중..."
+                  generatingText={t('reports.card.newReportGenerating')}
                 />
               </Animated.View>
 
@@ -952,7 +955,7 @@ export default function ReportsScreen() {
                     className="text-lg text-gray-900 mb-3"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    지난 실천리포트
+                    {t('reports.history.title')}
                   </Text>
                   <View
                     className="bg-white rounded-3xl overflow-hidden border border-gray-100"
@@ -993,7 +996,7 @@ export default function ReportsScreen() {
                                 style={{ fontFamily: 'Pretendard-Regular' }}
                                 numberOfLines={1}
                               >
-                                {historySummary?.headline || report.summary || '주간 실천 리포트'}
+                                {historySummary?.headline || report.summary || t('reports.history.weeklyReport')}
                               </Text>
                             </View>
                             {isExpanded ? (
@@ -1035,7 +1038,7 @@ export default function ReportsScreen() {
                               {historySummary.strengths.length > 0 && (
                                 <View className="mb-3">
                                   <Text className="text-sm text-gray-900 mb-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                                    💪 강점
+                                    💪 {t('reports.card.strengths')}
                                   </Text>
                                   {historySummary.strengths.map((strength, idx) => (
                                     <Text key={idx} className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
@@ -1048,7 +1051,7 @@ export default function ReportsScreen() {
                               {(historySummary.improvements.problem || historySummary.improvements.insight || historySummary.improvements.items?.length) && (
                                 <View className="mb-3">
                                   <Text className="text-sm text-gray-900 mb-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                                    ⚡ 개선 포인트
+                                    ⚡ {t('reports.card.improvements')}
                                   </Text>
                                   {historySummary.improvements.problem && (
                                     <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
@@ -1071,7 +1074,7 @@ export default function ReportsScreen() {
                               {historySummary.actionPlan.length > 0 && (
                                 <View>
                                   <Text className="text-sm text-gray-900 mb-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                                    🎯 MandaAct의 제안
+                                    🎯 {t('reports.card.suggestions')}
                                   </Text>
                                   {historySummary.actionPlan.map((step, idx) => (
                                     <Text key={idx} className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
@@ -1098,16 +1101,16 @@ export default function ReportsScreen() {
             {/* Case 1: Has mandalarts - show normal ReportCard */}
             {hasMandalarts && (
               <ReportCard
-                title="목표 진단"
-                subtitle="만다라트 계획 점검 및 개선 제안"
+                title={t('reports.goalDiagnosis')}
+                subtitle={t('reports.goalDiagnosisSubtitle')}
                 icon={Target}
-                date={diagnosis ? new Date(diagnosis.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : undefined}
+                date={diagnosis ? new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' }) : undefined}
                 summary={diagnosisSummary}
                 isExpanded={isDiagnosisExpanded}
                 onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
                 isLoading={diagnosisLoading}
                 isGenerating={generateDiagnosisMutation.isPending}
-                generatingText="새 진단 생성 중..."
+                generatingText={t('reports.card.newDiagnosisGenerating')}
               />
             )}
 
@@ -1115,10 +1118,10 @@ export default function ReportsScreen() {
             {!hasMandalarts && diagnosis && (
               <>
                 <ReportCard
-                  title="목표 진단"
-                  subtitle="만다라트 계획 점검 및 개선 제안"
+                  title={t('reports.goalDiagnosis')}
+                  subtitle={t('reports.goalDiagnosisSubtitle')}
                   icon={Target}
-                  date={new Date(diagnosis.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                  date={new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' })}
                   summary={diagnosisSummary}
                   isExpanded={isDiagnosisExpanded}
                   onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
@@ -1144,7 +1147,7 @@ export default function ReportsScreen() {
                       className="text-sm text-gray-700"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      새 진단을 받으려면 만다라트를 생성하거나 활성화하세요
+                      {t('reports.newDiagnosisNotice')}
                     </Text>
                   </View>
                   <Pressable
@@ -1155,7 +1158,7 @@ export default function ReportsScreen() {
                       className="text-xs text-white"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      생성
+                      {t('common.create')}
                     </Text>
                   </Pressable>
                 </View>
@@ -1181,13 +1184,13 @@ export default function ReportsScreen() {
                   className="text-lg text-gray-900 mb-2"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  만다라트 필요
+                  {t('reports.mandalartNeeded')}
                 </Text>
                 <Text
                   className="text-sm text-gray-500 text-center mb-5"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  목표 진단을 받으려면{'\n'}만다라트를 생성하거나 활성화해주세요
+                  {t('reports.mandalartNeededDesc')}
                 </Text>
                 <View className="flex-row gap-3 w-full">
                   <Pressable
@@ -1198,7 +1201,7 @@ export default function ReportsScreen() {
                       className="text-sm text-gray-700 text-center"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      사용 가이드
+                      {t('common.userGuide')}
                     </Text>
                   </Pressable>
                   <Pressable
@@ -1218,7 +1221,7 @@ export default function ReportsScreen() {
                               className="text-sm text-center"
                               style={{ fontFamily: 'Pretendard-SemiBold' }}
                             >
-                              만다라트 생성
+                              {t('reports.empty.createMandalart')}
                             </Text>
                           }
                         >
@@ -1231,7 +1234,7 @@ export default function ReportsScreen() {
                               className="text-sm opacity-0"
                               style={{ fontFamily: 'Pretendard-SemiBold' }}
                             >
-                              만다라트 생성
+                              {t('reports.empty.createMandalart')}
                             </Text>
                           </LinearGradient>
                         </MaskedView>
@@ -1243,11 +1246,11 @@ export default function ReportsScreen() {
             )}
           </Animated.View>
 
-          {/* Practice Report Card - Second (실천 결과) */}
+          {/* Practice Report Card - Second */}
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <ReportCard
-              title="실천 리포트"
-              subtitle="최근 7일간 실천 데이터 분석 및 개선 제안"
+              title={t('reports.practiceReport')}
+              subtitle={t('reports.practiceReportSubtitle')}
               icon={TrendingUp}
               date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, isEnglish) : undefined}
               summary={weeklySummary}
@@ -1255,7 +1258,7 @@ export default function ReportsScreen() {
               onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
               isLoading={weeklyLoading}
               isGenerating={generateWeeklyMutation.isPending}
-              generatingText="새 리포트 생성 중..."
+              generatingText={t('reports.card.newReportGenerating')}
             />
           </Animated.View>
 
@@ -1266,7 +1269,7 @@ export default function ReportsScreen() {
                 className="text-lg text-gray-900 mb-3"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                지난 실천리포트
+                {t('reports.history.title')}
               </Text>
               <View
                 className="bg-white rounded-3xl overflow-hidden border border-gray-100"
@@ -1307,7 +1310,7 @@ export default function ReportsScreen() {
                             style={{ fontFamily: 'Pretendard-Regular' }}
                             numberOfLines={1}
                           >
-                            {historySummary?.headline || report.summary || '주간 실천 리포트'}
+                            {historySummary?.headline || report.summary || t('reports.history.weeklyReport')}
                           </Text>
                         </View>
                         {isExpanded ? (
@@ -1361,7 +1364,7 @@ export default function ReportsScreen() {
                                 className="text-sm text-gray-900 mb-1"
                                 style={{ fontFamily: 'Pretendard-SemiBold' }}
                               >
-                                💪 강점
+                                💪 {t('reports.card.strengths')}
                               </Text>
                               {historySummary.strengths.map((strength, idx) => (
                                 <Text
@@ -1382,7 +1385,7 @@ export default function ReportsScreen() {
                                 className="text-sm text-gray-900 mb-1"
                                 style={{ fontFamily: 'Pretendard-SemiBold' }}
                               >
-                                ⚡ 개선 포인트
+                                ⚡ {t('reports.card.improvements')}
                               </Text>
                               {historySummary.improvements.problem && (
                                 <Text
@@ -1419,7 +1422,7 @@ export default function ReportsScreen() {
                                 className="text-sm text-gray-900 mb-1"
                                 style={{ fontFamily: 'Pretendard-SemiBold' }}
                               >
-                                🎯 MandaAct의 제안
+                                🎯 {t('reports.card.suggestions')}
                               </Text>
                               {historySummary.actionPlan.map((step, idx) => (
                                 <Text

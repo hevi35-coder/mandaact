@@ -16,6 +16,7 @@ import {
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { useTranslation } from 'react-i18next'
 // SafeAreaView removed - Header component handles safe area
 import {
   LogOut,
@@ -33,6 +34,7 @@ import {
   AlarmClock,
   Sparkles,
   Pencil,
+  Globe,
 } from 'lucide-react-native'
 import * as Application from 'expo-application'
 import { useNavigation } from '@react-navigation/native'
@@ -45,6 +47,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import { APP_NAME } from '@mandaact/shared'
 import { supabase } from '../lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
+import { changeLanguage, getCurrentLanguage, supportedLanguages, type SupportedLanguage } from '../i18n'
 
 // Time picker options
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -55,6 +58,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>()
   const queryClient = useQueryClient()
+  const { t, i18n } = useTranslation()
   const { user, signOut, loading } = useAuthStore()
   const { data: gamification } = useUserGamification(user?.id)
   const {
@@ -81,15 +85,19 @@ export default function SettingsScreen() {
   const [isSavingNickname, setIsSavingNickname] = useState(false)
   const [nicknameError, setNicknameError] = useState('')
 
+  // Language selection
+  const [showLanguageModal, setShowLanguageModal] = useState(false)
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getCurrentLanguage())
+
   const currentLevel = gamification?.current_level || 1
   const totalXP = gamification?.total_xp || 0
   const nickname = gamification?.nickname || ''
 
   const handleSignOut = useCallback(() => {
-    Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('settings.account.logout'), t('settings.account.logoutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '로그아웃',
+        text: t('settings.account.logout'),
         style: 'destructive',
         onPress: async () => {
           setIsSigningOut(true)
@@ -101,7 +109,7 @@ export default function SettingsScreen() {
         },
       },
     ])
-  }, [signOut])
+  }, [signOut, t])
 
   const handleOpenNicknameModal = useCallback(() => {
     setNicknameInput(nickname)
@@ -114,11 +122,11 @@ export default function SettingsScreen() {
 
     // Validation
     if (trimmed.length < 2) {
-      setNicknameError('닉네임은 2자 이상이어야 합니다')
+      setNicknameError(t('settings.nickname.errors.tooShort'))
       return
     }
     if (trimmed.length > 12) {
-      setNicknameError('닉네임은 12자 이하여야 합니다')
+      setNicknameError(t('settings.nickname.errors.tooLong'))
       return
     }
 
@@ -133,9 +141,9 @@ export default function SettingsScreen() {
 
       if (error) {
         if (error.code === '23505') {
-          setNicknameError('이미 사용 중인 닉네임입니다')
+          setNicknameError(t('settings.nickname.errors.alreadyTaken'))
         } else {
-          setNicknameError('닉네임 변경 중 오류가 발생했습니다')
+          setNicknameError(t('settings.nickname.errors.updateError'))
         }
         return
       }
@@ -144,23 +152,23 @@ export default function SettingsScreen() {
       await queryClient.refetchQueries({ queryKey: statsKeys.gamification(user?.id || '') })
       setShowNicknameModal(false)
     } catch {
-      setNicknameError('닉네임 변경 중 오류가 발생했습니다')
+      setNicknameError(t('settings.nickname.errors.updateError'))
     } finally {
       setIsSavingNickname(false)
     }
-  }, [nicknameInput, user?.id, queryClient])
+  }, [nicknameInput, user?.id, queryClient, t])
 
   const handleToggleNotifications = useCallback(async (value: boolean) => {
     const success = await toggleNotifications(value)
 
     if (!success && value) {
       Alert.alert(
-        '알림 권한 필요',
-        '푸시 알림을 사용하려면 설정에서 알림 권한을 허용해주세요.',
+        t('settings.notifications.permissionRequired'),
+        t('settings.notifications.permissionMessage'),
         [
-          { text: '취소', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: '설정으로 이동',
+            text: t('settings.notifications.goToSettings'),
             onPress: () => {
               if (Platform.OS === 'ios') {
                 Linking.openURL('app-settings:')
@@ -172,7 +180,7 @@ export default function SettingsScreen() {
         ]
       )
     }
-  }, [toggleNotifications])
+  }, [toggleNotifications, t])
 
   const handleOpenTimePicker = useCallback(() => {
     setSelectedHour(reminderTime.hour)
@@ -183,8 +191,11 @@ export default function SettingsScreen() {
   const handleSaveTime = useCallback(async () => {
     await updateReminderTime(selectedHour, selectedMinute)
     setShowTimePicker(false)
-    Alert.alert('알림 시간 설정', `매일 ${formatTimeDisplay(selectedHour, selectedMinute)}에 알림을 보내드립니다.`)
-  }, [selectedHour, selectedMinute, updateReminderTime])
+    Alert.alert(
+      t('settings.notifications.reminderTimeSet'),
+      t('settings.notifications.reminderTimeConfirm', { time: formatTimeDisplay(selectedHour, selectedMinute) })
+    )
+  }, [selectedHour, selectedMinute, updateReminderTime, t])
 
   const handleOpenURL = useCallback(async (url: string) => {
     const canOpen = await Linking.canOpenURL(url)
@@ -198,31 +209,31 @@ export default function SettingsScreen() {
     const buildNumber = Application.nativeBuildVersion || '1'
 
     Alert.alert(
-      '앱 정보',
-      `${APP_NAME}\n\n버전: ${version} (${buildNumber})\n플랫폼: React Native + Expo\n\n© 2025 MandaAct`,
-      [{ text: '확인' }]
+      t('settings.info.appInfo'),
+      t('settings.info.appInfoFormat', { appName: APP_NAME, version, build: buildNumber }),
+      [{ text: t('common.confirm') }]
     )
-  }, [])
+  }, [t])
 
   const handlePrivacyPolicy = useCallback(() => {
     handleOpenURL('https://mandaact.com/privacy')
   }, [handleOpenURL])
 
   const handleFeedback = useCallback(() => {
-    Alert.alert('피드백 보내기', '피드백을 보내시겠습니까?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('settings.support.feedback'), t('settings.support.feedbackConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '이메일로 보내기',
-        onPress: () => handleOpenURL('mailto:support@mandaact.com?subject=MandaAct 피드백'),
+        text: t('settings.support.feedbackEmail'),
+        onPress: () => handleOpenURL('mailto:support@mandaact.com?subject=MandaAct Feedback'),
       },
     ])
-  }, [handleOpenURL])
+  }, [handleOpenURL, t])
 
   const handleRateApp = useCallback(() => {
-    Alert.alert('앱 평가하기', '스토어에서 앱을 평가해주세요!', [
-      { text: '나중에', style: 'cancel' },
+    Alert.alert(t('settings.support.rateApp'), t('settings.support.rateConfirm'), [
+      { text: t('settings.support.rateLater'), style: 'cancel' },
       {
-        text: '평가하기',
+        text: t('settings.support.rateNow'),
         onPress: () => {
           // Platform-specific store URLs
           const storeUrl = Platform.select({
@@ -233,11 +244,20 @@ export default function SettingsScreen() {
         },
       },
     ])
-  }, [handleOpenURL])
+  }, [handleOpenURL, t])
+
+  const handleLanguageSelect = useCallback(async (lang: SupportedLanguage) => {
+    await changeLanguage(lang)
+    setCurrentLang(lang)
+    setShowLanguageModal(false)
+  }, [])
+
+  // Get current language display name
+  const currentLanguageDisplay = supportedLanguages.find(l => l.code === currentLang)?.nativeName || 'Unknown'
 
   return (
     <View className="flex-1 bg-gray-50">
-      <Header showBackButton title="설정" />
+      <Header showBackButton title={t('settings.title')} />
       <ScrollView className="flex-1 px-5 pt-5" contentContainerStyle={{ alignItems: 'center' }}>
         {/* Content Container - max width for tablet */}
         <View style={{ width: '100%', maxWidth: 500 }}>
@@ -264,7 +284,7 @@ export default function SettingsScreen() {
                 className="text-base text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                {nickname || '닉네임 설정'}
+                {nickname || t('home.nickname.placeholder')}
               </Text>
               <Pencil size={14} color="#9ca3af" style={{ marginLeft: 4 }} />
             </Pressable>
@@ -301,7 +321,7 @@ export default function SettingsScreen() {
                       className="text-sm"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      함께한 지 {Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))}일째
+                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) })}
                     </Text>
                   }
                 >
@@ -314,7 +334,7 @@ export default function SettingsScreen() {
                       className="text-sm opacity-0"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      함께한 지 {Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))}일째
+                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) })}
                     </Text>
                   </LinearGradient>
                 </MaskedView>
@@ -323,12 +343,52 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
+        {/* App Settings Section */}
+        <Text
+          className="text-sm text-gray-500 mb-2 ml-1"
+          style={{ fontFamily: 'Pretendard-SemiBold' }}
+        >
+          {t('settings.app.title')}
+        </Text>
+        <Animated.View
+          entering={FadeInUp.delay(150).duration(400)}
+          className="bg-white rounded-3xl overflow-hidden mb-5 border border-gray-100"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
+          }}
+        >
+          {/* Language Setting */}
+          <Pressable
+            onPress={() => setShowLanguageModal(true)}
+            className="flex-row items-center px-5 py-4"
+          >
+            <Globe size={22} color="#6b7280" />
+            <Text
+              className="flex-1 ml-3 text-base text-gray-900"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              {t('settings.app.language')}
+            </Text>
+            <Text
+              className="text-sm text-gray-400 mr-1"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              {currentLanguageDisplay}
+            </Text>
+            <ChevronRight size={18} color="#9ca3af" />
+          </Pressable>
+        </Animated.View>
+
         {/* Notification Settings */}
         <Text
           className="text-sm text-gray-500 mb-2 ml-1"
           style={{ fontFamily: 'Pretendard-SemiBold' }}
         >
-          알림
+          {t('settings.app.notifications')}
         </Text>
         <Animated.View
           entering={FadeInUp.delay(200).duration(400)}
@@ -349,14 +409,14 @@ export default function SettingsScreen() {
                 className="text-base text-gray-900"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                푸시 알림
+                {t('settings.notifications.pushNotifications')}
               </Text>
               {isPermissionDenied && (
                 <Text
                   className="text-xs text-red-500 mt-0.5"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  설정에서 알림 권한을 허용해주세요
+                  {t('settings.notifications.permissionDenied')}
                 </Text>
               )}
             </View>
@@ -382,13 +442,13 @@ export default function SettingsScreen() {
                   className={`text-base ${notificationsEnabled ? 'text-gray-900' : 'text-gray-400'}`}
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
-                  실천 리마인더
+                  {t('settings.notifications.reminder')}
                 </Text>
                 <Text
                   className={`text-xs mt-0.5 ${notificationsEnabled ? 'text-gray-500' : 'text-gray-400'}`}
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  매일 설정한 시간에 오늘 할 실천 알림
+                  {t('settings.notifications.reminderDesc')}
                 </Text>
               </View>
               <Switch
@@ -411,7 +471,7 @@ export default function SettingsScreen() {
                   className="flex-1 ml-2 text-sm text-gray-600"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  알림 시간
+                  {t('settings.notifications.reminderTime')}
                 </Text>
                 <Text
                   className="text-sm text-primary mr-1"
@@ -433,13 +493,13 @@ export default function SettingsScreen() {
                   className={`text-base ${notificationsEnabled ? 'text-gray-900' : 'text-gray-400'}`}
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
-                  맞춤 메시지
+                  {t('settings.notifications.customMessage')}
                 </Text>
                 <Text
                   className={`text-xs mt-0.5 ${notificationsEnabled ? 'text-gray-500' : 'text-gray-400'}`}
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  주간 리포트 생성, 장기 미접속 안내 등
+                  {t('settings.notifications.customMessageDesc')}
                 </Text>
               </View>
               <Switch
@@ -458,7 +518,7 @@ export default function SettingsScreen() {
           className="text-sm text-gray-500 mb-2 ml-1"
           style={{ fontFamily: 'Pretendard-SemiBold' }}
         >
-          지원
+          {t('settings.support.title')}
         </Text>
         <Animated.View
           entering={FadeInUp.delay(300).duration(400)}
@@ -480,7 +540,7 @@ export default function SettingsScreen() {
               className="flex-1 ml-3 text-base text-gray-900"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
-              사용 가이드
+              {t('settings.app.tutorial')}
             </Text>
             <ChevronRight size={18} color="#9ca3af" />
           </Pressable>
@@ -493,7 +553,7 @@ export default function SettingsScreen() {
               className="flex-1 ml-3 text-base text-gray-900"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
-              피드백 보내기
+              {t('settings.support.feedback')}
             </Text>
             <ChevronRight size={18} color="#9ca3af" />
           </Pressable>
@@ -506,7 +566,7 @@ export default function SettingsScreen() {
               className="flex-1 ml-3 text-base text-gray-900"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
-              앱 평가하기
+              {t('settings.support.rateApp')}
             </Text>
             <ChevronRight size={18} color="#9ca3af" />
           </Pressable>
@@ -517,7 +577,7 @@ export default function SettingsScreen() {
           className="text-sm text-gray-500 mb-2 ml-1"
           style={{ fontFamily: 'Pretendard-SemiBold' }}
         >
-          정보
+          {t('settings.info.title')}
         </Text>
         <Animated.View
           entering={FadeInUp.delay(400).duration(400)}
@@ -539,7 +599,7 @@ export default function SettingsScreen() {
               className="flex-1 ml-3 text-base text-gray-900"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
-              앱 정보
+              {t('settings.info.appInfo')}
             </Text>
             <Text
               className="text-sm text-gray-400 mr-1"
@@ -558,7 +618,7 @@ export default function SettingsScreen() {
               className="flex-1 ml-3 text-base text-gray-900"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
-              개인정보 처리방침
+              {t('settings.info.privacyPolicy')}
             </Text>
             <ExternalLink size={16} color="#9ca3af" />
           </Pressable>
@@ -586,7 +646,7 @@ export default function SettingsScreen() {
             className="ml-3 text-base text-gray-400"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            로그아웃
+            {t('settings.account.logout')}
           </Text>
         </Pressable>
 
@@ -596,7 +656,7 @@ export default function SettingsScreen() {
             className="text-xs text-gray-400"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            목표를 실천으로, {APP_NAME}
+            {t('settings.footer', { appName: APP_NAME })}
           </Text>
           <Text
             className="text-xs text-gray-300 mt-1"
@@ -629,7 +689,7 @@ export default function SettingsScreen() {
                 className="text-lg text-gray-900"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                알림 시간 설정
+                {t('settings.notifications.timePickerTitle')}
               </Text>
               <Pressable onPress={handleSaveTime} className="p-2">
                 <Check size={24} color="#2563eb" />
@@ -644,7 +704,7 @@ export default function SettingsScreen() {
                   className="text-sm text-gray-500 mb-2"
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
-                  시
+                  {t('settings.notifications.hour')}
                 </Text>
                 <ScrollView
                   className="h-40"
@@ -687,7 +747,7 @@ export default function SettingsScreen() {
                   className="text-sm text-gray-500 mb-2"
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
-                  분
+                  {t('settings.notifications.minute')}
                 </Text>
                 <ScrollView
                   className="h-40"
@@ -726,14 +786,13 @@ export default function SettingsScreen() {
                 className="text-base text-gray-600"
                 style={{ fontFamily: 'Pretendard-Regular' }}
               >
-                매일{' '}
+                {t('settings.notifications.dailyAt', { time: '' })}
                 <Text
                   className="text-primary"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  {formatTimeDisplay(selectedHour, selectedMinute)}
+                  {formatTimeDisplay(selectedHour, selectedMinute, i18n.language)}
                 </Text>
-                에 알림
               </Text>
             </View>
           </View>
@@ -766,7 +825,7 @@ export default function SettingsScreen() {
                   className="text-lg text-gray-900"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  닉네임 변경
+                  {t('settings.nickname.title')}
                 </Text>
                 <Pressable
                   onPress={handleSaveNickname}
@@ -786,7 +845,7 @@ export default function SettingsScreen() {
                 <TextInput
                   value={nicknameInput}
                   onChangeText={setNicknameInput}
-                  placeholder="닉네임 입력 (2-12자)"
+                  placeholder={t('settings.nickname.placeholder')}
                   maxLength={12}
                   autoFocus
                   className="text-base text-gray-900 border border-gray-200 rounded-xl px-4 py-3"
@@ -804,7 +863,7 @@ export default function SettingsScreen() {
                     className="text-xs text-gray-400 mt-2 ml-1"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    한글, 영문, 숫자 사용 가능 (2-12자)
+                    {t('settings.nickname.hint')}
                   </Text>
                 )}
               </View>
@@ -812,14 +871,99 @@ export default function SettingsScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLanguageModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl pt-4 pb-8">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-5 pb-4 border-b border-gray-100">
+              <Pressable
+                onPress={() => setShowLanguageModal(false)}
+                className="p-2"
+              >
+                <X size={24} color="#6b7280" />
+              </Pressable>
+              <Text
+                className="text-lg text-gray-900"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                {t('settings.language.title')}
+              </Text>
+              <View className="p-2 w-10" />
+            </View>
+
+            {/* Description */}
+            <View className="px-5 pt-4 pb-2">
+              <Text
+                className="text-sm text-gray-500"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.language.description')}
+              </Text>
+            </View>
+
+            {/* Language Options */}
+            <View className="px-5 py-4">
+              {supportedLanguages.map((lang) => (
+                <Pressable
+                  key={lang.code}
+                  onPress={() => handleLanguageSelect(lang.code)}
+                  className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${
+                    currentLang === lang.code
+                      ? 'bg-primary/10 border border-primary/30'
+                      : 'bg-gray-50 border border-gray-100'
+                  }`}
+                >
+                  <Globe
+                    size={20}
+                    color={currentLang === lang.code ? '#2563eb' : '#6b7280'}
+                  />
+                  <View className="flex-1 ml-3">
+                    <Text
+                      className={`text-base ${
+                        currentLang === lang.code ? 'text-primary' : 'text-gray-900'
+                      }`}
+                      style={{
+                        fontFamily:
+                          currentLang === lang.code
+                            ? 'Pretendard-SemiBold'
+                            : 'Pretendard-Regular',
+                      }}
+                    >
+                      {lang.nativeName}
+                    </Text>
+                  </View>
+                  {currentLang === lang.code && (
+                    <Check size={20} color="#2563eb" />
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
 
-// Helper function to format time display
-function formatTimeDisplay(hour: number, minute: number): string {
+// Helper function to format time display with localization
+function formatTimeDisplay(hour: number, minute: number, language = 'ko'): string {
+  const displayMinute = minute.toString().padStart(2, '0')
+
+  if (language === 'en') {
+    const period = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+    return `${displayHour}:${displayMinute} ${period}`
+  }
+
+  // Korean format (default)
   const period = hour >= 12 ? '오후' : '오전'
   const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
-  const displayMinute = minute.toString().padStart(2, '0')
   return `${period} ${displayHour}:${displayMinute}`
 }

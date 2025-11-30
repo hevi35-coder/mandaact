@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import * as Notifications from 'expo-notifications'
+import { useTranslation } from 'react-i18next'
 import {
   registerForPushNotificationsAsync,
   areNotificationsEnabled,
@@ -30,6 +31,7 @@ const DEFAULT_REMINDER_TIME: ReminderTime = { hour: 20, minute: 0 }
  * Daily reminders are sent via server push (pg_cron), not local notifications
  */
 export function useNotifications() {
+  const { i18n } = useTranslation()
   const [state, setState] = useState<NotificationState>({
     isEnabled: false,
     reminderEnabled: true,
@@ -280,14 +282,21 @@ export function useNotifications() {
   // Check if permission was denied
   const isPermissionDenied = state.permissionStatus === 'denied'
 
-  // Format time for display
+  // Format time for display with locale support
   const formatReminderTime = useCallback(() => {
     const { hour, minute } = state.reminderTime
-    const period = hour >= 12 ? '오후' : '오전'
-    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
     const displayMinute = minute.toString().padStart(2, '0')
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+
+    if (i18n.language === 'en') {
+      const period = hour >= 12 ? 'PM' : 'AM'
+      return `${displayHour}:${displayMinute} ${period}`
+    }
+
+    // Korean format (default)
+    const period = hour >= 12 ? '오후' : '오전'
     return `${period} ${displayHour}:${displayMinute}`
-  }, [state.reminderTime])
+  }, [state.reminderTime, i18n.language])
 
   return {
     isEnabled: state.isEnabled,

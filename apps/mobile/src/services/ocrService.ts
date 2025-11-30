@@ -30,12 +30,12 @@ export async function pickImage(
   if (source === 'camera') {
     const { status } = await ImagePicker.requestCameraPermissionsAsync()
     if (status !== 'granted') {
-      throw new Error('카메라 권한이 필요합니다.')
+      throw new Error('cameraPermissionRequired')
     }
   } else {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
-      throw new Error('사진 라이브러리 접근 권한이 필요합니다.')
+      throw new Error('libraryPermissionRequired')
     }
   }
 
@@ -155,7 +155,7 @@ export async function processOCR(imageUrl: string): Promise<OCRResult> {
   if (!response.ok) {
     const errorText = await response.text()
     logger.error('OCR error', new Error(errorText))
-    throw new Error('OCR 처리 중 오류가 발생했습니다.')
+    throw new Error('ocrProcessingError')
   }
 
   const rawResult: RawOCRResponse = await response.json()
@@ -174,7 +174,7 @@ export async function runOCRFlow(
 ): Promise<OCRResult | null> {
   try {
     // Step 1: Pick image
-    onProgress?.({ stage: 'picking', message: '이미지 선택 중...' })
+    onProgress?.({ stage: 'picking', message: 'picking' })
     const asset = await pickImage(source)
 
     if (!asset) {
@@ -182,18 +182,18 @@ export async function runOCRFlow(
     }
 
     // Step 2: Upload image
-    onProgress?.({ stage: 'uploading', message: '이미지 업로드 중...', progress: 0 })
+    onProgress?.({ stage: 'uploading', message: 'uploading', progress: 0 })
     const imageUrl = await uploadImage(asset, userId)
-    onProgress?.({ stage: 'uploading', message: '업로드 완료', progress: 100 })
+    onProgress?.({ stage: 'uploading', message: 'uploadComplete', progress: 100 })
 
     // Step 3: Process OCR
-    onProgress?.({ stage: 'processing', message: 'OCR 분석 중...' })
+    onProgress?.({ stage: 'processing', message: 'processing' })
     const result = await processOCR(imageUrl)
 
-    onProgress?.({ stage: 'done', message: '완료!' })
+    onProgress?.({ stage: 'done', message: 'done' })
     return result
   } catch (error) {
-    const message = error instanceof Error ? error.message : '알 수 없는 오류'
+    const message = error instanceof Error ? error.message : 'unknownError'
     onProgress?.({ stage: 'error', message })
     throw error
   }
@@ -216,18 +216,18 @@ export async function runOCRFlowFromUri(
     } as ImagePicker.ImagePickerAsset
 
     // Step 1: Upload image
-    onProgress?.({ stage: 'uploading', message: '이미지 업로드 중...', progress: 0 })
+    onProgress?.({ stage: 'uploading', message: 'uploading', progress: 0 })
     const imageUrl = await uploadImage(asset, userId)
-    onProgress?.({ stage: 'uploading', message: '업로드 완료', progress: 100 })
+    onProgress?.({ stage: 'uploading', message: 'uploadComplete', progress: 100 })
 
     // Step 2: Process OCR
-    onProgress?.({ stage: 'processing', message: 'OCR 분석 중...' })
+    onProgress?.({ stage: 'processing', message: 'processing' })
     const result = await processOCR(imageUrl)
 
-    onProgress?.({ stage: 'done', message: '완료!' })
+    onProgress?.({ stage: 'done', message: 'done' })
     return result
   } catch (error) {
-    const message = error instanceof Error ? error.message : '알 수 없는 오류'
+    const message = error instanceof Error ? error.message : 'unknownError'
     onProgress?.({ stage: 'error', message })
     throw error
   }
@@ -242,7 +242,7 @@ export async function parseMandalartText(text: string): Promise<OCRResult> {
   } = await supabase.auth.getSession()
 
   if (!session) {
-    throw new Error('로그인이 필요합니다.')
+    throw new Error('loginRequired')
   }
 
   const response = await fetch(
@@ -260,7 +260,7 @@ export async function parseMandalartText(text: string): Promise<OCRResult> {
   if (!response.ok) {
     const errorText = await response.text()
     logger.error('Parse error', new Error(errorText))
-    throw new Error('텍스트 파싱 중 오류가 발생했습니다.')
+    throw new Error('textParsingError')
   }
 
   const rawResult: RawOCRResponse = await response.json()

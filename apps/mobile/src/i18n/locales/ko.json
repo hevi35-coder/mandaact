@@ -82,7 +82,13 @@
       "stackExample": "(예: 1.5배 + 2배 = 3.5배)",
       "for3Days": "(3일간)",
       "for7Days": "(7일간)",
-      "activeMultipliers": "현재 활성 중인 배율"
+      "activeMultipliers": "현재 활성 중인 배율",
+      "names": {
+        "weekend": "주말 보너스",
+        "comeback": "복귀 환영",
+        "level_milestone": "레벨 달성",
+        "perfect_week": "완벽한 주"
+      }
     },
     "fairXP": {
       "title": "공정한 XP 정책",
@@ -196,7 +202,37 @@
       "onceDesc": "1회 완료 (예: 자격증 취득, 책 읽기)",
       "periodicDesc": "주기적 목표 (예: 월간 매출 목표, 분기별 평가)",
       "periodCycle": "반복 주기",
-      "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다"
+      "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다",
+      "reasonRoutine": "반복 실천으로 보여요",
+      "reasonMission": "완료 목표로 보여요",
+      "reasonReference": "마음가짐이나 원칙으로 보여요"
+    },
+    "format": {
+      "daily": "매일",
+      "timesPerWeek": "주 {{count}}회",
+      "timesPerWeekWithDays": "주 {{count}}회 ({{days}})",
+      "weekdays": "{{days}}",
+      "timesPerMonth": "월 {{count}}회",
+      "onceComplete": "1회 완료",
+      "periodicQuarterly": "분기별",
+      "periodicYearly": "연간",
+      "periodicMonthly": "월간"
+    },
+    "periodLabel": {
+      "이번 주": "이번 주",
+      "이번달": "이번달",
+      "이번 달": "이번 달",
+      "이번 분기": "이번 분기",
+      "올해": "올해"
+    },
+    "weekdayShort": {
+      "sun": "일",
+      "mon": "월",
+      "tue": "화",
+      "wed": "수",
+      "thu": "목",
+      "fri": "금",
+      "sat": "토"
     }
   },
   "mandalart": {
@@ -253,6 +289,47 @@
       },
       "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다"
     },
+    "subGoalEdit": {
+      "title": "세부목표 수정",
+      "description": "세부목표와 실천항목을 수정할 수 있습니다",
+      "subGoalLabel": "세부목표",
+      "subGoalPlaceholder": "세부목표 제목을 입력하세요",
+      "actions": "실천 항목",
+      "add": "추가",
+      "noActions": "실천 항목이 없습니다.\n추가 버튼을 클릭하여 항목을 추가하세요.",
+      "newAction": "새 실천항목",
+      "typeSettings": "타입 설정",
+      "selectTypeDesc": "\"{{title}}\"의 타입과 세부 설정을 선택하세요",
+      "autoSuggestion": "자동 추천",
+      "confidence": "신뢰도",
+      "confidenceHigh": "높음",
+      "confidenceMedium": "중간",
+      "confidenceLow": "낮음",
+      "actionType": "실천 항목 타입",
+      "weekdayNote": "요일을 선택하지 않으면 주간 횟수 기반으로 설정됩니다",
+      "notSet": "미설정",
+      "deleteAction": {
+        "title": "실천항목 삭제",
+        "message": "\"{{title}}\"을(를) 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.",
+        "cancel": "취소",
+        "delete": "삭제"
+      },
+      "toast": {
+        "subGoalCreated": "세부목표가 생성되었습니다. 실천항목을 추가하세요.",
+        "saved": "저장되었습니다",
+        "deleted": "삭제되었습니다",
+        "typeChanged": "타입이 변경되었습니다",
+        "typeChangeError": "타입 변경 중 오류가 발생했습니다",
+        "saveError": "저장 중 오류가 발생했습니다",
+        "deleteError": "삭제 중 오류가 발생했습니다",
+        "reorderError": "순서 변경 중 오류가 발생했습니다",
+        "addError": "추가 중 오류가 발생했습니다",
+        "enterSubGoal": "세부목표를 입력하세요",
+        "enterTitle": "제목을 입력하세요",
+        "saveSubGoalFirst": "먼저 세부목표 제목을 저장하세요",
+        "maxActions": "실천항목은 최대 8개까지 추가할 수 있습니다"
+      }
+    },
     "create": {
       "title": "만다라트 만들기",
       "subtitle": "새로운 목표 생성",
@@ -283,7 +360,8 @@
         "analyze": "텍스트 분석",
         "processing": "텍스트 분석 중...",
         "enterText": "텍스트를 입력해주세요.",
-        "parseError": "텍스트 파싱 중 오류가 발생했습니다."
+        "parseError": "텍스트 파싱 중 오류가 발생했습니다.",
+        "placeholder": "(예시) 핵심 목표: 건강한 삶\n\n1. 운동\n   - 매일 30분 걷기\n   - 주 3회 근력 운동\n   - 스트레칭 루틴\n   - 요가 수업\n   - 등산 가기\n   - 수영 배우기\n   - 홈트레이닝\n   - 자전거 타기\n\n2. 식습관\n   - 아침 거르지 않기\n   - 물 2L 마시기\n   - 채소 위주 식단\n   - 가공식품 줄이기\n\n... (총 8개 세부 목표, 각 8개 실천 항목)"
       },
       "manualInput": {
         "title": "직접 입력",
@@ -310,6 +388,19 @@
         "imageSelect": "이미지 선택 중 오류가 발생했습니다.",
         "ocrProcess": "OCR 처리 중 오류가 발생했습니다.",
         "save": "저장 중 오류가 발생했습니다."
+      },
+      "ocr": {
+        "picking": "이미지 선택 중...",
+        "uploading": "이미지 업로드 중...",
+        "uploadComplete": "업로드 완료",
+        "processing": "OCR 분석 중...",
+        "done": "처리 완료",
+        "cameraPermissionRequired": "카메라 권한이 필요합니다.",
+        "libraryPermissionRequired": "사진 라이브러리 권한이 필요합니다.",
+        "ocrProcessingError": "OCR 처리 중 오류가 발생했습니다.",
+        "textParsingError": "텍스트 파싱 중 오류가 발생했습니다.",
+        "loginRequired": "로그인이 필요합니다.",
+        "unknownError": "알 수 없는 오류가 발생했습니다."
       }
     },
     "detail": {
@@ -334,7 +425,21 @@
     "delete": {
       "title": "만다라트 삭제",
       "confirm": "정말 삭제하시겠습니까?",
-      "warning": "삭제된 만다라트는 복구할 수 없습니다."
+      "warning": "경고: 이 작업은 되돌릴 수 없습니다",
+      "dataToDelete": "삭제되는 데이터",
+      "allCheckHistory": "모든 체크 기록",
+      "subGoalCount": "{{count}}개의 세부 목표",
+      "actionCount": "{{count}}개의 실천 항목",
+      "dataToKeep": "유지되는 데이터",
+      "xpAndLevel": "획득한 XP 및 레벨 (변동 없음)",
+      "unlockedBadges": "해금된 배지 (영구 보존)",
+      "recommendation": "비활성화를 권장합니다. 데이터는 보존되며 언제든 복구 가능합니다.",
+      "deactivate": "비활성화 (권장)",
+      "permanentDelete": "영구 삭제",
+      "deactivated": "만다라트가 비활성화되었습니다",
+      "deleted": "만다라트가 삭제되었습니다",
+      "deactivateError": "비활성화 중 오류가 발생했습니다",
+      "deleteError": "삭제 중 오류가 발생했습니다"
     }
   },
   "stats": {
@@ -534,8 +639,20 @@
     }
   },
   "badges": {
-    "title": "배지",
-    "subtitle": "나의 업적",
+    "title": "뱃지",
+    "subtitle": "다양한 도전을 완료하고 뱃지를 수집하세요",
+    "collected": "수집한 뱃지",
+    "repeatable": "반복",
+    "detail": {
+      "title": "뱃지 상세",
+      "unlocked": "배지 획득 완료!",
+      "firstUnlockDate": "(최초 획득일)",
+      "totalCount": "누적 획득 횟수",
+      "secretBadge": "비밀 배지",
+      "unlockCondition": "잠금 해제 조건",
+      "reward": "획득 보상",
+      "repeatableNote": "반복 획득 가능 (매회 동일 보상)"
+    },
     "categories": {
       "practice": "실천",
       "streak": "시간의 여정",
@@ -543,59 +660,119 @@
       "monthly": "매달의 도전",
       "completion": "완료",
       "secret": "숨겨진 이야기",
-      "special": "특별",
+      "special": "특별한 순간",
       "first_steps": "시작의 용기",
       "volume": "반복의 미학",
-      "achievement": "특별한 순간"
+      "achievement": "특별한 순간",
+      "milestone": "시작의 용기"
     },
     "locked": "잠김",
     "unlocked": "획득",
     "progress": "진행 중",
     "names": {
-      "first_check": "첫 실천",
+      "first_check": "첫 체크",
+      "first_mandalart": "첫 만다라트",
       "checks_10": "10회 실천",
-      "checks_100": "100회 실천",
-      "checks_1000": "1000회 실천",
-      "streak_7": "1주 연속",
-      "streak_30": "1달 연속",
-      "streak_60": "2달 연속",
-      "streak_100": "100일 연속",
-      "streak_150": "150일 연속",
+      "checks_50": "첫 50회",
+      "checks_100": "백 번의 실천",
+      "checks_250": "250회 달성",
+      "checks_500": "500회의 여정",
+      "checks_1000": "천 번의 통찰",
+      "checks_2500": "2500회의 정상",
+      "checks_5000": "5000회의 경지",
+      "streak_3": "3일의 시작",
+      "streak_7": "7일의 약속",
+      "streak_14": "14일의 전환점",
+      "streak_30": "30일의 리듬",
+      "streak_60": "60일의 관성",
+      "streak_100": "100일의 증명",
+      "streak_150": "150일의 마스터",
       "active_7": "1주 활동",
       "active_30": "1달 활동",
       "active_60": "2달 활동",
       "active_100": "100일 활동",
       "monthly_80": "월간 80%",
       "monthly_90": "월간 90%",
+      "monthly_90_percent": "이달의 주인공",
       "monthly_perfect": "월간 퍼펙트",
+      "monthly_perfect_week": "완벽한 주",
+      "monthly_streak_30": "월간 마라톤",
+      "monthly_champion": "월간 그랜드슬램",
       "monthly_active": "월간 개근",
       "complete_subgoal": "세부목표 완주",
       "complete_mandalart": "만다라트 완주",
       "early_bird": "얼리버드",
-      "night_owl": "올빼미"
+      "night_owl": "밤의 새",
+      "midnight_warrior": "심야의 수행자",
+      "mandalart_rainbow": "일곱 빛깔",
+      "perfect_day": "오늘의 완성",
+      "level_10": "성장의 나무"
+    },
+    "unlockConditions": {
+      "secretBadge": "비밀 업적",
+      "conditionSecret": "달성 조건은 비밀입니다",
+      "firstMandalart": "첫 번째 만다라트 생성 (최소 16개 실천 항목 작성)",
+      "level10": "레벨 10 달성",
+      "monthlyChampion": "월간 완벽한 실천 달성",
+      "defaultTrigger": "특정 이벤트 달성 시 자동 획득",
+      "streak": "{{days}}일 연속 실천",
+      "totalChecks": "총 {{count}}회 실천",
+      "perfectDay": "하루 100% 달성 {{count}}회",
+      "perfectWeek": "주간 {{threshold}}% 이상 달성 {{count}}회",
+      "perfectMonth": "월간 {{threshold}}% 이상 달성",
+      "balanced": "모든 서브골 {{threshold}}% 이상 달성",
+      "morningPattern": "오전 체크 비율 {{threshold}}% 이상",
+      "timePattern": "특정 시간대 패턴 달성",
+      "weekendCompletion": "주말 완료율이 평일보다 높음",
+      "monthlyCompletion": "현재 달의 달성률 {{threshold}}% 이상",
+      "perfectWeekInMonth": "한 달 내 완벽한 주(100%) 달성",
+      "monthlyStreak": "한 달({{days}}일) 연속 실천"
+    },
+    "progressMessages": {
+      "achieved": "목표 달성!",
+      "almostThere": "거의 다 왔어요! {{remaining}}번만 더!",
+      "halfWay": "절반 넘었습니다! 계속 가세요!",
+      "goodProgress": "좋아요! {{progress}}/{{target}} 달성 중",
+      "justStarted": "시작이 반입니다! {{progress}}/{{target}}"
     },
     "descriptions": {
-      "first_check": "첫 번째 실천 체크",
+      "first_check": "천 리 길도 한 걸음부터",
+      "first_mandalart": "목표를 그린 자만이 도달할 수 있다",
       "checks_10": "총 10회 실천 완료",
-      "checks_100": "총 100회 실천 완료",
-      "checks_1000": "총 1000회 실천 완료",
-      "streak_7": "7일 연속 실천",
-      "streak_30": "30일 연속 실천",
-      "streak_60": "60일 연속 실천",
-      "streak_100": "100일 연속 실천",
-      "streak_150": "150일 연속 실천",
+      "checks_50": "반복의 힘을 처음 발견한 순간",
+      "checks_100": "꾸준함이 만드는 작은 기적",
+      "checks_250": "습관이 완전한 일상이 되다",
+      "checks_500": "500번의 선택이 만든 새로운 나",
+      "checks_1000": "천 번의 실천이 주는 깊은 깨달음",
+      "checks_2500": "끈기의 정상에서 보는 풍경",
+      "checks_5000": "실천이 예술의 경지에 이르다",
+      "streak_3": "모든 위대한 여정은 3일로부터 시작된다",
+      "streak_7": "나와의 첫 약속을 지켰다",
+      "streak_14": "의지가 습관으로 전환되는 마법의 순간",
+      "streak_30": "한 달의 리듬이 몸에 완전히 배었다",
+      "streak_60": "노력 없이도 계속되는 관성의 힘",
+      "streak_100": "백 일의 시간이 진정한 나를 증명한다",
+      "streak_150": "습관을 넘어 삶의 일부가 되다",
       "active_7": "일주일간 활동",
       "active_30": "한 달간 활동",
       "active_60": "두 달간 활동",
       "active_100": "100일간 활동",
       "monthly_80": "이번 달 80% 달성",
       "monthly_90": "이번 달 90% 달성",
+      "monthly_90_percent": "이번 달의 주인공은 바로 나",
       "monthly_perfect": "이번 달 100% 달성",
+      "monthly_perfect_week": "일주일 내내 100% 달성한 완벽함",
+      "monthly_streak_30": "한 달 내내 멈추지 않은 마라톤",
+      "monthly_champion": "한 달 100% 완료, 완벽의 정의",
       "monthly_active": "이번 달 매일 활동",
       "complete_subgoal": "세부 목표 하나 완료",
       "complete_mandalart": "만다라트 전체 완료",
       "early_bird": "오전 6시 이전 실천",
-      "night_owl": "자정 이후 실천"
+      "night_owl": "밤의 고요 속에서 최고의 집중력을 발휘했다",
+      "midnight_warrior": "달이 가장 높은 시간에도 멈추지 않았다",
+      "mandalart_rainbow": "모든 색이 조화를 이룰 때...",
+      "perfect_day": "모든 목표를 달성한 완벽한 하루",
+      "level_10": "레벨 10, 뿌리 깊은 나무가 되다"
     }
   },
   "reports": {
