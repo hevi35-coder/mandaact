@@ -467,6 +467,7 @@
     "app": {
       "title": "App",
       "language": "Language",
+      "timezone": "Timezone",
       "notifications": "Notifications",
       "tutorial": "User Guide",
       "version": "Version"
@@ -524,6 +525,12 @@
       "current": "Current Language",
       "korean": "Korean",
       "english": "English"
+    },
+    "timezone": {
+      "title": "Timezone Settings",
+      "description": "Used for Today's Practice and streak calculation",
+      "current": "Current Timezone",
+      "select": "Select your timezone"
     },
     "daysWithUs": "{{days}} days with us",
     "footer": "Turn goals into action, {{appName}}"

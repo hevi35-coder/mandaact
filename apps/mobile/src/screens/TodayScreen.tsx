@@ -30,7 +30,8 @@ import {
 } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
-import { format, addDays, isSameDay, startOfDay } from 'date-fns'
+import { format, addDays, isSameDay, startOfDay, parseISO } from 'date-fns'
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz'
 import { ko } from 'date-fns/locale/ko'
 import { enUS } from 'date-fns/locale/en-US'
 import i18n from '../i18n'
@@ -44,6 +45,7 @@ import {
 } from '../hooks/useActions'
 import { useDailyStats, useXPUpdate, statsKeys } from '../hooks/useStats'
 import { badgeKeys } from '../hooks/useBadges'
+import { useUserProfile, getDeviceTimezone } from '../hooks/useUserProfile'
 import { useToast } from '../components/Toast'
 import {
   shouldShowToday,
@@ -170,11 +172,21 @@ export default function TodayScreen() {
   const { width: screenWidth } = useWindowDimensions()
   const isTablet = Platform.OS === 'ios' && screenWidth >= 768
 
+  // Get user's timezone
+  const { timezone } = useUserProfile(user?.id)
+
   // Scroll to top on tab re-press
   const scrollRef = useRef<ScrollView>(null)
   useScrollToTop('Today', scrollRef)
 
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  // Calculate "today" in user's timezone
+  const getUserToday = useCallback(() => {
+    const now = new Date()
+    const zonedNow = toZonedTime(now, timezone)
+    return startOfDay(zonedNow)
+  }, [timezone])
+
+  const [selectedDate, setSelectedDate] = useState(() => getUserToday())
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     new Set()
   )
@@ -194,12 +206,16 @@ export default function TodayScreen() {
   const [typeSelectorVisible, setTypeSelectorVisible] = useState(false)
   const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionWithContext | null>(null)
 
-  // Date navigation
-  const today = startOfDay(new Date())
+  // Date navigation - use user's timezone
+  const today = useMemo(() => getUserToday(), [getUserToday])
   const isToday = isSameDay(selectedDate, today)
 
-  // Check if selected date allows checking (today or yesterday only)
-  const canCheck = isTodayOrYesterday(selectedDate)
+  // Check if selected date allows checking (today or yesterday only) - timezone aware
+  const canCheck = useMemo(() => {
+    const userToday = getUserToday()
+    const userYesterday = addDays(userToday, -1)
+    return isSameDay(selectedDate, userToday) || isSameDay(selectedDate, userYesterday)
+  }, [selectedDate, getUserToday])
 
   const handlePreviousDay = useCallback(() => {
     setSelectedDate((prev) => addDays(prev, -1))
@@ -210,8 +226,8 @@ export default function TodayScreen() {
   }, [])
 
   const handleToday = useCallback(() => {
-    setSelectedDate(new Date())
-  }, [])
+    setSelectedDate(getUserToday())
+  }, [getUserToday])
 
   // Data fetching
   const {

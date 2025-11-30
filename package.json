@@ -13,9 +13,16 @@
     "lint": "turbo run lint --filter=@mandaact/web --filter=@mandaact/shared",
     "type-check": "turbo run type-check --filter=@mandaact/web --filter=@mandaact/shared",
     "test": "turbo run test --filter=@mandaact/web --filter=@mandaact/shared",
-    "clean": "turbo run clean && rm -rf node_modules pnpm-lock.yaml"
+    "clean": "turbo run clean && rm -rf node_modules pnpm-lock.yaml",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "devDependencies": {
     "turbo": "^2.3.0"
+  },
+  "dependencies": {
+    "expo": "~52.0.47",
+    "react": "18.3.1",
+    "react-native": "0.76.9"
   }
 }

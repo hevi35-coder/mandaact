@@ -13,7 +13,46 @@ import {
 interface ReportRequest {
   report_type: 'weekly' | 'monthly' | 'diagnosis' | 'insight' | 'prediction' | 'struggling'
   mandalart_id?: string
+  language?: 'ko' | 'en' // Default: 'ko'
 }
+
+// Localization constants
+const LOCALES = {
+  ko: {
+    periodLabels: {
+      weekly: '지난 주',
+      monthly: '지난 달',
+      default: '최근',
+    },
+    dayNames: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+    timeNames: {
+      morning: '아침',
+      afternoon: '오후',
+      evening: '저녁',
+      night: '밤',
+    },
+    noActivity: '기간 내 활동이 없습니다.',
+    noBadges: '없음',
+  },
+  en: {
+    periodLabels: {
+      weekly: 'Last Week',
+      monthly: 'Last Month',
+      default: 'Recent',
+    },
+    dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    timeNames: {
+      morning: 'Morning',
+      afternoon: 'Afternoon',
+      evening: 'Evening',
+      night: 'Night',
+    },
+    noActivity: 'No activity during this period.',
+    noBadges: 'None',
+  },
+} as const
+
+type Language = 'ko' | 'en'
 
 // Supabase query builder types
 interface QueryBuilder {
@@ -86,7 +125,7 @@ serve(withErrorHandler('generate-report', async (req) => {
     }
 
     // Parse and validate request body
-    const { report_type, mandalart_id } = await parseRequestBody<ReportRequest>(req)
+    const { report_type, mandalart_id, language = 'ko' } = await parseRequestBody<ReportRequest>(req)
 
     if (!report_type) {
       return createErrorResponse(
@@ -95,14 +134,17 @@ serve(withErrorHandler('generate-report', async (req) => {
       )
     }
 
-    console.log(`Generating ${report_type} report for user ${user.id}`)
+    // Validate language parameter
+    const lang: Language = language === 'en' ? 'en' : 'ko'
+
+    console.log(`Generating ${report_type} report for user ${user.id} in ${lang}`)
 
     // Collect user data for the report
-    const reportData = await collectReportData(supabaseClient, user.id, report_type, mandalart_id)
+    const reportData = await collectReportData(supabaseClient, user.id, report_type, mandalart_id, lang)
 
     // Generate report with Perplexity AI
     console.log(`Generating ${report_type} report with data:`, JSON.stringify(reportData).substring(0, 300))
-    const reportContent = await generateAIReport(report_type, reportData)
+    const reportContent = await generateAIReport(report_type, reportData, lang)
     console.log(`Generated ${report_type} report content:`, reportContent?.substring(0, 200))
 
     // Save report to database
@@ -152,8 +194,11 @@ async function collectReportData(
   supabaseClient: SupabaseClient,
   userId: string,
   reportType: string,
-  mandalartId?: string
+  mandalartId?: string,
+  language: Language = 'ko'
 ): Promise<ReportData> {
+  const locale = LOCALES[language]
+
   // Determine date range based on report type
   const now = new Date()
   let startDate: Date
@@ -163,17 +208,17 @@ async function collectReportData(
     case 'weekly':
       startDate = new Date(now)
       startDate.setDate(now.getDate() - 7)
-      periodLabel = '지난 주'
+      periodLabel = locale.periodLabels.weekly
       break
     case 'monthly':
       startDate = new Date(now)
       startDate.setMonth(now.getMonth() - 1)
-      periodLabel = '지난 달'
+      periodLabel = locale.periodLabels.monthly
       break
     default:
       startDate = new Date(now)
       startDate.setDate(now.getDate() - 7)
-      periodLabel = '최근'
+      periodLabel = locale.periodLabels.default
   }
 
   // Get mandalart info with full structure
@@ -270,7 +315,7 @@ async function collectReportData(
       currentStreak: streakData?.current_streak || 0,
       longestStreak: streakData?.longest_streak || 0,
       recentBadges: recentBadges || [],
-      message: '기간 내 활동이 없습니다.',
+      message: locale.noActivity,
     }
   }
 
@@ -306,11 +351,12 @@ async function collectReportData(
     actionTypePattern[actionType] = (actionTypePattern[actionType] || 0) + 1
   })
 
-  const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
+  const dayNames = locale.dayNames
   const bestDay = Object.entries(weekdayPattern).sort((a, b) => b[1] - a[1])[0]
   const worstDay = Object.entries(weekdayPattern).sort((a, b) => a[1] - b[1])[0]
 
   const bestTime = Object.entries(timePattern).sort((a, b) => b[1] - a[1])[0]
+  const timeNames = locale.timeNames
   const bestSubGoal = Object.entries(subGoalPattern)
     .map(([id, data]) => ({ id, ...data }))
     .sort((a, b) => b.count - a.count)[0]
@@ -346,14 +392,7 @@ async function collectReportData(
     worstDay: worstDay ? { day: dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
     bestTime: bestTime
       ? {
-        period:
-          bestTime[0] === 'morning'
-            ? '아침'
-            : bestTime[0] === 'afternoon'
-              ? '오후'
-              : bestTime[0] === 'evening'
-                ? '저녁'
-                : '밤',
+        period: timeNames[bestTime[0] as keyof typeof timeNames] || bestTime[0],
         count: bestTime[1],
       }
       : null,
@@ -521,18 +560,52 @@ interface ReportData {
   message?: string
 }
 
-async function generateAIReport(reportType: string, data: ReportData): Promise<string> {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
-  if (!perplexityApiKey) {
-    throw new Error('PERPLEXITY_API_KEY not configured')
+// Get localized prompts based on language
+function getLocalizedPrompts(language: Language) {
+  const locale = LOCALES[language]
+  const isEnglish = language === 'en'
+
+  return {
+    weekly: {
+      system: isEnglish
+        ? `You are a data analysis expert. Analyze user's practice patterns and provide insights.
+
+You must respond ONLY in valid JSON format. Do NOT use markdown code blocks.
+
+Exact JSON format:
+{
+  "headline": "One sentence summarizing this week's most important pattern or change",
+  "key_metrics": [
+    {"label": "Practice Days", "value": "6 out of 7 days"},
+    {"label": "Total Practices", "value": "42 times"},
+    {"label": "Week-over-Week Change", "value": "+15% (37→42)"}
+  ],
+  "strengths": [
+    "High focus during Thursday evening time slot",
+    "Routine practice rate is stable"
+  ],
+  "improvements": {
+    "problem": "Practice frequency on Wednesday and other days is very low",
+    "insight": "Thursday showed high concentration in evening time slot"
+  },
+  "action_plan": {
+    "goal": "Improve weekday practice consistency",
+    "steps": [
+      "Set reminder for Tuesday at 3 PM",
+      "Reduce Wednesday goals to 3 items"
+    ]
   }
+}
 
-  let systemPrompt = ''
-  let userPrompt = ''
-
-  switch (reportType) {
-    case 'weekly': {
-      systemPrompt = `당신은 데이터 분석 전문가입니다. 사용자의 실천 패턴을 분석하여 인사이트만 제공하세요.
+Rules:
+- Follow the exact JSON structure above
+- Return JSON only without code blocks
+- key_metrics order: Practice Days → Total Practices → Week-over-Week Change
+- Include actual numbers in key_metrics values
+- For week-over-week, show percentage with specific counts (e.g., "+15% (37→42)")
+- Analyze patterns and context
+- Provide actionable advice`
+        : `당신은 데이터 분석 전문가입니다. 사용자의 실천 패턴을 분석하여 인사이트만 제공하세요.
 
 반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드 블록을 사용하지 마세요.
 
@@ -568,47 +641,53 @@ async function generateAIReport(reportType: string, data: ReportData): Promise<s
 - key_metrics의 value는 실제 수치를 포함하세요
 - 전주대비는 퍼센트와 함께 구체적 횟수 변화도 표시 (예: "+15% (37회→42회)")
 - 패턴과 맥락을 분석하세요
-- 실행 가능한 조언을 제공하세요`
+- 실행 가능한 조언을 제공하세요`,
 
-      const weeklyData = data
-      const badges = weeklyData.recentBadges?.map((b: { achievement?: { title?: string } }) => b.achievement?.title).join(', ') || '없음'
+      userPromptTemplate: (data: ReportData, badges: string, changeText: string) =>
+        isEnglish
+          ? `Find patterns in the following data and provide insights:
 
-      // Calculate previous week's checks for detailed comparison
-      const currentChecks = data.totalChecks || 0
-      let prevChecks: number | null = null
-      let changeText = '비교 데이터 없음'
+[Practice Status]
+- Practice Days: ${data.uniqueDays} out of 7 days
+- Total Practices: ${data.totalChecks || 0} times
+- Week-over-Week Change: ${changeText}
+- Streak: Current ${data.currentStreak || 0} days, Best ${data.longestStreak || 0} days
+- New Badges Earned: ${badges}
 
-      if (weeklyData.weekOverWeekChange != null) {
-        // Calculate prevChecks from weekOverWeekChange percentage
-        // Formula: change = ((current - prev) / prev) * 100
-        // So: prev = current / (1 + change/100)
-        // Handle edge case: if change is -100%, prev would be infinite (avoid division by zero)
-        const divisor = 1 + weeklyData.weekOverWeekChange / 100
-        if (divisor > 0 && currentChecks > 0) {
-          prevChecks = Math.round(currentChecks / divisor)
-          changeText = `${weeklyData.weekOverWeekChange > 0 ? '+' : ''}${weeklyData.weekOverWeekChange}% (${prevChecks}회→${currentChecks}회)`
-        } else if (weeklyData.weekOverWeekChange === 0) {
-          // No change, prev equals current
-          prevChecks = currentChecks
-          changeText = `0% (${currentChecks}회→${currentChecks}회)`
-        } else {
-          // Edge case: -100% change (prev had checks, current has 0)
-          changeText = `${weeklyData.weekOverWeekChange}%`
-        }
-      }
+[Time Patterns]
+- Day Distribution: ${JSON.stringify(data.weekdayPattern || {})}
+- Time Distribution: ${JSON.stringify(data.timePattern || {})}
+- Most Active: ${data.bestDay?.day} ${data.bestDay?.count} times
+- Least Active: ${data.worstDay?.day} ${data.worstDay?.count} times
+- Preferred Time: ${data.bestTime?.period} ${data.bestTime?.count} times
 
-      userPrompt = `다음 데이터에서 패턴을 찾아 인사이트를 제공하세요:
+[Goal Performance]
+- Best Performance: ${data.bestSubGoal?.title} (${data.bestSubGoal?.count} times)
+- Needs Improvement: ${data.worstSubGoal?.title} (${data.worstSubGoal?.count} times)
+
+[Practice Types]
+- Routine: ${data.actionTypePattern?.routine || 0} times
+- Mission: ${data.actionTypePattern?.mission || 0} times
+
+Analysis Perspectives:
+1. Identify optimal practice times from time/day patterns
+2. Suggest improvement priorities from goal variance
+3. Interpret week-over-week change trends
+4. Provide 1 actionable step for next week
+
+Respond in JSON format with actual numbers in key_metrics.`
+          : `다음 데이터에서 패턴을 찾아 인사이트를 제공하세요:
 
 [실천 현황]
 - 실천일수: 7일 중 ${data.uniqueDays}일
-- 총 실천횟수: ${currentChecks}회
+- 총 실천횟수: ${data.totalChecks || 0}회
 - 전주대비 실천횟수: ${changeText}
-- 스트릭: 현재 ${weeklyData.currentStreak}일, 최고 ${weeklyData.longestStreak}일
+- 스트릭: 현재 ${data.currentStreak || 0}일, 최고 ${data.longestStreak || 0}일
 - 새로 획득한 배지: ${badges}
 
 [시간 패턴]
-- 요일별 분포: ${JSON.stringify(weeklyData.weekdayPattern || {})}
-- 시간대 분포: ${JSON.stringify(weeklyData.timePattern || {})}
+- 요일별 분포: ${JSON.stringify(data.weekdayPattern || {})}
+- 시간대 분포: ${JSON.stringify(data.timePattern || {})}
 - 최고 활동: ${data.bestDay?.day} ${data.bestDay?.count}회
 - 최저 활동: ${data.worstDay?.day} ${data.worstDay?.count}회
 - 선호 시간: ${data.bestTime?.period} ${data.bestTime?.count}회
@@ -618,8 +697,8 @@ async function generateAIReport(reportType: string, data: ReportData): Promise<s
 - 개선 필요: ${data.worstSubGoal?.title} (${data.worstSubGoal?.count}회)
 
 [실천 타입]
-- 루틴: ${weeklyData.actionTypePattern?.routine || 0}회
-- 미션: ${weeklyData.actionTypePattern?.mission || 0}회
+- 루틴: ${data.actionTypePattern?.routine || 0}회
+- 미션: ${data.actionTypePattern?.mission || 0}회
 
 패턴 분석 관점:
 1. 시간/요일 패턴에서 최적 실천 시간대 파악
@@ -627,39 +706,48 @@ async function generateAIReport(reportType: string, data: ReportData): Promise<s
 3. 전주 대비 변화 추세 해석
 4. 다음 주 실행 가능한 1가지 액션
 
-JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세요.`
-      break
-    }
+JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세요.`,
+    },
 
-    case 'monthly': {
-      systemPrompt = `당신은 사용자의 장기 목표 달성을 돕는 전문 코치입니다.
-사용자의 월간 활동 데이터를 분석하여 4-5문단의 심도있는 리포트를 작성해주세요.
+    diagnosis: {
+      system: isEnglish
+        ? `You are a Mandalart plan review expert. Provide specific and actionable improvement directions.
 
-리포트 구성:
-1. 월간 성과 종합: 전반적인 성과 평가
-2. 트렌드 분석: 패턴, 성장 곡선, 주목할 변화
-3. 강점과 약점: 잘한 점과 개선이 필요한 부분
-4. 실행 계획: 다음 달을 위한 구체적 전략 3가지
-5. 격려 메시지: 장기적 관점에서의 동기부여
+You must respond ONLY in valid JSON format. Do NOT use markdown code blocks.
 
-톤: 전문적이지만 따뜻하고, 데이터 기반의 통찰력 있는 톤을 사용하세요.`
+Exact JSON format:
+{
+  "headline": "Your Mandalart plan is well-structured but needs clarity improvements",
+  "structure_metrics": [
+    {"label": "Completion", "value": "89/146 (61%)"},
+    {"label": "Clarity", "value": "42% (13 of 31 are specific)"},
+    {"label": "Measurability", "value": "35% (11 of 31 are measurable)"}
+  ],
+  "strengths": [
+    "All items are filled without gaps",
+    "Routine-focused, actionable structure"
+  ],
+  "improvements": [
+    {"area": "Action Specificity", "issue": "Achievement criteria unclear", "solution": "Add numeric goals to each action (e.g., 30 min, 3 times)"},
+    {"area": "Balance", "issue": "Concentrated in specific areas", "solution": "Add 2 actions to underrepresented areas"}
+  ],
+  "priority_tasks": [
+    "Specify exact time and frequency for top 3 routines",
+    "Set at least 5 criteria to verify completion",
+    "Create weekly review checklist"
+  ]
+}
 
-      userPrompt = `다음은 사용자의 지난 달 활동 데이터입니다:
-
-- 총 실천 횟수: ${data.totalChecks}회
-- 활동 일수: ${data.uniqueDays}일
-- 가장 활발했던 요일: ${data.bestDay?.day} (${data.bestDay?.count}회)
-- 가장 부진했던 요일: ${data.worstDay?.day} (${data.worstDay?.count}회)
-- 선호 시간대: ${data.bestTime?.period} (${data.bestTime?.count}회)
-- 최고 성과 목표: ${data.bestSubGoal?.title} (${data.bestSubGoal?.count}회)
-- 개선 필요 목표: ${data.worstSubGoal?.title} (${data.worstSubGoal?.count}회)
-
-위 데이터를 바탕으로 월간 리포트를 작성해주세요.`
-      break
-    }
-
-    case 'diagnosis': {
-      systemPrompt = `당신은 만다라트 계획 점검 전문가입니다. 구체적이고 실천 가능한 개선 방향을 제시하세요.
+Rules:
+- Follow the exact JSON structure above
+- Return JSON only without code blocks
+- structure_metrics must have exactly 3 items: Completion, Clarity, Measurability
+- Include actual numbers in structure_metrics values
+- Clarity: % of items with specific expressions (e.g., "30 min", "every morning", "3 times/week")
+- Measurability: % of items with numeric achievement verification (e.g., "3 times", "5 pages")
+- Provide specific and actionable advice
+- Use simple language instead of jargon`
+        : `당신은 만다라트 계획 점검 전문가입니다. 구체적이고 실천 가능한 개선 방향을 제시하세요.
 
 반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드 블록을 사용하지 마세요.
 
@@ -694,16 +782,38 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 - 표현 명확도: 숫자+단위, 시간대, 빈도 표현이 있는 항목 비율 (예: "30분", "매일 아침", "주 3회")
 - 측정 가능성: 숫자로 달성 여부 확인 가능한 항목 비율 (예: "3회", "5장")
 - 구체적이고 실천 가능한 조언을 제공하세요
-- 전문 용어 대신 쉬운 표현을 사용하세요`
+- 전문 용어 대신 쉬운 표현을 사용하세요`,
 
-      const diagnosisData = data
-      const structure = diagnosisData.structureAnalysis || {}
-      const mandalart = diagnosisData.mandalarts?.[0]
+      userPromptTemplate: (data: ReportData) => {
+        const structure = data.structureAnalysis || {}
+        const mandalart = data.mandalarts?.[0]
+        const trackableCount = (structure.typeDistribution?.routine || 0) + (structure.typeDistribution?.mission || 0)
 
-      // Calculate trackable actions (routine + mission)
-      const trackableCount = (structure.typeDistribution?.routine || 0) + (structure.typeDistribution?.mission || 0)
+        return isEnglish
+          ? `Analyze the Mandalart structure and suggest improvements:
 
-      userPrompt = `만다라트 구조를 분석하여 개선점을 제시하세요:
+[Basic Info]
+- Core Goal: "${mandalart?.center_goal || 'Not set'}"
+- Total Mandalarts: ${structure.totalMandalarts || 0}
+
+[Structure Analysis]
+- Total Items: ${structure.filledItems || 0} of ${structure.totalItems || 0} filled (${structure.fillRate || 0}%)
+- Clarity: ${structure.specificRate || 0}% (${structure.specificItems || 0} of ${trackableCount} trackable items are specific)
+- Measurability: ${structure.measurableRate || 0}% (${structure.measurableItems || 0} of ${trackableCount} trackable items have frequency set)
+- Type Distribution: Routine ${structure.typeDistribution?.routine || 0}, Mission ${structure.typeDistribution?.mission || 0}, Reference ${structure.typeDistribution?.reference || 0}
+
+[Practice Status]
+- Last Week Practice: ${data.totalChecks || 0} times
+- Current Streak: ${data.currentStreak || 0} days
+
+Analysis Perspectives:
+1. Completion rate (fill rate)
+2. Clarity evaluation (specific expressions or frequency settings)
+3. Measurability evaluation (whether achievement can be verified by frequency settings)
+4. Balanced goal composition (excluding reference items)
+
+Respond in JSON format with actual numbers in structure_metrics.`
+          : `만다라트 구조를 분석하여 개선점을 제시하세요:
 
 [기본 정보]
 - 중심 목표: "${mandalart?.center_goal || '미설정'}"
@@ -716,8 +826,8 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 - 타입 분포: 루틴 ${structure.typeDistribution?.routine || 0}개, 미션 ${structure.typeDistribution?.mission || 0}개, 참고 ${structure.typeDistribution?.reference || 0}개
 
 [실천 현황]
-- 지난 주 실천: ${diagnosisData.totalChecks || 0}회
-- 현재 스트릭: ${diagnosisData.currentStreak || 0}일
+- 지난 주 실천: ${data.totalChecks || 0}회
+- 현재 스트릭: ${data.currentStreak || 0}일
 
 분석 관점:
 1. 완성도 평가 (항목 채움률)
@@ -726,12 +836,70 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 4. 균형잡힌 목표 구성 (참고 항목 제외 기준)
 
 JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함하세요.`
+      },
+    },
+
+    default: {
+      system: isEnglish
+        ? `You are a goal achievement coach. Provide simple and useful insights.`
+        : `당신은 목표 달성 코치입니다. 간단하고 유용한 인사이트를 제공하세요.`,
+    },
+
+    noBadges: locale.noBadges,
+    noComparisonData: isEnglish ? 'No comparison data' : '비교 데이터 없음',
+  }
+}
+
+async function generateAIReport(reportType: string, data: ReportData, language: Language = 'ko'): Promise<string> {
+  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
+  if (!perplexityApiKey) {
+    throw new Error('PERPLEXITY_API_KEY not configured')
+  }
+
+  let systemPrompt = ''
+  let userPrompt = ''
+
+  // Get localized prompts based on language
+  const prompts = getLocalizedPrompts(language)
+
+  switch (reportType) {
+    case 'weekly': {
+      systemPrompt = prompts.weekly.system
+
+      const weeklyData = data
+      const badges = weeklyData.recentBadges?.map((b: { achievement?: { title?: string } }) => b.achievement?.title).join(', ') || prompts.noBadges
+
+      // Calculate previous week's checks for detailed comparison
+      const currentChecks = data.totalChecks || 0
+      let changeText = prompts.noComparisonData
+
+      if (weeklyData.weekOverWeekChange != null) {
+        const divisor = 1 + weeklyData.weekOverWeekChange / 100
+        if (divisor > 0 && currentChecks > 0) {
+          const prevChecks = Math.round(currentChecks / divisor)
+          changeText = `${weeklyData.weekOverWeekChange > 0 ? '+' : ''}${weeklyData.weekOverWeekChange}% (${prevChecks}→${currentChecks})`
+        } else if (weeklyData.weekOverWeekChange === 0) {
+          changeText = `0% (${currentChecks}→${currentChecks})`
+        } else {
+          changeText = `${weeklyData.weekOverWeekChange}%`
+        }
+      }
+
+      userPrompt = prompts.weekly.userPromptTemplate(data, badges, changeText)
+      break
+    }
+
+    case 'diagnosis': {
+      systemPrompt = prompts.diagnosis.system
+      userPrompt = prompts.diagnosis.userPromptTemplate(data)
       break
     }
 
     default:
-      systemPrompt = `당신은 목표 달성 코치입니다. 간단하고 유용한 인사이트를 제공하세요.`
-      userPrompt = `사용자의 활동 데이터를 바탕으로 인사이트를 제공해주세요:\n${JSON.stringify(data, null, 2)}`
+      systemPrompt = prompts.default.system
+      userPrompt = language === 'en'
+        ? `Please provide insights based on the user's activity data:\n${JSON.stringify(data, null, 2)}`
+        : `사용자의 활동 데이터를 바탕으로 인사이트를 제공해주세요:\n${JSON.stringify(data, null, 2)}`
   }
 
   // Call Perplexity API

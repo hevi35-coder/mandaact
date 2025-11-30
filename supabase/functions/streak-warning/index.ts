@@ -24,7 +24,41 @@ interface UserForStreakWarning {
   email: string
   push_token: string
   current_streak: number
+  user_timezone: string
+  user_language: string
 }
+
+// Localized messages for streak warning
+const STREAK_WARNING_MESSAGES = {
+  ko: {
+    streak30Plus: (nickname: string, streak: number) => ({
+      title: `${nickname}님, 🏆 ${streak}일 대기록을 지켜주세요!`,
+      body: '한 달 넘게 이어온 스트릭이에요.',
+    }),
+    streak7Plus: (nickname: string, streak: number) => ({
+      title: `${nickname}님, ${streak}일 스트릭이 위험해요! 🔥`,
+      body: '오늘 놓치면 처음부터예요.',
+    }),
+    streakDefault: (nickname: string, streak: number) => ({
+      title: `${nickname}님, ${streak}일 스트릭을 이어가세요! 🔥`,
+      body: '자정 전에 1개만 실천하면 유지돼요.',
+    }),
+  },
+  en: {
+    streak30Plus: (nickname: string, streak: number) => ({
+      title: `${nickname}, 🏆 Protect your ${streak}-day record!`,
+      body: "You've kept this streak for over a month.",
+    }),
+    streak7Plus: (nickname: string, streak: number) => ({
+      title: `${nickname}, your ${streak}-day streak is at risk! 🔥`,
+      body: "Miss today and you'll start over.",
+    }),
+    streakDefault: (nickname: string, streak: number) => ({
+      title: `${nickname}, keep your ${streak}-day streak going! 🔥`,
+      body: 'Complete just 1 action before midnight.',
+    }),
+  },
+} as const
 
 serve(async (req: Request) => {
   // Handle CORS preflight
@@ -87,10 +121,11 @@ serve(async (req: Request) => {
     // Process each user
     for (const user of users as UserForStreakWarning[]) {
       try {
-        // Get personalized message based on streak length
+        // Get personalized message based on streak length and language
         const { title, body } = getStreakWarningMessage(
           user.nickname,
-          user.current_streak
+          user.current_streak,
+          user.user_language
         )
 
         // Send push notification
@@ -140,28 +175,23 @@ serve(async (req: Request) => {
 })
 
 /**
- * Get personalized streak warning message based on streak length
+ * Get personalized streak warning message based on streak length and language
  */
 function getStreakWarningMessage(
   nickname: string,
-  streak: number
+  streak: number,
+  language: string
 ): { title: string; body: string } {
+  const lang = language === 'en' ? 'en' : 'ko'
+  const messages = STREAK_WARNING_MESSAGES[lang]
+
   if (streak >= 30) {
-    return {
-      title: `${nickname}님, 🏆 ${streak}일 대기록을 지켜주세요!`,
-      body: '한 달 넘게 이어온 스트릭이에요.',
-    }
+    return messages.streak30Plus(nickname, streak)
   } else if (streak >= 7) {
-    return {
-      title: `${nickname}님, ${streak}일 스트릭이 위험해요! 🔥`,
-      body: '오늘 놓치면 처음부터예요.',
-    }
+    return messages.streak7Plus(nickname, streak)
   } else {
     // streak 3-6
-    return {
-      title: `${nickname}님, ${streak}일 스트릭을 이어가세요! 🔥`,
-      body: '자정 전에 1개만 실천하면 유지돼요.',
-    }
+    return messages.streakDefault(nickname, streak)
   }
 }
 

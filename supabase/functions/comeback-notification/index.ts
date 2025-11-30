@@ -25,9 +25,51 @@ interface UserForComeback {
   push_token: string
   last_check_date: string
   days_since_last_check: number
+  user_timezone: string
+  user_language: string
 }
 
 const COMEBACK_DAYS = [3, 7, 14] as const
+
+// Localized messages for comeback notification
+const COMEBACK_MESSAGES = {
+  ko: {
+    3: (nickname: string) => ({
+      title: `${nickname}님, 다시 시작해볼까요? 💪`,
+      body: '오늘 1개만 실천해보세요.',
+    }),
+    7: (nickname: string) => ({
+      title: `${nickname}님, 목표가 기다리고 있어요 🎯`,
+      body: '언제든 다시 시작할 수 있어요.',
+    }),
+    14: (nickname: string) => ({
+      title: `${nickname}님, 새로운 목표를 세워볼까요? ✨`,
+      body: '만다라트를 수정하거나 새 목표를 만들어보세요.',
+    }),
+    default: (nickname: string) => ({
+      title: `${nickname}님, 다시 시작해볼까요?`,
+      body: '목표가 기다리고 있어요.',
+    }),
+  },
+  en: {
+    3: (nickname: string) => ({
+      title: `${nickname}, ready to start again? 💪`,
+      body: 'Try completing just 1 action today.',
+    }),
+    7: (nickname: string) => ({
+      title: `${nickname}, your goals are waiting 🎯`,
+      body: 'You can always start again.',
+    }),
+    14: (nickname: string) => ({
+      title: `${nickname}, set a new goal? ✨`,
+      body: 'Update your mandalart or create new goals.',
+    }),
+    default: (nickname: string) => ({
+      title: `${nickname}, ready to start again?`,
+      body: 'Your goals are waiting.',
+    }),
+  },
+} as const
 
 serve(async (req: Request) => {
   // Handle CORS preflight
@@ -90,8 +132,8 @@ serve(async (req: Request) => {
       // Process each user
       for (const user of users as UserForComeback[]) {
         try {
-          // Get personalized message
-          const { title, body } = getComebackMessage(user.nickname, days)
+          // Get personalized message based on language
+          const { title, body } = getComebackMessage(user.nickname, days, user.user_language)
 
           // Send push notification
           const sent = await sendPushNotification(user.push_token, title, body, {
@@ -143,34 +185,20 @@ serve(async (req: Request) => {
 })
 
 /**
- * Get personalized comeback message based on days inactive
+ * Get personalized comeback message based on days inactive and language
  */
 function getComebackMessage(
   nickname: string,
-  days: number
+  days: number,
+  language: string
 ): { title: string; body: string } {
-  switch (days) {
-    case 3:
-      return {
-        title: `${nickname}님, 다시 시작해볼까요? 💪`,
-        body: '오늘 1개만 실천해보세요.',
-      }
-    case 7:
-      return {
-        title: `${nickname}님, 목표가 기다리고 있어요 🎯`,
-        body: '언제든 다시 시작할 수 있어요.',
-      }
-    case 14:
-      return {
-        title: `${nickname}님, 새로운 목표를 세워볼까요? ✨`,
-        body: '만다라트를 수정하거나 새 목표를 만들어보세요.',
-      }
-    default:
-      return {
-        title: `${nickname}님, 다시 시작해볼까요?`,
-        body: '목표가 기다리고 있어요.',
-      }
-  }
+  const lang = language === 'en' ? 'en' : 'ko'
+  const messages = COMEBACK_MESSAGES[lang]
+
+  const messageKey = days as 3 | 7 | 14
+  const getMessage = messages[messageKey] || messages.default
+
+  return getMessage(nickname)
 }
 
 /**

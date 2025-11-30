@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Constants from 'expo-constants'
+import { getCurrentLanguage } from '../i18n'
 
 // Query keys
 export const reportKeys = {
@@ -144,6 +145,7 @@ export function useGenerateWeeklyReport() {
           },
           body: JSON.stringify({
             report_type: 'weekly',
+            language: getCurrentLanguage(),
           }),
         }
       )
@@ -228,6 +230,7 @@ export function useGenerateGoalDiagnosis() {
           },
           body: JSON.stringify({
             report_type: 'diagnosis',
+            language: getCurrentLanguage(),
           }),
         }
       )

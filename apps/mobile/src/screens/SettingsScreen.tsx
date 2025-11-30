@@ -44,10 +44,29 @@ import { useAuthStore } from '../store/authStore'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { useUserGamification, statsKeys } from '../hooks/useStats'
 import { useNotifications } from '../hooks/useNotifications'
+import { useUserProfile, getDeviceTimezone } from '../hooks/useUserProfile'
 import { APP_NAME } from '@mandaact/shared'
 import { supabase } from '../lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { changeLanguage, getCurrentLanguage, supportedLanguages, type SupportedLanguage } from '../i18n'
+
+// Common timezone options for selection
+const TIMEZONE_OPTIONS = [
+  { value: 'Asia/Seoul', label: '서울 (KST)', labelEn: 'Seoul (KST)', offset: '+9:00' },
+  { value: 'Asia/Tokyo', label: '도쿄 (JST)', labelEn: 'Tokyo (JST)', offset: '+9:00' },
+  { value: 'Asia/Shanghai', label: '상하이 (CST)', labelEn: 'Shanghai (CST)', offset: '+8:00' },
+  { value: 'Asia/Singapore', label: '싱가포르 (SGT)', labelEn: 'Singapore (SGT)', offset: '+8:00' },
+  { value: 'Asia/Bangkok', label: '방콕 (ICT)', labelEn: 'Bangkok (ICT)', offset: '+7:00' },
+  { value: 'Asia/Kolkata', label: '인도 (IST)', labelEn: 'India (IST)', offset: '+5:30' },
+  { value: 'Europe/London', label: '런던 (GMT)', labelEn: 'London (GMT)', offset: '+0:00' },
+  { value: 'Europe/Paris', label: '파리 (CET)', labelEn: 'Paris (CET)', offset: '+1:00' },
+  { value: 'Europe/Berlin', label: '베를린 (CET)', labelEn: 'Berlin (CET)', offset: '+1:00' },
+  { value: 'America/New_York', label: '뉴욕 (EST)', labelEn: 'New York (EST)', offset: '-5:00' },
+  { value: 'America/Los_Angeles', label: 'LA (PST)', labelEn: 'Los Angeles (PST)', offset: '-8:00' },
+  { value: 'America/Chicago', label: '시카고 (CST)', labelEn: 'Chicago (CST)', offset: '-6:00' },
+  { value: 'Pacific/Auckland', label: '오클랜드 (NZST)', labelEn: 'Auckland (NZST)', offset: '+12:00' },
+  { value: 'Australia/Sydney', label: '시드니 (AEST)', labelEn: 'Sydney (AEST)', offset: '+10:00' },
+]
 
 // Time picker options
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -88,6 +107,11 @@ export default function SettingsScreen() {
   // Language selection
   const [showLanguageModal, setShowLanguageModal] = useState(false)
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getCurrentLanguage())
+
+  // Timezone selection
+  const { timezone, updateTimezone } = useUserProfile(user?.id)
+  const [showTimezoneModal, setShowTimezoneModal] = useState(false)
+  const [isSavingTimezone, setIsSavingTimezone] = useState(false)
 
   const currentLevel = gamification?.current_level || 1
   const totalXP = gamification?.total_xp || 0
@@ -252,8 +276,23 @@ export default function SettingsScreen() {
     setShowLanguageModal(false)
   }, [])
 
+  const handleTimezoneSelect = useCallback(async (tz: string) => {
+    setIsSavingTimezone(true)
+    try {
+      const success = await updateTimezone(tz)
+      if (success) {
+        setShowTimezoneModal(false)
+      }
+    } finally {
+      setIsSavingTimezone(false)
+    }
+  }, [updateTimezone])
+
   // Get current language display name
   const currentLanguageDisplay = supportedLanguages.find(l => l.code === currentLang)?.nativeName || 'Unknown'
+
+  // Get current timezone display name
+  const currentTimezoneDisplay = TIMEZONE_OPTIONS.find(tz => tz.value === timezone)?.[currentLang === 'en' ? 'labelEn' : 'label'] || timezone
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -364,7 +403,7 @@ export default function SettingsScreen() {
           {/* Language Setting */}
           <Pressable
             onPress={() => setShowLanguageModal(true)}
-            className="flex-row items-center px-5 py-4"
+            className="flex-row items-center px-5 py-4 border-b border-gray-100"
           >
             <Globe size={22} color="#6b7280" />
             <Text
@@ -378,6 +417,27 @@ export default function SettingsScreen() {
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
               {currentLanguageDisplay}
+            </Text>
+            <ChevronRight size={18} color="#9ca3af" />
+          </Pressable>
+
+          {/* Timezone Setting */}
+          <Pressable
+            onPress={() => setShowTimezoneModal(true)}
+            className="flex-row items-center px-5 py-4"
+          >
+            <Clock size={22} color="#6b7280" />
+            <Text
+              className="flex-1 ml-3 text-base text-gray-900"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              {t('settings.app.timezone')}
+            </Text>
+            <Text
+              className="text-sm text-gray-400 mr-1"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              {currentTimezoneDisplay}
             </Text>
             <ChevronRight size={18} color="#9ca3af" />
           </Pressable>
@@ -945,6 +1005,95 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Timezone Selection Modal */}
+      <Modal
+        visible={showTimezoneModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTimezoneModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl pt-4 pb-8 max-h-[70%]">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-5 pb-4 border-b border-gray-100">
+              <Pressable
+                onPress={() => setShowTimezoneModal(false)}
+                className="p-2"
+                disabled={isSavingTimezone}
+              >
+                <X size={24} color="#6b7280" />
+              </Pressable>
+              <Text
+                className="text-lg text-gray-900"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                {t('settings.timezone.title')}
+              </Text>
+              <View className="p-2 w-10" />
+            </View>
+
+            {/* Description */}
+            <View className="px-5 pt-4 pb-2">
+              <Text
+                className="text-sm text-gray-500"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.timezone.description')}
+              </Text>
+            </View>
+
+            {/* Timezone Options */}
+            <ScrollView className="px-5 py-4">
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <Pressable
+                  key={tz.value}
+                  onPress={() => handleTimezoneSelect(tz.value)}
+                  disabled={isSavingTimezone}
+                  className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${
+                    timezone === tz.value
+                      ? 'bg-primary/10 border border-primary/30'
+                      : 'bg-gray-50 border border-gray-100'
+                  } ${isSavingTimezone ? 'opacity-50' : ''}`}
+                >
+                  <Clock
+                    size={20}
+                    color={timezone === tz.value ? '#2563eb' : '#6b7280'}
+                  />
+                  <View className="flex-1 ml-3">
+                    <Text
+                      className={`text-base ${
+                        timezone === tz.value ? 'text-primary' : 'text-gray-900'
+                      }`}
+                      style={{
+                        fontFamily:
+                          timezone === tz.value
+                            ? 'Pretendard-SemiBold'
+                            : 'Pretendard-Regular',
+                      }}
+                    >
+                      {currentLang === 'en' ? tz.labelEn : tz.label}
+                    </Text>
+                    <Text
+                      className="text-xs text-gray-400 mt-0.5"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      UTC{tz.offset}
+                    </Text>
+                  </View>
+                  {timezone === tz.value && (
+                    isSavingTimezone ? (
+                      <ActivityIndicator size="small" color="#2563eb" />
+                    ) : (
+                      <Check size={20} color="#2563eb" />
+                    )
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>

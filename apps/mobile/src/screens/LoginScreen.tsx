@@ -14,15 +14,30 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
-import { X, Mail, Lock, Eye, EyeOff } from 'lucide-react-native'
+import { X, Mail, Lock, Eye, EyeOff, Globe, ChevronDown, Check } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuthStore } from '../store/authStore'
 import { parseError, ERROR_MESSAGES } from '../lib/errorHandling'
 import { trackLogin, trackSignup, identifyUser } from '../lib'
 
+const LANGUAGES = [
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+]
+
 export default function LoginScreen() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [email, setEmail] = useState('')
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false)
+
+  const handleLanguageChange = useCallback(async (langCode: string) => {
+    await i18n.changeLanguage(langCode)
+    await AsyncStorage.setItem('userLanguage', langCode)
+    setShowLanguageDropdown(false)
+  }, [i18n])
+
+  const currentLanguage = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0]
   const [password, setPassword] = useState('')
   const [_confirmPassword, _setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -148,8 +163,12 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={() => setShowLanguageDropdown(false)}
         >
-          <View className="flex-1 justify-center items-center px-6 py-8">
+          <Pressable
+            className="flex-1 justify-center items-center px-6 py-8"
+            onPress={() => setShowLanguageDropdown(false)}
+          >
             {/* Content Container - max width for tablet */}
             <View style={{ width: '100%', maxWidth: 400 }}>
             {/* Logo/Header */}
@@ -177,7 +196,55 @@ export default function LoginScreen() {
 
             {/* Login Card */}
             <View className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-              <Text className="text-2xl font-bold text-black mb-6">{t('login.title')}</Text>
+              {/* Header with Title and Language Selector */}
+              <View className="flex-row items-center justify-between mb-6">
+                <Text className="text-2xl font-bold text-black">{t('login.title')}</Text>
+
+                {/* Language Selector */}
+                <View className="relative z-50">
+                  <Pressable
+                    onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                    className="flex-row items-center bg-gray-100 rounded-full px-3 py-2"
+                  >
+                    <Globe size={16} color="#6b7280" />
+                    <Text className="text-sm text-gray-700 ml-1.5 mr-1" style={{ fontFamily: 'Pretendard-Medium' }}>
+                      {currentLanguage.flag} {currentLanguage.code.toUpperCase()}
+                    </Text>
+                    <ChevronDown size={14} color="#6b7280" />
+                  </Pressable>
+
+                  {/* Language Dropdown */}
+                  {showLanguageDropdown && (
+                    <View
+                      className="absolute top-12 right-0 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+                      style={{ minWidth: 140, elevation: 5 }}
+                    >
+                      {LANGUAGES.map((lang) => (
+                        <Pressable
+                          key={lang.code}
+                          onPress={() => handleLanguageChange(lang.code)}
+                          className={`flex-row items-center justify-between px-4 py-3 ${
+                            lang.code === i18n.language ? 'bg-primary/5' : ''
+                          }`}
+                        >
+                          <View className="flex-row items-center">
+                            <Text className="text-base mr-2">{lang.flag}</Text>
+                            <Text
+                              className={`text-sm ${lang.code === i18n.language ? 'text-primary' : 'text-gray-700'}`}
+                              style={{ fontFamily: lang.code === i18n.language ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
+                            >
+                              {lang.label}
+                            </Text>
+                          </View>
+                          {lang.code === i18n.language && (
+                            <Check size={16} color="#2563eb" />
+                          )}
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
 
               {/* Email Input */}
               <View className="mb-4">
@@ -298,7 +365,7 @@ export default function LoginScreen() {
               </View>
             </View>
             </View>{/* End Content Container */}
-          </View>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
 

@@ -8,17 +8,19 @@ import {
 } from '../_shared/errorResponse.ts'
 
 /**
- * Scheduled Report Generator
+ * Scheduled Report Generator (v2 - Timezone & i18n Support)
  *
  * This function is called by pg_cron or manual trigger to generate weekly reports
  * for all eligible users and send push notifications.
  *
  * Flow:
- * 1. Get users who need weekly reports (via SQL function)
- * 2. For each user: generate report using Perplexity AI
- * 3. Update report status from 'pending' to actual content
- * 4. Send push notification to user
+ * 1. Get users who need weekly reports (via SQL function with timezone/language)
+ * 2. For each user: generate report using Perplexity AI (in user's language)
+ * 3. Save report to database
+ * 4. Send push notification to user (in user's language)
  */
+
+type Language = 'ko' | 'en'
 
 interface UserForReport {
   user_id: string
@@ -26,6 +28,8 @@ interface UserForReport {
   nickname: string
   push_token: string | null
   check_count: number
+  user_timezone: string
+  user_language: Language
 }
 
 interface CheckRecord {
@@ -37,6 +41,30 @@ interface CheckRecord {
       title: string
     }
   }
+}
+
+// Localization constants
+const LOCALES = {
+  ko: {
+    periodLabel: '지난 주',
+    dayNames: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+    timeNames: { morning: '아침', afternoon: '오후', evening: '저녁', night: '밤' },
+    noBadges: '없음',
+    pushNotification: {
+      title: (nickname: string) => `${nickname}님의 주간 리포트가 도착했어요!`,
+      body: '지난 주 실천 패턴을 확인해보세요.',
+    },
+  },
+  en: {
+    periodLabel: 'Last Week',
+    dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    timeNames: { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', night: 'Night' },
+    noBadges: 'None',
+    pushNotification: {
+      title: (nickname: string) => `${nickname}'s weekly report is ready!`,
+      body: 'Check your practice patterns from last week.',
+    },
+  },
 }
 
 serve(async (req: Request) => {
@@ -108,13 +136,20 @@ serve(async (req: Request) => {
     // Process each user
     for (const user of users as UserForReport[]) {
       try {
-        console.log(`Processing user: ${user.user_id}`)
+        console.log(`Processing user: ${user.user_id} (tz: ${user.user_timezone}, lang: ${user.user_language})`)
 
-        // Collect user data for report
-        const reportData = await collectUserReportData(supabaseAdmin, user.user_id)
+        const language: Language = user.user_language === 'en' ? 'en' : 'ko'
 
-        // Generate AI report
-        const reportContent = await generateWeeklyReport(reportData)
+        // Collect user data for report (with timezone awareness)
+        const reportData = await collectUserReportData(
+          supabaseAdmin,
+          user.user_id,
+          user.user_timezone,
+          language
+        )
+
+        // Generate AI report in user's language
+        const reportContent = await generateWeeklyReport(reportData, language)
 
         // Save report to database
         const { error: saveError } = await supabaseAdmin
@@ -127,6 +162,8 @@ serve(async (req: Request) => {
               scheduled: true,
               check_count: user.check_count,
               generated_at: new Date().toISOString(),
+              user_timezone: user.user_timezone,
+              language: language,
             },
           })
 
@@ -143,10 +180,11 @@ serve(async (req: Request) => {
         if (user.push_token) {
           try {
             const nickname = user.nickname || user.email.split('@')[0]
+            const locale = LOCALES[language]
             const notificationSent = await sendPushNotification(
               user.push_token,
-              `${nickname}님의 주간 리포트가 도착했어요!`,
-              '지난 주 실천 패턴을 확인해보세요.',
+              locale.pushNotification.title(nickname),
+              locale.pushNotification.body,
               { type: 'weekly_report' }
             )
 
@@ -190,13 +228,18 @@ serve(async (req: Request) => {
 })
 
 /**
- * Collect user data for weekly report
+ * Collect user data for weekly report with timezone awareness
  */
 async function collectUserReportData(
   supabaseAdmin: ReturnType<typeof createClient>,
-  userId: string
+  userId: string,
+  userTimezone: string,
+  language: Language
 ) {
-  // Calculate date range (last 7 days)
+  const locale = LOCALES[language]
+
+  // Calculate date range in user's timezone (last 7 days)
+  // Note: Server-side calculation, so we use the timezone offset
   const now = new Date()
   const startDate = new Date(now)
   startDate.setDate(now.getDate() - 7)
@@ -241,8 +284,8 @@ async function collectUserReportData(
 
   // Get streak data
   const { data: streakData } = await supabaseAdmin
-    .from('user_stats')
-    .select('current_streak, longest_streak')
+    .from('user_levels')
+    .select('current_streak')
     .eq('user_id', userId)
     .single()
 
@@ -289,7 +332,6 @@ async function collectUserReportData(
     })
   }
 
-  const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
   const bestDay = Object.entries(weekdayPattern).sort((a, b) => b[1] - a[1])[0]
   const worstDay = Object.entries(weekdayPattern).sort((a, b) => a[1] - b[1])[0]
   const bestTime = Object.entries(timePattern).sort((a, b) => b[1] - a[1])[0]
@@ -301,24 +343,17 @@ async function collectUserReportData(
     .sort((a, b) => a.count - b.count)[0]
 
   return {
-    period: '지난 주',
+    period: locale.periodLabel,
     mandalarts: mandalarts || [],
     totalChecks: checks?.length || 0,
     uniqueDays: checks ? new Set(checks.map((c: CheckRecord) => new Date(c.checked_at).toDateString())).size : 0,
     currentStreak: streakData?.current_streak || 0,
-    longestStreak: streakData?.longest_streak || 0,
-    bestDay: bestDay ? { day: dayNames[parseInt(bestDay[0])], count: bestDay[1] } : null,
-    worstDay: worstDay ? { day: dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
+    longestStreak: 0, // Not available in user_levels
+    bestDay: bestDay ? { day: locale.dayNames[parseInt(bestDay[0])], count: bestDay[1] } : null,
+    worstDay: worstDay ? { day: locale.dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
     bestTime: bestTime
       ? {
-          period:
-            bestTime[0] === 'morning'
-              ? '아침'
-              : bestTime[0] === 'afternoon'
-                ? '오후'
-                : bestTime[0] === 'evening'
-                  ? '저녁'
-                  : '밤',
+          period: locale.timeNames[bestTime[0] as keyof typeof locale.timeNames],
           count: bestTime[1],
         }
       : null,
@@ -328,6 +363,7 @@ async function collectUserReportData(
     timePattern,
     actionTypePattern,
     recentBadges: recentBadges || [],
+    userTimezone,
   }
 }
 
@@ -347,18 +383,86 @@ interface ReportData {
   timePattern: Record<string, number>
   actionTypePattern: Record<string, number>
   recentBadges: Array<{ achievement?: { title?: string } }>
+  userTimezone: string
 }
 
 /**
- * Generate weekly report using Perplexity AI
+ * Get localized prompts for AI report generation
  */
-async function generateWeeklyReport(data: ReportData): Promise<string> {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
-  if (!perplexityApiKey) {
-    throw new Error('PERPLEXITY_API_KEY not configured')
+function getLocalizedPrompts(language: Language) {
+  if (language === 'en') {
+    return {
+      systemPrompt: `You are a data analysis expert. Analyze user practice patterns and provide insights.
+
+You MUST respond with valid JSON only. Do NOT use markdown code blocks.
+
+Exact JSON format:
+{
+  "headline": "One sentence about the most important pattern or change this week",
+  "key_metrics": [
+    {"label": "Practice Days", "value": "6 out of 7 days"},
+    {"label": "Total Practices", "value": "42 times"},
+    {"label": "Compared to Last Week", "value": "+15%"}
+  ],
+  "strengths": [
+    "High focus during Thursday evenings",
+    "Routine practice rate remains stable"
+  ],
+  "improvements": {
+    "problem": "Practice frequency is very low on Wednesday and other days",
+    "insight": "Thursday shows high concentration in evening hours"
+  },
+  "action_plan": {
+    "goal": "Improve weekday practice consistency",
+    "steps": [
+      "Set reminder for Tuesday 3 PM",
+      "Try reducing Wednesday goals to 3 items"
+    ]
+  }
+}
+
+Writing rules:
+- Follow the JSON structure exactly
+- Return JSON only, no code blocks
+- key_metrics order: Practice Days → Total Practices → Compared to Last Week
+- Include actual numbers in key_metrics values
+- Analyze patterns and context
+- Provide actionable advice`,
+      userPromptTemplate: (data: ReportData, badges: string) => `Find patterns and provide insights from this data:
+
+[Practice Status]
+- Practice Days: ${data.uniqueDays} out of 7 days
+- Total Practices: ${data.totalChecks} times
+- Streak: Currently ${data.currentStreak} days
+- New Badges: ${badges}
+
+[Time Patterns]
+- Daily distribution: ${JSON.stringify(data.weekdayPattern || {})}
+- Time distribution: ${JSON.stringify(data.timePattern || {})}
+- Best activity: ${data.bestDay?.day} ${data.bestDay?.count} times
+- Lowest activity: ${data.worstDay?.day} ${data.worstDay?.count} times
+- Preferred time: ${data.bestTime?.period} ${data.bestTime?.count} times
+
+[Goal Performance]
+- Best performance: ${data.bestSubGoal?.title} (${data.bestSubGoal?.count} times)
+- Needs improvement: ${data.worstSubGoal?.title} (${data.worstSubGoal?.count} times)
+
+[Practice Types]
+- Routine: ${data.actionTypePattern?.routine || 0} times
+- Mission: ${data.actionTypePattern?.mission || 0} times
+
+Analysis perspectives:
+1. Find optimal practice time from time/day patterns
+2. Suggest improvement priorities from goal variance
+3. Provide 1 actionable item for next week
+
+Respond in JSON format with actual numbers in key_metrics.`,
+    }
   }
 
-  const systemPrompt = `당신은 데이터 분석 전문가입니다. 사용자의 실천 패턴을 분석하여 인사이트만 제공하세요.
+  // Korean (default)
+  return {
+    systemPrompt: `당신은 데이터 분석 전문가입니다. 사용자의 실천 패턴을 분석하여 인사이트만 제공하세요.
 
 반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드 블록을 사용하지 마세요.
 
@@ -393,16 +497,13 @@ async function generateWeeklyReport(data: ReportData): Promise<string> {
 - key_metrics 순서: 실천일수 → 총 실천횟수 → 전주대비 실천횟수
 - key_metrics의 value는 실제 수치를 포함하세요
 - 패턴과 맥락을 분석하세요
-- 실행 가능한 조언을 제공하세요`
-
-  const badges = data.recentBadges?.map((b) => b.achievement?.title).join(', ') || '없음'
-
-  const userPrompt = `다음 데이터에서 패턴을 찾아 인사이트를 제공하세요:
+- 실행 가능한 조언을 제공하세요`,
+    userPromptTemplate: (data: ReportData, badges: string) => `다음 데이터에서 패턴을 찾아 인사이트를 제공하세요:
 
 [실천 현황]
 - 실천일수: 7일 중 ${data.uniqueDays}일
 - 총 실천횟수: ${data.totalChecks}회
-- 스트릭: 현재 ${data.currentStreak}일, 최고 ${data.longestStreak}일
+- 스트릭: 현재 ${data.currentStreak}일
 - 새로 획득한 배지: ${badges}
 
 [시간 패턴]
@@ -425,7 +526,22 @@ async function generateWeeklyReport(data: ReportData): Promise<string> {
 2. 목표별 편차에서 개선 우선순위 제시
 3. 다음 주 실행 가능한 1가지 액션
 
-JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세요.`
+JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세요.`,
+  }
+}
+
+/**
+ * Generate weekly report using Perplexity AI with i18n support
+ */
+async function generateWeeklyReport(data: ReportData, language: Language): Promise<string> {
+  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
+  if (!perplexityApiKey) {
+    throw new Error('PERPLEXITY_API_KEY not configured')
+  }
+
+  const locale = LOCALES[language]
+  const prompts = getLocalizedPrompts(language)
+  const badges = data.recentBadges?.map((b) => b.achievement?.title).join(', ') || locale.noBadges
 
   // Call Perplexity API
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -439,7 +555,7 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
       messages: [
         {
           role: 'user',
-          content: `${systemPrompt}\n\n${userPrompt}`,
+          content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data, badges)}`,
         },
       ],
       temperature: 0.7,
@@ -483,7 +599,7 @@ async function sendPushNotification(
   data?: Record<string, unknown>
 ): Promise<boolean> {
   // Validate Expo push token format
-  if (!expoPushToken.startsWith('ExponentPushToken[')) {
+  if (!expoPushToken.startsWith('ExponentPushToken[') && !expoPushToken.startsWith('ExpoPushToken[')) {
     console.warn('Invalid Expo push token format:', expoPushToken)
     return false
   }

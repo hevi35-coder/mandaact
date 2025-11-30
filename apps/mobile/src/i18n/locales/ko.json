@@ -467,6 +467,7 @@
     "app": {
       "title": "앱",
       "language": "언어",
+      "timezone": "시간대",
       "notifications": "알림",
       "tutorial": "사용 가이드",
       "version": "버전"
@@ -524,6 +525,12 @@
       "current": "현재 언어",
       "korean": "한국어",
       "english": "English"
+    },
+    "timezone": {
+      "title": "시간대 설정",
+      "description": "오늘의 실천 및 스트릭 계산에 사용됩니다",
+      "current": "현재 시간대",
+      "select": "시간대를 선택하세요"
     },
     "daysWithUs": "함께한 지 {{days}}일째",
     "footer": "목표를 실천으로, {{appName}}"

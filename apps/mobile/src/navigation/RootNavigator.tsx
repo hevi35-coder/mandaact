@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useCallback } from 'react'
+import React, { createContext, useContext, useRef, useCallback, useEffect } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
@@ -7,6 +7,8 @@ import { ScrollView, useWindowDimensions, Platform } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { useAuthStore } from '../store/authStore'
+import { useUserProfile } from '../hooks/useUserProfile'
+import { logger } from '../lib/logger'
 
 // Context for scroll-to-top functionality
 type ScrollToTopContextType = {
@@ -164,10 +166,22 @@ function MainTabs() {
 
 export default function RootNavigator() {
   const { user, initialized } = useAuthStore()
+  const { autoDetectAndSave } = useUserProfile(user?.id)
 
   // Detect iPad for fullscreen modal
   const { width } = useWindowDimensions()
   const isTablet = Platform.OS === 'ios' && width >= 768
+
+  // Auto-detect timezone on first login
+  useEffect(() => {
+    if (user?.id && initialized) {
+      autoDetectAndSave().then((saved) => {
+        if (saved) {
+          logger.info('Timezone auto-detected and saved for user', { userId: user.id })
+        }
+      })
+    }
+  }, [user?.id, initialized, autoDetectAndSave])
 
   if (!initialized) {
     return <LoadingScreen />
