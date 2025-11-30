@@ -3,6 +3,7 @@ export * from './types'
 
 // Lib
 export * from './lib/actionTypes'
+export * from './lib/analyticsEvents'
 export * from './lib/badgeCategories'
 export * from './lib/badgeHints'
 export * from './lib/badgeStages'
@@ -17,3 +18,4 @@ export * from './lib/nicknameUtils'
 
 // Constants
 export * from './constants'
+

@@ -6,6 +6,27 @@
 
 import PostHog from 'posthog-react-native'
 import type { PostHogEventProperties } from '@posthog/core'
+import {
+  POSTHOG_EVENTS,
+  buildMandalartCreatedProps,
+  buildActionCheckedProps,
+  buildBadgeUnlockedProps,
+  buildTutorialCompletedProps,
+  buildNotificationClickedProps,
+  buildLevelUpProps,
+  buildWeeklyReportGeneratedProps,
+  buildGoalDiagnosisViewedProps,
+  buildLoginProps,
+  type MandalartCreatedData,
+  type ActionCheckedData,
+  type BadgeUnlockedData,
+  type TutorialCompletedData,
+  type NotificationClickedData,
+  type LevelUpData,
+  type WeeklyReportGeneratedData,
+  type GoalDiagnosisViewedData,
+  type LoginData,
+} from '@mandaact/shared'
 
 // PostHog 클라이언트 인스턴스
 let posthogClient: PostHog | null = null
@@ -75,12 +96,12 @@ export const resetUser = (): void => {
 }
 
 /**
- * 커스텀 이벤트 추적
+ * 커스텀 이벤트 추적 (내부 헬퍼)
  */
-export const trackEvent = (
+function trackEvent(
   eventName: string,
   properties?: PostHogEventProperties
-): void => {
+): void {
   if (!posthogClient) {
     if (__DEV__) {
       // eslint-disable-next-line no-console
@@ -105,146 +126,94 @@ export const trackScreen = (
 }
 
 // ========================================
-// 핵심 이벤트 추적 함수들
+// 핵심 이벤트 추적 함수들 (shared 사용)
 // ========================================
 
 /**
  * 만다라트 생성
  */
-export const trackMandalartCreated = (data: {
-  mandalart_id: string
-  input_method: 'image' | 'text' | 'manual'
-  sub_goals_count: number
-  actions_count: number
-}): void => {
-  trackEvent('mandalart_created', {
-    ...data,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+export const trackMandalartCreated = (data: MandalartCreatedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.MANDALART_CREATED,
+    buildMandalartCreatedProps(data, 'mobile')
+  )
 }
 
 /**
  * 액션 체크
  */
-export const trackActionChecked = (data: {
-  action_id: string
-  action_type: 'routine' | 'mission' | 'reference'
-  sub_goal_id: string
-  mandalart_id: string
-  checked_at: Date
-}): void => {
-  trackEvent('action_checked', {
-    action_id: data.action_id,
-    action_type: data.action_type,
-    sub_goal_id: data.sub_goal_id,
-    mandalart_id: data.mandalart_id,
-    hour: data.checked_at.getHours(),
-    day_of_week: data.checked_at.getDay(),
-    platform: 'mobile',
-    timestamp: data.checked_at.toISOString(),
-  })
+export const trackActionChecked = (data: ActionCheckedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.ACTION_CHECKED,
+    buildActionCheckedProps(data, 'mobile')
+  )
 }
 
 /**
  * 배지 획득
  */
-export const trackBadgeUnlocked = (data: {
-  badge_id: string
-  badge_title: string
-  badge_category: string
-  xp_reward: number
-  current_level: number
-}): void => {
-  trackEvent('badge_unlocked', {
-    ...data,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+export const trackBadgeUnlocked = (data: BadgeUnlockedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.BADGE_UNLOCKED,
+    buildBadgeUnlockedProps(data, 'mobile')
+  )
 }
 
 /**
  * 튜토리얼 완료
  */
-export const trackTutorialCompleted = (data: {
-  completed_steps: number
-  total_steps: number
-  time_spent_seconds?: number
-  skipped: boolean
-}): void => {
-  trackEvent('tutorial_completed', {
-    ...data,
-    completion_rate: (data.completed_steps / data.total_steps) * 100,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+export const trackTutorialCompleted = (data: TutorialCompletedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.TUTORIAL_COMPLETED,
+    buildTutorialCompletedProps(data, 'mobile')
+  )
 }
 
 /**
  * 알림 클릭
  */
-export const trackNotificationClicked = (data: {
-  notification_type: string
-  source: 'push' | 'in_app'
-}): void => {
-  trackEvent('notification_clicked', {
-    ...data,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+export const trackNotificationClicked = (data: NotificationClickedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.NOTIFICATION_CLICKED,
+    buildNotificationClickedProps(data, 'mobile')
+  )
 }
 
 /**
  * 레벨 업
  */
-export const trackLevelUp = (data: {
-  old_level: number
-  new_level: number
-  total_xp: number
-}): void => {
-  trackEvent('level_up', {
-    ...data,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+export const trackLevelUp = (data: LevelUpData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.LEVEL_UP,
+    buildLevelUpProps(data, 'mobile')
+  )
 }
 
 /**
  * 주간 리포트 생성
  */
-export const trackWeeklyReportGenerated = (data: {
-  week_start: string
-  completion_rate?: number
-  total_checks?: number
-  generated?: boolean
-}): void => {
-  trackEvent('weekly_report_generated', {
-    ...data,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+export const trackWeeklyReportGenerated = (data: WeeklyReportGeneratedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.WEEKLY_REPORT_GENERATED,
+    buildWeeklyReportGeneratedProps(data, 'mobile')
+  )
 }
 
 /**
  * 목표 진단 조회
  */
-export const trackGoalDiagnosisViewed = (data: {
-  mandalart_id: string
-  diagnosis_type?: 'SMART' | 'general'
-  generated?: boolean
-}): void => {
-  trackEvent('goal_diagnosis_viewed', {
-    ...data,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+export const trackGoalDiagnosisViewed = (data: GoalDiagnosisViewedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.GOAL_DIAGNOSIS_VIEWED,
+    buildGoalDiagnosisViewedProps(data, 'mobile')
+  )
 }
 
 /**
  * 앱 실행
  */
 export const trackAppOpened = (): void => {
-  trackEvent('app_opened', {
+  trackEvent(POSTHOG_EVENTS.APP_OPENED, {
     platform: 'mobile',
     timestamp: new Date().toISOString(),
   })
@@ -254,22 +223,20 @@ export const trackAppOpened = (): void => {
  * 로그인
  */
 export const trackLogin = (method: 'email' | 'google' | 'apple'): void => {
-  trackEvent('user_logged_in', {
-    method,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+  trackEvent(
+    POSTHOG_EVENTS.USER_LOGGED_IN,
+    buildLoginProps({ method }, 'mobile')
+  )
 }
 
 /**
  * 회원가입
  */
 export const trackSignup = (method: 'email' | 'google' | 'apple'): void => {
-  trackEvent('user_signed_up', {
-    method,
-    platform: 'mobile',
-    timestamp: new Date().toISOString(),
-  })
+  trackEvent(
+    POSTHOG_EVENTS.USER_SIGNED_UP,
+    buildLoginProps({ method }, 'mobile')
+  )
 }
 
 export default {
@@ -291,3 +258,4 @@ export default {
   trackLogin,
   trackSignup,
 }
+

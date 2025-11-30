@@ -5,6 +5,27 @@
  */
 
 import posthog from 'posthog-js'
+import {
+  POSTHOG_EVENTS,
+  buildMandalartCreatedProps,
+  buildActionCheckedProps,
+  buildBadgeUnlockedProps,
+  buildTutorialCompletedProps,
+  buildNotificationClickedProps,
+  buildLevelUpProps,
+  buildWeeklyReportGeneratedProps,
+  buildGoalDiagnosisViewedProps,
+  buildLoginProps,
+  type MandalartCreatedData,
+  type ActionCheckedData,
+  type BadgeUnlockedData,
+  type TutorialCompletedData,
+  type NotificationClickedData,
+  type LevelUpData,
+  type WeeklyReportGeneratedData,
+  type GoalDiagnosisViewedData,
+  type LoginData,
+} from '@mandaact/shared'
 
 // PostHog 초기화 여부
 let isInitialized = false
@@ -73,12 +94,12 @@ export const resetUser = () => {
 }
 
 /**
- * 커스텀 이벤트 추적
+ * 커스텀 이벤트 추적 (내부 헬퍼)
  *
  * @param eventName - 이벤트 이름
  * @param properties - 이벤트 속성
  */
-export const trackEvent = (eventName: string, properties?: Record<string, unknown>) => {
+function trackEvent(eventName: string, properties?: Record<string, unknown>) {
   // PostHog 객체가 로드되었는지 직접 확인
   if (typeof posthog?.capture !== 'function') {
     console.warn('PostHog not ready, event not captured:', eventName)
@@ -89,142 +110,96 @@ export const trackEvent = (eventName: string, properties?: Record<string, unknow
 }
 
 // ========================================
-// 핵심 이벤트 추적 함수들
+// 핵심 이벤트 추적 함수들 (shared 사용)
 // ========================================
 
-/**
- * Phase 8.1 - 핵심 이벤트 5개
- */
-
 // 1. 만다라트 생성
-export const trackMandalartCreated = (data: {
-  mandalart_id: string
-  input_method: 'image' | 'text' | 'manual'
-  sub_goals_count: number
-  actions_count: number
-}) => {
-  trackEvent('mandalart_created', {
-    mandalart_id: data.mandalart_id,
-    input_method: data.input_method,
-    sub_goals_count: data.sub_goals_count,
-    actions_count: data.actions_count,
-    timestamp: new Date().toISOString()
-  })
+export const trackMandalartCreated = (data: MandalartCreatedData) => {
+  trackEvent(
+    POSTHOG_EVENTS.MANDALART_CREATED,
+    buildMandalartCreatedProps(data, 'web')
+  )
 }
 
 // 2. 액션 체크
-export const trackActionChecked = (data: {
-  action_id: string
-  action_type: 'routine' | 'mission' | 'reference'
-  sub_goal_id: string
-  mandalart_id: string
-  checked_at: Date
-}) => {
-  trackEvent('action_checked', {
-    action_id: data.action_id,
-    action_type: data.action_type,
-    sub_goal_id: data.sub_goal_id,
-    mandalart_id: data.mandalart_id,
-    hour: data.checked_at.getHours(), // 시간대 분석용
-    day_of_week: data.checked_at.getDay(), // 요일 분석용
-    timestamp: data.checked_at.toISOString()
-  })
+export const trackActionChecked = (data: ActionCheckedData) => {
+  trackEvent(
+    POSTHOG_EVENTS.ACTION_CHECKED,
+    buildActionCheckedProps(data, 'web')
+  )
 }
 
 // 3. 배지 획득
-export const trackBadgeUnlocked = (data: {
-  badge_id: string
-  badge_title: string
-  badge_category: string
-  xp_reward: number
-  current_level: number
-}) => {
-  trackEvent('badge_unlocked', {
-    badge_id: data.badge_id,
-    badge_title: data.badge_title,
-    badge_category: data.badge_category,
-    xp_reward: data.xp_reward,
-    current_level: data.current_level,
-    timestamp: new Date().toISOString()
-  })
+export const trackBadgeUnlocked = (data: BadgeUnlockedData) => {
+  trackEvent(
+    POSTHOG_EVENTS.BADGE_UNLOCKED,
+    buildBadgeUnlockedProps(data, 'web')
+  )
 }
 
 // 4. 튜토리얼 완료
-export const trackTutorialCompleted = (data: {
-  completed_steps: number
-  total_steps: number
-  time_spent_seconds: number
-  skipped: boolean
-}) => {
-  trackEvent('tutorial_completed', {
-    completed_steps: data.completed_steps,
-    total_steps: data.total_steps,
-    time_spent_seconds: data.time_spent_seconds,
-    skipped: data.skipped,
-    completion_rate: (data.completed_steps / data.total_steps) * 100,
-    timestamp: new Date().toISOString()
-  })
+export const trackTutorialCompleted = (data: TutorialCompletedData) => {
+  trackEvent(
+    POSTHOG_EVENTS.TUTORIAL_COMPLETED,
+    buildTutorialCompletedProps(data, 'web')
+  )
 }
 
 // 5. 알림 클릭
-export const trackNotificationClicked = (data: {
-  notification_type: string
-  source: 'pwa_push' | 'in_app'
-}) => {
-  trackEvent('notification_clicked', {
-    notification_type: data.notification_type,
-    source: data.source,
-    timestamp: new Date().toISOString()
-  })
+export const trackNotificationClicked = (data: NotificationClickedData) => {
+  trackEvent(
+    POSTHOG_EVENTS.NOTIFICATION_CLICKED,
+    buildNotificationClickedProps(data, 'web')
+  )
 }
 
 // ========================================
-// 추가 이벤트 (Phase 8.1 완료 후 확장 가능)
+// 추가 이벤트
 // ========================================
 
 // 주간 리포트 생성
-export const trackWeeklyReportGenerated = (data: {
-  week_start: string
-  completion_rate: number
-  total_checks: number
-}) => {
-  trackEvent('weekly_report_generated', {
-    week_start: data.week_start,
-    completion_rate: data.completion_rate,
-    total_checks: data.total_checks,
-    timestamp: new Date().toISOString()
-  })
+export const trackWeeklyReportGenerated = (data: WeeklyReportGeneratedData) => {
+  trackEvent(
+    POSTHOG_EVENTS.WEEKLY_REPORT_GENERATED,
+    buildWeeklyReportGeneratedProps(data, 'web')
+  )
 }
 
 // 목표 진단 조회
-export const trackGoalDiagnosisViewed = (data: {
-  mandalart_id: string
-  diagnosis_type: 'SMART' | 'general'
-}) => {
-  trackEvent('goal_diagnosis_viewed', {
-    mandalart_id: data.mandalart_id,
-    diagnosis_type: data.diagnosis_type,
-    timestamp: new Date().toISOString()
-  })
+export const trackGoalDiagnosisViewed = (data: GoalDiagnosisViewedData) => {
+  trackEvent(
+    POSTHOG_EVENTS.GOAL_DIAGNOSIS_VIEWED,
+    buildGoalDiagnosisViewedProps(data, 'web')
+  )
 }
 
 // 레벨 업
-export const trackLevelUp = (data: {
-  old_level: number
-  new_level: number
-  total_xp: number
-}) => {
-  trackEvent('level_up', {
-    old_level: data.old_level,
-    new_level: data.new_level,
-    total_xp: data.total_xp,
-    timestamp: new Date().toISOString()
-  })
+export const trackLevelUp = (data: LevelUpData) => {
+  trackEvent(
+    POSTHOG_EVENTS.LEVEL_UP,
+    buildLevelUpProps(data, 'web')
+  )
+}
+
+// 로그인
+export const trackLogin = (method: 'email' | 'google' | 'apple') => {
+  trackEvent(
+    POSTHOG_EVENTS.USER_LOGGED_IN,
+    buildLoginProps({ method }, 'web')
+  )
+}
+
+// 회원가입
+export const trackSignup = (method: 'email' | 'google' | 'apple') => {
+  trackEvent(
+    POSTHOG_EVENTS.USER_SIGNED_UP,
+    buildLoginProps({ method }, 'web')
+  )
 }
 
 // 페이지 뷰 (자동 추적되지만 커스텀 속성 추가 가능)
 export const trackPageView = (pageName: string, properties?: Record<string, unknown>) => {
-  trackEvent('$pageview', {
+  trackEvent(POSTHOG_EVENTS.PAGEVIEW, {
     page_name: pageName,
     ...properties
   })
