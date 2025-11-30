@@ -238,7 +238,9 @@ export default function SettingsScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       <Header showBackButton title="설정" />
-      <ScrollView className="flex-1 px-5 pt-5">
+      <ScrollView className="flex-1 px-5 pt-5" contentContainerStyle={{ alignItems: 'center' }}>
+        {/* Content Container - max width for tablet */}
+        <View style={{ width: '100%', maxWidth: 500 }}>
 
         {/* User Info Card */}
         <Animated.View
@@ -603,6 +605,7 @@ export default function SettingsScreen() {
             © 2025 {APP_NAME}
           </Text>
         </View>
+        </View>{/* End Content Container */}
       </ScrollView>
 
       {/* Time Picker Modal */}

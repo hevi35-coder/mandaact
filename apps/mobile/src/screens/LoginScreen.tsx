@@ -147,7 +147,9 @@ export default function LoginScreen() {
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
         >
-          <View className="flex-1 justify-center px-6 py-8">
+          <View className="flex-1 justify-center items-center px-6 py-8">
+            {/* Content Container - max width for tablet */}
+            <View style={{ width: '100%', maxWidth: 400 }}>
             {/* Logo/Header */}
             <View className="items-center mb-10">
               <View className="flex-row items-center">
@@ -293,6 +295,7 @@ export default function LoginScreen() {
                 </View>
               </View>
             </View>
+            </View>{/* End Content Container */}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -383,24 +386,49 @@ export default function LoginScreen() {
                 </View>
               </View>
 
-              {/* Sign Up Button */}
+              {/* Sign Up Button - White background with gradient border and text */}
               <Pressable
                 onPress={handleSignUp}
                 disabled={signUpLoading}
-                className="overflow-hidden rounded-lg"
+                style={{ opacity: signUpLoading ? 0.5 : 1 }}
               >
                 <LinearGradient
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  className="py-3 rounded-lg"
-                  style={{ opacity: signUpLoading ? 0.5 : 1 }}
+                  style={{ padding: 2, borderRadius: 12 }}
                 >
-                  {signUpLoading ? (
-                    <ActivityIndicator color="white" size="small" />
-                  ) : (
-                    <Text className="text-white text-center font-semibold">회원가입</Text>
-                  )}
+                  <View
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: 10,
+                      height: 52,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {signUpLoading ? (
+                      <ActivityIndicator color="#9333ea" size="small" />
+                    ) : (
+                      <MaskedView
+                        maskElement={
+                          <Text style={{ fontSize: 16, fontFamily: 'Pretendard-SemiBold' }}>
+                            회원가입
+                          </Text>
+                        }
+                      >
+                        <LinearGradient
+                          colors={['#2563eb', '#9333ea', '#db2777']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                        >
+                          <Text style={{ fontSize: 16, fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
+                            회원가입
+                          </Text>
+                        </LinearGradient>
+                      </MaskedView>
+                    )}
+                  </View>
                 </LinearGradient>
               </Pressable>
             </View>
@@ -457,25 +485,49 @@ export default function LoginScreen() {
                 />
               </View>
 
+              {/* Reset Password Button - White background with gradient border and text */}
               <Pressable
                 onPress={handleResetPassword}
                 disabled={isResetting}
-                className="overflow-hidden rounded-lg"
+                style={{ opacity: isResetting ? 0.5 : 1 }}
               >
                 <LinearGradient
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  className="py-3 rounded-lg"
-                  style={{ opacity: isResetting ? 0.5 : 1 }}
+                  style={{ padding: 2, borderRadius: 12 }}
                 >
-                  {isResetting ? (
-                    <ActivityIndicator color="white" size="small" />
-                  ) : (
-                    <Text className="text-white text-center font-semibold">
-                      재설정 링크 보내기
-                    </Text>
-                  )}
+                  <View
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: 10,
+                      height: 52,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {isResetting ? (
+                      <ActivityIndicator color="#9333ea" size="small" />
+                    ) : (
+                      <MaskedView
+                        maskElement={
+                          <Text style={{ fontSize: 16, fontFamily: 'Pretendard-SemiBold' }}>
+                            재설정 링크 보내기
+                          </Text>
+                        }
+                      >
+                        <LinearGradient
+                          colors={['#2563eb', '#9333ea', '#db2777']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                        >
+                          <Text style={{ fontSize: 16, fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
+                            재설정 링크 보내기
+                          </Text>
+                        </LinearGradient>
+                      </MaskedView>
+                    )}
+                  </View>
                 </LinearGradient>
               </Pressable>
             </View>
