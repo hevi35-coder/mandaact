@@ -25,11 +25,10 @@ export {
   getStoredPushToken,
   areNotificationsEnabled,
   setNotificationsEnabled,
-  scheduleDailyReminder,
-  cancelScheduledNotification,
   cancelAllScheduledNotifications,
-  getScheduledNotifications,
   sendLocalNotification,
   addNotificationResponseListener,
   addNotificationReceivedListener,
+  refreshPushToken,
+  deactivatePushToken,
 } from './notificationService'

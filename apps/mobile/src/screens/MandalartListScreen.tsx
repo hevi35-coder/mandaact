@@ -8,6 +8,8 @@ import {
   Alert,
   RefreshControl,
   Switch,
+  useWindowDimensions,
+  Platform,
 } from 'react-native'
 import { useScrollToTop } from '../navigation/RootNavigator'
 import Animated, { FadeInUp } from 'react-native-reanimated'
@@ -35,6 +37,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 export default function MandalartListScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
+
+  // iPad detection
+  const { width: screenWidth } = useWindowDimensions()
+  const isTablet = Platform.OS === 'ios' && screenWidth >= 768
 
   // Scroll to top on tab re-press
   const scrollRef = useRef<ScrollView>(null)
@@ -320,74 +326,106 @@ export default function MandalartListScreen() {
         )}
 
         {/* Mandalart List */}
-        {mandalarts.length > 0 && (
-          <View className="space-y-4 pb-5">
-            {mandalarts.map((mandalart, index) => (
-              <Animated.View
-                key={mandalart.id}
-                entering={FadeInUp.delay(100 + index * 50).duration(400)}
+        {mandalarts.length > 0 && (() => {
+          // Render single mandalart card
+          const renderMandalartCard = (mandalart: Mandalart, index: number) => (
+            <Animated.View
+              key={mandalart.id}
+              entering={FadeInUp.delay(100 + index * 50).duration(400)}
+              className="mb-4"
+            >
+              <Pressable
+                onPress={() => handleViewDetail(mandalart)}
+                className={`bg-white rounded-3xl p-5 border border-gray-100 ${
+                  !mandalart.is_active ? 'opacity-60' : ''
+                }`}
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 3,
+                }}
               >
-                <Pressable
-                  onPress={() => handleViewDetail(mandalart)}
-                  className={`bg-white rounded-3xl p-5 border border-gray-100 ${
-                    !mandalart.is_active ? 'opacity-60' : ''
-                  }`}
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 12,
-                    elevation: 3,
-                  }}
-                >
-                  {/* Header Row - 웹과 동일: 타이틀 + 토글 */}
-                  <View className="flex-row items-start justify-between gap-4">
-                    <View className="flex-1">
-                      <Text
-                        className="text-lg text-gray-900"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                        numberOfLines={1}
-                      >
-                        {mandalart.title}
-                      </Text>
-                      <Text
-                        className="text-base text-gray-500 mt-1"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                        numberOfLines={2}
-                      >
-                        핵심 목표: {mandalart.center_goal}
-                      </Text>
-                    </View>
-
-                    {/* Toggle Switch with Status Label */}
-                    <View className="items-center pt-0.5">
-                      {togglingIds.has(mandalart.id) ? (
-                        <ActivityIndicator size="small" color="#374151" />
-                      ) : (
-                        <>
-                          <Switch
-                            value={mandalart.is_active}
-                            onValueChange={() => handleToggleActive(mandalart)}
-                            trackColor={{ false: '#d1d5db', true: '#2563eb' }}
-                            thumbColor="white"
-                          />
-                          <Text
-                            className={`text-xs mt-1 ${
-                              mandalart.is_active ? 'text-indigo-500' : 'text-gray-400'
-                            }`}
-                            style={{ fontFamily: 'Pretendard-Medium' }}
-                          >
-                            {mandalart.is_active ? '활성' : '비활성'}
-                          </Text>
-                        </>
-                      )}
-                    </View>
+                {/* Header Row - 웹과 동일: 타이틀 + 토글 */}
+                <View className="flex-row items-start justify-between gap-4">
+                  <View className="flex-1">
+                    <Text
+                      className="text-lg text-gray-900"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      numberOfLines={1}
+                    >
+                      {mandalart.title}
+                    </Text>
+                    <Text
+                      className="text-base text-gray-500 mt-1"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                      numberOfLines={2}
+                    >
+                      핵심 목표: {mandalart.center_goal}
+                    </Text>
                   </View>
-                </Pressable>
-              </Animated.View>
-            ))}
-          </View>
-        )}
+
+                  {/* Toggle Switch with Status Label */}
+                  <View className="items-center pt-0.5">
+                    {togglingIds.has(mandalart.id) ? (
+                      <ActivityIndicator size="small" color="#374151" />
+                    ) : (
+                      <>
+                        <Switch
+                          value={mandalart.is_active}
+                          onValueChange={() => handleToggleActive(mandalart)}
+                          trackColor={{ false: '#d1d5db', true: '#2563eb' }}
+                          thumbColor="white"
+                        />
+                        <Text
+                          className={`text-xs mt-1 ${
+                            mandalart.is_active ? 'text-indigo-500' : 'text-gray-400'
+                          }`}
+                          style={{ fontFamily: 'Pretendard-Medium' }}
+                        >
+                          {mandalart.is_active ? '활성' : '비활성'}
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                </View>
+              </Pressable>
+            </Animated.View>
+          )
+
+          // iPad: 2-column grid layout
+          if (isTablet && mandalarts.length >= 2) {
+            const leftColumn = mandalarts.filter((_, idx) => idx % 2 === 0)
+            const rightColumn = mandalarts.filter((_, idx) => idx % 2 === 1)
+
+            return (
+              <View style={{ flexDirection: 'row', gap: 16 }} className="pb-5">
+                {/* Left Column */}
+                <View style={{ flex: 1 }}>
+                  {leftColumn.map((mandalart, idx) =>
+                    renderMandalartCard(mandalart, idx * 2)
+                  )}
+                </View>
+                {/* Right Column */}
+                <View style={{ flex: 1 }}>
+                  {rightColumn.map((mandalart, idx) =>
+                    renderMandalartCard(mandalart, idx * 2 + 1)
+                  )}
+                </View>
+              </View>
+            )
+          }
+
+          // Phone or single item: standard single-column layout
+          return (
+            <View className="space-y-4 pb-5">
+              {mandalarts.map((mandalart, index) =>
+                renderMandalartCard(mandalart, index)
+              )}
+            </View>
+          )
+        })()}
 
         {/* Bottom spacing */}
         <View className="h-8" />

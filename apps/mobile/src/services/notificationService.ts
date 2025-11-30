@@ -3,9 +3,19 @@ import * as Device from 'expo-device'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { logger } from '../lib/logger'
+import { supabase } from '../lib/supabase'
 
 const NOTIFICATION_TOKEN_KEY = '@mandaact/push_token'
 const NOTIFICATION_ENABLED_KEY = '@mandaact/notifications_enabled'
+
+/**
+ * Get device name for push token identification
+ */
+function getDeviceName(): string {
+  const brand = Device.brand || 'Unknown'
+  const modelName = Device.modelName || 'Device'
+  return `${brand} ${modelName}`
+}
 
 /**
  * Configure notification behavior
@@ -56,6 +66,9 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
     // Store token locally
     await AsyncStorage.setItem(NOTIFICATION_TOKEN_KEY, token)
+
+    // Also save to database for server-side push notifications
+    await savePushTokenToDatabase(token)
   } catch (error) {
     logger.error('Error getting push token', error)
   }
@@ -119,50 +132,6 @@ export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
 }
 
 /**
- * Schedule a daily reminder notification
- */
-export async function scheduleDailyReminder(
-  hour: number = 20,
-  minute: number = 0
-): Promise<string | null> {
-  try {
-    // Cancel existing reminder
-    await cancelScheduledNotification('daily-reminder')
-
-    const identifier = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '오늘의 실천을 완료하세요! 💪',
-        body: '아직 완료하지 않은 실천이 있어요. 지금 확인해보세요!',
-        sound: true,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour,
-        minute,
-      },
-      identifier: 'daily-reminder',
-    })
-
-    return identifier
-  } catch (error) {
-    logger.error('Error scheduling daily reminder', error)
-    return null
-  }
-}
-
-/**
- * Cancel a specific scheduled notification
- */
-export async function cancelScheduledNotification(identifier: string): Promise<void> {
-  try {
-    await Notifications.cancelScheduledNotificationAsync(identifier)
-  } catch (error) {
-    logger.error('Error canceling notification', error)
-  }
-}
-
-/**
  * Cancel all scheduled notifications
  */
 export async function cancelAllScheduledNotifications(): Promise<void> {
@@ -170,18 +139,6 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
     await Notifications.cancelAllScheduledNotificationsAsync()
   } catch (error) {
     logger.error('Error canceling all notifications', error)
-  }
-}
-
-/**
- * Get all scheduled notifications
- */
-export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
-  try {
-    return await Notifications.getAllScheduledNotificationsAsync()
-  } catch (error) {
-    logger.error('Error getting scheduled notifications', error)
-    return []
   }
 }
 
@@ -226,4 +183,98 @@ export function addNotificationReceivedListener(
   callback: (notification: Notifications.Notification) => void
 ): Notifications.EventSubscription {
   return Notifications.addNotificationReceivedListener(callback)
+}
+
+/**
+ * Save push token to Supabase database for server-side notifications
+ * Uses upsert to handle token updates
+ */
+async function savePushTokenToDatabase(token: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      logger.info('No authenticated user, skipping push token save')
+      return
+    }
+
+    const platform = Platform.OS as 'ios' | 'android' | 'web'
+    const deviceName = getDeviceName()
+
+    // Upsert the token - update if exists, insert if not
+    const { error } = await supabase
+      .from('push_tokens')
+      .upsert(
+        {
+          user_id: user.id,
+          token,
+          platform,
+          device_name: deviceName,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id,token',
+        }
+      )
+
+    if (error) {
+      logger.error('Error saving push token to database', error)
+      return
+    }
+
+    logger.info('Push token saved to database successfully')
+  } catch (error) {
+    logger.error('Error in savePushTokenToDatabase', error)
+  }
+}
+
+/**
+ * Deactivate push token when user logs out or disables notifications
+ */
+export async function deactivatePushToken(): Promise<void> {
+  try {
+    const token = await getStoredPushToken()
+    if (!token) return
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { error } = await supabase
+      .from('push_tokens')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .eq('token', token)
+
+    if (error) {
+      logger.error('Error deactivating push token', error)
+    }
+  } catch (error) {
+    logger.error('Error in deactivatePushToken', error)
+  }
+}
+
+/**
+ * Refresh push token - call this on app launch to ensure token is up to date
+ */
+export async function refreshPushToken(): Promise<string | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return null
+    }
+
+    // Check if notifications are enabled
+    const enabled = await areNotificationsEnabled()
+    if (!enabled) {
+      return null
+    }
+
+    // Re-register to get latest token
+    return await registerForPushNotificationsAsync()
+  } catch (error) {
+    logger.error('Error refreshing push token', error)
+    return null
+  }
 }

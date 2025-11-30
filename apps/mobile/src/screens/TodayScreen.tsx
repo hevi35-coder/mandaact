@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  useWindowDimensions,
+  Platform,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -77,6 +79,10 @@ export default function TodayScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+
+  // iPad detection
+  const { width: screenWidth } = useWindowDimensions()
+  const isTablet = Platform.OS === 'ios' && screenWidth >= 768
 
   // Scroll to top on tab re-press
   const scrollRef = useRef<ScrollView>(null)
@@ -860,157 +866,197 @@ export default function TodayScreen() {
         )}
 
         {/* Actions List - Grouped by Mandalart */}
-        {filteredActions.length > 0 && (
-          <View className="space-y-4 pb-4">
-            {Object.entries(actionsByMandalart).map(
-              ([mandalartId, { mandalart, actions: mandalartActions }], index) => {
-                const isCollapsed = collapsedSections.has(mandalartId)
-                const mandalartNonRef = mandalartActions.filter(
-                  (a) => a.type !== 'reference'
-                )
-                const mandalartChecked = mandalartNonRef.filter(
-                  (a) => a.is_checked
-                ).length
-                const mandalartTotal = mandalartNonRef.length
+        {filteredActions.length > 0 && (() => {
+          const mandalartEntries = Object.entries(actionsByMandalart)
+          const mandalartCount = mandalartEntries.length
+          // iPad: 2-column layout when 2+ mandalarts, full width when 1
+          const usesTwoColumn = isTablet && mandalartCount >= 2
 
-                return (
-                  <Animated.View
-                    key={mandalartId}
-                    entering={FadeInUp.delay(100 + index * 100).duration(400)}
-                    className="mb-4"
-                  >
-                    {/* Section Header */}
-                    <Pressable
-                      onPress={() => toggleSection(mandalartId)}
-                      className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+          // Render single mandalart section
+          const renderMandalartSection = (
+            mandalartId: string,
+            mandalart: typeof mandalartEntries[0][1]['mandalart'],
+            mandalartActions: typeof mandalartEntries[0][1]['actions'],
+            index: number
+          ) => {
+            const isCollapsed = collapsedSections.has(mandalartId)
+            const mandalartNonRef = mandalartActions.filter(
+              (a) => a.type !== 'reference'
+            )
+            const mandalartChecked = mandalartNonRef.filter(
+              (a) => a.is_checked
+            ).length
+            const mandalartTotal = mandalartNonRef.length
+
+            return (
+              <Animated.View
+                key={mandalartId}
+                entering={FadeInUp.delay(100 + index * 100).duration(400)}
+                className="mb-4"
+              >
+                {/* Section Header */}
+                <Pressable
+                  onPress={() => toggleSection(mandalartId)}
+                  className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <View className="flex-1">
+                    <View className="flex-row items-center">
+                      <Text className="text-base font-semibold text-gray-900">
+                        {mandalart.title}
+                      </Text>
+                      <Text className="text-sm text-gray-500 ml-2">
+                        {mandalartChecked}/{mandalartTotal}
+                      </Text>
+                    </View>
+                    <Text
+                      className="text-sm text-gray-500 mt-1"
+                      numberOfLines={1}
                     >
-                      <View className="flex-1">
-                        <View className="flex-row items-center">
-                          <Text className="text-base font-semibold text-gray-900">
-                            {mandalart.title}
-                          </Text>
-                          <Text className="text-sm text-gray-500 ml-2">
-                            {mandalartChecked}/{mandalartTotal}
-                          </Text>
-                        </View>
-                        <Text
-                          className="text-sm text-gray-500 mt-1"
-                          numberOfLines={1}
+                      핵심 목표: {mandalart.center_goal}
+                    </Text>
+                  </View>
+                  {isCollapsed ? (
+                    <ChevronRight size={20} color="#6b7280" />
+                  ) : (
+                    <ChevronDown size={20} color="#6b7280" />
+                  )}
+                </Pressable>
+
+                {/* Actions in this Mandalart */}
+                {!isCollapsed && (
+                  <View className="mt-2 space-y-2">
+                    {mandalartActions.map((action, actionIndex) => {
+                      // Check if action can be checked (not reference AND date is today/yesterday)
+                      const isCheckDisabled = action.type === 'reference' || !canCheck
+
+                      return (
+                        <Animated.View
+                          key={action.id}
+                          entering={FadeInUp.delay(50 + actionIndex * 50).duration(300)}
+                          className={`flex-row items-center p-4 bg-white rounded-xl border ${
+                            action.is_checked
+                              ? 'border-gray-200 bg-gray-50'
+                              : action.type === 'reference' || !canCheck
+                                ? 'border-gray-100 bg-gray-50/50'
+                                : 'border-gray-200'
+                          }`}
                         >
-                          핵심 목표: {mandalart.center_goal}
-                        </Text>
-                      </View>
-                      {isCollapsed ? (
-                        <ChevronRight size={20} color="#6b7280" />
-                      ) : (
-                        <ChevronDown size={20} color="#6b7280" />
-                      )}
-                    </Pressable>
+                          {/* Checkbox - 사각형 스타일 (Web과 동일) */}
+                          <Pressable
+                            onPress={() => handleToggleCheck(action)}
+                            disabled={isCheckDisabled || checkingActions.has(action.id)}
+                            className="mr-3"
+                          >
+                            {checkingActions.has(action.id) ? (
+                              <ActivityIndicator size="small" color="#374151" />
+                            ) : action.is_checked ? (
+                              <View className="w-5 h-5 bg-gray-900 rounded border border-gray-900 items-center justify-center">
+                                <Check size={14} color="#ffffff" strokeWidth={3} />
+                              </View>
+                            ) : (
+                              <View
+                                className={`w-5 h-5 rounded border-2 ${
+                                  isCheckDisabled
+                                    ? 'border-gray-300 bg-gray-100'
+                                    : 'border-gray-400'
+                                }`}
+                              />
+                            )}
+                          </Pressable>
 
-                    {/* Actions in this Mandalart */}
-                    {!isCollapsed && (
-                      <View className="mt-2 space-y-2">
-                        {mandalartActions.map((action, actionIndex) => {
-                          // Check if action can be checked (not reference AND date is today/yesterday)
-                          const isCheckDisabled = action.type === 'reference' || !canCheck
-
-                          return (
-                            <Animated.View
-                              key={action.id}
-                              entering={FadeInUp.delay(50 + actionIndex * 50).duration(300)}
-                              className={`flex-row items-center p-4 bg-white rounded-xl border ${
+                          {/* Content */}
+                          <View className="flex-1">
+                            <Text
+                              className={`text-base ${
                                 action.is_checked
-                                  ? 'border-gray-200 bg-gray-50'
-                                  : action.type === 'reference' || !canCheck
-                                    ? 'border-gray-100 bg-gray-50/50'
-                                    : 'border-gray-200'
+                                  ? 'text-gray-500 line-through'
+                                  : 'text-gray-900'
                               }`}
                             >
-                              {/* Checkbox - 사각형 스타일 (Web과 동일) */}
-                              <Pressable
-                                onPress={() => handleToggleCheck(action)}
-                                disabled={isCheckDisabled || checkingActions.has(action.id)}
-                                className="mr-3"
+                              {action.title}
+                            </Text>
+                            <View className="flex-row items-center mt-1">
+                              <Text className="text-xs text-gray-400">
+                                {action.sub_goal.title}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Period Progress Badge */}
+                          {action.period_progress && action.period_progress.target !== null && (
+                            <View
+                              className={`px-2 py-1 rounded-lg mr-2 ${
+                                action.period_progress.isCompleted
+                                  ? 'bg-green-100 border border-green-200'
+                                  : 'bg-gray-100 border border-gray-200'
+                              }`}
+                            >
+                              <Text
+                                className={`text-xs ${
+                                  action.period_progress.isCompleted
+                                    ? 'text-green-700'
+                                    : 'text-gray-600'
+                                }`}
                               >
-                                {checkingActions.has(action.id) ? (
-                                  <ActivityIndicator size="small" color="#374151" />
-                                ) : action.is_checked ? (
-                                  <View className="w-5 h-5 bg-gray-900 rounded border border-gray-900 items-center justify-center">
-                                    <Check size={14} color="#ffffff" strokeWidth={3} />
-                                  </View>
-                                ) : (
-                                  <View
-                                    className={`w-5 h-5 rounded border-2 ${
-                                      isCheckDisabled
-                                        ? 'border-gray-300 bg-gray-100'
-                                        : 'border-gray-400'
-                                    }`}
-                                  />
-                                )}
-                              </Pressable>
+                                {action.period_progress.periodLabel} {action.period_progress.checkCount}/{action.period_progress.target}
+                                {action.period_progress.isCompleted && ' ✓'}
+                              </Text>
+                            </View>
+                          )}
 
-                              {/* Content */}
-                              <View className="flex-1">
-                                <Text
-                                  className={`text-base ${
-                                    action.is_checked
-                                      ? 'text-gray-500 line-through'
-                                      : 'text-gray-900'
-                                  }`}
-                                >
-                                  {action.title}
-                                </Text>
-                                <View className="flex-row items-center mt-1">
-                                  <Text className="text-xs text-gray-400">
-                                    {action.sub_goal.title}
-                                  </Text>
-                                </View>
-                              </View>
+                          {/* Type Badge - Pressable로 변경 (타입 수정 모달 열기) */}
+                          <Pressable
+                            onPress={() => handleTypeBadgePress(action)}
+                            className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200 active:bg-gray-200"
+                          >
+                            <ActionTypeIcon type={action.type} size={14} />
+                            <Text className="text-xs text-gray-600 ml-1">
+                              {formatTypeDetails(action) ||
+                                getActionTypeLabel(action.type)}
+                            </Text>
+                          </Pressable>
+                        </Animated.View>
+                      )
+                    })}
+                  </View>
+                )}
+              </Animated.View>
+            )
+          }
 
-                              {/* Period Progress Badge */}
-                              {action.period_progress && action.period_progress.target !== null && (
-                                <View
-                                  className={`px-2 py-1 rounded-lg mr-2 ${
-                                    action.period_progress.isCompleted
-                                      ? 'bg-green-100 border border-green-200'
-                                      : 'bg-gray-100 border border-gray-200'
-                                  }`}
-                                >
-                                  <Text
-                                    className={`text-xs ${
-                                      action.period_progress.isCompleted
-                                        ? 'text-green-700'
-                                        : 'text-gray-600'
-                                    }`}
-                                  >
-                                    {action.period_progress.periodLabel} {action.period_progress.checkCount}/{action.period_progress.target}
-                                    {action.period_progress.isCompleted && ' ✓'}
-                                  </Text>
-                                </View>
-                              )}
+          if (usesTwoColumn) {
+            // iPad 2-column layout: split mandalarts into left/right columns
+            const leftColumn = mandalartEntries.filter((_, idx) => idx % 2 === 0)
+            const rightColumn = mandalartEntries.filter((_, idx) => idx % 2 === 1)
 
-                              {/* Type Badge - Pressable로 변경 (타입 수정 모달 열기) */}
-                              <Pressable
-                                onPress={() => handleTypeBadgePress(action)}
-                                className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200 active:bg-gray-200"
-                              >
-                                <ActionTypeIcon type={action.type} size={14} />
-                                <Text className="text-xs text-gray-600 ml-1">
-                                  {formatTypeDetails(action) ||
-                                    getActionTypeLabel(action.type)}
-                                </Text>
-                              </Pressable>
-                            </Animated.View>
-                          )
-                        })}
-                      </View>
-                    )}
-                  </Animated.View>
-                )
-              }
-            )}
-          </View>
-        )}
+            return (
+              <View style={{ flexDirection: 'row', gap: 16 }} className="pb-4">
+                {/* Left Column */}
+                <View style={{ flex: 1 }}>
+                  {leftColumn.map(([mandalartId, { mandalart, actions: mandalartActions }], idx) =>
+                    renderMandalartSection(mandalartId, mandalart, mandalartActions, idx * 2)
+                  )}
+                </View>
+                {/* Right Column */}
+                <View style={{ flex: 1 }}>
+                  {rightColumn.map(([mandalartId, { mandalart, actions: mandalartActions }], idx) =>
+                    renderMandalartSection(mandalartId, mandalart, mandalartActions, idx * 2 + 1)
+                  )}
+                </View>
+              </View>
+            )
+          }
+
+          // Phone or single mandalart: standard single-column layout
+          return (
+            <View className="space-y-4 pb-4">
+              {mandalartEntries.map(
+                ([mandalartId, { mandalart, actions: mandalartActions }], index) =>
+                  renderMandalartSection(mandalartId, mandalart, mandalartActions, index)
+              )}
+            </View>
+          )
+        })()}
 
         {/* Bottom spacing */}
         <View className="h-8" />

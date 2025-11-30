@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Home, CalendarCheck, Grid3X3, FileText } from 'lucide-react-native'
-import { ScrollView } from 'react-native'
+import { ScrollView, useWindowDimensions, Platform } from 'react-native'
 
 import { useAuthStore } from '../store/authStore'
 
@@ -162,6 +162,10 @@ function MainTabs() {
 export default function RootNavigator() {
   const { user, initialized } = useAuthStore()
 
+  // Detect iPad for fullscreen modal
+  const { width } = useWindowDimensions()
+  const isTablet = Platform.OS === 'ios' && width >= 768
+
   if (!initialized) {
     return <LoadingScreen />
   }
@@ -176,7 +180,9 @@ export default function RootNavigator() {
               name="CreateMandalart"
               component={MandalartCreateScreen}
               options={{
-                presentation: 'modal',
+                // iPad: fullScreenModal for better 9x9 grid experience
+                // Phone: regular modal
+                presentation: isTablet ? 'fullScreenModal' : 'modal',
                 animation: 'slide_from_bottom',
               }}
             />

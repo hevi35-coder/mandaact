@@ -37,8 +37,9 @@ import { suggestActionType } from '@mandaact/shared'
 import { logger, trackMandalartCreated } from '../lib'
 import CoreGoalModal from '../components/CoreGoalModal'
 import SubGoalModal from '../components/SubGoalModal'
-import { CenterGoalCell, SubGoalCell } from '../components'
+import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
 import { mandalartKeys } from '../hooks/useMandalarts'
+import { useResponsive } from '../hooks/useResponsive'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -67,7 +68,8 @@ export default function MandalartCreateScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
-  const { width: screenWidth } = useWindowDimensions()
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions()
+  const { isTablet } = useResponsive()
 
   // Calculate cell size dynamically
   const gridWidth = screenWidth - (CONTAINER_PADDING * 2) - (CARD_PADDING * 2)
@@ -591,7 +593,10 @@ export default function MandalartCreateScreen() {
 
   // Render image input with preview
   if (step === 'input' && inputMethod === 'image') {
-    const imageWidth = screenWidth - 32 // px-4 * 2
+    // iPad uses fullScreenModal, so use full width. Phone uses modal with limited width.
+    const imageWidth = isTablet
+      ? screenWidth - 40 // iPad: full width minus padding
+      : screenWidth - 40 // Phone: full width minus padding (modal takes full width on phone)
 
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
@@ -939,8 +944,73 @@ export default function MandalartCreateScreen() {
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1 px-5 pt-5">
-          {/* 3x3 Grid Card */}
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingTop: 20,
+            alignItems: isTablet ? 'center' : undefined,
+          }}
+        >
+          {/* iPad: Full 9x9 Grid */}
+          {isTablet ? (
+            (() => {
+              // Calculate optimal grid size for iPad fullscreen modal
+              const headerHeight = 64 // Header height
+              const verticalPadding = 100 // Top and bottom padding + safe areas
+              const availableHeight = screenHeight - headerHeight - verticalPadding
+              const availableWidth = screenWidth - 40 // Horizontal padding
+              const gridSize = Math.min(availableWidth, availableHeight, 700)
+
+              // Transform mandalartData to match MandalartFullGrid interface
+              const fullGridData = {
+                id: 'preview',
+                center_goal: mandalartData.center_goal,
+                sub_goals: mandalartData.sub_goals.map(sg => ({
+                  id: `preview-${sg.position}`,
+                  mandalart_id: 'preview',
+                  position: sg.position,
+                  title: sg.title,
+                  created_at: '',
+                  actions: sg.actions.map(a => ({
+                    id: `preview-action-${sg.position}-${a.position}`,
+                    sub_goal_id: `preview-${sg.position}`,
+                    position: a.position,
+                    title: a.title,
+                    type: 'routine' as const,
+                    created_at: '',
+                  })),
+                })),
+              }
+
+              return (
+                <View style={{ marginBottom: 20 }}>
+                  <View className="mb-4">
+                    <Text
+                      className="text-base text-gray-900 text-center"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      셀을 탭하여 수정하세요
+                    </Text>
+                  </View>
+                  <MandalartFullGrid
+                    mandalart={fullGridData}
+                    gridSize={gridSize}
+                    onCenterGoalPress={handleCoreGoalClick}
+                    onSubGoalPress={(subGoal) => {
+                      setSelectedSubGoalPosition(subGoal.position)
+                      setSubGoalModalOpen(true)
+                    }}
+                    onActionPress={(subGoal) => {
+                      setSelectedSubGoalPosition(subGoal.position)
+                      setSubGoalModalOpen(true)
+                    }}
+                  />
+                </View>
+              )
+            })()
+          ) : (
+          /* Phone: 3x3 Grid Card */
           <View
             className="bg-white rounded-3xl border border-gray-100 p-5 mb-5"
             style={{
@@ -1137,6 +1207,7 @@ export default function MandalartCreateScreen() {
               </View>
             )}
           </View>
+          )}
 
           <View className="h-8" />
         </ScrollView>

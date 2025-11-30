@@ -1,19 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import * as Notifications from 'expo-notifications'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   registerForPushNotificationsAsync,
-  scheduleDailyReminder,
-  cancelAllScheduledNotifications,
   areNotificationsEnabled,
   setNotificationsEnabled,
-  getScheduledNotifications,
 } from '../services/notificationService'
+import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-
-const REMINDER_TIME_KEY = '@mandaact/reminder_time'
-const REMINDER_ENABLED_KEY = '@mandaact/reminder_enabled'
-const CUSTOM_MESSAGE_ENABLED_KEY = '@mandaact/custom_message_enabled'
 
 interface ReminderTime {
   hour: number
@@ -31,6 +24,11 @@ interface NotificationState {
 
 const DEFAULT_REMINDER_TIME: ReminderTime = { hour: 20, minute: 0 }
 
+/**
+ * Hook for managing notification settings
+ * Settings are stored in Supabase `notification_settings` table
+ * Daily reminders are sent via server push (pg_cron), not local notifications
+ */
 export function useNotifications() {
   const [state, setState] = useState<NotificationState>({
     isEnabled: false,
@@ -41,30 +39,72 @@ export function useNotifications() {
     isLoading: true,
   })
 
-  // Load initial state
+  // Load initial state from DB and local storage
   useEffect(() => {
     async function loadState() {
       try {
-        const [enabled, permissions, storedTime, reminderEnabled, customMessageEnabled] = await Promise.all([
+        const [enabled, permissions] = await Promise.all([
           areNotificationsEnabled(),
           Notifications.getPermissionsAsync(),
-          AsyncStorage.getItem(REMINDER_TIME_KEY),
-          AsyncStorage.getItem(REMINDER_ENABLED_KEY),
-          AsyncStorage.getItem(CUSTOM_MESSAGE_ENABLED_KEY),
         ])
 
-        const reminderTime = storedTime
-          ? JSON.parse(storedTime)
-          : DEFAULT_REMINDER_TIME
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
 
-        setState({
-          isEnabled: enabled && permissions.status === 'granted',
-          reminderEnabled: reminderEnabled !== 'false', // default true
-          customMessageEnabled: customMessageEnabled !== 'false', // default true
-          permissionStatus: permissions.status,
-          reminderTime,
-          isLoading: false,
-        })
+        if (!user) {
+          setState((prev) => ({
+            ...prev,
+            isEnabled: false,
+            permissionStatus: permissions.status,
+            isLoading: false,
+          }))
+          return
+        }
+
+        // Load settings from DB
+        const { data: settings } = await supabase
+          .from('notification_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (settings) {
+          setState({
+            isEnabled: enabled && permissions.status === 'granted',
+            reminderEnabled: settings.reminder_enabled,
+            customMessageEnabled: settings.custom_message_enabled,
+            permissionStatus: permissions.status,
+            reminderTime: {
+              hour: settings.reminder_hour,
+              minute: settings.reminder_minute,
+            },
+            isLoading: false,
+          })
+        } else {
+          // No settings yet, create default
+          const { error } = await supabase
+            .from('notification_settings')
+            .insert({
+              user_id: user.id,
+              reminder_enabled: true,
+              reminder_hour: DEFAULT_REMINDER_TIME.hour,
+              reminder_minute: DEFAULT_REMINDER_TIME.minute,
+              custom_message_enabled: true,
+            })
+
+          if (error) {
+            logger.error('Error creating default notification settings', error)
+          }
+
+          setState({
+            isEnabled: enabled && permissions.status === 'granted',
+            reminderEnabled: true,
+            customMessageEnabled: true,
+            permissionStatus: permissions.status,
+            reminderTime: DEFAULT_REMINDER_TIME,
+            isLoading: false,
+          })
+        }
       } catch (error) {
         logger.error('Error loading notification state', error)
         setState((prev) => ({ ...prev, isLoading: false }))
@@ -80,16 +120,13 @@ export function useNotifications() {
 
     try {
       if (enabled) {
-        // Request permissions (may fail in Expo Go simulator)
+        // Request permissions and get push token
         const token = await registerForPushNotificationsAsync()
 
-        // Even if token is null (Expo Go limitation), allow enabling for UI testing
-        // In production build, this will work properly
         if (!token) {
           const permissions = await Notifications.getPermissionsAsync()
           logger.info('Push token not available (Expo Go limitation), enabling UI state only')
 
-          // Still enable the UI state for testing
           await setNotificationsEnabled(true)
           setState((prev) => ({
             ...prev,
@@ -100,11 +137,6 @@ export function useNotifications() {
           return true
         }
 
-        // Schedule daily reminder if reminder is enabled
-        if (state.reminderEnabled) {
-          const { hour, minute } = state.reminderTime
-          await scheduleDailyReminder(hour, minute)
-        }
         await setNotificationsEnabled(true)
 
         setState((prev) => ({
@@ -116,7 +148,6 @@ export function useNotifications() {
         return true
       } else {
         // Disable notifications
-        await cancelAllScheduledNotifications()
         await setNotificationsEnabled(false)
 
         setState((prev) => ({
@@ -131,24 +162,29 @@ export function useNotifications() {
       setState((prev) => ({ ...prev, isLoading: false }))
       return false
     }
-  }, [state.reminderTime, state.reminderEnabled])
+  }, [])
 
-  // Toggle reminder notifications
+  // Toggle reminder notifications (saves to DB)
   const toggleReminder = useCallback(async (enabled: boolean) => {
     setState((prev) => ({ ...prev, isLoading: true }))
 
     try {
-      await AsyncStorage.setItem(REMINDER_ENABLED_KEY, String(enabled))
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setState((prev) => ({ ...prev, isLoading: false }))
+        return false
+      }
 
-      if (state.isEnabled) {
-        if (enabled) {
-          // Schedule reminder
-          const { hour, minute } = state.reminderTime
-          await scheduleDailyReminder(hour, minute)
-        } else {
-          // Cancel scheduled reminders
-          await cancelAllScheduledNotifications()
-        }
+      // Update DB
+      const { error } = await supabase
+        .from('notification_settings')
+        .update({ reminder_enabled: enabled })
+        .eq('user_id', user.id)
+
+      if (error) {
+        logger.error('Error updating reminder setting', error)
+        setState((prev) => ({ ...prev, isLoading: false }))
+        return false
       }
 
       setState((prev) => ({
@@ -162,14 +198,30 @@ export function useNotifications() {
       setState((prev) => ({ ...prev, isLoading: false }))
       return false
     }
-  }, [state.isEnabled, state.reminderTime])
+  }, [])
 
-  // Toggle custom message notifications
+  // Toggle custom message notifications (saves to DB)
   const toggleCustomMessage = useCallback(async (enabled: boolean) => {
     setState((prev) => ({ ...prev, isLoading: true }))
 
     try {
-      await AsyncStorage.setItem(CUSTOM_MESSAGE_ENABLED_KEY, String(enabled))
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setState((prev) => ({ ...prev, isLoading: false }))
+        return false
+      }
+
+      // Update DB
+      const { error } = await supabase
+        .from('notification_settings')
+        .update({ custom_message_enabled: enabled })
+        .eq('user_id', user.id)
+
+      if (error) {
+        logger.error('Error updating custom message setting', error)
+        setState((prev) => ({ ...prev, isLoading: false }))
+        return false
+      }
 
       setState((prev) => ({
         ...prev,
@@ -184,35 +236,45 @@ export function useNotifications() {
     }
   }, [])
 
-  // Update reminder time
+  // Update reminder time (saves to DB - server will use this for scheduling)
   const updateReminderTime = useCallback(async (hour: number, minute: number) => {
     setState((prev) => ({ ...prev, isLoading: true }))
 
     try {
-      const newTime = { hour, minute }
-      await AsyncStorage.setItem(REMINDER_TIME_KEY, JSON.stringify(newTime))
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setState((prev) => ({ ...prev, isLoading: false }))
+        return false
+      }
 
-      // Reschedule if notifications and reminder are enabled
-      if (state.isEnabled && state.reminderEnabled) {
-        await scheduleDailyReminder(hour, minute)
+      // Update DB
+      const { error } = await supabase
+        .from('notification_settings')
+        .update({
+          reminder_hour: hour,
+          reminder_minute: minute,
+        })
+        .eq('user_id', user.id)
+
+      if (error) {
+        logger.error('Error updating reminder time', error)
+        setState((prev) => ({ ...prev, isLoading: false }))
+        return false
       }
 
       setState((prev) => ({
         ...prev,
-        reminderTime: newTime,
+        reminderTime: { hour, minute },
         isLoading: false,
       }))
+
+      logger.info('Reminder time updated', { hour, minute })
       return true
     } catch (error) {
       logger.error('Error updating reminder time', error)
       setState((prev) => ({ ...prev, isLoading: false }))
       return false
     }
-  }, [state.isEnabled, state.reminderEnabled])
-
-  // Get scheduled notifications for debugging
-  const getScheduled = useCallback(async () => {
-    return getScheduledNotifications()
   }, [])
 
   // Check if permission was denied
@@ -239,7 +301,6 @@ export function useNotifications() {
     toggleReminder,
     toggleCustomMessage,
     updateReminderTime,
-    getScheduled,
     formatReminderTime,
   }
 }
