@@ -340,3 +340,44 @@ All notification functions have been updated to use user timezone:
 - `scheduled-report/index.ts` - v2 with timezone & i18n support
 - `streak-warning/index.ts` - v2 with i18n support (ko/en messages)
 - `comeback-notification/index.ts` - v2 with i18n support (ko/en messages)
+- `generate-report/index.ts` - v2 with i18n support (ko/en prompts)
+
+---
+
+## Implementation Status Summary (2025-11-30)
+
+### Completed Features
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| Mobile i18n (ko/en) | ✅ Complete | 833 lines per language, 12 screens |
+| Login language selector | ✅ Complete | Dropdown in login card header |
+| Settings language selector | ✅ Complete | Full language list with native names |
+| Timezone auto-detection | ✅ Complete | `Intl.DateTimeFormat().resolvedOptions().timeZone` |
+| Timezone settings UI | ✅ Complete | Searchable timezone picker |
+| TodayScreen timezone | ✅ Complete | User timezone-based date calculation |
+| Streak calculation timezone | ✅ Complete | RPC with timezone parameter |
+| Push notification i18n | ✅ Complete | All 4 notification types (ko/en) |
+| AI report i18n | ✅ Complete | Prompts and responses in user language |
+| SQL function timezone | ✅ Complete | All notification functions updated |
+
+### Future Enhancement (Japanese Support)
+
+**Estimated Effort: 5-6 hours**
+
+| Task | Effort |
+|------|--------|
+| `ja.json` translation file | 2-3 hours |
+| Mobile config/UI update | 30 min |
+| Edge Functions update | 1 hour |
+| SQL migrations | 30 min |
+| Testing | 1 hour |
+
+**Files to Update:**
+- `apps/mobile/src/i18n/locales/ja.json` (new)
+- `apps/mobile/src/i18n/index.ts`
+- `supabase/functions/streak-warning/index.ts`
+- `supabase/functions/comeback-notification/index.ts`
+- `supabase/functions/scheduled-report/index.ts`
+- `supabase/functions/generate-report/index.ts`
+- SQL migration for notification messages
