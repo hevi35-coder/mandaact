@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -22,10 +22,10 @@ import {
   ChevronLeft,
   Info,
 } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 import SortableList from './SortableList'
 import {
   suggestActionType,
-  getActionTypeLabel,
   formatTypeDetails,
   getWeekdayNames,
   type ActionType,
@@ -60,49 +60,8 @@ interface SubGoalModalProps {
   onSave: (data: SubGoalData) => void
 }
 
-// Type constants
-const TYPE_OPTIONS: { type: ActionType; label: string; description: string; color: string }[] = [
-  {
-    type: 'routine',
-    label: '루틴',
-    description: '매일, 매주, 매월 등 반복적으로 실천',
-    color: '#3b82f6',
-  },
-  {
-    type: 'mission',
-    label: '미션',
-    description: '끝이 있는 목표 (책 읽기 등)',
-    color: '#10b981',
-  },
-  {
-    type: 'reference',
-    label: '참고',
-    description: '마음가짐, 가치관 등 참고 항목',
-    color: '#f59e0b',
-  },
-]
-
-const FREQUENCY_OPTIONS: { value: RoutineFrequency; label: string }[] = [
-  { value: 'daily', label: '매일' },
-  { value: 'weekly', label: '매주' },
-  { value: 'monthly', label: '매월' },
-]
-
 const WEEKLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
 const MONTHLY_COUNT_OPTIONS = [1, 2, 3, 5, 10, 20, 30]
-
-const MISSION_COMPLETION_OPTIONS: { value: MissionCompletionType; label: string }[] = [
-  { value: 'once', label: '1회 완료' },
-  { value: 'periodic', label: '주기적 목표' },
-]
-
-const PERIOD_CYCLE_OPTIONS: { value: MissionPeriodCycle; label: string }[] = [
-  { value: 'daily', label: '매일' },
-  { value: 'weekly', label: '매주' },
-  { value: 'monthly', label: '매월' },
-  { value: 'quarterly', label: '분기별' },
-  { value: 'yearly', label: '매년' },
-]
 
 // Action type icon component
 function ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number }) {
@@ -120,15 +79,15 @@ function ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number }
 
 // Get type label with frequency/cycle info - uses formatTypeDetails from shared package
 // Shows "미설정" when type is set but frequency/completion_type is not configured
-function getTypeLabel(action: ActionData): string {
-  if (!action.type) return '루틴'
+function getTypeLabel(action: ActionData, t: (key: string) => string): string {
+  if (!action.type) return t('actionType.routine')
 
   // Check if frequency/completion_type is properly set
   if (action.type === 'routine' && !action.routine_frequency) {
-    return '미설정'
+    return t('mandalart.modal.subGoal.notSet')
   }
   if (action.type === 'mission' && !action.mission_completion_type) {
-    return '미설정'
+    return t('mandalart.modal.subGoal.notSet')
   }
 
   // Use formatTypeDetails for detailed display (e.g., "주1회", "매일", "1회 완료")
@@ -142,7 +101,13 @@ function getTypeLabel(action: ActionData): string {
   })
   if (details) return details
 
-  return getActionTypeLabel(action.type)
+  // Fallback to translated type label
+  const typeLabels: Record<ActionType, string> = {
+    routine: t('actionType.routine'),
+    mission: t('actionType.mission'),
+    reference: t('actionType.reference'),
+  }
+  return typeLabels[action.type] || t('actionType.routine')
 }
 
 export default function SubGoalModal({
@@ -153,6 +118,7 @@ export default function SubGoalModal({
   initialActions,
   onSave,
 }: SubGoalModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [actions, setActions] = useState<ActionData[]>([])
   const [editingTitleMode, setEditingTitleMode] = useState(false)
@@ -174,6 +140,47 @@ export default function SubGoalModal({
   const [customMonthlyValue, setCustomMonthlyValue] = useState('')
 
   const weekdays = getWeekdayNames()
+
+  // Translated options
+  const typeOptions = useMemo(() => [
+    {
+      type: 'routine' as ActionType,
+      label: t('actionType.routine'),
+      description: t('actionType.selector.routineDesc'),
+      color: '#3b82f6',
+    },
+    {
+      type: 'mission' as ActionType,
+      label: t('actionType.mission'),
+      description: t('actionType.selector.missionDesc'),
+      color: '#10b981',
+    },
+    {
+      type: 'reference' as ActionType,
+      label: t('actionType.reference'),
+      description: t('actionType.selector.referenceDesc'),
+      color: '#f59e0b',
+    },
+  ], [t])
+
+  const frequencyOptions = useMemo(() => [
+    { value: 'daily' as RoutineFrequency, label: t('actionType.daily') },
+    { value: 'weekly' as RoutineFrequency, label: t('actionType.weekly') },
+    { value: 'monthly' as RoutineFrequency, label: t('actionType.monthly') },
+  ], [t])
+
+  const missionCompletionOptions = useMemo(() => [
+    { value: 'once' as MissionCompletionType, label: t('actionType.once') },
+    { value: 'periodic' as MissionCompletionType, label: t('actionType.periodic') },
+  ], [t])
+
+  const periodCycleOptions = useMemo(() => [
+    { value: 'daily' as MissionPeriodCycle, label: t('actionType.daily') },
+    { value: 'weekly' as MissionPeriodCycle, label: t('actionType.weekly') },
+    { value: 'monthly' as MissionPeriodCycle, label: t('actionType.monthly') },
+    { value: 'quarterly' as MissionPeriodCycle, label: t('actionType.quarterly') },
+    { value: 'yearly' as MissionPeriodCycle, label: t('actionType.yearly') },
+  ], [t])
 
   useEffect(() => {
     if (visible) {
@@ -353,7 +360,7 @@ export default function SubGoalModal({
                     <X size={24} color="#6b7280" />
                   </Pressable>
                   <Text className="text-lg font-semibold text-gray-900">
-                    세부 목표 {position}
+                    {t('mandalart.modal.subGoal.title', { position })}
                   </Text>
                 </View>
                 <Pressable
@@ -361,7 +368,7 @@ export default function SubGoalModal({
                   className="bg-primary px-4 py-2 rounded-lg flex-row items-center"
                 >
                   <Check size={18} color="white" />
-                  <Text className="text-white font-semibold ml-1">완료</Text>
+                  <Text className="text-white font-semibold ml-1">{t('common.done')}</Text>
                 </Pressable>
               </View>
             ) : (
@@ -376,7 +383,7 @@ export default function SubGoalModal({
                   <ChevronLeft size={24} color="#6b7280" />
                 </Pressable>
                 <Text className="text-lg font-semibold text-gray-900">
-                  타입 설정
+                  {t('mandalart.modal.subGoal.typeSettings')}
                 </Text>
                 <Pressable onPress={handleTypeSave} className="p-1">
                   <Check size={24} color="#374151" />
@@ -389,14 +396,14 @@ export default function SubGoalModal({
                 {/* Sub-goal Title */}
                 <View className="mb-4">
                   <Text className="text-sm font-medium text-gray-700 mb-2">
-                    세부 목표
+                    {t('mandalart.modal.subGoal.subGoalLabel')}
                   </Text>
                   {editingTitleMode ? (
                     <View className="flex-row items-center" style={{ gap: 8 }}>
                       <TextInput
                         value={editingText}
                         onChangeText={setEditingText}
-                        placeholder="세부 목표를 입력하세요"
+                        placeholder={t('mandalart.modal.subGoal.subGoalPlaceholder')}
                         className="flex-1 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-base"
                         autoFocus
                         onSubmitEditing={handleTitleSave}
@@ -420,7 +427,7 @@ export default function SubGoalModal({
                       className="flex-row items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-xl"
                     >
                       <Text className={`flex-1 text-base ${title ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {title || '세부 목표를 입력하세요'}
+                        {title || t('mandalart.modal.subGoal.subGoalPlaceholder')}
                       </Text>
                       <Pencil size={16} color="#9ca3af" />
                     </Pressable>
@@ -430,7 +437,7 @@ export default function SubGoalModal({
                 {/* Actions List with Drag Reorder */}
                 <View className="mb-4">
                   <Text className="text-sm font-medium text-gray-700 mb-2">
-                    실천 항목 (8개)
+                    {t('mandalart.modal.subGoal.actionsLabel')}
                   </Text>
                   <GestureHandlerRootView>
                     <SortableList
@@ -454,7 +461,7 @@ export default function SubGoalModal({
                               <TextInput
                                 value={editingText}
                                 onChangeText={setEditingText}
-                                placeholder={`실천 항목 ${index + 1}`}
+                                placeholder={t('mandalart.modal.subGoal.actionPlaceholder', { index: index + 1 })}
                                 className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
                                 autoFocus
                                 onSubmitEditing={() => handleActionSave(index)}
@@ -480,7 +487,7 @@ export default function SubGoalModal({
                                 className="flex-1 py-1"
                               >
                                 <Text className={`text-sm ${action.title ? 'text-gray-900' : 'text-gray-400'}`}>
-                                  {action.title || `실천 항목 ${index + 1}`}
+                                  {action.title || t('mandalart.modal.subGoal.actionPlaceholder', { index: index + 1 })}
                                 </Text>
                               </Pressable>
 
@@ -494,7 +501,7 @@ export default function SubGoalModal({
                               >
                                 <ActionTypeIcon type={action.type || 'routine'} size={12} />
                                 <Text className={`text-xs ml-1 ${action.title ? 'text-gray-600' : 'text-gray-400'}`}>
-                                  {getTypeLabel(action)}
+                                  {getTypeLabel(action, t)}
                                 </Text>
                               </Pressable>
 
@@ -522,17 +529,17 @@ export default function SubGoalModal({
               <ScrollView className="p-4">
                 {selectedActionIndex !== null && (
                   <Text className="text-sm text-gray-500 mb-4">
-                    "{actions[selectedActionIndex]?.title}"의 타입을 선택하세요
+                    {t('mandalart.modal.subGoal.selectType', { title: actions[selectedActionIndex]?.title })}
                   </Text>
                 )}
 
                 {/* Type Selection */}
                 <View className="mb-4">
                   <Text className="text-sm font-semibold text-gray-700 mb-2">
-                    실천 항목 타입
+                    {t('mandalart.modal.subGoal.actionTypeLabel')}
                   </Text>
                   <View style={{ gap: 8 }}>
-                    {TYPE_OPTIONS.map((option) => (
+                    {typeOptions.map((option) => (
                       <Pressable
                         key={option.type}
                         onPress={() => setSelectedType(option.type)}
@@ -573,14 +580,14 @@ export default function SubGoalModal({
                 {selectedType === 'routine' && (
                   <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <Text className="text-base font-semibold text-gray-900 mb-3">
-                      루틴 설정
+                      {t('mandalart.modal.routine.title')}
                     </Text>
 
                     {/* Frequency */}
                     <View className="mb-3">
-                      <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
+                      <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.repeatCycle')}</Text>
                       <View className="flex-row" style={{ gap: 8 }}>
-                        {FREQUENCY_OPTIONS.map((option) => (
+                        {frequencyOptions.map((option) => (
                           <Pressable
                             key={option.value}
                             onPress={() => {
@@ -614,7 +621,7 @@ export default function SubGoalModal({
                     {routineFrequency === 'weekly' && (
                       <View className="mb-3">
                         <Text className="text-sm text-gray-700 mb-2">
-                          실천 요일 (선택사항)
+                          {t('mandalart.modal.routine.weekdayLabel')}
                         </Text>
                         <View className="flex-row flex-wrap" style={{ gap: 8 }}>
                           {weekdays.map((day) => (
@@ -642,7 +649,7 @@ export default function SubGoalModal({
 
                         {routineWeekdays.length === 0 && (
                           <View className="mt-3">
-                            <Text className="text-sm text-gray-700 mb-2">주간 목표 횟수</Text>
+                            <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.weeklyGoal')}</Text>
                             <View className="flex-row" style={{ gap: 8 }}>
                               {WEEKLY_COUNT_OPTIONS.map((count) => (
                                 <Pressable
@@ -674,7 +681,7 @@ export default function SubGoalModal({
                     {/* Monthly Count */}
                     {routineFrequency === 'monthly' && (
                       <View className="mb-3">
-                        <Text className="text-sm text-gray-700 mb-2">월간 목표 횟수</Text>
+                        <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.monthlyGoal')}</Text>
                         <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
                           {MONTHLY_COUNT_OPTIONS.map((count) => (
                             <Pressable
@@ -740,7 +747,7 @@ export default function SubGoalModal({
                         <View className="flex-row items-center mt-2">
                           <Info size={12} color="#9ca3af" />
                           <Text className="text-xs text-gray-400 ml-1">
-                            매일 실천하는 항목은 반복 주기를 '매일'로 선택하세요
+                            {t('mandalart.modal.routine.dailyHint')}
                           </Text>
                         </View>
                       </View>
@@ -752,13 +759,13 @@ export default function SubGoalModal({
                 {selectedType === 'mission' && (
                   <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <Text className="text-base font-semibold text-gray-900 mb-3">
-                      미션 설정
+                      {t('mandalart.modal.mission.title')}
                     </Text>
 
                     <View className="mb-3">
-                      <Text className="text-sm text-gray-700 mb-2">완료 방식</Text>
+                      <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.mission.completionType')}</Text>
                       <View style={{ gap: 8 }}>
-                        {MISSION_COMPLETION_OPTIONS.map((option) => (
+                        {missionCompletionOptions.map((option) => (
                           <Pressable
                             key={option.value}
                             onPress={() => setMissionCompletionType(option.value)}
@@ -789,9 +796,9 @@ export default function SubGoalModal({
 
                     {missionCompletionType === 'periodic' && (
                       <View className="mt-3">
-                        <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
+                        <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.mission.periodCycle')}</Text>
                         <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                          {PERIOD_CYCLE_OPTIONS.map((option) => (
+                          {periodCycleOptions.map((option) => (
                             <Pressable
                               key={option.value}
                               onPress={() => setMissionPeriodCycle(option.value)}
@@ -824,7 +831,7 @@ export default function SubGoalModal({
                     <View className="flex-row items-center">
                       <Info size={16} color="#6b7280" />
                       <Text className="text-sm text-gray-500 ml-2">
-                        참고 타입은 달성률에 포함되지 않습니다
+                        {t('mandalart.modal.referenceInfo')}
                       </Text>
                     </View>
                   </View>

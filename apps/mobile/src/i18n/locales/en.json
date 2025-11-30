@@ -219,6 +219,40 @@
       "create": "Create Mandalart",
       "coreGoal": "Core Goal"
     },
+    "modal": {
+      "subGoal": {
+        "title": "Sub-goal {{position}}",
+        "subGoalLabel": "Sub-goal",
+        "subGoalPlaceholder": "Enter sub-goal",
+        "actionsLabel": "Actions (8)",
+        "actionPlaceholder": "Action {{index}}",
+        "typeSettings": "Type Settings",
+        "selectType": "Select type for \"{{title}}\"",
+        "actionTypeLabel": "Action Type",
+        "notSet": "Not Set"
+      },
+      "coreGoal": {
+        "title": "Core Goal Settings",
+        "mandalartTitle": "Mandalart Title",
+        "titlePlaceholder": "e.g., 2024 Goals, Healthy Life",
+        "coreGoalLabel": "Core Goal",
+        "coreGoalPlaceholder": "Enter your core goal"
+      },
+      "routine": {
+        "title": "Routine Settings",
+        "repeatCycle": "Repeat Cycle",
+        "weekdayLabel": "Weekdays (Optional)",
+        "weeklyGoal": "Weekly Goal Count",
+        "monthlyGoal": "Monthly Goal Count",
+        "dailyHint": "For daily actions, select 'Daily' as repeat cycle"
+      },
+      "mission": {
+        "title": "Mission Settings",
+        "completionType": "Completion Type",
+        "periodCycle": "Period Cycle"
+      },
+      "referenceInfo": "Reference type is not included in achievement rate"
+    },
     "create": {
       "title": "Create Mandalart",
       "subtitle": "Create new goals",

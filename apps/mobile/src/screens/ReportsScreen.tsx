@@ -26,6 +26,7 @@ import {
 } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { useTranslation } from 'react-i18next'
 import { Header } from '../components'
 
 import { useAuthStore } from '../store/authStore'
@@ -42,20 +43,27 @@ import {
 import { parseWeeklyReport, parseDiagnosisReport, type ReportSummary } from '../lib/reportParser'
 
 // Get week dates for display
-function formatWeekDates(weekStart: string, weekEnd: string): string {
+function formatWeekDates(weekStart: string, weekEnd: string, isEnglish: boolean): string {
   const start = new Date(weekStart)
   const end = new Date(weekEnd)
+  if (isEnglish) {
+    const formatDate = (d: Date) => `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    return `${formatDate(start)} ~ ${formatDate(end)}`
+  }
   const formatDate = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`
   return `${formatDate(start)} ~ ${formatDate(end)}`
 }
 
 // Get next Monday date for "다음 리포트" display
-function getNextMonday(): string {
+function getNextMonday(isEnglish: boolean): string {
   const now = new Date()
   const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7
   const nextMonday = new Date(now)
   nextMonday.setDate(now.getDate() + daysUntilMonday)
+  if (isEnglish) {
+    return `${nextMonday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (Mon)`
+  }
   return `${nextMonday.getMonth() + 1}월 ${nextMonday.getDate()}일 (월)`
 }
 
@@ -71,6 +79,11 @@ function ReportCard({
   isLoading,
   isGenerating,
   generatingText,
+  loadingText,
+  viewDetailsText,
+  strengthsText,
+  improvementsText,
+  suggestionsText,
 }: {
   title: string
   subtitle: string
@@ -82,6 +95,11 @@ function ReportCard({
   isLoading?: boolean
   isGenerating?: boolean
   generatingText?: string
+  loadingText?: string
+  viewDetailsText?: string
+  strengthsText?: string
+  improvementsText?: string
+  suggestionsText?: string
 }) {
   if (isLoading) {
     return (
@@ -101,7 +119,7 @@ function ReportCard({
             className="text-base text-gray-500 mt-4"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            불러오는 중...
+            {loadingText || 'Loading...'}
           </Text>
         </View>
       </View>
@@ -206,7 +224,7 @@ function ReportCard({
                   className="text-sm text-primary"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  상세보기
+                  {viewDetailsText || 'View Details'}
                 </Text>
                 {isExpanded ? (
                   <ChevronUp size={16} color="#2563eb" />
@@ -224,7 +242,7 @@ function ReportCard({
                         className="text-sm text-gray-900 mb-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        💪 강점
+                        💪 {strengthsText || 'Strengths'}
                       </Text>
                       {summary.strengths.map((strength, idx) => (
                         <Text
@@ -245,7 +263,7 @@ function ReportCard({
                         className="text-sm text-gray-900 mb-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        ⚡ 개선 포인트
+                        ⚡ {improvementsText || 'Areas to Improve'}
                       </Text>
                       {summary.improvements.problem && (
                         <Text
@@ -282,7 +300,7 @@ function ReportCard({
                         className="text-sm text-gray-900 mb-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        🎯 MandaAct의 제안
+                        🎯 {suggestionsText || "MandaAct's Suggestions"}
                       </Text>
                       {summary.actionPlan.map((step, idx) => (
                         <Text
@@ -568,6 +586,8 @@ function EmptyReportState({
 export default function ReportsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const { user } = useAuthStore()
+  const { t, i18n } = useTranslation()
+  const isEnglish = i18n.language === 'en'
 
   // iPad detection
   const { width: screenWidth } = useWindowDimensions()
@@ -637,7 +657,7 @@ export default function ReportsScreen() {
         generated: true,
       })
     } catch {
-      Alert.alert('오류', '리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
+      Alert.alert(t('common.error'), t('reports.error'))
     }
   }
 
@@ -665,13 +685,13 @@ export default function ReportsScreen() {
                   className="text-3xl text-gray-900"
                   style={{ fontFamily: 'Pretendard-Bold' }}
                 >
-                  리포트
+                  {t('reports.title')}
                 </Text>
                 <Text
                   className="text-base text-gray-500 ml-3"
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
-                  맞춤형 분석과 코칭
+                  {t('reports.subtitle')}
                 </Text>
               </View>
             </View>
@@ -812,7 +832,7 @@ export default function ReportsScreen() {
                           className="text-base ml-2"
                           style={{ fontFamily: 'Pretendard-Medium' }}
                         >
-                          다음 리포트: {getNextMonday()}
+                          {t('reports.nextReport', { date: getNextMonday(isEnglish) })}
                         </Text>
                       </View>
                     }
@@ -828,7 +848,7 @@ export default function ReportsScreen() {
                           className="text-base ml-2"
                           style={{ fontFamily: 'Pretendard-Medium' }}
                         >
-                          다음 리포트: {getNextMonday()}
+                          {t('reports.nextReport', { date: getNextMonday(isEnglish) })}
                         </Text>
                       </View>
                     </LinearGradient>
@@ -915,7 +935,7 @@ export default function ReportsScreen() {
                   title="실천 리포트"
                   subtitle="최근 7일간 실천 데이터 분석 및 개선 제안"
                   icon={TrendingUp}
-                  date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end) : undefined}
+                  date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, isEnglish) : undefined}
                   summary={weeklySummary}
                   isExpanded={isPracticeExpanded}
                   onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
@@ -966,7 +986,7 @@ export default function ReportsScreen() {
                                 className="text-sm text-gray-900"
                                 style={{ fontFamily: 'Pretendard-Medium' }}
                               >
-                                {formatWeekDates(report.week_start, report.week_end)}
+                                {formatWeekDates(report.week_start, report.week_end, isEnglish)}
                               </Text>
                               <Text
                                 className="text-xs text-gray-500"
@@ -1229,7 +1249,7 @@ export default function ReportsScreen() {
               title="실천 리포트"
               subtitle="최근 7일간 실천 데이터 분석 및 개선 제안"
               icon={TrendingUp}
-              date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end) : undefined}
+              date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, isEnglish) : undefined}
               summary={weeklySummary}
               isExpanded={isPracticeExpanded}
               onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
@@ -1280,7 +1300,7 @@ export default function ReportsScreen() {
                             className="text-sm text-gray-900"
                             style={{ fontFamily: 'Pretendard-Medium' }}
                           >
-                            {formatWeekDates(report.week_start, report.week_end)}
+                            {formatWeekDates(report.week_start, report.week_end, isEnglish)}
                           </Text>
                           <Text
                             className="text-xs text-gray-500"

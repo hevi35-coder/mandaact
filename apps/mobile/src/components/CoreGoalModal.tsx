@@ -11,6 +11,7 @@ import {
 import { X, Check } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { useTranslation } from 'react-i18next'
 
 interface CoreGoalModalProps {
   visible: boolean
@@ -27,6 +28,7 @@ export default function CoreGoalModal({
   initialCenterGoal,
   onSave,
 }: CoreGoalModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [centerGoal, setCenterGoal] = useState('')
 
@@ -68,7 +70,7 @@ export default function CoreGoalModal({
                   <X size={24} color="#6b7280" />
                 </Pressable>
                 <Text className="text-lg font-semibold text-gray-900">
-                  핵심 목표 설정
+                  {t('mandalart.modal.coreGoal.title')}
                 </Text>
               </View>
               <Pressable
@@ -86,7 +88,7 @@ export default function CoreGoalModal({
                       maskElement={
                         <View className="flex-row items-center">
                           <Check size={18} color="#000" />
-                          <Text className="font-semibold ml-1">완료</Text>
+                          <Text className="font-semibold ml-1">{t('common.done')}</Text>
                         </View>
                       }
                     >
@@ -97,7 +99,7 @@ export default function CoreGoalModal({
                       >
                         <View className="flex-row items-center opacity-0">
                           <Check size={18} color="#000" />
-                          <Text className="font-semibold ml-1">완료</Text>
+                          <Text className="font-semibold ml-1">{t('common.done')}</Text>
                         </View>
                       </LinearGradient>
                     </MaskedView>
@@ -110,12 +112,12 @@ export default function CoreGoalModal({
               {/* Title */}
               <View className="mb-4">
                 <Text className="text-sm font-medium text-gray-700 mb-2">
-                  만다라트 제목
+                  {t('mandalart.modal.coreGoal.mandalartTitle')}
                 </Text>
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
-                  placeholder="예: 2024 목표, 건강한 삶"
+                  placeholder={t('mandalart.modal.coreGoal.titlePlaceholder')}
                   className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
                   placeholderTextColor="#9ca3af"
                 />
@@ -124,12 +126,12 @@ export default function CoreGoalModal({
               {/* Center Goal */}
               <View className="mb-4">
                 <Text className="text-sm font-medium text-gray-700 mb-2">
-                  핵심 목표
+                  {t('mandalart.modal.coreGoal.coreGoalLabel')}
                 </Text>
                 <TextInput
                   value={centerGoal}
                   onChangeText={setCenterGoal}
-                  placeholder="이루고 싶은 핵심 목표를 입력하세요"
+                  placeholder={t('mandalart.modal.coreGoal.coreGoalPlaceholder')}
                   className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-base text-gray-900"
                   placeholderTextColor="#9ca3af"
                   multiline

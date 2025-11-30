@@ -219,6 +219,40 @@
       "create": "만다라트 생성",
       "coreGoal": "핵심 목표"
     },
+    "modal": {
+      "subGoal": {
+        "title": "세부 목표 {{position}}",
+        "subGoalLabel": "세부 목표",
+        "subGoalPlaceholder": "세부 목표를 입력하세요",
+        "actionsLabel": "실천 항목 (8개)",
+        "actionPlaceholder": "실천 항목 {{index}}",
+        "typeSettings": "타입 설정",
+        "selectType": "\"{{title}}\"의 타입을 선택하세요",
+        "actionTypeLabel": "실천 항목 타입",
+        "notSet": "미설정"
+      },
+      "coreGoal": {
+        "title": "핵심 목표 설정",
+        "mandalartTitle": "만다라트 제목",
+        "titlePlaceholder": "예: 2024 목표, 건강한 삶",
+        "coreGoalLabel": "핵심 목표",
+        "coreGoalPlaceholder": "이루고 싶은 핵심 목표를 입력하세요"
+      },
+      "routine": {
+        "title": "루틴 설정",
+        "repeatCycle": "반복 주기",
+        "weekdayLabel": "실천 요일 (선택사항)",
+        "weeklyGoal": "주간 목표 횟수",
+        "monthlyGoal": "월간 목표 횟수",
+        "dailyHint": "매일 실천하는 항목은 반복 주기를 '매일'로 선택하세요"
+      },
+      "mission": {
+        "title": "미션 설정",
+        "completionType": "완료 방식",
+        "periodCycle": "반복 주기"
+      },
+      "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다"
+    },
     "create": {
       "title": "만다라트 만들기",
       "subtitle": "새로운 목표 생성",
