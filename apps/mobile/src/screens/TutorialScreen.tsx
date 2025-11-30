@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import {
   View,
   Text,
@@ -22,10 +22,12 @@ import {
   FileText,
   RotateCw,
   Lightbulb,
+  LucideIcon,
 } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useTranslation } from 'react-i18next'
 
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { trackTutorialCompleted } from '../lib'
@@ -34,42 +36,43 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
-// Tutorial steps
-const TUTORIAL_STEPS = [
+// Tutorial step config (without text - text comes from translations)
+interface TutorialStepConfig {
+  id: string
+  icon: LucideIcon
+  iconColor: string
+  iconBg: string
+  contentKey: string
+  bullets?: string[] | { icon: LucideIcon; textKey: string }[]
+  useIconBullets?: boolean
+}
+
+const TUTORIAL_STEP_CONFIGS: TutorialStepConfig[] = [
   {
     id: 'welcome',
     icon: Target,
     iconColor: '#2563eb',
     iconBg: '#eff6ff',
-    title: 'MandaAct에 오신 것을\n환영합니다!',
-    description:
-      '만다라트와 함께 체계적인 목표 관리를 시작하세요.\n작은 실천들이 모여 큰 변화를 만듭니다.',
+    contentKey: 'welcome',
   },
   {
     id: 'mandalart',
     icon: Grid3x3,
     iconColor: '#8b5cf6',
     iconBg: '#f3e8ff',
-    title: '만다라트란?',
-    description:
-      '9x9 격자에 핵심 목표와 세부 목표,\n구체적인 실천 항목을 배치하는\n목표 관리 프레임워크입니다.',
-    bullets: [
-      '중앙: 핵심 목표 (1개)',
-      '주변 8칸: 세부 목표 (8개)',
-      '각 세부 목표: 실천 항목 (각 8개, 총 64개)',
-    ],
+    contentKey: 'mandalart',
+    bullets: ['bullet1', 'bullet2', 'bullet3'],
   },
   {
     id: 'create',
     icon: Sparkles,
     iconColor: '#ec4899',
     iconBg: '#fce7f3',
-    title: '3가지 생성 방식',
-    description: '편한 방법으로 만다라트를 만들어보세요.',
+    contentKey: 'create',
     bullets: [
-      { icon: Camera, text: '이미지 업로드: 사진에서 텍스트 추출' },
-      { icon: ImageIcon, text: '텍스트 붙여넣기: 복사한 텍스트로 생성' },
-      { icon: FileText, text: '직접 입력: 하나씩 직접 입력' },
+      { icon: Camera, textKey: 'imageUpload' },
+      { icon: ImageIcon, textKey: 'textPaste' },
+      { icon: FileText, textKey: 'manual' },
     ],
     useIconBullets: true,
   },
@@ -78,12 +81,11 @@ const TUTORIAL_STEPS = [
     icon: CheckCircle,
     iconColor: '#22c55e',
     iconBg: '#dcfce7',
-    title: '오늘의 실천',
-    description: '오늘 할 일을 확인하고 체크하세요.',
+    contentKey: 'daily',
     bullets: [
-      { icon: RotateCw, text: '루틴: 반복되는 습관 (체크 가능)' },
-      { icon: Target, text: '미션: 달성해야 할 목표 (체크 가능)' },
-      { icon: Lightbulb, text: '참고: 마음가짐/참고사항 (체크 불가)' },
+      { icon: RotateCw, textKey: 'routine' },
+      { icon: Target, textKey: 'mission' },
+      { icon: Lightbulb, textKey: 'reference' },
     ],
     useIconBullets: true,
   },
@@ -92,34 +94,23 @@ const TUTORIAL_STEPS = [
     icon: Award,
     iconColor: '#f59e0b',
     iconBg: '#fef3c7',
-    title: '레벨업',
-    description:
-      '실천할 때마다 XP를 획득합니다.\n레벨업도 하고 배지도 획득하세요!',
-    bullets: [
-      '다양한 보너스로 XP 최대 3.5배',
-      '다양한 배지 수집',
-    ],
+    contentKey: 'gamification',
+    bullets: ['bullet1', 'bullet2'],
   },
   {
     id: 'stats',
     icon: TrendingUp,
     iconColor: '#06b6d4',
     iconBg: '#cffafe',
-    title: 'AI 리포트',
-    description: 'AI 리포트로 맞춤 피드백을 받으세요.',
-    bullets: [
-      '만다라트 목표 진단 및 개선 제안',
-      '7일간 실천 데이터 분석 및 개선 제안',
-    ],
+    contentKey: 'stats',
+    bullets: ['bullet1', 'bullet2'],
   },
   {
     id: 'notification',
     icon: Bell,
     iconColor: '#ef4444',
     iconBg: '#fee2e2',
-    title: '알림 설정',
-    description:
-      '실천 리마인더로\n목표를 잊지 않도록 도와드립니다.\n설정에서 원하는 시간에 알림을 받으세요.',
+    contentKey: 'notification',
   },
 ]
 
@@ -127,11 +118,21 @@ const TUTORIAL_COMPLETED_KEY = '@mandaact/tutorial_completed'
 
 export default function TutorialScreen() {
   const navigation = useNavigation<NavigationProp>()
+  const { t } = useTranslation()
   const scrollViewRef = useRef<ScrollView>(null)
   const [currentStep, setCurrentStep] = useState(0)
 
+  // Get translated steps
+  const tutorialSteps = useMemo(() => {
+    return TUTORIAL_STEP_CONFIGS.map(step => ({
+      ...step,
+      title: t(`tutorial.content.${step.contentKey}.title`),
+      description: t(`tutorial.content.${step.contentKey}.description`),
+    }))
+  }, [t])
+
   const handleNext = () => {
-    if (currentStep < TUTORIAL_STEPS.length - 1) {
+    if (currentStep < tutorialSteps.length - 1) {
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
       scrollViewRef.current?.scrollTo({ x: nextStep * SCREEN_WIDTH, animated: true })
@@ -150,8 +151,8 @@ export default function TutorialScreen() {
     // Mark tutorial as completed
     await AsyncStorage.setItem(TUTORIAL_COMPLETED_KEY, 'true')
     trackTutorialCompleted({
-      completed_steps: TUTORIAL_STEPS.length,
-      total_steps: TUTORIAL_STEPS.length,
+      completed_steps: tutorialSteps.length,
+      total_steps: tutorialSteps.length,
       skipped: false,
     })
     navigation.goBack()
@@ -161,20 +162,20 @@ export default function TutorialScreen() {
     await AsyncStorage.setItem(TUTORIAL_COMPLETED_KEY, 'true')
     trackTutorialCompleted({
       completed_steps: currentStep + 1,
-      total_steps: TUTORIAL_STEPS.length,
+      total_steps: tutorialSteps.length,
       skipped: true,
     })
     navigation.goBack()
   }
 
-  const isLastStep = currentStep === TUTORIAL_STEPS.length - 1
+  const isLastStep = currentStep === tutorialSteps.length - 1
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Skip Button */}
       <View className="flex-row justify-end px-4 py-2">
         <Pressable onPress={handleSkip} className="px-4 py-2">
-          <Text className="text-gray-500">건너뛰기</Text>
+          <Text className="text-gray-500">{t('tutorial.skip')}</Text>
         </Pressable>
       </View>
 
@@ -187,7 +188,7 @@ export default function TutorialScreen() {
         showsHorizontalScrollIndicator={false}
         className="flex-1"
       >
-        {TUTORIAL_STEPS.map((step, _index) => {
+        {tutorialSteps.map((step, _index) => {
           const IconComponent = step.icon
           return (
             <View
@@ -224,14 +225,18 @@ export default function TutorialScreen() {
                       return (
                         <View key={bIndex} className="flex-row items-center mb-2">
                           <BulletIcon size={16} color="#6b7280" />
-                          <Text className="text-sm text-gray-700 flex-1 ml-2">{bullet.text}</Text>
+                          <Text className="text-sm text-gray-700 flex-1 ml-2">
+                            {t(`tutorial.content.${step.contentKey}.${bullet.textKey}`)}
+                          </Text>
                         </View>
                       )
                     }
                     return (
                       <View key={bIndex} className="flex-row items-start mb-2">
                         <Text className="text-primary mr-2">•</Text>
-                        <Text className="text-sm text-gray-700 flex-1">{typeof bullet === 'string' ? bullet : ''}</Text>
+                        <Text className="text-sm text-gray-700 flex-1">
+                          {typeof bullet === 'string' ? t(`tutorial.content.${step.contentKey}.${bullet}`) : ''}
+                        </Text>
                       </View>
                     )
                   })}
@@ -244,7 +249,7 @@ export default function TutorialScreen() {
 
       {/* Progress Indicators */}
       <View className="flex-row justify-center py-4">
-        {TUTORIAL_STEPS.map((_, index) => (
+        {tutorialSteps.map((_, index) => (
           <View
             key={index}
             className={`w-2 h-2 rounded-full mx-1 ${
@@ -262,7 +267,7 @@ export default function TutorialScreen() {
             onPress={handlePrev}
           >
             <ChevronLeft size={20} color="#374151" />
-            <Text className="text-gray-700 font-medium ml-1">이전</Text>
+            <Text className="text-gray-700 font-medium ml-1">{t('tutorial.previous')}</Text>
           </Pressable>
         )}
 
@@ -273,7 +278,7 @@ export default function TutorialScreen() {
           onPress={isLastStep ? handleComplete : handleNext}
         >
           <Text className="text-white font-medium mr-1">
-            {isLastStep ? '시작하기' : '다음'}
+            {isLastStep ? t('tutorial.start') : t('tutorial.next')}
           </Text>
           {!isLastStep && <ChevronRight size={20} color="white" />}
         </Pressable>

@@ -24,7 +24,9 @@ import {
   isSameDay,
 } from 'date-fns'
 import { ko } from 'date-fns/locale/ko'
+import { enUS } from 'date-fns/locale/en-US'
 import { isToday as isTodayFn } from '@mandaact/shared'
+import { useTranslation } from 'react-i18next'
 
 interface DatePickerModalProps {
   visible: boolean
@@ -39,9 +41,12 @@ export default function DatePickerModal({
   onSelect,
   onClose,
 }: DatePickerModalProps) {
+  const { t, i18n } = useTranslation()
   const [currentMonth, setCurrentMonth] = useState(selectedDate)
+  const isEnglish = i18n.language === 'en'
+  const dateLocale = isEnglish ? enUS : ko
 
-  const weekDays = ['일', '월', '화', '수', '목', '금', '토']
+  const weekDays = t('datePicker.weekDays', { returnObjects: true }) as string[]
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth)
@@ -94,7 +99,7 @@ export default function DatePickerModal({
               <X size={20} color="#6b7280" />
             </Pressable>
             <Text className="text-base font-semibold text-gray-900">
-              날짜 선택
+              {t('datePicker.title')}
             </Text>
             <View className="w-10" />
           </View>
@@ -108,7 +113,9 @@ export default function DatePickerModal({
               <ChevronLeft size={20} color="#374151" />
             </Pressable>
             <Text className="text-lg font-semibold text-gray-900">
-              {format(currentMonth, 'yyyy년 M월', { locale: ko })}
+              {isEnglish
+                ? format(currentMonth, 'MMMM yyyy', { locale: dateLocale })
+                : format(currentMonth, 'yyyy년 M월', { locale: dateLocale })}
             </Text>
             <Pressable
               onPress={handleNextMonth}

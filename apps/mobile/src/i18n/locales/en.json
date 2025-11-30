@@ -1,0 +1,615 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "done": "Done",
+    "next": "Next",
+    "previous": "Previous",
+    "today": "Today",
+    "all": "All",
+    "new": "New",
+    "success": "Success",
+    "ok": "OK",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "viewDetails": "View Details",
+    "userGuide": "User Guide",
+    "create": "Create",
+    "sharing": "Sharing...",
+    "exporting": "Exporting...",
+    "dateSelect": "Select Date",
+    "back": "Back",
+    "skip": "Skip",
+    "start": "Get Started"
+  },
+  "datePicker": {
+    "title": "Select Date",
+    "weekDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "monthFormat": "{{year}} {{month}}"
+  },
+  "months": {
+    "1": "January",
+    "2": "February",
+    "3": "March",
+    "4": "April",
+    "5": "May",
+    "6": "June",
+    "7": "July",
+    "8": "August",
+    "9": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December"
+  },
+  "nav": {
+    "home": "Home",
+    "today": "Today",
+    "mandalart": "Mandalart",
+    "stats": "Stats",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "Home",
+    "subtitle": "Growth Dashboard",
+    "level": "Level",
+    "totalXP": "Total XP",
+    "toNextLevel": "To Level {{level}}",
+    "totalChecks": "Total Checks",
+    "activeDays": "Active Days",
+    "xpMethods": {
+      "title": "How to Earn XP",
+      "checkOnce": "One check",
+      "streakBonus": "Streak (7+ days)",
+      "perfectDay": "Perfect Day (100%)",
+      "perfectWeek": "Perfect Week (80%+)",
+      "badge": "Badge unlock",
+      "badgeVaries": "Varies by badge"
+    },
+    "xpMultiplier": {
+      "title": "XP Multiplier Bonus",
+      "weekend": "Weekend (Sat/Sun)",
+      "comeback": "Welcome Back (3+ days away)",
+      "levelMilestone": "Level Milestone (5, 10, 15...)",
+      "perfectWeek": "After Perfect Week",
+      "stackNote": "Multipliers stack when combined",
+      "stackExample": "(e.g., 1.5x + 2x = 3.5x)",
+      "for3Days": "(3 days)",
+      "for7Days": "(7 days)",
+      "activeMultipliers": "Currently Active Multipliers"
+    },
+    "fairXP": {
+      "title": "Fair XP Policy",
+      "dailyLimit": "Each action can be checked/unchecked 3 times per day",
+      "cooldown": "Same action can be re-checked after 10 seconds",
+      "spamLimit": "Excessive checking in short time is limited"
+    },
+    "badges": {
+      "title": "Badge Collection",
+      "loading": "Loading badges...",
+      "fairPolicy": {
+        "title": "Fair Badge Policy",
+        "minActions": "Minimum 16 actions (5+ characters each)",
+        "normalPattern": "Normal checking patterns (automation detected)",
+        "noEmpty": "Cannot create empty mandalarts"
+      }
+    },
+    "streak": {
+      "title": "Streak",
+      "subtitle": "Consecutive Practice Record",
+      "consecutive": "Days in a row",
+      "longest": "Longest Record",
+      "newRecord": "New Record!",
+      "recent4Weeks": "Last 4 Weeks Activity",
+      "startNew": "Start a new streak today!",
+      "keepGoing": "{{days}} days left to reach 7 days. Keep going!",
+      "amazing": "Amazing! Consistency is becoming a habit"
+    },
+    "nickname": {
+      "title": "Change Nickname",
+      "description": "Set a nickname that will be displayed to other users.",
+      "label": "Nickname",
+      "placeholder": "Enter nickname",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "changed": "Nickname has been changed."
+    }
+  },
+  "today": {
+    "title": "Today",
+    "subtitle": "Today's Practice",
+    "achievementRate": "Today's Achievement Rate",
+    "dateRestriction": "You can only check items for today and yesterday",
+    "typeFilter": "Type Filter",
+    "referenceNote": "Reference type items are not included in achievement rate",
+    "noFilterResult": "No items match the filter",
+    "tryOtherFilter": "Try selecting a different type filter",
+    "coreGoal": "Core Goal",
+    "empty": {
+      "title": "No practice items yet",
+      "description": "Create a mandalart to\nmanage your daily goals",
+      "howTo": {
+        "title": "How to Start Practicing",
+        "step1": "Create a mandalart",
+        "step2": "Check off items daily"
+      },
+      "guide": "User Guide",
+      "create": "Create Mandalart"
+    },
+    "xp": {
+      "earned": "+{{xp}} XP",
+      "multiplier": "×{{multiplier}} multiplier applied!",
+      "completed": "Practice complete!",
+      "levelUp": "Level Up!",
+      "levelUpDesc": "Congratulations! You've leveled up!",
+      "perfectDay": "Perfect Day!",
+      "perfectDayBonus": "+{{xp}} XP bonus!",
+      "perfectWeek": "Perfect Week!",
+      "perfectWeekBonus": "2x XP bonus activated for 7 days!",
+      "newBadge": "New Badge Unlocked!",
+      "subtracted": "-{{xp}} XP",
+      "unchecked": "Unchecked"
+    },
+    "typeChanged": "Type Changed",
+    "typeChangedDesc": "Action type has been updated",
+    "typeChangeError": "Error occurred while changing type"
+  },
+  "actionType": {
+    "routine": "Routine",
+    "mission": "Mission",
+    "reference": "Reference",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "once": "One-time",
+    "periodic": "Periodic",
+    "quarterly": "Quarterly",
+    "yearly": "Yearly",
+    "selector": {
+      "title": "Action Type Settings",
+      "description": "Select the type and settings for \"{{title}}\"",
+      "aiSuggestion": "Auto suggestion",
+      "confidence": "Confidence",
+      "confidenceHigh": "High",
+      "confidenceMedium": "Medium",
+      "confidenceLow": "Low",
+      "typeLabel": "Action Type",
+      "routineDesc": "Recurring actions like daily, weekly, monthly",
+      "missionDesc": "Goal with an end (read a book, get certification)",
+      "referenceDesc": "Mindset, values - no check needed",
+      "routineSettings": "Routine Settings",
+      "repeatCycle": "Repeat Cycle",
+      "weekdaySelect": "Select weekdays (optional)",
+      "weekdayHint": "If no weekdays selected, it will be count-based",
+      "weeklyGoal": "Weekly goal count",
+      "monthlyGoal": "Monthly goal count",
+      "dailyHint": "For daily actions, select 'Daily' as repeat cycle",
+      "missionSettings": "Mission Settings",
+      "completionType": "Completion Type",
+      "onceDesc": "One-time completion (certification, book)",
+      "periodicDesc": "Periodic goal (monthly sales, quarterly review)",
+      "periodCycle": "Period Cycle",
+      "referenceInfo": "Reference type is not included in achievement rate"
+    }
+  },
+  "mandalart": {
+    "list": {
+      "title": "Mandalart",
+      "subtitle": "Goal Management",
+      "count": "{{count}} items",
+      "active": "Active",
+      "inactive": "Inactive",
+      "createNew": "Create New",
+      "empty": {
+        "title": "No mandalarts yet",
+        "description": "Create a mandalart to\nmanage your goals systematically",
+        "howTo": "How to Create a Mandalart",
+        "methodImage": "Upload Image",
+        "methodText": "Paste Text",
+        "methodManual": "Manual Input",
+        "guide": "User Guide"
+      },
+      "create": "Create Mandalart",
+      "coreGoal": "Core Goal"
+    },
+    "create": {
+      "title": "Create Mandalart",
+      "subtitle": "Create new goals",
+      "selectMethod": "Select creation method",
+      "methods": {
+        "image": "Image",
+        "text": "Text",
+        "manual": "Manual"
+      },
+      "imageUpload": {
+        "title": "Upload Image",
+        "description": "Upload a photo if you have an existing mandalart",
+        "hint": "Auto-extract text from your mandalart image",
+        "selectImage": "Select Image",
+        "camera": "Camera",
+        "gallery": "Gallery",
+        "permissionRequired": "Permission Required",
+        "cameraPermission": "Camera access permission is required.",
+        "galleryPermission": "Gallery access permission is required.",
+        "extractText": "Extract Text",
+        "processing": "Processing OCR...",
+        "tapToSelect": "Tap to select image (max 5MB)"
+      },
+      "textPaste": {
+        "title": "Paste Text",
+        "description": "Paste your AI-generated text",
+        "hint": "Auto-analyze your pasted mandalart text",
+        "analyze": "Analyze Text",
+        "processing": "Analyzing text...",
+        "enterText": "Please enter text.",
+        "parseError": "Error parsing text."
+      },
+      "manualInput": {
+        "title": "Manual Input",
+        "description": "Create from scratch in empty grid",
+        "tapToEdit": "Tap cells to enter goals and actions"
+      },
+      "preview": {
+        "title": "Review & Edit",
+        "tapToModify": "Tap cells to modify",
+        "subGoal": "Sub-goal",
+        "action": "Action",
+        "back": "Back",
+        "saving": "Saving..."
+      },
+      "validation": {
+        "enterTitle": "Please enter a title.",
+        "enterCoreGoal": "Please enter the core goal."
+      },
+      "success": {
+        "title": "Success",
+        "created": "Mandalart has been created!"
+      },
+      "errors": {
+        "imageSelect": "Error selecting image.",
+        "ocrProcess": "Error processing OCR.",
+        "save": "Error saving."
+      }
+    },
+    "detail": {
+      "title": "Mandalart Details",
+      "centerGoal": "Core Goal",
+      "subGoals": "Sub Goals",
+      "actions": "Actions",
+      "back": "Back",
+      "edit": "Edit",
+      "exportSuccess": "High-resolution mandalart image has been saved to gallery.",
+      "exportError": "An error occurred while exporting.",
+      "loadingError": "An error occurred while loading the mandalart.",
+      "usage": {
+        "title": "How to Use",
+        "tapToView": "Tap each area to view details and edit.",
+        "typeLabel": "Type guide:",
+        "routine": "Routine",
+        "mission": "Mission",
+        "reference": "Reference"
+      }
+    },
+    "delete": {
+      "title": "Delete Mandalart",
+      "confirm": "Are you sure you want to delete?",
+      "warning": "Deleted mandalarts cannot be recovered."
+    }
+  },
+  "stats": {
+    "title": "Stats",
+    "subtitle": "Practice Analysis",
+    "streak": "Streak",
+    "completion": "Completion Rate",
+    "heatmap": "Activity Heatmap",
+    "progress": "Progress",
+    "filter": {
+      "all": "All Mandalarts (Active)",
+      "select": "Select Mandalart"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "account": {
+      "title": "Account",
+      "email": "Email",
+      "logout": "Log Out",
+      "logoutConfirm": "Are you sure you want to log out?",
+      "deleteAccount": "Delete Account",
+      "deleteConfirm": "Are you sure you want to delete your account?\nAll data will be deleted and cannot be recovered."
+    },
+    "app": {
+      "title": "App",
+      "language": "Language",
+      "notifications": "Notifications",
+      "tutorial": "User Guide",
+      "version": "Version"
+    },
+    "support": {
+      "title": "Support",
+      "feedback": "Send Feedback",
+      "feedbackConfirm": "Would you like to send feedback?",
+      "feedbackEmail": "Send via Email",
+      "rateApp": "Rate App",
+      "rateConfirm": "Please rate us on the store!",
+      "rateLater": "Later",
+      "rateNow": "Rate Now",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "info": {
+      "title": "Info",
+      "appInfo": "App Info",
+      "appInfoFormat": "{{appName}}\n\nVersion: {{version}} ({{build}})\nPlatform: React Native + Expo\n\n© 2025 {{appName}}",
+      "privacyPolicy": "Privacy Policy"
+    },
+    "notifications": {
+      "pushNotifications": "Push Notifications",
+      "permissionDenied": "Please enable notification permission in settings",
+      "permissionRequired": "Notification Permission Required",
+      "permissionMessage": "Please enable notification permission in settings to use push notifications.",
+      "goToSettings": "Go to Settings",
+      "reminder": "Practice Reminder",
+      "reminderDesc": "Daily notification at your set time",
+      "reminderTime": "Reminder Time",
+      "reminderTimeSet": "Set Reminder Time",
+      "reminderTimeConfirm": "You'll receive notifications daily at {{time}}.",
+      "customMessage": "Custom Messages",
+      "customMessageDesc": "Weekly reports, inactivity alerts, etc.",
+      "timePickerTitle": "Set Notification Time",
+      "hour": "Hour",
+      "minute": "Minute",
+      "dailyAt": "Daily at {{time}}"
+    },
+    "nickname": {
+      "title": "Change Nickname",
+      "placeholder": "Enter nickname (2-12 characters)",
+      "hint": "Letters, numbers allowed (2-12 characters)",
+      "errors": {
+        "tooShort": "Nickname must be at least 2 characters",
+        "tooLong": "Nickname must be 12 characters or less",
+        "alreadyTaken": "This nickname is already taken",
+        "updateError": "Error updating nickname"
+      }
+    },
+    "language": {
+      "title": "Language Settings",
+      "description": "Select the language to use in the app",
+      "current": "Current Language",
+      "korean": "Korean",
+      "english": "English"
+    },
+    "daysWithUs": "{{days}} days with us",
+    "footer": "Turn goals into action, {{appName}}"
+  },
+  "login": {
+    "title": "Log In",
+    "subtitle": "Turn goals into action with Mandalart",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot password?",
+    "loginButton": "Log In",
+    "loggingIn": "Logging in...",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "inputError": "Input Error",
+    "enterEmail": "Please enter your email.",
+    "enterPassword": "Please enter your password.",
+    "signupComplete": "Sign Up Complete",
+    "verificationSent": "Verification email has been sent. Please check your inbox.",
+    "emailSent": "Email Sent",
+    "resetLinkSent": "Password reset link has been sent to your email. Please check your inbox.",
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "networkError": "Network error occurred"
+    }
+  },
+  "signup": {
+    "title": "Sign Up",
+    "email": "Email",
+    "emailPlaceholder": "user@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "Password (8+ characters)",
+    "confirmPassword": "Confirm Password",
+    "confirmPlaceholder": "Re-enter password",
+    "signUpButton": "Sign Up",
+    "hasAccount": "Already have an account?",
+    "login": "Log In",
+    "errors": {
+      "passwordMismatch": "Passwords do not match",
+      "weakPassword": "Password must be at least 8 characters",
+      "emailInUse": "This email is already in use"
+    }
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "description": "A verification code will be sent to your registered email.\nPlease check for the password reset link.",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter email address",
+    "sendButton": "Send Reset Link",
+    "success": "Password reset email has been sent",
+    "checkEmail": "Please check your email"
+  },
+  "tutorial": {
+    "title": "Tutorial",
+    "welcome": "Welcome to MandaAct!",
+    "skip": "Skip",
+    "start": "Get Started",
+    "next": "Next",
+    "previous": "Previous",
+    "steps": {
+      "intro": "Introduction to Mandalart",
+      "create": "Create a Mandalart",
+      "actions": "Set Up Actions",
+      "check": "Daily Checking",
+      "gamification": "Grow Like a Game",
+      "streak": "Maintain Your Streak",
+      "complete": "Ready to Start!"
+    },
+    "content": {
+      "welcome": {
+        "title": "Welcome to\nMandaAct!",
+        "description": "Start systematic goal management with Mandalart.\nSmall actions add up to big changes."
+      },
+      "mandalart": {
+        "title": "What is Mandalart?",
+        "description": "A goal management framework that places\ncore goals, sub-goals, and specific actions\nin a 9x9 grid.",
+        "bullet1": "Center: Core Goal (1)",
+        "bullet2": "Surrounding 8 cells: Sub-goals (8)",
+        "bullet3": "Each sub-goal: Actions (8 each, 64 total)"
+      },
+      "create": {
+        "title": "3 Creation Methods",
+        "description": "Create your mandalart in the way that works best for you.",
+        "imageUpload": "Image Upload: Extract text from photos",
+        "textPaste": "Text Paste: Create from copied text",
+        "manual": "Manual Input: Enter one by one"
+      },
+      "daily": {
+        "title": "Today's Practice",
+        "description": "Check off your tasks for today.",
+        "routine": "Routine: Recurring habits (checkable)",
+        "mission": "Mission: Goals to achieve (checkable)",
+        "reference": "Reference: Mindset/notes (not checkable)"
+      },
+      "gamification": {
+        "title": "Level Up",
+        "description": "Earn XP with every check.\nLevel up and collect badges!",
+        "bullet1": "Up to 3.5x XP with various bonuses",
+        "bullet2": "Collect various badges"
+      },
+      "stats": {
+        "title": "AI Reports",
+        "description": "Get personalized feedback with AI reports.",
+        "bullet1": "Mandalart goal diagnosis and improvement suggestions",
+        "bullet2": "7-day practice data analysis and improvement suggestions"
+      },
+      "notification": {
+        "title": "Notification Settings",
+        "description": "Practice reminders help you\nstay on track with your goals.\nSet up notifications at your preferred time in Settings."
+      }
+    }
+  },
+  "badges": {
+    "title": "Badges",
+    "subtitle": "My Achievements",
+    "categories": {
+      "practice": "Practice",
+      "streak": "Streak",
+      "consistency": "Consistency",
+      "monthly": "Monthly",
+      "completion": "Completion",
+      "secret": "Secret",
+      "special": "Special",
+      "first_steps": "First Steps",
+      "volume": "Repetition",
+      "achievement": "Special Moments"
+    },
+    "locked": "Locked",
+    "unlocked": "Unlocked",
+    "progress": "In Progress",
+    "names": {
+      "first_check": "First Check",
+      "checks_10": "10 Checks",
+      "checks_100": "100 Checks",
+      "checks_1000": "1000 Checks",
+      "streak_7": "1 Week Streak",
+      "streak_30": "1 Month Streak",
+      "streak_60": "2 Month Streak",
+      "streak_100": "100 Day Streak",
+      "streak_150": "150 Day Streak",
+      "active_7": "1 Week Active",
+      "active_30": "1 Month Active",
+      "active_60": "2 Month Active",
+      "active_100": "100 Days Active",
+      "monthly_80": "Monthly 80%",
+      "monthly_90": "Monthly 90%",
+      "monthly_perfect": "Monthly Perfect",
+      "monthly_active": "Monthly Perfect Attendance",
+      "complete_subgoal": "Sub-goal Complete",
+      "complete_mandalart": "Mandalart Complete",
+      "early_bird": "Early Bird",
+      "night_owl": "Night Owl"
+    },
+    "descriptions": {
+      "first_check": "Complete your first check",
+      "checks_10": "Complete 10 total checks",
+      "checks_100": "Complete 100 total checks",
+      "checks_1000": "Complete 1000 total checks",
+      "streak_7": "7 days in a row",
+      "streak_30": "30 days in a row",
+      "streak_60": "60 days in a row",
+      "streak_100": "100 days in a row",
+      "streak_150": "150 days in a row",
+      "active_7": "Active for 1 week",
+      "active_30": "Active for 1 month",
+      "active_60": "Active for 2 months",
+      "active_100": "Active for 100 days",
+      "monthly_80": "Achieve 80% this month",
+      "monthly_90": "Achieve 90% this month",
+      "monthly_perfect": "Achieve 100% this month",
+      "monthly_active": "Active every day this month",
+      "complete_subgoal": "Complete one sub-goal",
+      "complete_mandalart": "Complete entire mandalart",
+      "early_bird": "Check before 6 AM",
+      "night_owl": "Check after midnight"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Personalized Analysis & Coaching",
+    "weekly": "Weekly Report",
+    "diagnosis": "Goal Diagnosis",
+    "generate": "Generate Report",
+    "generating": "Generating...",
+    "practiceReport": "Practice Report",
+    "practiceReportSubtitle": "7-day practice data analysis and improvement suggestions",
+    "goalDiagnosis": "Goal Diagnosis",
+    "goalDiagnosisSubtitle": "Mandalart plan review and improvement suggestions",
+    "empty": {
+      "title": "No reports yet",
+      "description": "Start practicing and AI reports\nwill be generated automatically every Monday",
+      "firstReportTitle": "Get your first report!",
+      "firstReportDesc": "Based on your practice records,\nAI provides personalized analysis",
+      "generateFirst": "Generate First Report",
+      "stepsTitle": "Steps to generate reports",
+      "step1": "Create a mandalart",
+      "step2": "Record practice (1+ times)",
+      "goPractice": "Start Practicing",
+      "createMandalart": "Create Mandalart"
+    },
+    "card": {
+      "viewDetails": "View Details",
+      "strengths": "Strengths",
+      "improvements": "Areas to Improve",
+      "suggestions": "MandaAct's Suggestions",
+      "newDiagnosisGenerating": "Generating new diagnosis...",
+      "newReportGenerating": "Generating new report..."
+    },
+    "history": {
+      "title": "Past Practice Reports",
+      "weeklyReport": "Weekly Practice Report"
+    },
+    "nextReport": "Next Report: {{date}}",
+    "mandalartNeeded": "Mandalart Needed",
+    "mandalartNeededDesc": "Create or activate a mandalart\nto receive goal diagnosis",
+    "newDiagnosisNotice": "Create or activate a mandalart to receive new diagnosis",
+    "error": "Failed to generate report. Please try again later."
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "network": "Please check your network connection",
+    "unauthorized": "Login required",
+    "notFound": "Not found",
+    "serverError": "Server error occurred"
+  }
+}

@@ -18,6 +18,7 @@ import {
   Lightbulb,
   Info,
 } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 import {
   type ActionType,
   type RoutineFrequency,
@@ -55,48 +56,20 @@ interface ActionTypeSelectorProps {
   onSave: (data: ActionTypeData) => Promise<void>
 }
 
-const TYPE_OPTIONS: { type: ActionType; label: string; description: string; icon: React.ReactNode }[] = [
-  {
-    type: 'routine',
-    label: '루틴',
-    description: '매일, 매주, 매월 등 반복적으로 실천하는 항목',
-    icon: <RotateCw size={20} color="#3b82f6" />,
-  },
-  {
-    type: 'mission',
-    label: '미션',
-    description: '끝이 있는 목표 (책 1권 읽기, 자격증 취득 등)',
-    icon: <Target size={20} color="#10b981" />,
-  },
-  {
-    type: 'reference',
-    label: '참고',
-    description: '마음가짐, 가치관 등 체크가 필요없는 참고 항목',
-    icon: <Lightbulb size={20} color="#f59e0b" />,
-  },
-]
-
-const FREQUENCY_OPTIONS: { value: RoutineFrequency; label: string }[] = [
-  { value: 'daily', label: '매일' },
-  { value: 'weekly', label: '매주' },
-  { value: 'monthly', label: '매월' },
-]
+// Helper to get type icon
+function getTypeIcon(type: ActionType) {
+  switch (type) {
+    case 'routine':
+      return <RotateCw size={20} color="#3b82f6" />
+    case 'mission':
+      return <Target size={20} color="#10b981" />
+    case 'reference':
+      return <Lightbulb size={20} color="#f59e0b" />
+  }
+}
 
 const WEEKLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
 const MONTHLY_COUNT_OPTIONS = [1, 2, 3, 5, 10, 20, 30]
-
-const MISSION_COMPLETION_OPTIONS: { value: MissionCompletionType; label: string }[] = [
-  { value: 'once', label: '1회 완료 (예: 자격증 취득, 책 읽기)' },
-  { value: 'periodic', label: '주기적 목표 (예: 월간 매출 목표, 분기별 평가)' },
-]
-
-const PERIOD_CYCLE_OPTIONS: { value: MissionPeriodCycle; label: string }[] = [
-  { value: 'daily', label: '매일' },
-  { value: 'weekly', label: '매주' },
-  { value: 'monthly', label: '매월' },
-  { value: 'quarterly', label: '분기별' },
-  { value: 'yearly', label: '매년' },
-]
 
 export default function ActionTypeSelector({
   visible,
@@ -106,6 +79,49 @@ export default function ActionTypeSelector({
   onClose,
   onSave,
 }: ActionTypeSelectorProps) {
+  const { t } = useTranslation()
+
+  // Translated options - must be inside component to use t()
+  const typeOptions = [
+    {
+      type: 'routine' as ActionType,
+      label: t('actionType.routine'),
+      description: t('actionType.selector.routineDesc'),
+      icon: getTypeIcon('routine'),
+    },
+    {
+      type: 'mission' as ActionType,
+      label: t('actionType.mission'),
+      description: t('actionType.selector.missionDesc'),
+      icon: getTypeIcon('mission'),
+    },
+    {
+      type: 'reference' as ActionType,
+      label: t('actionType.reference'),
+      description: t('actionType.selector.referenceDesc'),
+      icon: getTypeIcon('reference'),
+    },
+  ]
+
+  const frequencyOptions = [
+    { value: 'daily' as RoutineFrequency, label: t('actionType.daily') },
+    { value: 'weekly' as RoutineFrequency, label: t('actionType.weekly') },
+    { value: 'monthly' as RoutineFrequency, label: t('actionType.monthly') },
+  ]
+
+  const missionCompletionOptions = [
+    { value: 'once' as MissionCompletionType, label: t('actionType.selector.onceDesc') },
+    { value: 'periodic' as MissionCompletionType, label: t('actionType.selector.periodicDesc') },
+  ]
+
+  const periodCycleOptions = [
+    { value: 'daily' as MissionPeriodCycle, label: t('actionType.daily') },
+    { value: 'weekly' as MissionPeriodCycle, label: t('actionType.weekly') },
+    { value: 'monthly' as MissionPeriodCycle, label: t('actionType.monthly') },
+    { value: 'quarterly' as MissionPeriodCycle, label: t('actionType.quarterly') },
+    { value: 'yearly' as MissionPeriodCycle, label: t('actionType.yearly') },
+  ]
+
   const [type, setType] = useState<ActionType>(initialData?.type || 'routine')
   const [routineFrequency, setRoutineFrequency] = useState<RoutineFrequency>(
     initialData?.routine_frequency || 'daily'
@@ -237,11 +253,11 @@ export default function ActionTypeSelector({
   const getConfidenceLabel = (confidence: string) => {
     switch (confidence) {
       case 'high':
-        return '높음'
+        return t('actionType.selector.confidenceHigh')
       case 'medium':
-        return '중간'
+        return t('actionType.selector.confidenceMedium')
       default:
-        return '낮음'
+        return t('actionType.selector.confidenceLow')
     }
   }
 
@@ -265,7 +281,7 @@ export default function ActionTypeSelector({
                 <X size={24} color="#6b7280" />
               </Pressable>
               <Text className="text-lg font-semibold text-gray-900">
-                실천 항목 타입 설정
+                {t('actionType.selector.title')}
               </Text>
               <Pressable
                 onPress={handleSave}
@@ -283,19 +299,19 @@ export default function ActionTypeSelector({
             <ScrollView className="px-4 py-4">
               {/* Action Title */}
               <Text className="text-sm text-gray-500 mb-4">
-                "{actionTitle}"의 타입과 세부 설정을 선택하세요
+                {t('actionType.selector.description', { title: actionTitle })}
               </Text>
 
               {/* AI Suggestion */}
               {aiSuggestion && (
                 <View className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
                   <Text className="text-sm font-medium text-blue-900">
-                    💡 자동 추천: {getActionTypeLabel(aiSuggestion.type as ActionType)}
+                    {t('actionType.selector.aiSuggestion')}: {t(`actionType.${aiSuggestion.type}`)}
                   </Text>
                   <View className="flex-row items-center mt-1">
                     <Info size={12} color="#1e40af" />
                     <Text className="text-xs text-blue-700 ml-1 flex-1">
-                      {aiSuggestion.reason} (신뢰도: {getConfidenceLabel(aiSuggestion.confidence)})
+                      {aiSuggestion.reason} ({t('actionType.selector.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
                     </Text>
                   </View>
                 </View>
@@ -304,10 +320,10 @@ export default function ActionTypeSelector({
               {/* Type Selection */}
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-gray-700 mb-2">
-                  실천 항목 타입
+                  {t('actionType.selector.typeLabel')}
                 </Text>
                 <View className="gap-2">
-                  {TYPE_OPTIONS.map((option) => (
+                  {typeOptions.map((option) => (
                     <Pressable
                       key={option.type}
                       onPress={() => setType(option.type)}
@@ -331,10 +347,10 @@ export default function ActionTypeSelector({
                       <View className="mr-2">{option.icon}</View>
                       <View className="flex-1">
                         <Text className="text-sm font-medium text-gray-900">
-                          {option.label}
+                          {t(`actionType.${option.type}`)}
                         </Text>
                         <Text className="text-xs text-gray-500 mt-0.5">
-                          {option.description}
+                          {t(`actionType.selector.${option.type}Desc`)}
                         </Text>
                       </View>
                     </Pressable>
@@ -346,14 +362,14 @@ export default function ActionTypeSelector({
               {type === 'routine' && (
                 <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                   <Text className="text-base font-semibold text-gray-900 mb-3">
-                    루틴 설정
+                    {t('actionType.selector.routineSettings')}
                   </Text>
 
                   {/* Frequency Select - Button Style */}
                   <View className="mb-3">
-                    <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
+                    <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.repeatCycle')}</Text>
                     <View className="flex-row" style={{ gap: 8 }}>
-                      {FREQUENCY_OPTIONS.map((option) => (
+                      {frequencyOptions.map((option) => (
                         <Pressable
                           key={option.value}
                           onPress={() => {
@@ -377,7 +393,7 @@ export default function ActionTypeSelector({
                                 : 'text-gray-700'
                             }`}
                           >
-                            {option.label}
+                            {t(`actionType.${option.value}`)}
                           </Text>
                         </Pressable>
                       ))}
@@ -388,7 +404,7 @@ export default function ActionTypeSelector({
                   {routineFrequency === 'weekly' && (
                     <View className="mb-3">
                       <Text className="text-sm text-gray-700 mb-2">
-                        주중 실천 요일 선택 (선택사항)
+                        {t('actionType.selector.weekdaySelect')}
                       </Text>
                       <View className="flex-row flex-wrap gap-2">
                         {weekdays.map((day) => (
@@ -416,14 +432,14 @@ export default function ActionTypeSelector({
                       <View className="flex-row items-center mt-2">
                         <Info size={12} color="#9ca3af" />
                         <Text className="text-xs text-gray-400 ml-1">
-                          요일을 선택하지 않으면 주간 횟수 기반으로 설정됩니다
+                          {t('actionType.selector.weekdayHint')}
                         </Text>
                       </View>
 
                       {/* Weekly Count (when no weekdays selected) */}
                       {routineWeekdays.length === 0 && (
                         <View className="mt-3">
-                          <Text className="text-sm text-gray-700 mb-2">주간 목표 횟수</Text>
+                          <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.weeklyGoal')}</Text>
                           <View className="flex-row" style={{ gap: 8 }}>
                             {WEEKLY_COUNT_OPTIONS.map((count) => (
                               <Pressable
@@ -455,7 +471,7 @@ export default function ActionTypeSelector({
                   {/* Monthly Count */}
                   {routineFrequency === 'monthly' && (
                     <View className="mb-3">
-                      <Text className="text-sm text-gray-700 mb-2">월간 목표 횟수</Text>
+                      <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.monthlyGoal')}</Text>
                       <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
                         {MONTHLY_COUNT_OPTIONS.map((count) => (
                           <Pressable
@@ -521,7 +537,7 @@ export default function ActionTypeSelector({
                       <View className="flex-row items-center mt-2">
                         <Info size={12} color="#9ca3af" />
                         <Text className="text-xs text-gray-400 ml-1">
-                          매일 실천하는 항목은 반복 주기를 '매일'로 선택하세요
+                          {t('actionType.selector.dailyHint')}
                         </Text>
                       </View>
                     </View>
@@ -533,14 +549,14 @@ export default function ActionTypeSelector({
               {type === 'mission' && (
                 <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                   <Text className="text-base font-semibold text-gray-900 mb-3">
-                    미션 설정
+                    {t('actionType.selector.missionSettings')}
                   </Text>
 
                   {/* Completion Type */}
                   <View className="mb-3">
-                    <Text className="text-sm text-gray-700 mb-2">완료 방식</Text>
+                    <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.completionType')}</Text>
                     <View className="gap-2">
-                      {MISSION_COMPLETION_OPTIONS.map((option) => (
+                      {missionCompletionOptions.map((option) => (
                         <Pressable
                           key={option.value}
                           onPress={() => setMissionCompletionType(option.value)}
@@ -562,7 +578,7 @@ export default function ActionTypeSelector({
                             )}
                           </View>
                           <Text className="text-sm text-gray-700 flex-1">
-                            {option.label}
+                            {t(`actionType.selector.${option.value}Desc`)}
                           </Text>
                         </Pressable>
                       ))}
@@ -572,9 +588,9 @@ export default function ActionTypeSelector({
                   {/* Period Cycle (for periodic missions) - Button Style */}
                   {missionCompletionType === 'periodic' && (
                     <View className="mt-3">
-                      <Text className="text-sm text-gray-700 mb-2">반복 주기</Text>
+                      <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.periodCycle')}</Text>
                       <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                        {PERIOD_CYCLE_OPTIONS.map((option) => (
+                        {periodCycleOptions.map((option) => (
                           <Pressable
                             key={option.value}
                             onPress={() => setMissionPeriodCycle(option.value)}
@@ -591,7 +607,7 @@ export default function ActionTypeSelector({
                                   : 'text-gray-700'
                               }`}
                             >
-                              {option.label}
+                              {t(`actionType.${option.value}`)}
                             </Text>
                           </Pressable>
                         ))}
@@ -607,7 +623,7 @@ export default function ActionTypeSelector({
                   <View className="flex-row items-center">
                     <Info size={16} color="#6b7280" />
                     <Text className="text-sm text-gray-500 ml-2">
-                      참고 타입은 달성률에 포함되지 않습니다
+                      {t('actionType.selector.referenceInfo')}
                     </Text>
                   </View>
                 </View>

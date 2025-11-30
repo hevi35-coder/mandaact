@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 
@@ -12,15 +13,44 @@ export const badgeKeys = {
     [...badgeKeys.all, 'progress', userId] as const,
 }
 
-// Badge categories
+// Badge categories - names will be translated via hook
 export const BADGE_CATEGORIES = {
-  practice: { id: 'practice', name: '실천', icon: '✅', color: '#22c55e' },
-  streak: { id: 'streak', name: '스트릭', icon: '🔥', color: '#f59e0b' },
-  consistency: { id: 'consistency', name: '꾸준함', icon: '📅', color: '#3b82f6' },
-  monthly: { id: 'monthly', name: '월간', icon: '🌙', color: '#8b5cf6' },
-  completion: { id: 'completion', name: '완주', icon: '🏆', color: '#ec4899' },
-  special: { id: 'special', name: '특별', icon: '⭐', color: '#06b6d4' },
+  practice: { id: 'practice', nameKey: 'badges.categories.practice', icon: '✅', color: '#22c55e' },
+  streak: { id: 'streak', nameKey: 'badges.categories.streak', icon: '🔥', color: '#f59e0b' },
+  consistency: { id: 'consistency', nameKey: 'badges.categories.consistency', icon: '📅', color: '#3b82f6' },
+  monthly: { id: 'monthly', nameKey: 'badges.categories.monthly', icon: '🌙', color: '#8b5cf6' },
+  completion: { id: 'completion', nameKey: 'badges.categories.completion', icon: '🏆', color: '#ec4899' },
+  special: { id: 'special', nameKey: 'badges.categories.special', icon: '⭐', color: '#06b6d4' },
 } as const
+
+// Hook to get translated badge category name
+export function useTranslatedBadgeCategories() {
+  const { t } = useTranslation()
+  return Object.entries(BADGE_CATEGORIES).reduce((acc, [key, value]) => {
+    acc[key] = {
+      ...value,
+      name: t(value.nameKey),
+    }
+    return acc
+  }, {} as Record<string, { id: string; name: string; icon: string; color: string }>)
+}
+
+// Hook to translate badge name and description
+export function useTranslateBadge() {
+  const { t, i18n } = useTranslation()
+
+  return (badge: BadgeDefinition) => {
+    const badgeKey = badge.key || badge.id
+    const translatedName = t(`badges.names.${badgeKey}`, { defaultValue: badge.name })
+    const translatedDesc = t(`badges.descriptions.${badgeKey}`, { defaultValue: badge.description })
+
+    return {
+      ...badge,
+      name: translatedName,
+      description: translatedDesc,
+    }
+  }
+}
 
 // Badge definitions
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [

@@ -22,6 +22,7 @@ import {
   ArrowLeft,
 } from 'lucide-react-native'
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { useMandalartWithDetails } from '../hooks/useMandalarts'
 import { saveToGallery, shareImage, captureViewAsImage } from '../services/exportService'
@@ -65,6 +66,7 @@ function _ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number 
 export default function MandalartDetailScreen() {
   const navigation = useNavigation<NavigationProp>()
   const route = useRoute<DetailRouteProp>()
+  const { t } = useTranslation()
   const { id } = route.params
   const gridRef = useRef<View>(null)
   const exportGridRef = useRef<View>(null)
@@ -114,18 +116,18 @@ export default function MandalartDetailScreen() {
       const uri = await captureViewAsImage(exportGridRef, { format: 'png', quality: 1 })
 
       if (action === 'share') {
-        await shareImage(uri, { dialogTitle: `${mandalart?.title} 공유` })
+        await shareImage(uri, { dialogTitle: `${mandalart?.title}` })
       } else {
         await saveToGallery(uri)
-        Alert.alert('성공', '고해상도 만다라트 이미지가 갤러리에 저장되었습니다.')
+        Alert.alert(t('common.success'), t('mandalart.detail.exportSuccess'))
       }
     } catch (err) {
       logger.error('Export error', err)
-      Alert.alert('오류', err instanceof Error ? err.message : '내보내기 중 오류가 발생했습니다.')
+      Alert.alert(t('common.error'), err instanceof Error ? err.message : t('mandalart.detail.exportError'))
     } finally {
       setIsExporting(false)
     }
-  }, [mandalart])
+  }, [mandalart, t])
 
   // Get sub-goal by position
   const getSubGoalByPosition = useCallback((position: number): SubGoalWithActions | undefined => {
@@ -206,7 +208,7 @@ export default function MandalartDetailScreen() {
             className="text-base text-gray-500 mt-4"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            불러오는 중...
+            {t('common.loading')}
           </Text>
         </View>
       </View>
@@ -222,7 +224,7 @@ export default function MandalartDetailScreen() {
             className="text-base text-red-500 text-center mb-4"
             style={{ fontFamily: 'Pretendard-Medium' }}
           >
-            만다라트를 불러오는 중 오류가 발생했습니다.
+            {t('mandalart.detail.loadingError')}
           </Text>
           <Pressable
             onPress={() => refetch()}
@@ -232,7 +234,7 @@ export default function MandalartDetailScreen() {
               className="text-white text-base"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
             >
-              다시 시도
+              {t('common.retry')}
             </Text>
           </Pressable>
         </View>
@@ -323,7 +325,7 @@ export default function MandalartDetailScreen() {
               className="text-gray-900 mt-4"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
             >
-              내보내는 중...
+              {t('common.exporting')}
             </Text>
           </View>
         </View>
@@ -466,7 +468,7 @@ export default function MandalartDetailScreen() {
                     className="text-base text-gray-700 ml-1"
                     style={{ fontFamily: 'Pretendard-Medium' }}
                   >
-                    뒤로
+                    {t('mandalart.detail.back')}
                   </Text>
                 </Pressable>
                 <Pressable
@@ -484,7 +486,7 @@ export default function MandalartDetailScreen() {
                     className="text-base text-white"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    수정
+                    {t('mandalart.detail.edit')}
                   </Text>
                 </Pressable>
                 </>
@@ -543,42 +545,42 @@ export default function MandalartDetailScreen() {
                     className="text-base text-gray-900 ml-2"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    사용 방법
+                    {t('mandalart.detail.usage.title')}
                   </Text>
                 </View>
                 <Text
                   className="text-sm text-gray-500 mb-2"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  • 각 영역을 탭하여 상세보기 및 수정이 가능합니다.
+                  • {t('mandalart.detail.usage.tapToView')}
                 </Text>
                 <View className="flex-row items-center">
                   <Text
                     className="text-sm text-gray-500"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    • 타입 구분:{' '}
+                    • {t('mandalart.detail.usage.typeLabel')}{' '}
                   </Text>
                   <RotateCw size={14} color="#3b82f6" />
                   <Text
                     className="text-sm text-gray-500 ml-1 mr-2"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    루틴
+                    {t('mandalart.detail.usage.routine')}
                   </Text>
                   <Target size={14} color="#10b981" />
                   <Text
                     className="text-sm text-gray-500 ml-1 mr-2"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    미션
+                    {t('mandalart.detail.usage.mission')}
                   </Text>
                   <Lightbulb size={14} color="#f59e0b" />
                   <Text
                     className="text-sm text-gray-500 ml-1"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    참고
+                    {t('mandalart.detail.usage.reference')}
                   </Text>
                 </View>
               </View>

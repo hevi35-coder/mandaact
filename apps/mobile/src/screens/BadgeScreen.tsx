@@ -18,10 +18,12 @@ import {
   useUserBadges,
   useBadgeProgress,
   BADGE_CATEGORIES,
+  useTranslatedBadgeCategories,
   getBadgesByCategory,
   isBadgeUnlocked,
   getBadgeUnlockDate,
   getBadgeRepeatCount,
+  useTranslateBadge,
   type BadgeDefinition,
 } from '../hooks/useBadges'
 import { useUserGamification } from '../hooks/useStats'
@@ -354,6 +356,10 @@ export default function BadgeScreen() {
   const [selectedBadge, setSelectedBadge] = useState<BadgeDefinition | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
+  // Get translated badge categories
+  const translatedCategories = useTranslatedBadgeCategories()
+  const translateBadge = useTranslateBadge()
+
   // Data fetching
   const { data: badges = [] } = useBadgeDefinitions()
   const { data: userBadges = [], refetch: refetchUserBadges } = useUserBadges(user?.id)
@@ -490,7 +496,7 @@ export default function BadgeScreen() {
                 전체
               </Text>
             </Pressable>
-            {Object.values(BADGE_CATEGORIES).map(cat => (
+            {Object.values(translatedCategories).map(cat => (
               <Pressable
                 key={cat.id}
                 className={`px-4 py-2.5 rounded-xl ${
@@ -520,7 +526,7 @@ export default function BadgeScreen() {
 
         {/* Badge Grid by Category */}
         {Object.entries(filteredCategories).map(([categoryId, categoryBadges]) => {
-          const category = BADGE_CATEGORIES[categoryId as keyof typeof BADGE_CATEGORIES]
+          const category = translatedCategories[categoryId]
           if (!categoryBadges.length) return null
 
           return (

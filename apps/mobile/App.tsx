@@ -1,5 +1,5 @@
 import './global.css'
-import React, { useEffect, useRef, useCallback } from 'react'
+import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -22,6 +22,7 @@ import {
   addNotificationReceivedListener,
 } from './src/services/notificationService'
 import { initSentry, logger, trackAppOpened } from './src/lib'
+import { initI18n } from './src/i18n'
 
 // Initialize Sentry and PostHog on app load
 initSentry().then(() => {
@@ -74,36 +75,43 @@ function AppContent() {
 }
 
 export default function App() {
-  const [fontsLoaded, setFontsLoaded] = React.useState(false)
+  const [fontsLoaded, setFontsLoaded] = useState(false)
+  const [i18nReady, setI18nReady] = useState(false)
 
-  // Load fonts on app start
+  // Load fonts and i18n on app start
   useEffect(() => {
-    async function loadFonts() {
+    async function loadResources() {
       try {
-        await Font.loadAsync({
-          'Pretendard-Regular': require('./assets/fonts/Pretendard-Regular.otf'),
-          'Pretendard-Medium': require('./assets/fonts/Pretendard-Medium.otf'),
-          'Pretendard-SemiBold': require('./assets/fonts/Pretendard-SemiBold.otf'),
-          'Pretendard-Bold': require('./assets/fonts/Pretendard-Bold.otf'),
-        })
+        // Load fonts and i18n in parallel
+        await Promise.all([
+          Font.loadAsync({
+            'Pretendard-Regular': require('./assets/fonts/Pretendard-Regular.otf'),
+            'Pretendard-Medium': require('./assets/fonts/Pretendard-Medium.otf'),
+            'Pretendard-SemiBold': require('./assets/fonts/Pretendard-SemiBold.otf'),
+            'Pretendard-Bold': require('./assets/fonts/Pretendard-Bold.otf'),
+          }),
+          initI18n(),
+        ])
         setFontsLoaded(true)
+        setI18nReady(true)
       } catch (error) {
-        logger.error('Error loading fonts', error)
-        // Continue without custom fonts
+        logger.error('Error loading resources', error)
+        // Continue even if some resources fail
         setFontsLoaded(true)
+        setI18nReady(true)
       }
     }
-    loadFonts()
+    loadResources()
   }, [])
 
-  // Hide splash screen when fonts are loaded
+  // Hide splash screen when resources are loaded
   const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
+    if (fontsLoaded && i18nReady) {
       await SplashScreen.hideAsync()
     }
-  }, [fontsLoaded])
+  }, [fontsLoaded, i18nReady])
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !i18nReady) {
     return null
   }
 
