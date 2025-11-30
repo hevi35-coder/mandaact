@@ -7,30 +7,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 MandaAct is an AI-powered Mandalart (9x9 goal framework) action tracker with gamification, AI reports, and comprehensive progress analytics. Users can create mandalarts via 3 input methods (image OCR, text parsing, or manual input), track daily actions with smart type system, earn XP/badges, and receive AI-generated weekly reports.
 
 **Core Tech Stack:**
-- Frontend: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
-- State: Zustand (global), TanStack Query (server)
-- Animation: Framer Motion
-- Backend: Supabase (PostgreSQL, Auth, Storage, Edge Functions in Deno)
-- AI: Google Cloud Vision API (OCR), Perplexity API (weekly reports, goal diagnosis)
-- PWA: Vite PWA Plugin, Workbox (service worker, push notifications)
+- **Monorepo**: pnpm workspace (apps/web, apps/mobile, packages/shared)
+- **Frontend (Web)**: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
+- **Mobile**: React Native + Expo SDK 52 + NativeWind + React Navigation
+- **State**: Zustand (global), TanStack Query (server)
+- **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions in Deno)
+- **AI**: Google Cloud Vision API (OCR), Perplexity API (LLM)
 
 **Key Features (Production):**
 - 📸 3 Input Methods (image OCR, text paste, manual template)
 - 🎮 Gamification (XP/levels, 21 badges, streaks, monthly challenges)
 - 📊 AI Reports (weekly practice report, goal diagnosis via Perplexity)
-- 🎓 Interactive Tutorial (7-step onboarding)
-- 📱 PWA (installable, offline support, push notifications)
-- 📈 Analytics (heatmap, progress tracking, mandalart filters)
+- 📱 **Cross-Platform** (Web + iOS + Android with iPad support)
+- 🔔 **Native Push Notifications** (Mobile) & PWA Notifications (Web)
+- 🌍 **Global Support** (i18n: English/Korean)
 
 ## Development Commands
 
 ```bash
 # Development
-npm run dev              # Start dev server (Vite)
-npm run type-check       # TypeScript check without emit
-npm run lint             # ESLint check
-npm run build            # TypeScript compile + Vite build
-npm run preview          # Preview production build
+pnpm dev:web             # Start Web dev server (Vite)
+pnpm dev:mobile          # Start Mobile dev server (Expo)
+
+# Build
+pnpm build:web           # Build Web for production
+pnpm build:mobile        # Build Mobile (EAS Build)
+
+# Quality Checks
+pnpm type-check          # TypeScript check (workspace)
+pnpm lint                # ESLint check (workspace)
 
 # Supabase (backend)
 npx supabase start       # Start local Supabase (Docker required)
@@ -213,23 +218,17 @@ Located in `supabase/functions/`:
 
 ### Navigation & Routing
 
-**Responsive Navigation:** `src/components/Navigation.tsx`
-- Desktop: Top sticky bar
-- Mobile: Bottom sticky bar
-- Auto-hides on auth pages (/, /login, /signup)
+**Web (React Router v6):**
+- `/`: Landing page
+- `/home`: Dashboard
+- `/today`: Today's checklist
+- `/mandalart/*`: Mandalart management
+- `/settings`: Settings
 
-**Main Routes:**
-- `/`: Landing page (auto-redirects to /login or /home)
-- `/login`, `/signup`: Authentication
-- `/home`: Dashboard with stats, quick actions, recent activity
-- `/today`: Today's action checklist (grouped by mandalart, type filters)
-- `/mandalart/list`: Mandalart management (activate/deactivate)
-- `/mandalart/create`: Triple input (image/text/manual)
-- `/mandalart/:id`: Detail view (9x9 grid visualization, edit actions)
-- `/stats`: Progress analytics (heatmap, sub-goal progress, mandalart filter)
-- `/reports`: AI-generated weekly reports + goal diagnosis
-- `/tutorial`: Interactive 7-step onboarding tutorial
-- `/settings/notifications`: PWA notification settings
+**Mobile (React Navigation):**
+- `MainTabs`: Bottom tab navigator (Home, Today, Mandalart, Reports)
+- `Stack`: Native stack for details, auth, and modals
+- **iPad Support**: Responsive layout with split view considerations
 
 ### OCR Processing Flow
 
@@ -397,16 +396,20 @@ newlyUnlocked.forEach(badge => {
   - `ACTION_TYPE_IMPROVEMENT_V2.md`: Action type system v2
   - `NOTIFICATION_SYSTEM_PROGRESS.md`: PWA notification setup
 
-**Current Progress (as of 2025-11-15):**
-- Phase 1-A: Image OCR ✅ (completed)
-- Phase 1: UX improvements ✅ (4/4 completed)
-- Phase 2: Feature expansion ✅ (4/4 completed)
-- Phase 2-B: UX improvements follow-up ✅ (8/8 completed)
-- Phase 3-A: Gamification System ✅ (XP Phase 1 & 2, Badges, Streaks)
-- Phase 3-B: Tutorial System ✅ (7-step onboarding)
-- Phase 3-C: AI Reports ✅ (Weekly practice + Goal diagnosis)
-- PWA Deployment: Production ✅ (Vercel + Supabase)
-- **Next Priority**: Phase 4 - Code quality & stability
+**Current Progress (as of 2025-12-01):**
+- **Mobile App Completed** ✅ (iOS/Android/iPad)
+- **Monorepo Migration Completed** ✅
+- **i18n Support Completed** ✅ (English/Korean)
+- **Native Push Notifications Completed** ✅
+- Phase 1-3 Features: Fully implemented on both Web & Mobile
+- **Next Priority**: Store deployment & AdMob integration
+
+## Documentation References
+
+- **[UI Guidelines](./docs/guidelines/UI_GUIDELINES.md)**: Unified design patterns
+- **[Build Guide](./docs/development/BUILD_GUIDE.md)**: Mobile build & troubleshooting
+- **[Version Policy](./docs/development/VERSION_POLICY.md)**: Locked dependency versions
+- **[Roadmap](./docs/project/ROADMAP.md)**: Project status and plans
 
 ## Testing & Deployment
 

@@ -2,16 +2,17 @@
 
 ## 프로젝트 개요
 - **프로젝트명**: MandaAct
-- **스택**: React 18 + TypeScript + Vite + Supabase
+- **스택**:
+  - **Web**: React 18 + TypeScript + Vite + Supabase
+  - **Mobile**: React Native + Expo + NativeWind
 - **저장소**: https://github.com/hevi35-coder/mandaact
-- **목적**: 스마트폰에서 PWA로 사용
+- **목적**: Web(PWA) 및 Mobile(iOS/Android) 배포
 
-## 현재 상태 (2025-11-14)
-- ✅ GitHub 저장소 최신 코드 푸시 완료
-- ✅ 로그인 페이지 재디자인 완료
-- ✅ 최초 사용자 UX 개선 완료
-- ✅ PWA 설정 완료 (vite-plugin-pwa)
-- ✅ Supabase 백엔드 클라우드 운영 중
+## 현재 상태 (2025-12-01)
+- ✅ Web App (PWA) 프로덕션 배포 완료
+- ✅ Mobile App (iOS/Android) 개발 완료
+- ✅ Monorepo 구조 마이그레이션 완료
+- ✅ Supabase 백엔드 안정화 완료
 
 ---
 
@@ -29,22 +30,31 @@
 
 ## 📋 배포 전 체크리스트
 
-### 1. 빌드 테스트
+### 1. 빌드 테스트 (Web)
 ```bash
 # TypeScript 타입 체크
-npm run type-check
+pnpm type-check
 
 # 프로덕션 빌드
-npm run build
+pnpm build:web
 
 # 빌드 결과 미리보기
-npm run preview
+pnpm preview
 ```
 
 **예상 결과:**
-- `dist/` 폴더 생성
+- `apps/web/dist/` 폴더 생성
 - 빌드 에러 없음
 - `http://localhost:4173`에서 확인 가능
+
+### 2. 빌드 테스트 (Mobile)
+```bash
+# TypeScript 타입 체크
+pnpm type-check
+
+# 로컬 빌드 테스트 (EAS CLI 필요)
+eas build --platform android --profile preview --local
+```
 
 ### 2. 환경 변수 준비
 Vercel에 설정할 환경 변수 (`.env.local` 참고):
@@ -91,9 +101,10 @@ npx supabase functions deploy generate-report
 ### Step 3: 프로젝트 설정
 **Build & Development Settings:**
 - Framework Preset: Vite
-- Build Command: `npm run build` (자동 감지됨)
-- Output Directory: `dist` (자동 감지됨)
-- Install Command: `npm install` (자동 감지됨)
+- Root Directory: `apps/web` (Monorepo 설정)
+- Build Command: `pnpm build` (또는 `npm run build`)
+- Output Directory: `dist`
+- Install Command: `pnpm install`
 
 **환경 변수 설정:**
 1. "Environment Variables" 섹션 펼치기
@@ -116,6 +127,45 @@ npx supabase functions deploy generate-report
 1. Project Settings > Domains
 2. 원하는 도메인 추가
 3. DNS 설정 (Vercel 안내 따르기)
+
+---
+
+## 📱 Mobile 배포: EAS Build
+
+### Step 1: EAS CLI 설치 및 로그인
+```bash
+npm install -g eas-cli
+eas login
+```
+
+### Step 2: 프로젝트 설정
+```bash
+cd apps/mobile
+eas build:configure
+```
+
+### Step 3: 환경 변수 설정 (EAS Secrets)
+```bash
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "..."
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "..."
+```
+
+### Step 4: 빌드 실행
+```bash
+# Android APK (Preview)
+eas build --platform android --profile preview
+
+# iOS Simulator (Preview)
+eas build --platform ios --profile preview
+
+# Production (Store)
+eas build --platform all --profile production
+```
+
+### Step 5: 스토어 제출 (EAS Submit)
+```bash
+eas submit --platform all
+```
 
 ---
 

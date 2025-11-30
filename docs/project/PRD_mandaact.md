@@ -28,7 +28,9 @@
 ✅ **리포트 완료**: AI 주간 실천 리포트, 목표 진단
 ✅ **튜토리얼 완료**: 인터랙티브 온보딩 (7단계)
 ✅ **PWA 배포**: 프로덕션 환경 구축 완료
-⏳ **Next**: 코드 품질 개선, 모니터링 강화
+✅ **Mobile App 완료**: iOS/Android 앱 개발 및 iPad 지원
+✅ **글로벌 지원 완료**: 한국어/영어 i18n 적용
+⏳ **Next**: 스토어 배포, AdMob 연동, 모니터링 강화
 
 ---
 
@@ -258,6 +260,7 @@ CREATE TABLE check_history (
 **Acceptance Criteria**:
 - [ ] 알림 도달률 > 90%
 - [ ] 알림 클릭률 (CTR) > 15%
+- [ ] 모바일 네이티브 푸시 알림 정상 작동 (Expo Notifications)
 
 ---
 
@@ -427,7 +430,7 @@ CREATE TABLE check_history (
 
 ### Tech Stack Details
 
-#### Frontend
+#### Frontend (Web)
 - **Framework**: React 18 + TypeScript
 - **Build Tool**: Vite (fast HMR, optimized build)
 - **Routing**: React Router v6
@@ -440,6 +443,13 @@ CREATE TABLE check_history (
 - **PWA**:
   - Vite PWA Plugin
   - Workbox (service worker)
+
+#### Mobile (React Native)
+- **Framework**: React Native + Expo SDK 52
+- **Styling**: NativeWind (Tailwind for RN)
+- **Navigation**: React Navigation
+- **Build**: EAS Build (Cloud)
+- **Notifications**: Expo Notifications
 
 #### Backend (Supabase)
 - **Database**: PostgreSQL 15

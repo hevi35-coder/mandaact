@@ -4,9 +4,11 @@ Complete guide to set up the MandaAct development environment.
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+
+- pnpm (Package Manager)
 - Git
 - A code editor (VS Code recommended)
+- Expo Go app (for mobile testing)
 
 ## 1. Clone and Install
 
@@ -15,8 +17,8 @@ Complete guide to set up the MandaAct development environment.
 git clone <your-repo-url>
 cd mandaact
 
-# Install dependencies
-npm install
+# Install dependencies (using pnpm workspace)
+pnpm install
 ```
 
 ## 2. Supabase Setup
@@ -70,37 +72,53 @@ npx supabase db reset
 
 ## 5. Environment Variables
 
+### Web App (`apps/web/.env.local`)
 1. Copy the example environment file:
 ```bash
-cp .env.example .env.local
+cp .env.example apps/web/.env.local
 ```
 
-2. Fill in your credentials in `.env.local`:
+2. Fill in your credentials:
 ```bash
-# Supabase (from step 2)
+# Supabase
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
-
-# Google Cloud Platform (from step 3)
-GCP_PROJECT_ID=your-project-id
-GCP_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
-GCP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-
-# Perplexity API (from step 4)
-PERPLEXITY_API_KEY=pplx-xxxxxxxxxxxxxxxx
 ```
 
-**Important**:
-- Keep `.env.local` private (already in `.gitignore`)
-- For `GCP_PRIVATE_KEY`, keep the quotes and `\n` characters
+### Mobile App (`apps/mobile/.env`)
+1. Create `.env` file in `apps/mobile`:
+```bash
+cp apps/mobile/.env.example apps/mobile/.env
+```
+
+2. Fill in credentials (must start with `EXPO_PUBLIC_`):
+```bash
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+### Edge Functions (Supabase)
+Set secrets via CLI:
+```bash
+npx supabase secrets set GCP_PROJECT_ID=...
+npx supabase secrets set GCP_CLIENT_EMAIL=...
+npx supabase secrets set GCP_PRIVATE_KEY=...
+npx supabase secrets set PERPLEXITY_API_KEY=...
+```
 
 ## 6. Run Development Server
 
+### Web App
 ```bash
-npm run dev
+pnpm dev:web
 ```
-
 Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Mobile App
+```bash
+pnpm dev:mobile
+```
+Scan the QR code with Expo Go (Android) or Camera (iOS).
 
 ## 7. Verify Setup
 
@@ -140,6 +158,7 @@ npm run dev
 
 ## Next Steps
 
-- Read [DEVELOPMENT.md](./DEVELOPMENT.md) for development guidelines
-- Check [API_SPEC.md](./API_SPEC.md) for API documentation
-- See the PRD in `claudedocs/PRD_mandaact.md` for feature specifications
+- Read **[DEVELOPMENT.md](./DEVELOPMENT.md)** for coding guidelines
+- Check **[BUILD_GUIDE.md](./BUILD_GUIDE.md)** for mobile build instructions
+- See **[PRD](../project/PRD_mandaact.md)** for feature specifications
+- Review **[UI_GUIDELINES.md](../guidelines/UI_GUIDELINES.md)** for design patterns

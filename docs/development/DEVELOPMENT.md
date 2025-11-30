@@ -6,25 +6,20 @@ Guidelines and best practices for MandaAct development.
 
 ```
 mandaact/
-├── src/
-│   ├── components/         # Reusable UI components
-│   │   ├── ui/            # Base UI components (shadcn/ui)
-│   │   ├── mandalart/     # Mandalart-specific components
-│   │   ├── layout/        # Layout components
-│   │   └── common/        # Common shared components
-│   ├── pages/             # Page components (one per route)
-│   ├── hooks/             # Custom React hooks
-│   ├── lib/               # Utility functions and helpers
-│   │   ├── supabase.ts   # Supabase client
-│   │   └── utils.ts      # General utilities
-│   ├── types/             # TypeScript type definitions
-│   ├── styles/            # Global styles
-│   └── main.tsx           # App entry point
+├── apps/
+│   ├── web/               # React + Vite Web App
+│   │   ├── src/
+│   │   └── ...
+│   └── mobile/            # React Native + Expo App
+│       ├── src/
+│       └── ...
+├── packages/
+│   └── shared/            # Shared logic (types, constants, utils)
 ├── supabase/
 │   ├── migrations/        # Database migrations (SQL)
 │   └── functions/         # Edge functions (serverless)
-├── public/                # Static assets
-└── docs/                  # Documentation
+├── docs/                  # Documentation
+└── ...
 ```
 
 ## Code Style
@@ -151,20 +146,18 @@ export async function getMandalart(id: string): Promise<Mandalart | null> {
 
 ## Component Development
 
-### Folder Organization
+### Folder Organization (Web & Mobile)
 ```
-components/
-├── ui/                    # Base UI (buttons, inputs, etc.)
-│   ├── button.tsx
-│   ├── input.tsx
-│   └── card.tsx
-├── mandalart/            # Domain-specific
-│   ├── MandalartGrid.tsx
-│   ├── MandalartCell.tsx
-│   └── MandalartEditor.tsx
-└── layout/               # Layout components
-    ├── Header.tsx
-    └── Sidebar.tsx
+src/
+├── components/            # UI Components
+│   ├── ui/                # Base UI (shadcn/ui or NativeWind)
+│   ├── mandalart/         # Feature components
+│   └── ...
+├── screens/               # Page/Screen components (Mobile)
+├── pages/                 # Page components (Web)
+├── hooks/                 # Custom Hooks
+├── lib/                   # Utilities
+└── ...
 ```
 
 ### Component Template
@@ -188,23 +181,23 @@ export function MyComponent({ className }: MyComponentProps) {
 }
 ```
 
-## Testing Strategy
+### Testing Strategy
 
-### Unit Tests (Future)
-- Use Vitest for unit testing
-- Test complex logic and utilities
-- Mock Supabase calls
+#### Unit Tests (Vitest)
+- **Web**: `apps/web/src/**/*.test.tsx`
+- **Shared**: `packages/shared/**/*.test.ts`
+- Run: `pnpm test`
 
-### Integration Tests (Future)
-- Test user flows
-- Use React Testing Library
+#### Mobile Tests
+- Manual testing on iOS Simulator / Android Emulator
+- See **[Testing Guide](../mobile/TESTING_GUIDE.md)** for detailed scenarios.
 
-### Manual Testing Checklist
-- [ ] Mobile responsive (Chrome DevTools)
-- [ ] Cross-browser (Chrome, Safari, Firefox)
-- [ ] Offline behavior (PWA)
-- [ ] Error states
-- [ ] Loading states
+#### Manual Testing Checklist
+- [ ] Mobile responsive (Web)
+- [ ] Cross-browser (Chrome, Safari)
+- [ ] iOS/Android Simulator check
+- [ ] Offline behavior (PWA & Mobile)
+- [ ] Error states & Loading states
 
 ## Git Workflow
 
@@ -284,22 +277,20 @@ if (isDev) {
 ## Deployment
 
 ### Pre-Deployment Checklist
-- [ ] Run `npm run build` successfully
-- [ ] No TypeScript errors (`npm run type-check`)
-- [ ] No ESLint errors (`npm run lint`)
-- [ ] Test production build locally (`npm run preview`)
-- [ ] Environment variables set in Vercel
+- [ ] Run `pnpm build:web` or `pnpm build:mobile` successfully
+- [ ] No TypeScript errors (`pnpm type-check`)
+- [ ] No ESLint errors (`pnpm lint`)
+- [ ] Environment variables set (Vercel / EAS Secrets)
 
-### Deploy to Vercel
+### Deploy Web (Vercel)
 ```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy
-vercel
-
-# Production deployment
 vercel --prod
+```
+
+### Deploy Mobile (EAS)
+See **[Build Guide](./BUILD_GUIDE.md)** for detailed instructions.
+```bash
+eas build --platform all
 ```
 
 ## Resources

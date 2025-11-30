@@ -797,7 +797,26 @@ Week 9-10 | Phase 9.3: AdMob 광고          [🟢 Recommended]
           ├─ AdMob 계정 및 SDK 연동
           ├─ 광고 유형 구현
           └─ 정책 준수 및 수익 최적화
+```
 
+---
+
+## 📚 관련 문서 (Related Documents)
+
+### 개발 가이드
+- **[BUILD_GUIDE.md](../development/BUILD_GUIDE.md)**: 모바일 빌드 및 트러블슈팅
+- **[VERSION_POLICY.md](../development/VERSION_POLICY.md)**: 의존성 버전 관리 정책
+- **[DEPLOYMENT_GUIDE.md](../development/DEPLOYMENT_GUIDE.md)**: 웹/모바일 배포 가이드
+
+### 기능 문서
+- **[XP_SYSTEM_PHASE2_COMPLETE.md](../features/XP_SYSTEM_PHASE2_COMPLETE.md)**: XP 시스템 구현 상세
+- **[BADGE_SYSTEM_V5_RENEWAL.md](../features/BADGE_SYSTEM_V5_RENEWAL.md)**: 배지 시스템 v5.0 기획
+- **[GLOBAL_SUPPORT_ENHANCEMENT.md](../features/GLOBAL_SUPPORT_ENHANCEMENT.md)**: i18n 구현 상세
+
+### UI/UX 가이드라인
+- **[UI_GUIDELINES.md](../guidelines/UI_GUIDELINES.md)**: 웹/모바일 UI 패턴
+- **[ANIMATION_GUIDE.md](../guidelines/ANIMATION_GUIDE.md)**: 애니메이션 베스트 프랙티스
+```
 Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
           └─ 사용자 피드백 기반 결정
 ```

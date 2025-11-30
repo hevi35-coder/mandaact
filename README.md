@@ -10,10 +10,12 @@ MandaAct transforms your Mandalart goals into actionable daily habits with a com
 - 📸 **Triple Input Methods**: Image upload (OCR), text paste, or manual template entry
 - ✅ **Smart Action Tracking**: 3 action types (루틴/미션/참고) with intelligent daily display logic
 - 🎮 **Gamification System**: XP points, levels, badges, and streaks for motivation
-- 🤖 **AI Coaching**: Personalized coaching via Perplexity API with context-aware responses
+- 🤖 **AI Coaching**: Personalized coaching via LLM API with context-aware responses
 - 📊 **Analytics & Reports**: Weekly AI reports, goal diagnostics, and progress insights
-- 🔔 **PWA Notifications**: Native push notifications for daily reminders
-- 📱 **Progressive Web App**: Installable app with offline support
+- 📊 **Analytics & Reports**: Weekly AI reports, goal diagnostics, and progress insights
+- 🔔 **Native Push Notifications**: Daily reminders and achievement alerts (Mobile)
+- 📱 **Cross-Platform**: Available on Web, iOS, and Android (with iPad support)
+- 🌍 **Global Support**: English and Korean language support (i18n)
 - 🎓 **Interactive Tutorial**: Step-by-step onboarding for new users
 
 ### Key Pages
@@ -39,6 +41,14 @@ MandaAct transforms your Mandalart goals into actionable daily habits with a com
 - **React Markdown** - Markdown rendering for AI reports
 - **dom-to-image-more** - Image export functionality
 
+### Mobile (React Native)
+- **Expo SDK 52** - Managed workflow for React Native
+- **React Native** - Native mobile framework
+- **NativeWind** - Tailwind CSS for React Native
+- **React Navigation** - Native navigation library
+- **EAS Build** - Cloud build service for iOS/Android
+- **Expo Notifications** - Push notification service
+
 ### Backend
 - **Supabase** - Complete backend solution
   - **PostgreSQL** - Relational database with Row Level Security (RLS)
@@ -60,39 +70,24 @@ MandaAct transforms your Mandalart goals into actionable daily habits with a com
 
 ```
 mandaact/
-├── src/
-│   ├── components/        # Reusable UI components
-│   │   ├── stats/         # Statistics and progress components
-│   │   ├── ui/            # shadcn/ui base components
-│   │   └── ...            # Feature-specific components
-│   ├── pages/             # Page components (9 routes)
-│   ├── hooks/             # Custom React hooks
-│   ├── lib/               # Utilities and helpers
-│   │   ├── actionTypes.ts # Action type logic and display rules
-│   │   ├── xpMultipliers.ts # XP calculation system
-│   │   ├── stats.ts       # Badge and streak calculations
-│   │   └── ...            # Other utilities
-│   ├── store/             # Zustand global state
-│   ├── types/             # TypeScript type definitions
-│   ├── styles/            # Global styles and Tailwind config
-│   └── main.tsx           # App entry point
+├── apps/
+│   ├── web/               # React + Vite Web App
+│   │   ├── src/
+│   │   └── ...
+│   └── mobile/            # React Native + Expo App
+│       ├── src/
+│       └── ...
+├── packages/
+│   └── shared/            # Shared logic (types, constants, utils)
 ├── supabase/
-│   ├── migrations/        # Database schema migrations (35+ files)
-│   └── functions/         # Edge functions
-│       ├── ocr-mandalart/ # OCR processing (v4)
-│       ├── chat/          # AI coaching (v17)
-│       └── chat-v2/       # Experimental version
-├── public/                # Static assets (icons, manifest, etc.)
+│   ├── migrations/        # Database schema migrations
+│   └── functions/         # Edge functions (OCR, AI Chat)
 ├── docs/                  # Comprehensive documentation
-│   ├── project/           # Roadmap, improvements, PRD
-│   ├── development/       # Setup, deployment, API guides
-│   ├── guidelines/        # UI/UX patterns (empty state, cards, etc.)
-│   ├── features/          # Feature docs (badges, XP, notifications, actions)
-│   ├── troubleshooting/   # Debug guides and solutions
-│   └── archive/           # Historical documentation
-│       ├── completed/     # Finished work documentation
-│       ├── deprecated/    # Outdated documentation
-│       └── sessions/      # Development session logs
+│   ├── project/           # Roadmap, PRD
+│   ├── development/       # Build, Version Policy, Setup
+│   ├── guidelines/        # UI Guidelines (Web/Mobile)
+│   ├── features/          # Feature specs
+│   └── archive/           # Historical docs
 └── CLAUDE.md              # AI assistant development guide
 ```
 
@@ -143,11 +138,17 @@ Smart display logic shows only relevant actions based on frequency, completion s
 - **[Action Types v2](./docs/features/ACTION_TYPE_IMPROVEMENT_V2.md)** - Routine, mission, reference types
 
 ### 🎨 UI/UX Guidelines
-- **[Empty State Pattern](./docs/guidelines/EMPTY_STATE_PATTERN.md)** - Consistent empty state design
-- **[Card Component Guidelines](./docs/guidelines/CARD_COMPONENT_GUIDELINES.md)** - Card component patterns
+### 🎨 UI/UX Guidelines
+- **[UI Guidelines](./docs/guidelines/UI_GUIDELINES.md)** - **(New)** Unified Web/Mobile UI patterns & diffs
 - **[Animation Guide](./docs/guidelines/ANIMATION_GUIDE.md)** - Animation best practices
 - **[Notification Guidelines](./docs/guidelines/NOTIFICATION_GUIDELINES.md)** - Notification UX patterns
-- **[Modal Guidelines](./docs/guidelines/UI_MODAL_GUIDELINES.md)** - Modal dialog patterns
+- **[Empty State Pattern](./docs/guidelines/EMPTY_STATE_PATTERN.md)** - Consistent empty state design
+
+### 🛠 Development & Build
+- **[Build Guide](./docs/development/BUILD_GUIDE.md)** - **(New)** Mobile build process & troubleshooting
+- **[Version Policy](./docs/development/VERSION_POLICY.md)** - **(New)** Locked versions for React/Expo
+- **[Setup Guide](./docs/development/SETUP_GUIDE.md)** - Getting started
+- **[Development Guide](./docs/development/DEVELOPMENT.md)** - Coding standards
 
 ### 🔧 Troubleshooting
 - **[Troubleshooting Guide](./docs/troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
@@ -169,8 +170,8 @@ Smart display logic shows only relevant actions based on frequency, completion s
 git clone https://github.com/hevi35-coder/mandaact.git
 cd mandaact
 
-# Install dependencies
-npm install
+# Install dependencies (using pnpm)
+pnpm install
 
 # Copy environment variables
 cp .env.example .env.local
@@ -181,8 +182,12 @@ cp .env.example .env.local
 # - PERPLEXITY_API_KEY (Edge Function secret)
 
 # Run development server
-npm run dev
+pnpm dev:web
 # Access at http://localhost:5173
+
+# Run mobile app
+pnpm dev:mobile
+# Scan QR code with Expo Go
 
 # Optional: Run Supabase locally
 npx supabase start
@@ -193,12 +198,15 @@ npx supabase db push
 ### Development Commands
 
 ```bash
-# Development
-npm run dev              # Start Vite dev server with HMR
-npm run type-check       # TypeScript type checking (no emit)
-npm run lint             # ESLint code quality check
-npm run build            # Production build
-npm run preview          # Preview production build locally
+# Run development server (Web)
+pnpm dev:web
+
+# Run development server (Mobile)
+pnpm dev:mobile
+
+# Build for production
+pnpm build:web
+pnpm build:mobile
 
 # Supabase Backend
 npx supabase start       # Start local Supabase (Docker required)
@@ -258,6 +266,12 @@ Provides personalized motivation, suggestions, and accountability.
 AI-generated reports analyzing:
 - **Practice Report**: Check patterns, trends, and improvement suggestions
 - **Goal Diagnosis**: Mandalart structure analysis and SMART goal compliance
+
+### 6. Mobile Experience
+- **iPad Support**: Optimized layout for tablet devices with split view support
+- **Native Push Notifications**: Reliable reminders using Expo Notifications
+- **Internationalization (i18n)**: Full support for English and Korean
+- **Offline First**: Robust offline capabilities for checking actions anywhere
 
 ## Development
 
