@@ -1,3 +1,11 @@
+/**
+ * MandalartDetailScreen - Refactored (Minimal Changes)
+ * 
+ * This screen is already well-structured with modals separated.
+ * We keep the main grid rendering logic here as it's complex and tightly coupled.
+ * Only extract reusable UI components.
+ */
+
 import React, { useRef, useCallback, useState } from 'react'
 import {
   View,
@@ -40,9 +48,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 type DetailRouteProp = RouteProp<RootStackParamList, 'MandalartDetail'>
 
 // Grid layout constants - will be overridden by responsive values
-const DEFAULT_CONTAINER_PADDING = 16 // 화면 좌우 패딩 (phone)
-const DEFAULT_CARD_PADDING = 12 // 카드 내부 패딩 (phone)
-const DEFAULT_CELL_GAP = 8 // 셀 사이 간격 (phone)
+const DEFAULT_CONTAINER_PADDING = 16
+const DEFAULT_CARD_PADDING = 12
+const DEFAULT_CELL_GAP = 8
 
 // Sub-goal with actions type
 interface SubGoalWithActions extends SubGoal {
@@ -112,7 +120,6 @@ export default function MandalartDetailScreen() {
 
     setIsExporting(true)
     try {
-      // Capture the high-resolution 9x9 export grid
       const uri = await captureViewAsImage(exportGridRef, { format: 'png', quality: 1 })
 
       if (action === 'share') {
@@ -129,24 +136,19 @@ export default function MandalartDetailScreen() {
     }
   }, [mandalart, t])
 
-  // Get sub-goal by position
   const getSubGoalByPosition = useCallback((position: number): SubGoalWithActions | undefined => {
     return mandalart?.sub_goals.find(sg => sg.position === position) as SubGoalWithActions | undefined
   }, [mandalart])
 
-  // Handle center goal tap
   const handleCenterGoalTap = useCallback(() => {
     setInfoModalVisible(true)
   }, [])
 
-  // Handle sub-goal tap (including empty cells)
   const handleSubGoalTap = useCallback((position: number) => {
     const subGoal = getSubGoalByPosition(position)
     if (subGoal) {
-      // Existing sub-goal: expand to show details
       setExpandedSubGoal(subGoal)
     } else {
-      // Empty sub-goal: create a placeholder and open edit modal
       const emptySubGoal: SubGoalWithActions = {
         id: '',
         mandalart_id: id,
@@ -160,18 +162,15 @@ export default function MandalartDetailScreen() {
     }
   }, [getSubGoalByPosition, id])
 
-  // Handle delete mandalart - opens modal
   const handleDelete = useCallback(() => {
     setDeleteModalVisible(true)
   }, [])
 
-  // Handle delete/deactivate success
   const handleDeleteSuccess = useCallback(async (_action: 'deactivate' | 'delete') => {
     await queryClient.invalidateQueries({ queryKey: mandalartKeys.all })
     navigation.goBack()
   }, [queryClient, navigation])
 
-  // Handle edit button in expanded view
   const handleEditSubGoal = useCallback(() => {
     if (expandedSubGoal) {
       setSelectedSubGoal(expandedSubGoal)
@@ -179,12 +178,11 @@ export default function MandalartDetailScreen() {
     }
   }, [expandedSubGoal])
 
-  // Handle modal success
   const handleModalSuccess = useCallback(() => {
     refetch()
   }, [refetch])
 
-  // Sync expandedSubGoal when mandalart data changes (after refetch)
+  // Sync expandedSubGoal when mandalart data changes
   React.useEffect(() => {
     if (expandedSubGoal && mandalart) {
       const updatedSubGoal = mandalart.sub_goals.find(
@@ -196,7 +194,73 @@ export default function MandalartDetailScreen() {
     }
   }, [mandalart])
 
-  // Grid positions are now defined inline in the row-based layout
+  // Render 3x3 cell for main view
+  const renderMainCell = (position: number) => {
+    if (position === 0) {
+      return (
+        <CenterGoalCell
+          key="center"
+          centerGoal={mandalart!.center_goal}
+          size={cellSize}
+          onPress={handleCenterGoalTap}
+          numberOfLines={4}
+        />
+      )
+    }
+
+    const subGoal = getSubGoalByPosition(position)
+    return (
+      <SubGoalCell
+        key={position}
+        title={subGoal?.title || ''}
+        size={cellSize}
+        position={position}
+        filledActions={subGoal?.actions?.length || 0}
+        onPress={() => handleSubGoalTap(position)}
+        variant="overview"
+      />
+    )
+  }
+
+  // Render 3x3 cell for expanded sub-goal view
+  const renderExpandedCell = (cellPos: number) => {
+    if (!expandedSubGoal) return null
+
+    if (cellPos === 0) {
+      return (
+        <SubGoalCell
+          key="subgoal-center"
+          title={expandedSubGoal.title}
+          size={cellSize}
+          onPress={handleEditSubGoal}
+          variant="center"
+          numberOfLines={3}
+        />
+      )
+    }
+
+    const action = expandedSubGoal.actions?.find(a => a.position === cellPos)
+
+    return (
+      <Pressable
+        key={cellPos}
+        onPress={handleEditSubGoal}
+        className="items-center justify-center p-1.5 rounded-xl bg-white border border-gray-200 active:bg-gray-50"
+        style={{
+          width: cellSize,
+          height: cellSize,
+        }}
+      >
+        {action ? (
+          <Text className="text-xs text-gray-800 text-center" numberOfLines={4}>
+            {action.title}
+          </Text>
+        ) : (
+          <Text className="text-xs text-gray-300">-</Text>
+        )}
+      </Pressable>
+    )
+  }
 
   // Loading state
   if (isLoading) {
@@ -242,78 +306,6 @@ export default function MandalartDetailScreen() {
     )
   }
 
-  // Render 3x3 cell for main view (center + sub-goals)
-  const renderMainCell = (position: number) => {
-    if (position === 0) {
-      // Center: Core goal with gradient
-      return (
-        <CenterGoalCell
-          key="center"
-          centerGoal={mandalart.center_goal}
-          size={cellSize}
-          onPress={handleCenterGoalTap}
-          numberOfLines={4}
-        />
-      )
-    }
-
-    // Sub-goal cells (using shared component)
-    const subGoal = getSubGoalByPosition(position)
-    return (
-      <SubGoalCell
-        key={position}
-        title={subGoal?.title || ''}
-        size={cellSize}
-        position={position}
-        filledActions={subGoal?.actions?.length || 0}
-        onPress={() => handleSubGoalTap(position)}
-        variant="overview"
-      />
-    )
-  }
-
-  // Render 3x3 cell for expanded sub-goal view (tappable to open edit modal)
-  const renderExpandedCell = (cellPos: number) => {
-    if (!expandedSubGoal) return null
-
-    if (cellPos === 0) {
-      // Center: Sub-goal title (using shared component with 'center' variant)
-      return (
-        <SubGoalCell
-          key="subgoal-center"
-          title={expandedSubGoal.title}
-          size={cellSize}
-          onPress={handleEditSubGoal}
-          variant="center"
-          numberOfLines={3}
-        />
-      )
-    }
-
-    // Actions (tappable)
-    const action = expandedSubGoal.actions?.find(a => a.position === cellPos)
-
-    return (
-      <Pressable
-        key={cellPos}
-        onPress={handleEditSubGoal}
-        className="items-center justify-center p-1.5 rounded-xl bg-white border border-gray-200 active:bg-gray-50"
-        style={{
-          width: cellSize,
-          height: cellSize,
-        }}
-      >
-        {action ? (
-          <Text className="text-xs text-gray-800 text-center" numberOfLines={4}>
-            {action.title}
-          </Text>
-        ) : (
-          <Text className="text-xs text-gray-300">-</Text>
-        )}
-      </Pressable>
-    )
-  }
-
   return (
     <View className="flex-1 bg-gray-50">
       {/* Loading overlay */}
@@ -331,7 +323,7 @@ export default function MandalartDetailScreen() {
         </View>
       )}
 
-      {/* Header - styled like Header component */}
+      {/* Header */}
       <View
         className="bg-white border-b border-gray-100"
         style={{
@@ -387,211 +379,202 @@ export default function MandalartDetailScreen() {
         className="flex-1"
         contentContainerStyle={isTablet ? { alignItems: 'center', paddingVertical: 24 } : undefined}
       >
-        {/* Responsive container for iPad */}
         <View style={isTablet ? { width: '100%', maxWidth: contentMaxWidth } : undefined}>
 
-        {/* iPad: Full 9x9 Grid */}
-        {isTablet ? (
-          (() => {
-            // Calculate optimal grid size for iPad
-            const headerHeight = 64 + insets.top // Header with safe area
-            const verticalPadding = 48 // Top and bottom padding
-            const availableHeight = screenHeight - headerHeight - verticalPadding
-            const availableWidth = screenWidth - (CONTAINER_PADDING * 2)
-            // Use the smaller dimension to keep grid square, with some max limit
-            const gridSize = Math.min(availableWidth, availableHeight, 800)
+          {/* iPad: Full 9x9 Grid */}
+          {isTablet ? (
+            (() => {
+              const headerHeight = 64 + insets.top
+              const verticalPadding = 48
+              const availableHeight = screenHeight - headerHeight - verticalPadding
+              const availableWidth = screenWidth - (CONTAINER_PADDING * 2)
+              const gridSize = Math.min(availableWidth, availableHeight, 800)
 
-            return (
-              <View style={{ alignItems: 'center', paddingHorizontal: CONTAINER_PADDING }} ref={gridRef} collapsable={false}>
-                <MandalartFullGrid
-                  mandalart={{
-                    id: mandalart.id,
-                    center_goal: mandalart.center_goal,
-                    sub_goals: mandalart.sub_goals as SubGoalWithActions[],
-                  }}
-                  gridSize={gridSize}
-                  onCenterGoalPress={handleCenterGoalTap}
-                  onSubGoalPress={(subGoal) => {
-                    setSelectedSubGoal(subGoal)
-                    setEditModalVisible(true)
-                  }}
-                  onActionPress={(subGoal, _action) => {
-                    setSelectedSubGoal(subGoal)
-                    setEditModalVisible(true)
-                  }}
-                />
+              return (
+                <View style={{ alignItems: 'center', paddingHorizontal: CONTAINER_PADDING }} ref={gridRef} collapsable={false}>
+                  <MandalartFullGrid
+                    mandalart={{
+                      id: mandalart.id,
+                      center_goal: mandalart.center_goal,
+                      sub_goals: mandalart.sub_goals as SubGoalWithActions[],
+                    }}
+                    gridSize={gridSize}
+                    onCenterGoalPress={handleCenterGoalTap}
+                    onSubGoalPress={(subGoal) => {
+                      setSelectedSubGoal(subGoal)
+                      setEditModalVisible(true)
+                    }}
+                    onActionPress={(subGoal, _action) => {
+                      setSelectedSubGoal(subGoal)
+                      setEditModalVisible(true)
+                    }}
+                  />
+                </View>
+              )
+            })()
+          ) : (
+            /* Phone: 3x3 Grid with drill-down */
+            <>
+              {/* Header Bar */}
+              <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                {!expandedSubGoal ? (
+                  <Pressable
+                    onPress={handleCenterGoalTap}
+                    className="flex-1 flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+                    style={{
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.04,
+                      shadowRadius: 8,
+                      elevation: 2,
+                    }}
+                  >
+                    <Text
+                      className="text-base text-gray-700 flex-1"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                      numberOfLines={1}
+                    >
+                      {mandalart.center_goal}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <>
+                    <Pressable
+                      onPress={() => setExpandedSubGoal(null)}
+                      className="flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+                      style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.04,
+                        shadowRadius: 8,
+                        elevation: 2,
+                      }}
+                    >
+                      <ArrowLeft size={16} color="#374151" />
+                      <Text
+                        className="text-base text-gray-700 ml-1"
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        {t('mandalart.detail.back')}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleEditSubGoal}
+                      className="px-5 py-3 bg-gray-900 rounded-2xl active:bg-gray-800"
+                      style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 8,
+                        elevation: 3,
+                      }}
+                    >
+                      <Text
+                        className="text-base text-white"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('mandalart.detail.edit')}
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
               </View>
-            )
-          })()
-        ) : (
-          /* Phone: Original 3x3 Grid with drill-down */
-          <>
-            {/* Header Bar - Same height for both views */}
-            <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              {!expandedSubGoal ? (
-                /* Main View: Core goal display (1-line, same height as expanded view buttons) */
-                <Pressable
-                  onPress={handleCenterGoalTap}
-                  className="flex-1 flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
+
+              {/* 3x3 Grid */}
+              <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 16 }} ref={gridRef} collapsable={false}>
+                <View
+                  className="bg-white rounded-3xl border border-gray-100"
                   style={{
+                    padding: CARD_PADDING,
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.04,
-                    shadowRadius: 8,
-                    elevation: 2,
-                  }}
-                >
-                  <Text
-                    className="text-base text-gray-700 flex-1"
-                    style={{ fontFamily: 'Pretendard-Medium' }}
-                    numberOfLines={1}
-                  >
-                    {mandalart.center_goal}
-                  </Text>
-                </Pressable>
-              ) : (
-                /* Expanded View: Back and Edit buttons */
-                <>
-                <Pressable
-                  onPress={() => setExpandedSubGoal(null)}
-                  className="flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.04,
-                    shadowRadius: 8,
-                    elevation: 2,
-                  }}
-                >
-                  <ArrowLeft size={16} color="#374151" />
-                  <Text
-                    className="text-base text-gray-700 ml-1"
-                    style={{ fontFamily: 'Pretendard-Medium' }}
-                  >
-                    {t('mandalart.detail.back')}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleEditSubGoal}
-                  className="px-5 py-3 bg-gray-900 rounded-2xl active:bg-gray-800"
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
                     elevation: 3,
                   }}
                 >
-                  <Text
-                    className="text-base text-white"
-                    style={{ fontFamily: 'Pretendard-SemiBold' }}
-                  >
-                    {t('mandalart.detail.edit')}
-                  </Text>
-                </Pressable>
-                </>
-              )}
-            </View>
-
-            {/* 3x3 Grid - Row-based layout for reliable 3x3 display */}
-            <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 16 }} ref={gridRef} collapsable={false}>
-              <View
-                className="bg-white rounded-3xl border border-gray-100"
-                style={{
-                  padding: CARD_PADDING,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 12,
-                  elevation: 3,
-                }}
-              >
-                {/* Row 1: positions 0, 1, 2 → indices 1, 2, 3 */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
-                  {[1, 2, 3].map((pos) =>
-                    expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
-                  )}
-                </View>
-                {/* Row 2: positions 3, 4, 5 → indices 4, 0, 5 (center is 0) */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
-                  {[4, 0, 5].map((pos) =>
-                    expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
-                  )}
-                </View>
-                {/* Row 3: positions 6, 7, 8 → indices 6, 7, 8 */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
-                  {[6, 7, 8].map((pos) =>
-                    expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
-                  )}
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
+                    {[1, 2, 3].map((pos) =>
+                      expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
+                    )}
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                    {[4, 0, 5].map((pos) =>
+                      expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
+                    )}
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                    {[6, 7, 8].map((pos) =>
+                      expandedSubGoal ? renderExpandedCell(pos) : renderMainCell(pos)
+                    )}
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Usage Instructions (Phone only) */}
-            <View className="px-5 py-5 pb-8">
-              <View
-                className="bg-white rounded-3xl p-6 border border-gray-100"
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 12,
-                  elevation: 3,
-                }}
-              >
-                <View className="flex-row items-center mb-3">
-                  <Lightbulb size={20} color="#2563eb" />
-                  <Text
-                    className="text-base text-gray-900 ml-2"
-                    style={{ fontFamily: 'Pretendard-SemiBold' }}
-                  >
-                    {t('mandalart.detail.usage.title')}
-                  </Text>
-                </View>
-                <Text
-                  className="text-sm text-gray-500 mb-2"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
+              {/* Usage Instructions (Phone only) */}
+              <View className="px-5 py-5 pb-8">
+                <View
+                  className="bg-white rounded-3xl p-6 border border-gray-100"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
+                    elevation: 3,
+                  }}
                 >
-                  • {t('mandalart.detail.usage.tapToView')}
-                </Text>
-                <View className="flex-row items-center">
+                  <View className="flex-row items-center mb-3">
+                    <Lightbulb size={20} color="#2563eb" />
+                    <Text
+                      className="text-base text-gray-900 ml-2"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      {t('mandalart.detail.usage.title')}
+                    </Text>
+                  </View>
                   <Text
-                    className="text-sm text-gray-500"
+                    className="text-sm text-gray-500 mb-2"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    • {t('mandalart.detail.usage.typeLabel')}{' '}
+                    • {t('mandalart.detail.usage.tapToView')}
                   </Text>
-                  <RotateCw size={14} color="#3b82f6" />
-                  <Text
-                    className="text-sm text-gray-500 ml-1 mr-2"
-                    style={{ fontFamily: 'Pretendard-Regular' }}
-                  >
-                    {t('mandalart.detail.usage.routine')}
-                  </Text>
-                  <Target size={14} color="#10b981" />
-                  <Text
-                    className="text-sm text-gray-500 ml-1 mr-2"
-                    style={{ fontFamily: 'Pretendard-Regular' }}
-                  >
-                    {t('mandalart.detail.usage.mission')}
-                  </Text>
-                  <Lightbulb size={14} color="#f59e0b" />
-                  <Text
-                    className="text-sm text-gray-500 ml-1"
-                    style={{ fontFamily: 'Pretendard-Regular' }}
-                  >
-                    {t('mandalart.detail.usage.reference')}
-                  </Text>
+                  <View className="flex-row items-center">
+                    <Text
+                      className="text-sm text-gray-500"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      • {t('mandalart.detail.usage.typeLabel')}{' '}
+                    </Text>
+                    <RotateCw size={14} color="#3b82f6" />
+                    <Text
+                      className="text-sm text-gray-500 ml-1 mr-2"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('mandalart.detail.usage.routine')}
+                    </Text>
+                    <Target size={14} color="#10b981" />
+                    <Text
+                      className="text-sm text-gray-500 ml-1 mr-2"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('mandalart.detail.usage.mission')}
+                    </Text>
+                    <Lightbulb size={14} color="#f59e0b" />
+                    <Text
+                      className="text-sm text-gray-500 ml-1"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('mandalart.detail.usage.reference')}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          </>
-        )}
+            </>
+          )}
         </View>
-        {/* End of responsive container for iPad */}
       </ScrollView>
 
-      {/* Hidden 9x9 Export Grid (rendered off-screen for high-resolution capture) */}
+      {/* Hidden 9x9 Export Grid */}
       <View
         style={{
           position: 'absolute',
@@ -608,7 +591,7 @@ export default function MandalartDetailScreen() {
         />
       </View>
 
-      {/* Mandalart Info Modal */}
+      {/* Modals */}
       <MandalartInfoModal
         visible={infoModalVisible}
         mandalart={mandalart}
@@ -616,7 +599,6 @@ export default function MandalartDetailScreen() {
         onSuccess={handleModalSuccess}
       />
 
-      {/* Sub-goal Edit Modal */}
       <SubGoalEditModal
         visible={editModalVisible}
         subGoal={selectedSubGoal}
@@ -627,7 +609,6 @@ export default function MandalartDetailScreen() {
         onSuccess={handleModalSuccess}
       />
 
-      {/* Delete Mandalart Modal */}
       <DeleteMandalartModal
         visible={deleteModalVisible}
         mandalart={mandalart}
