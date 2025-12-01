@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
 import SubGoalModal from '../SubGoalModal'
-import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
+import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '..'
 import type { PreviewStepProps, MandalartData } from './types'
 import type { SubGoal, Action } from '@mandaact/shared'
 
