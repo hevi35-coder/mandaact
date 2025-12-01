@@ -71,38 +71,169 @@ eas secret:list
 
 ---
 
-## 3. 개발 빌드 (Development Build)
+## 3. 개발 빌드 실행 가이드 (Development Build Workflow)
 
-Expo Go가 아닌, 네이티브 코드가 포함된 **Development Build**를 사용하는 경우입니다.
+이 프로젝트는 **Expo Development Build**를 사용합니다. Expo Go가 아닌 네이티브 모듈이 포함된 커스텀 개발 빌드입니다.
 
-### 3.1 클라우드 빌드 (추천)
-로컬 환경(Xcode/Android Studio) 설정 없이 빌드할 수 있어 가장 간편합니다.
+### 3.1 핵심 개념: `expo start` vs `expo run:ios`
+
+| 명령어 | 용도 | 전제 조건 | 빌드 시간 |
+|--------|------|-----------|-----------|
+| `expo start` | Metro 번들러만 실행 (JS 코드 제공) | **개발 빌드가 이미 설치되어 있어야 함** | 즉시 (~5초) |
+| `expo run:ios` | 네이티브 빌드 + 설치 + Metro 실행 | Xcode 설치 필요 | 느림 (첫 빌드 3~5분) |
+
+**중요**: `expo start --ios`는 이미 설치된 앱을 실행하려고 시도하므로, **처음 실행 시에는 반드시 `expo run:ios`를 먼저 실행**해야 합니다.
+
+---
+
+### 3.2 처음 실행 시 (First Time Setup)
+
+시뮬레이터/디바이스에 개발 빌드가 없는 경우, 다음 순서로 진행합니다.
+
+#### **방법 1: 로컬 빌드 (추천 - 가장 빠름)**
+
+```bash
+# 1. 시뮬레이터 부팅 (선택 사항)
+open -a Simulator
+
+# 2. 개발 빌드 생성 및 설치
+pnpm --filter @mandaact/mobile ios
+
+# 또는
+cd apps/mobile
+npm run ios
+```
+
+**소요 시간**: 첫 빌드 3~5분, 이후 증분 빌드 30초~1분
+
+**장점**:
+- 가장 빠른 개발 사이클
+- 네이티브 코드 디버깅 가능
+- 오프라인 작업 가능
+
+**단점**:
+- Xcode 설치 필요 (Mac만 가능)
+- 디스크 공간 사용 (ios/ 폴더 생성)
+
+#### **방법 2: EAS 클라우드 빌드**
+
+로컬 환경 설정 없이 빌드하고 싶은 경우:
 
 ```bash
 cd apps/mobile
 
 # iOS 개발 빌드 (시뮬레이터용)
-eas build --profile development --platform ios --local
+eas build --profile development --platform ios
 
-# Android 개발 빌드 (에뮬레이터/디바이스용)
-eas build --profile development --platform android
+# 빌드 완료 후 다운로드하여 시뮬레이터에 설치
+# (EAS가 제공하는 URL에서 .tar.gz 다운로드)
 ```
 
-### 3.2 로컬 빌드 (Prebuild)
-직접 Xcode/Android Studio로 빌드해야 할 때 사용합니다. (디버깅 용이)
+**소요 시간**: 10~20분 (빌드 큐 대기 시간 포함)
+
+**장점**:
+- Xcode 불필요
+- 클라우드에서 빌드
+
+**단점**:
+- 느림
+- 인터넷 필요
+- Free tier는 빌드 큐 대기 시간 김
+
+---
+
+### 3.3 일상적인 개발 워크플로우 (Daily Development)
+
+개발 빌드가 **이미 설치된 이후**에는 다음과 같이 빠르게 작업할 수 있습니다.
+
+#### **Step 1: Metro 번들러 실행**
 
 ```bash
-cd apps/mobile
+# 루트에서
+pnpm --filter @mandaact/mobile start
 
-# 1. Prebuild (네이티브 폴더 생성: ios/, android/)
-npx expo prebuild
-
-# 2. iOS 실행
-npm run ios
-
-# 3. Android 실행
-npm run android
+# 또는 apps/mobile에서
+npm start
 ```
+
+#### **Step 2: 앱 실행**
+
+**자동 실행 (추천)**:
+```bash
+# Metro가 실행된 상태에서 터미널에서 'i' 입력
+# → iOS 시뮬레이터가 자동으로 열리고 앱 실행
+```
+
+**수동 실행**:
+- 시뮬레이터에서 "MandaAct" 앱 아이콘 클릭
+- 또는 시뮬레이터에서 `Cmd + Shift + H` (홈) → 앱 선택
+
+#### **Step 3: 개발 중 새로고침**
+
+코드 수정 후:
+- **자동 새로고침**: Fast Refresh가 자동으로 적용됨 (대부분의 경우)
+- **수동 새로고침**: 
+  - 시뮬레이터에서 `Cmd + R`
+  - 또는 Metro 터미널에서 `r` 입력
+
+---
+
+### 3.4 네이티브 코드 변경 시 (Native Code Changes)
+
+다음과 같은 경우 **재빌드 필요**:
+- 새로운 네이티브 모듈 설치 (예: `expo install expo-camera`)
+- `app.json` / `app.config.js` 수정
+- iOS/Android 네이티브 코드 직접 수정
+
+**재빌드 방법**:
+```bash
+# 빠른 재빌드 (증분 빌드)
+pnpm --filter @mandaact/mobile ios
+
+# 완전 클린 빌드 (문제 발생 시)
+cd apps/mobile
+rm -rf ios android
+npx expo prebuild --clean
+npm run ios
+```
+
+---
+
+### 3.5 빠른 참조 (Quick Reference)
+
+| 상황 | 명령어 |
+|------|--------|
+| **처음 실행** | `pnpm --filter @mandaact/mobile ios` |
+| **일상 개발** | `pnpm --filter @mandaact/mobile start` → `i` |
+| **앱 새로고침** | Metro에서 `r` 또는 시뮬레이터에서 `Cmd + R` |
+| **캐시 문제** | `pnpm --filter @mandaact/mobile start --clear` |
+| **네이티브 변경** | `pnpm --filter @mandaact/mobile ios` (재빌드) |
+| **완전 클린** | `rm -rf ios android && npx expo prebuild --clean` |
+
+---
+
+### 3.6 트러블슈팅: "Could not connect to the server"
+
+**증상**: 시뮬레이터에서 "Error loading app: Could not connect to the server" 에러
+
+**원인**: Metro 번들러가 실행되지 않았거나, 앱이 잘못된 서버 주소를 참조
+
+**해결 방법**:
+
+1. **Metro 번들러 실행 확인**:
+   ```bash
+   # 새 터미널에서
+   pnpm --filter @mandaact/mobile start
+   ```
+
+2. **앱 새로고침**:
+   - Metro 터미널에서 `r` 입력
+   - 또는 시뮬레이터에서 `Cmd + R`
+
+3. **앱 재설치** (위 방법이 안 되면):
+   ```bash
+   pnpm --filter @mandaact/mobile ios
+   ```
 
 ---
 
