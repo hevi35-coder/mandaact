@@ -41,24 +41,16 @@ import SubGoalModal from '../components/SubGoalModal'
 import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
 import { mandalartKeys } from '../hooks/useMandalarts'
 import { useResponsive } from '../hooks/useResponsive'
+import {
+  MethodSelector,
+  ProgressOverlay,
+  type InputMethod,
+  type MandalartData,
+} from '../components/MandalartCreate'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
-type InputMethod = 'image' | 'text' | 'manual'
 type Step = 'select' | 'input' | 'preview' | 'saving'
-
-interface MandalartData {
-  title: string
-  center_goal: string
-  sub_goals: Array<{
-    position: number
-    title: string
-    actions: Array<{
-      position: number
-      title: string
-    }>
-  }>
-}
 
 // Grid layout constants
 const CONTAINER_PADDING = 16
@@ -459,18 +451,12 @@ export default function MandalartCreateScreen() {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
         {/* Progress overlay */}
-        {progress && (
-          <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
-            <View className="bg-white rounded-2xl p-6 mx-4 items-center">
-              <ActivityIndicator size="large" color="#2563eb" />
-              <Text className="text-gray-900 font-semibold mt-4">
-                {t(`mandalart.create.ocr.${progress.message}`, progress.message)}
-              </Text>
-            </View>
-          </View>
-        )}
+        <ProgressOverlay
+          visible={!!progress}
+          message={progress?.message ? t(`mandalart.create.ocr.${progress.message}`, progress.message) : ''}
+        />
 
-        {/* Header - Beautified */}
+        {/* Header */}
         <View className="flex-row items-center px-5 h-16 border-b border-gray-100">
           <Pressable onPress={handleBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
             <ArrowLeft size={24} color="#374151" />
@@ -491,110 +477,7 @@ export default function MandalartCreateScreen() {
           </View>
         </View>
 
-        <ScrollView className="flex-1 px-5 pt-5">
-          <Text
-            className="text-lg text-gray-900 mb-5"
-            style={{ fontFamily: 'Pretendard-SemiBold' }}
-          >
-            {t('mandalart.create.selectMethod')}
-          </Text>
-
-          {/* Image OCR */}
-          <Pressable
-            onPress={() => handleSelectMethod('image')}
-            className="bg-white rounded-3xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 3,
-            }}
-          >
-            <View className="w-14 h-14 rounded-2xl bg-gray-100 items-center justify-center mr-4">
-              <ImageIcon size={26} color="#6b7280" />
-            </View>
-            <View className="flex-1">
-              <Text
-                className="text-base text-gray-900"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                {t('mandalart.create.imageUpload.title')}
-              </Text>
-              <Text
-                className="text-sm text-gray-500 mt-1"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {t('mandalart.create.imageUpload.description')}
-              </Text>
-            </View>
-          </Pressable>
-
-          {/* Text Paste */}
-          <Pressable
-            onPress={() => handleSelectMethod('text')}
-            className="bg-white rounded-3xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 3,
-            }}
-          >
-            <View className="w-14 h-14 rounded-2xl bg-gray-100 items-center justify-center mr-4">
-              <FileText size={26} color="#6b7280" />
-            </View>
-            <View className="flex-1">
-              <Text
-                className="text-base text-gray-900"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                {t('mandalart.create.textPaste.title')}
-              </Text>
-              <Text
-                className="text-sm text-gray-500 mt-1"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {t('mandalart.create.textPaste.description')}
-              </Text>
-            </View>
-          </Pressable>
-
-          {/* Manual Input */}
-          <Pressable
-            onPress={() => {
-              setInputMethod('manual')
-              handleManualCreate()
-            }}
-            className="bg-white rounded-3xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 3,
-            }}
-          >
-            <View className="w-14 h-14 rounded-2xl bg-gray-100 items-center justify-center mr-4">
-              <PenLine size={26} color="#6b7280" />
-            </View>
-            <View className="flex-1">
-              <Text
-                className="text-base text-gray-900"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                {t('mandalart.create.manualInput.title')}
-              </Text>
-              <Text
-                className="text-sm text-gray-500 mt-1"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {t('mandalart.create.manualInput.description')}
-              </Text>
-            </View>
-          </Pressable>
-        </ScrollView>
+        <MethodSelector onSelectMethod={handleSelectMethod} />
       </SafeAreaView>
     )
   }
@@ -1000,203 +883,203 @@ export default function MandalartCreateScreen() {
               )
             })()
           ) : (
-          /* Phone: 3x3 Grid Card */
-          <View
-            className="bg-white rounded-3xl border border-gray-100 p-5 mb-5"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 3,
-            }}
-          >
-            <View className="mb-4">
-              <Text
-                className="text-base text-gray-900"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                {t('mandalart.create.manualInput.title')}
-              </Text>
-              <Text
-                className="text-sm text-gray-500 mt-1"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {t('mandalart.create.manualInput.tapToEdit')}
-              </Text>
-            </View>
+            /* Phone: 3x3 Grid Card */
+            <View
+              className="bg-white rounded-3xl border border-gray-100 p-5 mb-5"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+                elevation: 3,
+              }}
+            >
+              <View className="mb-4">
+                <Text
+                  className="text-base text-gray-900"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  {t('mandalart.create.manualInput.title')}
+                </Text>
+                <Text
+                  className="text-sm text-gray-500 mt-1"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {t('mandalart.create.manualInput.tapToEdit')}
+                </Text>
+              </View>
 
-            {expandedSection === null ? (
-              // Collapsed: 3x3 Sub-goals overview - Row-based layout
-              <View>
-                {/* Row 1: positions 1, 2, 3 */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
-                  {[1, 2, 3].map((sectionPos) => {
-                    const subGoal = getSubGoalByPosition(sectionPos)
-                    const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
+              {expandedSection === null ? (
+                // Collapsed: 3x3 Sub-goals overview - Row-based layout
+                <View>
+                  {/* Row 1: positions 1, 2, 3 */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
+                    {[1, 2, 3].map((sectionPos) => {
+                      const subGoal = getSubGoalByPosition(sectionPos)
+                      const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
 
-                    return (
-                      <SubGoalCell
-                        key={sectionPos}
-                        title={subGoal?.title || ''}
-                        size={cellSize}
-                        position={sectionPos}
-                        filledActions={filledActions}
-                        onPress={() => handleSectionTap(sectionPos)}
-                        variant="overview"
-                      />
-                    )
-                  })}
-                </View>
-                {/* Row 2: positions 4, 0 (center), 5 */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
-                  {[4, 0, 5].map((sectionPos) => {
-                    if (sectionPos === 0) {
-                      // Center: Core goal with gradient (using shared component)
                       return (
-                        <CenterGoalCell
-                          key="center"
-                          centerGoal={mandalartData.center_goal}
+                        <SubGoalCell
+                          key={sectionPos}
+                          title={subGoal?.title || ''}
                           size={cellSize}
-                          onPress={handleCoreGoalClick}
-                          showPlaceholder={true}
-                          numberOfLines={3}
+                          position={sectionPos}
+                          filledActions={filledActions}
+                          onPress={() => handleSectionTap(sectionPos)}
+                          variant="overview"
                         />
                       )
-                    }
+                    })}
+                  </View>
+                  {/* Row 2: positions 4, 0 (center), 5 */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                    {[4, 0, 5].map((sectionPos) => {
+                      if (sectionPos === 0) {
+                        // Center: Core goal with gradient (using shared component)
+                        return (
+                          <CenterGoalCell
+                            key="center"
+                            centerGoal={mandalartData.center_goal}
+                            size={cellSize}
+                            onPress={handleCoreGoalClick}
+                            showPlaceholder={true}
+                            numberOfLines={3}
+                          />
+                        )
+                      }
 
-                    const subGoal = getSubGoalByPosition(sectionPos)
-                    const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
+                      const subGoal = getSubGoalByPosition(sectionPos)
+                      const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
 
-                    return (
-                      <SubGoalCell
-                        key={sectionPos}
-                        title={subGoal?.title || ''}
-                        size={cellSize}
-                        position={sectionPos}
-                        filledActions={filledActions}
-                        onPress={() => handleSectionTap(sectionPos)}
-                        variant="overview"
-                      />
-                    )
-                  })}
+                      return (
+                        <SubGoalCell
+                          key={sectionPos}
+                          title={subGoal?.title || ''}
+                          size={cellSize}
+                          position={sectionPos}
+                          filledActions={filledActions}
+                          onPress={() => handleSectionTap(sectionPos)}
+                          variant="overview"
+                        />
+                      )
+                    })}
+                  </View>
+                  {/* Row 3: positions 6, 7, 8 */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                    {[6, 7, 8].map((sectionPos) => {
+                      const subGoal = getSubGoalByPosition(sectionPos)
+                      const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
+
+                      return (
+                        <SubGoalCell
+                          key={sectionPos}
+                          title={subGoal?.title || ''}
+                          size={cellSize}
+                          position={sectionPos}
+                          filledActions={filledActions}
+                          onPress={() => handleSectionTap(sectionPos)}
+                          variant="overview"
+                        />
+                      )
+                    })}
+                  </View>
                 </View>
-                {/* Row 3: positions 6, 7, 8 */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
-                  {[6, 7, 8].map((sectionPos) => {
-                    const subGoal = getSubGoalByPosition(sectionPos)
-                    const filledActions = subGoal?.actions.filter(a => a.title.trim()).length || 0
-
-                    return (
-                      <SubGoalCell
-                        key={sectionPos}
-                        title={subGoal?.title || ''}
-                        size={cellSize}
-                        position={sectionPos}
-                        filledActions={filledActions}
-                        onPress={() => handleSectionTap(sectionPos)}
-                        variant="overview"
-                      />
-                    )
-                  })}
-                </View>
-              </View>
-            ) : (
-              // Expanded: 3x3 grid of selected section's actions
-              <View>
-                <View className="flex-row items-center justify-between mb-4">
-                  <Pressable
-                    onPress={handleGridBack}
-                    className="flex-row items-center px-4 py-2.5 border border-gray-300 rounded-2xl active:bg-gray-50"
-                  >
-                    <ChevronLeft size={16} color="#6b7280" />
-                    <Text
-                      className="text-sm text-gray-600 ml-0.5"
-                      style={{ fontFamily: 'Pretendard-Medium' }}
+              ) : (
+                // Expanded: 3x3 grid of selected section's actions
+                <View>
+                  <View className="flex-row items-center justify-between mb-4">
+                    <Pressable
+                      onPress={handleGridBack}
+                      className="flex-row items-center px-4 py-2.5 border border-gray-300 rounded-2xl active:bg-gray-50"
                     >
-                      {t('mandalart.create.preview.back')}
-                    </Text>
-                  </Pressable>
+                      <ChevronLeft size={16} color="#6b7280" />
+                      <Text
+                        className="text-sm text-gray-600 ml-0.5"
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        {t('mandalart.create.preview.back')}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        setSelectedSubGoalPosition(expandedSection)
+                        setSubGoalModalOpen(true)
+                      }}
+                      className="px-4 py-2.5 bg-gray-900 rounded-2xl active:bg-gray-800"
+                    >
+                      <Text
+                        className="text-sm text-white"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('common.edit')}
+                      </Text>
+                    </Pressable>
+                  </View>
+
                   <Pressable
                     onPress={() => {
                       setSelectedSubGoalPosition(expandedSection)
                       setSubGoalModalOpen(true)
                     }}
-                    className="px-4 py-2.5 bg-gray-900 rounded-2xl active:bg-gray-800"
+                    className="rounded-xl overflow-hidden border border-gray-200"
                   >
-                    <Text
-                      className="text-sm text-white"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('common.edit')}
-                    </Text>
+                    {/* Row-based 3x3 grid for expanded section */}
+                    <View>
+                      {/* Row 1 */}
+                      <View style={{ flexDirection: 'row' }}>
+                        {[0, 1, 2].map((cellPos) => (
+                          <View
+                            key={cellPos}
+                            style={{
+                              width: cellSize,
+                              height: cellSize,
+                              borderRightWidth: cellPos < 2 ? 1 : 0,
+                              borderBottomWidth: 1,
+                              borderColor: '#e5e7eb',
+                            }}
+                          >
+                            {renderExpandedCell(expandedSection, cellPos)}
+                          </View>
+                        ))}
+                      </View>
+                      {/* Row 2 */}
+                      <View style={{ flexDirection: 'row' }}>
+                        {[3, 4, 5].map((cellPos) => (
+                          <View
+                            key={cellPos}
+                            style={{
+                              width: cellSize,
+                              height: cellSize,
+                              borderRightWidth: cellPos < 5 ? 1 : 0,
+                              borderBottomWidth: 1,
+                              borderColor: '#e5e7eb',
+                            }}
+                          >
+                            {renderExpandedCell(expandedSection, cellPos)}
+                          </View>
+                        ))}
+                      </View>
+                      {/* Row 3 */}
+                      <View style={{ flexDirection: 'row' }}>
+                        {[6, 7, 8].map((cellPos) => (
+                          <View
+                            key={cellPos}
+                            style={{
+                              width: cellSize,
+                              height: cellSize,
+                              borderRightWidth: cellPos < 8 ? 1 : 0,
+                              borderColor: '#e5e7eb',
+                            }}
+                          >
+                            {renderExpandedCell(expandedSection, cellPos)}
+                          </View>
+                        ))}
+                      </View>
+                    </View>
                   </Pressable>
                 </View>
-
-                <Pressable
-                  onPress={() => {
-                    setSelectedSubGoalPosition(expandedSection)
-                    setSubGoalModalOpen(true)
-                  }}
-                  className="rounded-xl overflow-hidden border border-gray-200"
-                >
-                  {/* Row-based 3x3 grid for expanded section */}
-                  <View>
-                    {/* Row 1 */}
-                    <View style={{ flexDirection: 'row' }}>
-                      {[0, 1, 2].map((cellPos) => (
-                        <View
-                          key={cellPos}
-                          style={{
-                            width: cellSize,
-                            height: cellSize,
-                            borderRightWidth: cellPos < 2 ? 1 : 0,
-                            borderBottomWidth: 1,
-                            borderColor: '#e5e7eb',
-                          }}
-                        >
-                          {renderExpandedCell(expandedSection, cellPos)}
-                        </View>
-                      ))}
-                    </View>
-                    {/* Row 2 */}
-                    <View style={{ flexDirection: 'row' }}>
-                      {[3, 4, 5].map((cellPos) => (
-                        <View
-                          key={cellPos}
-                          style={{
-                            width: cellSize,
-                            height: cellSize,
-                            borderRightWidth: cellPos < 5 ? 1 : 0,
-                            borderBottomWidth: 1,
-                            borderColor: '#e5e7eb',
-                          }}
-                        >
-                          {renderExpandedCell(expandedSection, cellPos)}
-                        </View>
-                      ))}
-                    </View>
-                    {/* Row 3 */}
-                    <View style={{ flexDirection: 'row' }}>
-                      {[6, 7, 8].map((cellPos) => (
-                        <View
-                          key={cellPos}
-                          style={{
-                            width: cellSize,
-                            height: cellSize,
-                            borderRightWidth: cellPos < 8 ? 1 : 0,
-                            borderColor: '#e5e7eb',
-                          }}
-                        >
-                          {renderExpandedCell(expandedSection, cellPos)}
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                </Pressable>
-              </View>
-            )}
-          </View>
+              )}
+            </View>
           )}
 
           <View className="h-8" />
