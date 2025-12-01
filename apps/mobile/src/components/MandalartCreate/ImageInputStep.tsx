@@ -1,0 +1,209 @@
+/**
+ * ImageInputStep Component
+ * 
+ * Handles image selection and OCR processing
+ */
+
+import React, { useState } from 'react'
+import {
+    View,
+    Text,
+    Pressable,
+    Image,
+    ScrollView,
+    useWindowDimensions,
+    Alert,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { ArrowLeft, Upload } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
+import { useTranslation } from 'react-i18next'
+import * as ImagePicker from 'expo-image-picker'
+import { runOCRFlowFromUri } from '../../services/ocrService'
+import { useResponsive } from '../../hooks/useResponsive'
+import { logger } from '../../lib'
+import type { InputStepProps } from './types'
+
+export function ImageInputStep({ onBack, onNext, setLoading }: InputStepProps) {
+    const { t } = useTranslation()
+    const { width: screenWidth } = useWindowDimensions()
+    const { isTablet } = useResponsive()
+
+    const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null)
+    const [isProcessing, setIsProcessing] = useState(false)
+
+    // Calculate image width
+    const imageWidth = isTablet ? screenWidth - 40 : screenWidth - 40
+
+    const handleImageSourceSelect = async () => {
+        Alert.alert(
+            t('mandalart.create.imageUpload.selectSource'),
+            '',
+            [
+                {
+                    text: t('mandalart.create.imageUpload.camera'),
+                    onPress: () => pickImage('camera'),
+                },
+                {
+                    text: t('mandalart.create.imageUpload.gallery'),
+                    onPress: () => pickImage('gallery'),
+                },
+                {
+                    text: t('common.cancel'),
+                    style: 'cancel',
+                },
+            ]
+        )
+    }
+
+    const pickImage = async (source: 'camera' | 'gallery') => {
+        try {
+            let result
+
+            if (source === 'camera') {
+                const permission = await ImagePicker.requestCameraPermissionsAsync()
+                if (!permission.granted) {
+                    Alert.alert(t('common.error'), t('mandalart.create.errors.cameraPermission'))
+                    return
+                }
+                result = await ImagePicker.launchCameraAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    quality: 0.8,
+                    allowsEditing: true,
+                })
+            } else {
+                const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
+                if (!permission.granted) {
+                    Alert.alert(t('common.error'), t('mandalart.create.errors.galleryPermission'))
+                    return
+                }
+                result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    quality: 0.8,
+                    allowsEditing: true,
+                })
+            }
+
+            if (!result.canceled && result.assets[0]) {
+                setSelectedImageUri(result.assets[0].uri)
+            }
+        } catch (error) {
+            logger.error('Image picker error', error)
+            Alert.alert(t('common.error'), t('mandalart.create.errors.imageSelect'))
+        }
+    }
+
+    const handleProcessOCR = async () => {
+        if (!selectedImageUri) return
+
+        setIsProcessing(true)
+        setLoading(true, 'uploading')
+
+        try {
+            const mandalartData = await runOCRFlowFromUri(
+                selectedImageUri,
+                (progress) => setLoading(true, progress.message)
+            )
+
+            onNext(mandalartData)
+        } catch (error) {
+            logger.error('OCR error', error)
+            Alert.alert(t('common.error'), t('mandalart.create.errors.ocrFailed'))
+        } finally {
+            setIsProcessing(false)
+            setLoading(false)
+        }
+    }
+
+    return (
+        <SafeAreaView className="flex-1 bg-gray-50">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-5 h-16 border-b border-gray-100">
+                <View className="flex-row items-center">
+                    <Pressable onPress={onBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
+                        <ArrowLeft size={24} color="#374151" />
+                    </Pressable>
+                    <Text
+                        className="text-xl text-gray-900 ml-2"
+                        style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                        {t('mandalart.create.imageUpload.title')}
+                    </Text>
+                </View>
+                {selectedImageUri && (
+                    <Pressable
+                        onPress={handleProcessOCR}
+                        disabled={isProcessing}
+                        className="rounded-2xl overflow-hidden"
+                    >
+                        <LinearGradient
+                            colors={['#2563eb', '#9333ea', '#db2777']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{ padding: 1, borderRadius: 16 }}
+                        >
+                            <View className="bg-white rounded-2xl px-5 py-2.5 items-center justify-center">
+                                <MaskedView
+                                    maskElement={
+                                        <Text style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                                            {t('mandalart.create.imageUpload.extractText')}
+                                        </Text>
+                                    }
+                                >
+                                    <LinearGradient
+                                        colors={['#2563eb', '#9333ea', '#db2777']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                    >
+                                        <Text style={{ fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
+                                            {t('mandalart.create.imageUpload.extractText')}
+                                        </Text>
+                                    </LinearGradient>
+                                </MaskedView>
+                            </View>
+                        </LinearGradient>
+                    </Pressable>
+                )}
+            </View>
+
+            <ScrollView className="flex-1 px-5 pt-5">
+                <Text
+                    className="text-sm text-gray-500 mb-4"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                    {t('mandalart.create.imageUpload.hint')}
+                </Text>
+
+                {!selectedImageUri ? (
+                    // Image upload area
+                    <Pressable
+                        onPress={handleImageSourceSelect}
+                        className="border-2 border-dashed border-gray-300 rounded-3xl p-8 items-center justify-center bg-white active:bg-gray-50"
+                        style={{ minHeight: 220 }}
+                    >
+                        <Upload size={48} color="#9ca3af" />
+                        <Text
+                            className="text-base text-gray-500 mt-4 text-center"
+                            style={{ fontFamily: 'Pretendard-Medium' }}
+                        >
+                            {t('mandalart.create.imageUpload.tapToSelect')}
+                        </Text>
+                    </Pressable>
+                ) : (
+                    // Image preview
+                    <Pressable
+                        onPress={handleImageSourceSelect}
+                        className="bg-white rounded-3xl overflow-hidden border border-gray-100 active:opacity-90"
+                    >
+                        <Image
+                            source={{ uri: selectedImageUri }}
+                            style={{ width: imageWidth, height: imageWidth }}
+                            resizeMode="contain"
+                        />
+                    </Pressable>
+                )}
+            </ScrollView>
+        </SafeAreaView>
+    )
+}
