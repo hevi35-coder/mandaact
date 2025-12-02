@@ -32,6 +32,12 @@ export function getEnv(): EnvConfig {
     PROJECT_ID: process.env.EXPO_PUBLIC_PROJECT_ID,
   }
 
+  // Debug log
+  console.log('[ENV] Loaded variables:', {
+    SUPABASE_URL: env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY ? '***' : 'MISSING',
+  })
+
   return env
 }
 

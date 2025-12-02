@@ -3,10 +3,10 @@
  */
 
 import type { XPMultiplier } from '@mandaact/shared'
-import type { BadgeDefinition } from '../../hooks/useBadges'
+import type { BadgeDefinition, UserBadge, BadgeProgress } from '../../hooks/useBadges'
 
 // Re-export for convenience
-export type { XPMultiplier, BadgeDefinition }
+export type { XPMultiplier, BadgeDefinition, UserBadge, BadgeProgress }
 
 export interface ProfileCardProps {
     currentLevel: number
@@ -22,10 +22,11 @@ export interface ProfileCardProps {
     // Children components props
     activeMultipliers: XPMultiplier[]
     badges: BadgeDefinition[]
-    userBadges: Array<{ achievement_id: string }>
+    userBadges: UserBadge[]
+    badgeProgress: BadgeProgress[]
     badgesLoading: boolean
     translateBadge: (badge: BadgeDefinition) => BadgeDefinition
-    onBadgePress: () => void
+    onBadgePress: (badge: BadgeDefinition) => void
 }
 
 export interface XPInfoSectionProps {
@@ -34,10 +35,11 @@ export interface XPInfoSectionProps {
 
 export interface BadgeCollectionSectionProps {
     badges: BadgeDefinition[]
-    userBadges: Array<{ achievement_id: string }>
+    userBadges: UserBadge[]
+    badgeProgress: BadgeProgress[]
     isLoading: boolean
     translateBadge: (badge: BadgeDefinition) => BadgeDefinition
-    onBadgePress: () => void
+    onBadgePress: (badge: BadgeDefinition) => void
 }
 
 export interface StreakCardProps {
@@ -71,6 +73,6 @@ export interface BadgeMiniCardProps {
     badge: BadgeDefinition
     isUnlocked: boolean
     isSecret: boolean
-    onPress: () => void
+    onPress: (badge: BadgeDefinition) => void
     translateBadge: (badge: BadgeDefinition) => BadgeDefinition
 }

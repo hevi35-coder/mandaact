@@ -218,7 +218,7 @@ export default function TutorialScreen() {
 
               {/* Bullets */}
               {step.bullets && (
-                <View className="bg-gray-50 rounded-2xl p-4">
+                <View className="bg-gray-50 rounded-xl p-4">
                   {step.bullets.map((bullet, bIndex) => {
                     if (step.useIconBullets && typeof bullet === 'object' && 'icon' in bullet) {
                       const BulletIcon = bullet.icon

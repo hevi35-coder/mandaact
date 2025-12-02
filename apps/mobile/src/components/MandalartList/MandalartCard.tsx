@@ -5,9 +5,10 @@
  */
 
 import React from 'react'
-import { View, Text, Pressable, ActivityIndicator, Switch } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeInUp } from 'react-native-reanimated'
+import { Toggle } from '../ui/Toggle'
 import type { MandalartCardProps } from './types'
 
 export const MandalartCard = React.memo(({
@@ -25,7 +26,7 @@ export const MandalartCard = React.memo(({
         >
             <Pressable
                 onPress={() => onPress(mandalart)}
-                className={`bg-white rounded-3xl p-5 border border-gray-100 ${!mandalart.is_active ? 'opacity-60' : ''
+                className={`bg-white rounded-2xl p-5 border border-gray-100 ${!mandalart.is_active ? 'opacity-60' : ''
                     }`}
                 style={{
                     shadowColor: '#000',
@@ -55,26 +56,19 @@ export const MandalartCard = React.memo(({
                     </View>
 
                     {/* Toggle Switch with Status Label */}
-                    <View className="items-center pt-0.5">
-                        {isToggling ? (
-                            <ActivityIndicator size="small" color="#374151" />
-                        ) : (
-                            <>
-                                <Switch
-                                    value={mandalart.is_active}
-                                    onValueChange={() => onToggleActive(mandalart)}
-                                    trackColor={{ false: '#d1d5db', true: '#2563eb' }}
-                                    thumbColor="white"
-                                />
-                                <Text
-                                    className={`text-xs mt-1 ${mandalart.is_active ? 'text-indigo-500' : 'text-gray-400'
-                                        }`}
-                                    style={{ fontFamily: 'Pretendard-Medium' }}
-                                >
-                                    {mandalart.is_active ? t('mandalart.list.active') : t('mandalart.list.inactive')}
-                                </Text>
-                            </>
-                        )}
+                    <View className="items-center pt-1">
+                        <Toggle
+                            value={mandalart.is_active}
+                            onValueChange={() => onToggleActive(mandalart)}
+                            loading={isToggling}
+                            size="sm"
+                        />
+                        <Text
+                            className={`text-xs mt-1.5 ${mandalart.is_active ? 'text-gray-700' : 'text-gray-400'}`}
+                            style={{ fontFamily: 'Pretendard-Medium' }}
+                        >
+                            {mandalart.is_active ? t('mandalart.list.active') : t('mandalart.list.inactive')}
+                        </Text>
                     </View>
                 </View>
             </Pressable>

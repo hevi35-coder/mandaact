@@ -116,7 +116,7 @@ export default function DeleteMandalartModal({
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl max-h-[85%]">
+        <View className="bg-white rounded-t-2xl max-h-[85%]">
           {/* Header */}
           <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
             <View className="flex-row items-center">
@@ -134,7 +134,7 @@ export default function DeleteMandalartModal({
 
           <ScrollView className="px-5 py-4">
             {/* Warning */}
-            <View className="flex-row items-center mb-4 p-3 bg-red-50 rounded-xl border border-red-200">
+            <View className="flex-row items-center mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
               <AlertTriangle size={20} color="#ef4444" />
               <Text
                 className="text-sm text-red-700 ml-2 flex-1"
@@ -152,7 +152,7 @@ export default function DeleteMandalartModal({
               >
                 {t('mandalart.delete.dataToDelete')}
               </Text>
-              <View className="bg-gray-50 rounded-xl p-3 border border-gray-200">
+              <View className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <Text
                   className="text-sm text-gray-700 mb-1"
                   style={{ fontFamily: 'Pretendard-Regular' }}
@@ -182,7 +182,7 @@ export default function DeleteMandalartModal({
               >
                 {t('mandalart.delete.dataToKeep')}
               </Text>
-              <View className="bg-gray-50 rounded-xl p-3 border border-gray-200">
+              <View className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <Text
                   className="text-sm text-gray-700 mb-1"
                   style={{ fontFamily: 'Pretendard-Regular' }}
@@ -199,7 +199,7 @@ export default function DeleteMandalartModal({
             </View>
 
             {/* Recommendation */}
-            <View className="flex-row items-start mb-6 p-3 bg-blue-50 rounded-xl border border-blue-200">
+            <View className="flex-row items-start mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <Info size={18} color="#3b82f6" className="mt-0.5" />
               <Text
                 className="text-sm text-blue-700 ml-2 flex-1"
@@ -215,7 +215,7 @@ export default function DeleteMandalartModal({
               <Pressable
                 onPress={handleDeactivate}
                 disabled={isProcessing}
-                className="rounded-xl overflow-hidden mb-3"
+                className="rounded-lg overflow-hidden mb-3"
               >
                 <LinearGradient
                   colors={['#2563eb', '#9333ea', '#db2777']}
@@ -223,7 +223,7 @@ export default function DeleteMandalartModal({
                   end={{ x: 1, y: 0 }}
                   style={{ padding: 1, borderRadius: 12 }}
                 >
-                  <View className="bg-white rounded-xl py-4 items-center justify-center">
+                  <View className="bg-white rounded-lg py-4 items-center justify-center">
                     {processingAction === 'deactivate' ? (
                       <ActivityIndicator size="small" color="#2563eb" />
                     ) : (
@@ -259,7 +259,7 @@ export default function DeleteMandalartModal({
               <Pressable
                 onPress={handleDelete}
                 disabled={isProcessing}
-                className="bg-white border border-gray-300 rounded-xl py-4 items-center active:bg-gray-50"
+                className="bg-white border border-gray-300 rounded-lg py-4 items-center active:bg-gray-50"
               >
                 {processingAction === 'delete' ? (
                   <ActivityIndicator size="small" color="#ef4444" />

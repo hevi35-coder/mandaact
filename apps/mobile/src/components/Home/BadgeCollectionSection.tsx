@@ -1,6 +1,6 @@
 /**
  * BadgeCollectionSection Component
- * 
+ *
  * Collapsible section showing badge collection
  */
 
@@ -16,6 +16,7 @@ import type { BadgeCollectionSectionProps } from './types'
 export function BadgeCollectionSection({
     badges,
     userBadges,
+    badgeProgress,
     isLoading,
     translateBadge,
     onBadgePress,

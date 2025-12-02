@@ -104,7 +104,7 @@ function ReportCard({
   if (isLoading) {
     return (
       <View
-        className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
+        className="bg-white rounded-2xl p-6 mb-5 border border-gray-100"
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
@@ -128,7 +128,7 @@ function ReportCard({
 
   return (
     <View
-      className="bg-white rounded-3xl mb-5 overflow-hidden relative border border-gray-100"
+      className="bg-white rounded-2xl mb-5 overflow-hidden relative border border-gray-100"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -139,7 +139,7 @@ function ReportCard({
     >
       {/* Loading Overlay - shown when generating */}
       {isGenerating && (
-        <View className="absolute inset-0 bg-white/80 z-10 items-center justify-center rounded-3xl">
+        <View className="absolute inset-0 bg-white/80 z-10 items-center justify-center rounded-2xl">
           <ActivityIndicator size="large" color="#2563eb" />
           <Text
             className="text-sm text-gray-700 mt-2"
@@ -216,7 +216,7 @@ function ReportCard({
           {/* Expandable Detail Section */}
           {(summary.strengths.length > 0 || summary.actionPlan.length > 0 || summary.improvements.problem) && (
             <Pressable
-              className="bg-primary/5 rounded-2xl p-4 border border-primary/10"
+              className="bg-primary/5 rounded-xl p-4 border border-primary/10"
               onPress={onToggleExpand}
             >
               <View className="flex-row items-center justify-between">
@@ -902,7 +902,7 @@ export default function ReportsScreen() {
                 {/* Case 3: No mandalarts and no diagnosis */}
                 {!hasMandalarts && !diagnosis && (
                   <View
-                    className="bg-white rounded-3xl p-6 items-center mb-5 border border-gray-100"
+                    className="bg-white rounded-2xl p-6 items-center mb-5 border border-gray-100"
                     style={{
                       shadowColor: '#000',
                       shadowOffset: { width: 0, height: 4 },
@@ -958,7 +958,7 @@ export default function ReportsScreen() {
                     {t('reports.history.title')}
                   </Text>
                   <View
-                    className="bg-white rounded-3xl overflow-hidden border border-gray-100"
+                    className="bg-white rounded-2xl overflow-hidden border border-gray-100"
                     style={{
                       shadowColor: '#000',
                       shadowOffset: { width: 0, height: 4 },

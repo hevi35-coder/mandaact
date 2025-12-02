@@ -112,7 +112,7 @@ export function TextInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                     </Text>
 
                     <TextInput
-                        className="bg-white rounded-3xl p-5 text-base text-gray-900 border border-gray-200"
+                        className="bg-white rounded-2xl p-5 text-base text-gray-900 border border-gray-200"
                         style={{
                             minHeight: 300,
                             fontFamily: 'Pretendard-Regular',
@@ -133,7 +133,7 @@ export function TextInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                         >
                             {t('mandalart.create.textPaste.exampleTitle')}
                         </Text>
-                        <View className="bg-gray-100 rounded-2xl p-4">
+                        <View className="bg-gray-100 rounded-xl p-4">
                             <Text className="text-xs text-gray-600 font-mono leading-5">
                                 {t('mandalart.create.textPaste.exampleContent')}
                             </Text>

@@ -94,7 +94,7 @@ export default function MandalartInfoModal({
           onPress={onClose}
         >
           <Pressable
-            className="bg-white rounded-t-3xl"
+            className="bg-white rounded-t-2xl"
             onPress={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -113,7 +113,7 @@ export default function MandalartInfoModal({
               <Pressable
                 onPress={handleSave}
                 disabled={isSaving}
-                className="bg-gray-900 px-4 py-2 rounded-xl flex-row items-center active:bg-gray-800"
+                className="bg-gray-900 px-4 py-2 rounded-lg flex-row items-center active:bg-gray-800"
               >
                 {isSaving ? (
                   <ActivityIndicator size="small" color="white" />
@@ -145,7 +145,7 @@ export default function MandalartInfoModal({
                   value={title}
                   onChangeText={setTitle}
                   placeholder={t('mandalart.modal.coreGoal.titlePlaceholder')}
-                  className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+                  className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-base text-gray-900"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                   placeholderTextColor="#9ca3af"
                 />
@@ -163,7 +163,7 @@ export default function MandalartInfoModal({
                   value={centerGoal}
                   onChangeText={setCenterGoal}
                   placeholder={t('mandalart.modal.coreGoal.coreGoalPlaceholder')}
-                  className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-base text-gray-900"
+                  className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 text-base text-gray-900"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                   placeholderTextColor="#9ca3af"
                   multiline

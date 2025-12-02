@@ -29,6 +29,7 @@ export function ProfileCard({
     activeMultipliers,
     badges,
     userBadges,
+    badgeProgress,
     badgesLoading,
     translateBadge,
     onBadgePress,
@@ -38,7 +39,7 @@ export function ProfileCard({
     return (
         <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
-            className="bg-white rounded-3xl p-6 mb-5 border border-gray-100"
+            className="bg-white rounded-2xl p-6 mb-5 border border-gray-100"
             style={{
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
@@ -130,6 +131,7 @@ export function ProfileCard({
                     <BadgeCollectionSection
                         badges={badges}
                         userBadges={userBadges}
+                        badgeProgress={badgeProgress}
                         isLoading={badgesLoading}
                         translateBadge={translateBadge}
                         onBadgePress={onBadgePress}

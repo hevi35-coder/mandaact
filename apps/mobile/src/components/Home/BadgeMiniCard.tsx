@@ -23,7 +23,7 @@ export function BadgeMiniCard({
                     ? 'bg-amber-50 border-2 border-amber-200'
                     : 'bg-gray-100 border border-gray-200 opacity-50'
                 }`}
-            onPress={onPress}
+            onPress={() => onPress(translatedBadge)}
         >
             <Text className={`text-2xl mb-1 ${isUnlocked ? '' : 'opacity-30'}`}>
                 {translatedBadge.icon}

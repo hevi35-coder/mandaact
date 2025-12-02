@@ -49,7 +49,7 @@ export function Dialog({ open, onClose, children, ...props }: DialogProps) {
         onPress={onClose}
       >
         <Pressable
-          className="bg-white rounded-2xl w-full max-w-md overflow-hidden"
+          className="bg-white rounded-xl w-full max-w-md overflow-hidden"
           onPress={(e) => e.stopPropagation()}
         >
           {children}

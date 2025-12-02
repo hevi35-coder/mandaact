@@ -104,7 +104,7 @@ export function NicknameModal({
             onRequestClose={onClose}
         >
             <View className="flex-1 bg-black/50 justify-center items-center px-6">
-                <View className="bg-white rounded-2xl w-full max-w-sm p-6">
+                <View className="bg-white rounded-xl w-full max-w-sm p-6">
                     {/* Header */}
                     <View className="flex-row items-center justify-between mb-4">
                         <Text className="text-lg font-bold text-gray-900">
@@ -134,7 +134,7 @@ export function NicknameModal({
                             placeholder={NICKNAME_DIALOG.PLACEHOLDER}
                             maxLength={12}
                             editable={!nicknameSaving}
-                            className="border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-900"
+                            className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
                             placeholderTextColor="#9ca3af"
                         />
                         {nicknameError ? (
@@ -147,7 +147,7 @@ export function NicknameModal({
                         <Pressable
                             onPress={handleSave}
                             disabled={nicknameSaving}
-                            className={`py-3 rounded-xl items-center ${nicknameSaving ? 'bg-gray-400' : 'bg-gray-900'
+                            className={`py-3 rounded-lg items-center ${nicknameSaving ? 'bg-gray-400' : 'bg-gray-900'
                                 }`}
                         >
                             <Text className="text-white font-semibold">
@@ -157,7 +157,7 @@ export function NicknameModal({
                         <Pressable
                             onPress={onClose}
                             disabled={nicknameSaving}
-                            className="py-3 rounded-xl items-center border border-gray-300"
+                            className="py-3 rounded-lg items-center border border-gray-300"
                         >
                             <Text className="text-gray-700 font-semibold">
                                 {NICKNAME_DIALOG.CANCEL}

@@ -5,7 +5,6 @@ import {
   ScrollView,
   Pressable,
   Alert,
-  Switch,
   Linking,
   ActivityIndicator,
   Modal,
@@ -40,6 +39,7 @@ import * as Application from 'expo-application'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Header } from '../components'
+import { Toggle } from '../components/ui/Toggle'
 import { useAuthStore } from '../store/authStore'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { useUserGamification, statsKeys } from '../hooks/useStats'
@@ -304,7 +304,7 @@ export default function SettingsScreen() {
         {/* User Info Card */}
         <Animated.View
           entering={FadeInUp.delay(100).duration(400)}
-          className="bg-white rounded-3xl p-5 mb-5 border border-gray-100"
+          className="bg-white rounded-2xl p-5 mb-5 border border-gray-100"
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
@@ -391,7 +391,7 @@ export default function SettingsScreen() {
         </Text>
         <Animated.View
           entering={FadeInUp.delay(150).duration(400)}
-          className="bg-white rounded-3xl overflow-hidden mb-5 border border-gray-100"
+          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
@@ -452,7 +452,7 @@ export default function SettingsScreen() {
         </Text>
         <Animated.View
           entering={FadeInUp.delay(200).duration(400)}
-          className="bg-white rounded-3xl overflow-hidden mb-5 border border-gray-100"
+          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
@@ -480,16 +480,11 @@ export default function SettingsScreen() {
                 </Text>
               )}
             </View>
-            {notificationLoading ? (
-              <ActivityIndicator size="small" color="#2563eb" />
-            ) : (
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={handleToggleNotifications}
-                trackColor={{ false: '#d1d5db', true: '#2563eb' }}
-                thumbColor="white"
-              />
-            )}
+            <Toggle
+              value={notificationsEnabled}
+              onValueChange={handleToggleNotifications}
+              loading={notificationLoading}
+            />
           </View>
 
           {/* Notification Types - Always visible, disabled when master is off */}
@@ -511,12 +506,11 @@ export default function SettingsScreen() {
                   {t('settings.notifications.reminderDesc')}
                 </Text>
               </View>
-              <Switch
+              <Toggle
                 value={notificationsEnabled && reminderEnabled}
                 onValueChange={(value) => { toggleReminder(value) }}
-                trackColor={{ false: '#d1d5db', true: '#2563eb' }}
-                thumbColor="white"
                 disabled={!notificationsEnabled || notificationLoading}
+                size="sm"
               />
             </View>
 
@@ -562,12 +556,11 @@ export default function SettingsScreen() {
                   {t('settings.notifications.customMessageDesc')}
                 </Text>
               </View>
-              <Switch
+              <Toggle
                 value={notificationsEnabled && customMessageEnabled}
                 onValueChange={(value) => { toggleCustomMessage(value) }}
-                trackColor={{ false: '#d1d5db', true: '#2563eb' }}
-                thumbColor="white"
                 disabled={!notificationsEnabled || notificationLoading}
+                size="sm"
               />
             </View>
           </View>
@@ -582,7 +575,7 @@ export default function SettingsScreen() {
         </Text>
         <Animated.View
           entering={FadeInUp.delay(300).duration(400)}
-          className="bg-white rounded-3xl overflow-hidden mb-5 border border-gray-100"
+          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
@@ -641,7 +634,7 @@ export default function SettingsScreen() {
         </Text>
         <Animated.View
           entering={FadeInUp.delay(400).duration(400)}
-          className="bg-white rounded-3xl overflow-hidden mb-5 border border-gray-100"
+          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
@@ -686,7 +679,7 @@ export default function SettingsScreen() {
 
         {/* Sign Out */}
         <Pressable
-          className="bg-white rounded-3xl px-5 py-4 flex-row items-center mb-8 border border-gray-100"
+          className="bg-white rounded-2xl px-5 py-4 flex-row items-center mb-8 border border-gray-100"
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },

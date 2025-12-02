@@ -119,7 +119,7 @@ export default function ActionEditModal({
         className="flex-1"
       >
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl max-h-[80%]">
+          <View className="bg-white rounded-t-2xl max-h-[80%]">
             {/* Header */}
             <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
               <Pressable onPress={handleClose} className="p-2">
@@ -155,7 +155,7 @@ export default function ActionEditModal({
                   onChangeText={setTitle}
                   placeholder="실천 항목을 입력하세요"
                   placeholderTextColor="#9ca3af"
-                  className="bg-gray-50 rounded-xl px-4 py-3 text-base text-gray-900 border border-gray-200"
+                  className="bg-gray-50 rounded-lg px-4 py-3 text-base text-gray-900 border border-gray-200"
                   multiline
                   maxLength={100}
                 />
@@ -174,7 +174,7 @@ export default function ActionEditModal({
                     <Pressable
                       key={type.type}
                       onPress={() => setActionType(type.type)}
-                      className={`flex-row items-center p-4 rounded-xl border ${
+                      className={`flex-row items-center p-4 rounded-lg border ${
                         actionType === type.type
                           ? 'border-primary bg-primary/5'
                           : 'border-gray-200 bg-white'
@@ -214,7 +214,7 @@ export default function ActionEditModal({
                       <Pressable
                         key={freq.value}
                         onPress={() => setFrequency(freq.value)}
-                        className={`flex-1 py-3 rounded-xl border ${
+                        className={`flex-1 py-3 rounded-lg border ${
                           frequency === freq.value
                             ? 'border-primary bg-primary/5'
                             : 'border-gray-200 bg-white'
@@ -236,7 +236,7 @@ export default function ActionEditModal({
               )}
 
               {/* Info notice */}
-              <View className="bg-blue-50 rounded-xl p-4 mb-8">
+              <View className="bg-blue-50 rounded-lg p-4 mb-8">
                 <Text className="text-sm text-blue-700">
                   💡 유형에 따라 실천 표시 방식이 달라집니다.{'\n'}
                   • 루틴: 설정한 주기마다 체크 가능{'\n'}

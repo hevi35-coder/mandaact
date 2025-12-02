@@ -60,7 +60,7 @@ export default function CoreGoalModal({
           onPress={onClose}
         >
           <Pressable
-            className="bg-white rounded-t-3xl"
+            className="bg-white rounded-t-2xl"
             onPress={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -118,7 +118,7 @@ export default function CoreGoalModal({
                   value={title}
                   onChangeText={setTitle}
                   placeholder={t('mandalart.modal.coreGoal.titlePlaceholder')}
-                  className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+                  className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-base text-gray-900"
                   placeholderTextColor="#9ca3af"
                 />
               </View>
@@ -132,7 +132,7 @@ export default function CoreGoalModal({
                   value={centerGoal}
                   onChangeText={setCenterGoal}
                   placeholder={t('mandalart.modal.coreGoal.coreGoalPlaceholder')}
-                  className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-base text-gray-900"
+                  className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 text-base text-gray-900"
                   placeholderTextColor="#9ca3af"
                   multiline
                   numberOfLines={2}

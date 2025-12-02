@@ -18,7 +18,7 @@ import { useResponsive } from '../hooks/useResponsive'
 import { useAuthStore } from '../store/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUserGamification, use4WeekHeatmap, useProfileStats, statsKeys } from '../hooks/useStats'
-import { useBadgeDefinitions, useUserBadges, useTranslateBadge } from '../hooks/useBadges'
+import { useBadgeDefinitions, useUserBadges, useBadgeProgress, useTranslateBadge, isBadgeUnlocked, getBadgeUnlockDate, getBadgeRepeatCount, type BadgeDefinition } from '../hooks/useBadges'
 import {
   getXPForCurrentLevel,
   getLevelFromXP,
@@ -28,7 +28,7 @@ import type { XPMultiplier } from '@mandaact/shared'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
 
 // Sub-components
-import { ProfileCard, StreakCard, NicknameModal } from '../components/Home'
+import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal } from '../components/Home'
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList>,
@@ -52,6 +52,9 @@ export default function HomeScreen() {
   // Nickname editing states
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false)
 
+  // Badge detail modal state
+  const [selectedBadge, setSelectedBadge] = useState<BadgeDefinition | null>(null)
+
   // Translation for badges
   const translateBadge = useTranslateBadge()
 
@@ -61,6 +64,7 @@ export default function HomeScreen() {
   const { data: fourWeekData = [], isLoading: fourWeekLoading } = use4WeekHeatmap(user?.id)
   const { data: badges = [], isLoading: badgesLoading } = useBadgeDefinitions()
   const { data: userBadges = [] } = useUserBadges(user?.id)
+  const { data: badgeProgress = [] } = useBadgeProgress(user?.id)
 
   const isLoading = gamificationLoading || profileStatsLoading
 
@@ -146,9 +150,10 @@ export default function HomeScreen() {
                 activeMultipliers={activeMultipliers}
                 badges={badges}
                 userBadges={userBadges}
+                badgeProgress={badgeProgress}
                 badgesLoading={badgesLoading}
                 translateBadge={translateBadge}
-                onBadgePress={() => navigation.navigate('Badges')}
+                onBadgePress={(badge) => setSelectedBadge(badge)}
               />
             </View>
 
@@ -177,6 +182,17 @@ export default function HomeScreen() {
         visible={nicknameModalVisible}
         currentNickname={nickname}
         onClose={() => setNicknameModalVisible(false)}
+      />
+
+      {/* Badge Detail Modal */}
+      <BadgeDetailModal
+        badge={selectedBadge}
+        isUnlocked={selectedBadge ? isBadgeUnlocked(selectedBadge.id, userBadges) : false}
+        unlockDate={selectedBadge ? getBadgeUnlockDate(selectedBadge.id, userBadges) : null}
+        progress={selectedBadge ? badgeProgress.find(p => p.badge_id === selectedBadge.id) : undefined}
+        repeatCount={selectedBadge ? getBadgeRepeatCount(selectedBadge.id, userBadges) : 0}
+        visible={!!selectedBadge}
+        onClose={() => setSelectedBadge(null)}
       />
     </View>
   )

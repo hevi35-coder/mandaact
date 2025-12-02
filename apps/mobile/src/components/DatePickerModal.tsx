@@ -90,7 +90,7 @@ export default function DatePickerModal({
         onPress={onClose}
       >
         <Pressable
-          className="bg-white rounded-2xl w-full max-w-sm overflow-hidden"
+          className="bg-white rounded-xl w-full max-w-sm overflow-hidden"
           onPress={(e) => e.stopPropagation()}
         >
           {/* Header */}

@@ -12,7 +12,7 @@ export function ProgressOverlay({ visible, message }: ProgressOverlayProps) {
     return (
         <Modal visible={visible} transparent animationType="fade">
             <View className="flex-1 bg-black/50 items-center justify-center">
-                <View className="bg-white rounded-3xl p-8 items-center min-w-[200px]">
+                <View className="bg-white rounded-2xl p-8 items-center min-w-[200px]">
                     <ActivityIndicator size="large" color="#2563eb" />
                     <Text
                         className="text-gray-900 mt-4 text-center"

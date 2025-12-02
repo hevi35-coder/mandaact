@@ -311,7 +311,7 @@ export default function MandalartDetailScreen() {
       {/* Loading overlay */}
       {isExporting && (
         <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
-          <View className="bg-white rounded-3xl p-6 items-center">
+          <View className="bg-white rounded-2xl p-6 items-center">
             <ActivityIndicator size="large" color="#2563eb" />
             <Text
               className="text-gray-900 mt-4"
@@ -483,7 +483,7 @@ export default function MandalartDetailScreen() {
               {/* 3x3 Grid */}
               <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 16 }} ref={gridRef} collapsable={false}>
                 <View
-                  className="bg-white rounded-3xl border border-gray-100"
+                  className="bg-white rounded-2xl border border-gray-100"
                   style={{
                     padding: CARD_PADDING,
                     shadowColor: '#000',
@@ -514,7 +514,7 @@ export default function MandalartDetailScreen() {
               {/* Usage Instructions (Phone only) */}
               <View className="px-5 py-5 pb-8">
                 <View
-                  className="bg-white rounded-3xl p-6 border border-gray-100"
+                  className="bg-white rounded-2xl p-6 border border-gray-100"
                   style={{
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 4 },

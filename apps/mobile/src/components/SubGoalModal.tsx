@@ -348,7 +348,7 @@ export default function SubGoalModal({
           onPress={handleClose}
         >
           <Pressable
-            className="bg-white rounded-t-3xl"
+            className="bg-white rounded-t-2xl"
             style={{ maxHeight: '85%' }}
             onPress={(e) => e.stopPropagation()}
           >
@@ -404,7 +404,7 @@ export default function SubGoalModal({
                         value={editingText}
                         onChangeText={setEditingText}
                         placeholder={t('mandalart.modal.subGoal.subGoalPlaceholder')}
-                        className="flex-1 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-base"
+                        className="flex-1 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-base"
                         autoFocus
                         onSubmitEditing={handleTitleSave}
                       />
@@ -424,7 +424,7 @@ export default function SubGoalModal({
                   ) : (
                     <Pressable
                       onPress={handleTitleEdit}
-                      className="flex-row items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-xl"
+                      className="flex-row items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg"
                     >
                       <Text className={`flex-1 text-base ${title ? 'text-gray-900' : 'text-gray-400'}`}>
                         {title || t('mandalart.modal.subGoal.subGoalPlaceholder')}
@@ -543,7 +543,7 @@ export default function SubGoalModal({
                       <Pressable
                         key={option.type}
                         onPress={() => setSelectedType(option.type)}
-                        className={`flex-row items-center p-3 rounded-xl border ${
+                        className={`flex-row items-center p-3 rounded-lg border ${
                           selectedType === option.type
                             ? 'border-gray-900 bg-gray-50'
                             : 'border-gray-200 bg-white'
@@ -578,7 +578,7 @@ export default function SubGoalModal({
 
                 {/* Routine Settings */}
                 {selectedType === 'routine' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
                     <Text className="text-base font-semibold text-gray-900 mb-3">
                       {t('mandalart.modal.routine.title')}
                     </Text>
@@ -757,7 +757,7 @@ export default function SubGoalModal({
 
                 {/* Mission Settings */}
                 {selectedType === 'mission' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
                     <Text className="text-base font-semibold text-gray-900 mb-3">
                       {t('mandalart.modal.mission.title')}
                     </Text>
@@ -827,7 +827,7 @@ export default function SubGoalModal({
 
                 {/* Reference Info */}
                 {selectedType === 'reference' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
                     <View className="flex-row items-center">
                       <Info size={16} color="#6b7280" />
                       <Text className="text-sm text-gray-500 ml-2">

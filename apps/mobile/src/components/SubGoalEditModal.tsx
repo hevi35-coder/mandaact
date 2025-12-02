@@ -582,7 +582,7 @@ export default function SubGoalEditModal({
             onPress={onClose}
           >
             <Pressable
-              className="bg-white rounded-t-3xl"
+              className="bg-white rounded-t-2xl"
               style={{ maxHeight: '85%' }}
               onPress={(e) => e.stopPropagation()}
             >
@@ -654,7 +654,7 @@ export default function SubGoalEditModal({
                         value={subGoalTitle}
                         onChangeText={setSubGoalTitle}
                         placeholder={t('mandalart.subGoalEdit.subGoalPlaceholder')}
-                        className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-base"
+                        className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-base"
                         style={{ fontFamily: 'Pretendard-Regular' }}
                         autoFocus
                         onSubmitEditing={handleSubGoalTitleSave}
@@ -683,7 +683,7 @@ export default function SubGoalEditModal({
                   ) : (
                     <Pressable
                       onPress={() => setIsEditingSubGoalTitle(true)}
-                      className="flex-row items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50"
+                      className="flex-row items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50"
                     >
                       <Text
                         className="flex-1 text-base text-gray-900"
@@ -708,7 +708,7 @@ export default function SubGoalEditModal({
                     {actions.length < 8 && (
                       <Pressable
                         onPress={handleActionAdd}
-                        className="flex-row items-center px-3 py-2 border border-gray-200 rounded-xl bg-white"
+                        className="flex-row items-center px-3 py-2 border border-gray-200 rounded-lg bg-white"
                       >
                         <Plus size={16} color="#2563eb" />
                         <Text
@@ -722,7 +722,7 @@ export default function SubGoalEditModal({
                   </View>
 
                   {actions.length === 0 ? (
-                    <View className="py-8 border border-dashed border-gray-300 rounded-xl">
+                    <View className="py-8 border border-dashed border-gray-300 rounded-lg">
                       <Text
                         className="text-sm text-gray-400 text-center"
                         style={{ fontFamily: 'Pretendard-Regular' }}
@@ -738,7 +738,7 @@ export default function SubGoalEditModal({
                         itemHeight={52}
                         onDragEnd={handleDragEnd}
                         renderItem={({ item: action, index: idx }) => (
-                          <View className="flex-row items-center bg-white border border-gray-200 rounded-xl p-3 mb-2">
+                          <View className="flex-row items-center bg-white border border-gray-200 rounded-lg p-3 mb-2">
                             {/* Handle + Position */}
                             <View className="flex-row items-center mr-2">
                               <GripVertical size={16} color="#9ca3af" />
@@ -842,7 +842,7 @@ export default function SubGoalEditModal({
 
                 {/* AI Suggestion */}
                 {aiSuggestion && (
-                  <View className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+                  <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
                     <Text
                       className="text-sm text-blue-900"
                       style={{ fontFamily: 'Pretendard-Medium' }}
@@ -874,7 +874,7 @@ export default function SubGoalEditModal({
                       <Pressable
                         key={option.type}
                         onPress={() => setSelectedType(option.type)}
-                        className={`flex-row items-center p-4 rounded-2xl border ${
+                        className={`flex-row items-center p-4 rounded-xl border ${
                           selectedType === option.type
                             ? 'border-gray-900 bg-gray-50'
                             : 'border-gray-200 bg-white'
@@ -913,7 +913,7 @@ export default function SubGoalEditModal({
 
                 {/* Routine Settings */}
                 {selectedType === 'routine' && (
-                  <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <Text
                       className="text-base text-gray-900 mb-3"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
@@ -941,7 +941,7 @@ export default function SubGoalEditModal({
                               setShowCustomMonthlyInput(false)
                               setCustomMonthlyValue('')
                             }}
-                            className={`flex-1 py-2.5 rounded-xl border items-center ${
+                            className={`flex-1 py-2.5 rounded-lg border items-center ${
                               routineFrequency === option.value
                                 ? 'bg-gray-900 border-gray-900'
                                 : 'bg-white border-gray-300'
@@ -1109,7 +1109,7 @@ export default function SubGoalEditModal({
 
                 {/* Mission Settings */}
                 {selectedType === 'mission' && (
-                  <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <Text
                       className="text-base text-gray-900 mb-3"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
@@ -1130,7 +1130,7 @@ export default function SubGoalEditModal({
                           <Pressable
                             key={option.value}
                             onPress={() => setMissionCompletionType(option.value)}
-                            className={`flex-row items-center p-4 rounded-xl border ${
+                            className={`flex-row items-center p-4 rounded-lg border ${
                               missionCompletionType === option.value
                                 ? 'border-gray-900 bg-white'
                                 : 'border-gray-200 bg-white'
@@ -1172,7 +1172,7 @@ export default function SubGoalEditModal({
                             <Pressable
                               key={option.value}
                               onPress={() => setMissionPeriodCycle(option.value)}
-                              className={`px-4 py-2.5 rounded-xl border ${
+                              className={`px-4 py-2.5 rounded-lg border ${
                                 missionPeriodCycle === option.value
                                   ? 'bg-gray-900 border-gray-900'
                                   : 'bg-white border-gray-300'
@@ -1198,7 +1198,7 @@ export default function SubGoalEditModal({
 
                 {/* Reference Info */}
                 {selectedType === 'reference' && (
-                  <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <View className="flex-row items-center">
                       <Info size={16} color="#6b7280" />
                       <Text

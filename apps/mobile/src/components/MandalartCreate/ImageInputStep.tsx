@@ -179,7 +179,7 @@ export function ImageInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                     // Image upload area
                     <Pressable
                         onPress={handleImageSourceSelect}
-                        className="border-2 border-dashed border-gray-300 rounded-3xl p-8 items-center justify-center bg-white active:bg-gray-50"
+                        className="border-2 border-dashed border-gray-300 rounded-2xl p-8 items-center justify-center bg-white active:bg-gray-50"
                         style={{ minHeight: 220 }}
                     >
                         <Upload size={48} color="#9ca3af" />
@@ -194,7 +194,7 @@ export function ImageInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                     // Image preview
                     <Pressable
                         onPress={handleImageSourceSelect}
-                        className="bg-white rounded-3xl overflow-hidden border border-gray-100 active:opacity-90"
+                        className="bg-white rounded-2xl overflow-hidden border border-gray-100 active:opacity-90"
                     >
                         <Image
                             source={{ uri: selectedImageUri }}

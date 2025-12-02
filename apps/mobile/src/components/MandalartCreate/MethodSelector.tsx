@@ -47,7 +47,7 @@ export function MethodSelector({ onSelectMethod }: MethodSelectorProps) {
                 <Pressable
                     key={method.id}
                     onPress={() => onSelectMethod(method.id)}
-                    className="bg-white rounded-3xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
+                    className="bg-white rounded-2xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
                     style={{
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: 4 },

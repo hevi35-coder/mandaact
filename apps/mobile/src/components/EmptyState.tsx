@@ -55,7 +55,7 @@ export function EmptyState({
       )}
       {actionLabel && onAction && (
         <Pressable
-          className={`bg-primary rounded-xl mt-4 ${isCompact ? 'px-4 py-2' : 'px-6 py-3'}`}
+          className={`bg-primary rounded-lg mt-4 ${isCompact ? 'px-4 py-2' : 'px-6 py-3'}`}
           onPress={onAction}
         >
           <Text className={`text-white font-medium ${isCompact ? 'text-sm' : ''}`}>
@@ -129,7 +129,7 @@ export function NetworkErrorState({
       <Text className="text-sm text-gray-500 text-center mt-1">{message}</Text>
       {onRetry && (
         <Pressable
-          className="bg-gray-100 rounded-xl px-6 py-3 mt-4 flex-row items-center"
+          className="bg-gray-100 rounded-lg px-6 py-3 mt-4 flex-row items-center"
           onPress={onRetry}
         >
           <RefreshCw size={18} color="#374151" />
@@ -161,7 +161,7 @@ export function ErrorState({
       )}
       {onRetry && (
         <Pressable
-          className="bg-primary rounded-xl px-6 py-3 mt-4 flex-row items-center"
+          className="bg-primary rounded-lg px-6 py-3 mt-4 flex-row items-center"
           onPress={onRetry}
         >
           <RefreshCw size={18} color="white" />
