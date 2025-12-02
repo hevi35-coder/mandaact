@@ -479,6 +479,27 @@ export function getInitialPeriod(cycle: MissionPeriodCycle): { start: Date; end:
 }
 
 /**
+ * Check if action has a configured frequency/completion type
+ * Unconfigured actions should be shown in a separate "unconfigured" section
+ */
+export function isActionConfigured(action: {
+  type: ActionType
+  routine_frequency?: RoutineFrequency
+  mission_completion_type?: MissionCompletionType
+}): boolean {
+  switch (action.type) {
+    case 'routine':
+      return !!action.routine_frequency
+    case 'mission':
+      return !!action.mission_completion_type
+    case 'reference':
+      return true // Reference items are always "configured"
+    default:
+      return false
+  }
+}
+
+/**
  * Check if action should be shown on a given date based on type and settings
  * @param action - The action to check
  * @param targetDate - The date to check against (defaults to today)
@@ -730,9 +751,9 @@ export function getActionPeriodTarget(action: {
     // Daily: target is 1 per day (shown differently in UI)
     if (frequency === 'daily') return null
 
-    // Weekday-based weekly: no count target (based on specific days)
+    // Weekday-based weekly: target is number of selected days
     if (frequency === 'weekly' && action.routine_weekdays && action.routine_weekdays.length > 0) {
-      return null
+      return action.routine_weekdays.length
     }
 
     // Count-based weekly/monthly

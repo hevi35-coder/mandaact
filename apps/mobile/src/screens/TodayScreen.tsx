@@ -36,7 +36,7 @@ import { useDailyStats, useXPUpdate, statsKeys } from '../hooks/useStats'
 import { badgeKeys } from '../hooks/useBadges'
 import { useUserProfile } from '../hooks/useUserProfile'
 import { useToast } from '../components/Toast'
-import { shouldShowToday } from '@mandaact/shared'
+import { shouldShowToday, isActionConfigured } from '@mandaact/shared'
 import type { Action, Mandalart, ActionType } from '@mandaact/shared'
 import { logger, trackActionChecked, trackBadgeUnlocked } from '../lib'
 import { badgeService } from '../lib/badge'
@@ -45,8 +45,12 @@ import {
   DateNavigation,
   ProgressCard,
   MandalartSection,
+  ActionTypeIcon,
   type ActionWithContext,
 } from '../components/Today'
+import { Grid3X3, ChevronDown, ChevronRight, Settings } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
 
 export default function TodayScreen() {
   const { t } = useTranslation()
@@ -184,9 +188,25 @@ export default function TodayScreen() {
     setActiveFilters(new Set())
   }, [])
 
-  // Filter actions based on type and shouldShowToday logic (Web과 동일)
+  // Separate configured and unconfigured actions
+  const { configuredActions, unconfiguredActions } = useMemo(() => {
+    const configured: typeof actions = []
+    const unconfigured: typeof actions = []
+
+    actions.forEach((action) => {
+      if (isActionConfigured(action)) {
+        configured.push(action)
+      } else {
+        unconfigured.push(action)
+      }
+    })
+
+    return { configuredActions: configured, unconfiguredActions: unconfigured }
+  }, [actions])
+
+  // Filter configured actions based on type and shouldShowToday logic
   const filteredActions = useMemo(() => {
-    return actions.filter((action) => {
+    return configuredActions.filter((action) => {
       // Apply shouldShowToday logic
       const shouldShow = shouldShowToday(action, selectedDate)
       if (!shouldShow) return false
@@ -198,7 +218,10 @@ export default function TodayScreen() {
       // Show only if action type is in active filters
       return activeFilters.has(action.type)
     })
-  }, [actions, activeFilters, selectedDate])
+  }, [configuredActions, activeFilters, selectedDate])
+
+  // State for unconfigured section collapse
+  const [unconfiguredCollapsed, setUnconfiguredCollapsed] = useState(true)
 
   // Group actions by mandalart and sort by sub_goal.position, then action.position
   const actionsByMandalart = useMemo(() => {
@@ -508,15 +531,102 @@ export default function TodayScreen() {
         {actions.length === 0 && (
           <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
-            className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
+            className="bg-white rounded-2xl p-6"
           >
-            <Text className="text-4xl mb-4">📝</Text>
-            <Text className="text-lg font-semibold text-gray-900 text-center mb-2">
-              {t('today.noActions')}
+            {/* Icon */}
+            <View className="items-center mb-4">
+              <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
+                <Grid3X3 size={28} color="#9ca3af" />
+              </View>
+            </View>
+
+            {/* Title & Description */}
+            <Text
+              className="text-lg text-gray-900 text-center mb-2"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              {t('today.empty.title')}
             </Text>
-            <Text className="text-gray-500 text-center">
-              {t('today.createMandalartFirst')}
+            <Text
+              className="text-sm text-gray-500 text-center mb-5"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              {t('today.empty.description')}
             </Text>
+
+            {/* Guide Box */}
+            <View className="bg-gray-50 rounded-xl p-4 mb-5">
+              <Text
+                className="text-sm text-gray-700 mb-3"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                {t('today.empty.howTo.title')}
+              </Text>
+              <View className="flex-row items-center mb-2">
+                <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
+                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  {t('today.empty.howTo.step1')}
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
+                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  {t('today.empty.howTo.step2')}
+                </Text>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View className="flex-row gap-3">
+              <Pressable
+                className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
+                onPress={() => navigation.navigate('Tutorial')}
+              >
+                <Text
+                  className="text-sm text-gray-700 text-center"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  {t('today.empty.guide')}
+                </Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 rounded-xl overflow-hidden"
+                onPress={() => navigation.navigate('CreateMandalart')}
+              >
+                <LinearGradient
+                  colors={['#2563eb', '#9333ea', '#db2777']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ padding: 1, borderRadius: 12 }}
+                >
+                  <View className="bg-white rounded-xl py-3 items-center justify-center">
+                    <MaskedView
+                      maskElement={
+                        <Text
+                          className="text-sm text-center"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('today.empty.create')}
+                        </Text>
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#2563eb', '#9333ea', '#db2777']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <Text
+                          className="text-sm opacity-0"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('today.empty.create')}
+                        </Text>
+                      </LinearGradient>
+                    </MaskedView>
+                  </View>
+                </LinearGradient>
+              </Pressable>
+            </View>
           </Animated.View>
         )}
 
@@ -536,23 +646,14 @@ export default function TodayScreen() {
           </Animated.View>
         )}
 
-        {/* Actions List - Grouped by Mandalart */}
-        {filteredActions.length > 0 && (() => {
-          const mandalartEntries = Object.entries(actionsByMandalart)
-          const mandalartCount = mandalartEntries.length
-          // iPad: 2-column layout when 2+ mandalarts, full width when 1
-          const usesTwoColumn = isTablet && mandalartCount >= 2
-
-          if (usesTwoColumn) {
-            // iPad 2-column layout: split mandalarts into left/right columns
-            const leftColumn = mandalartEntries.filter((_, idx) => idx % 2 === 0)
-            const rightColumn = mandalartEntries.filter((_, idx) => idx % 2 === 1)
-
-            return (
-              <View style={{ flexDirection: 'row', gap: 16 }} className="pb-4">
-                {/* Left Column */}
-                <View style={{ flex: 1 }}>
-                  {leftColumn.map(([mandalartId, { mandalart, actions: mandalartActions }]) => (
+        {/* iPad: 2-column layout (Left: Configured, Right: Unconfigured) */}
+        {isTablet && (filteredActions.length > 0 || unconfiguredActions.length > 0) && (
+          <View style={{ flexDirection: 'row', gap: 16 }} className="pb-4">
+            {/* Left Column - Configured Actions */}
+            <View style={{ flex: 1 }}>
+              {filteredActions.length > 0 ? (
+                Object.entries(actionsByMandalart).map(
+                  ([mandalartId, { mandalart, actions: mandalartActions }]) => (
                     <MandalartSection
                       key={mandalartId}
                       mandalartId={mandalartId}
@@ -566,53 +667,196 @@ export default function TodayScreen() {
                       checkingActions={checkingActions}
                       isTablet={isTablet}
                     />
-                  ))}
-                </View>
-                {/* Right Column */}
-                <View style={{ flex: 1 }}>
-                  {rightColumn.map(([mandalartId, { mandalart, actions: mandalartActions }]) => (
-                    <MandalartSection
-                      key={mandalartId}
-                      mandalartId={mandalartId}
-                      mandalartTitle={mandalart.title}
-                      actions={mandalartActions}
-                      isCollapsed={collapsedSections.has(mandalartId)}
-                      onToggleSection={() => toggleSection(mandalartId)}
-                      onToggleCheck={handleToggleCheck}
-                      onTypeBadgePress={handleTypeBadgePress}
-                      canCheck={canCheck}
-                      checkingActions={checkingActions}
-                      isTablet={isTablet}
-                    />
-                  ))}
-                </View>
-              </View>
-            )
-          }
-
-          // Phone or single mandalart: standard single-column layout
-          return (
-            <View className="space-y-4 pb-4">
-              {mandalartEntries.map(
-                ([mandalartId, { mandalart, actions: mandalartActions }]) => (
-                  <MandalartSection
-                    key={mandalartId}
-                    mandalartId={mandalartId}
-                    mandalartTitle={mandalart.title}
-                    actions={mandalartActions}
-                    isCollapsed={collapsedSections.has(mandalartId)}
-                    onToggleSection={() => toggleSection(mandalartId)}
-                    onToggleCheck={handleToggleCheck}
-                    onTypeBadgePress={handleTypeBadgePress}
-                    canCheck={canCheck}
-                    checkingActions={checkingActions}
-                    isTablet={isTablet}
-                  />
+                  )
                 )
+              ) : (
+                <View className="bg-gray-50 rounded-lg border border-gray-200 p-6 items-center">
+                  <Text className="text-gray-400 text-sm">{t('today.noFilterResult')}</Text>
+                </View>
               )}
             </View>
-          )
-        })()}
+
+            {/* Right Column - Unconfigured Actions */}
+            <View style={{ flex: 1 }}>
+              {unconfiguredActions.length > 0 && (
+                <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+                  {/* Section Header */}
+                  <Pressable
+                    onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
+                    className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <Settings size={16} color="#6b7280" />
+                        <Text
+                          className="text-base font-semibold text-gray-900 ml-2"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('today.unconfigured.title')}
+                        </Text>
+                        <Text className="text-sm text-gray-500 ml-2">
+                          {unconfiguredActions.length}
+                        </Text>
+                      </View>
+                      <Text
+                        className="text-sm text-gray-500 mt-1"
+                        numberOfLines={1}
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
+                        {t('today.unconfigured.hint')}
+                      </Text>
+                    </View>
+                    {unconfiguredCollapsed ? (
+                      <ChevronRight size={20} color="#6b7280" />
+                    ) : (
+                      <ChevronDown size={20} color="#6b7280" />
+                    )}
+                  </Pressable>
+
+                  {/* Unconfigured Items - Same style as ActionItem */}
+                  {!unconfiguredCollapsed && (
+                    <View className="mt-2 space-y-2">
+                      {unconfiguredActions.map((action) => (
+                        <Pressable
+                          key={action.id}
+                          className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
+                          onPress={() => handleTypeBadgePress(action)}
+                        >
+                          <View className="flex-1">
+                            <Text
+                              className="text-base text-gray-900"
+                              numberOfLines={1}
+                            >
+                              {action.title}
+                            </Text>
+                            <Text
+                              className="text-xs text-gray-400 mt-1"
+                              numberOfLines={1}
+                            >
+                              {action.sub_goal.title}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200">
+                            <ActionTypeIcon type={action.type} size={14} />
+                            <Text className="text-xs text-gray-600 ml-1">
+                              {action.type === 'routine' ? t('actionType.routine') : t('actionType.mission')}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </Animated.View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Phone: Single column layout */}
+        {!isTablet && (
+          <>
+            {/* Configured Actions */}
+            {filteredActions.length > 0 && (
+              <View className="space-y-4 pb-4">
+                {Object.entries(actionsByMandalart).map(
+                  ([mandalartId, { mandalart, actions: mandalartActions }]) => (
+                    <MandalartSection
+                      key={mandalartId}
+                      mandalartId={mandalartId}
+                      mandalartTitle={mandalart.title}
+                      actions={mandalartActions}
+                      isCollapsed={collapsedSections.has(mandalartId)}
+                      onToggleSection={() => toggleSection(mandalartId)}
+                      onToggleCheck={handleToggleCheck}
+                      onTypeBadgePress={handleTypeBadgePress}
+                      canCheck={canCheck}
+                      checkingActions={checkingActions}
+                      isTablet={isTablet}
+                    />
+                  )
+                )}
+              </View>
+            )}
+
+            {/* Unconfigured Actions Section */}
+            {unconfiguredActions.length > 0 && (
+              <Animated.View
+                entering={FadeInUp.delay(300).duration(400)}
+                className="mb-4"
+              >
+                {/* Section Header */}
+                <Pressable
+                  onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
+                  className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <View className="flex-1">
+                    <View className="flex-row items-center">
+                      <Settings size={16} color="#6b7280" />
+                      <Text
+                        className="text-base font-semibold text-gray-900 ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('today.unconfigured.title')}
+                      </Text>
+                      <Text className="text-sm text-gray-500 ml-2">
+                        {unconfiguredActions.length}
+                      </Text>
+                    </View>
+                    <Text
+                      className="text-sm text-gray-500 mt-1"
+                      numberOfLines={1}
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('today.unconfigured.hint')}
+                    </Text>
+                  </View>
+                  {unconfiguredCollapsed ? (
+                    <ChevronRight size={20} color="#6b7280" />
+                  ) : (
+                    <ChevronDown size={20} color="#6b7280" />
+                  )}
+                </Pressable>
+
+                {/* Unconfigured Items - Same style as ActionItem */}
+                {!unconfiguredCollapsed && (() => {
+                  // Phone: single column (iPad has its own layout at top level)
+                  return (
+                    <View className="mt-2 space-y-2">
+                      {unconfiguredActions.map((action) => (
+                        <Pressable
+                          key={action.id}
+                          className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
+                          onPress={() => handleTypeBadgePress(action)}
+                        >
+                          <View className="flex-1">
+                            <Text
+                              className="text-base text-gray-900"
+                              numberOfLines={1}
+                            >
+                              {action.title}
+                            </Text>
+                            <Text
+                              className="text-xs text-gray-400 mt-1"
+                              numberOfLines={1}
+                            >
+                              {action.sub_goal.title}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200">
+                            <ActionTypeIcon type={action.type} size={14} />
+                            <Text className="text-xs text-gray-600 ml-1">
+                              {action.type === 'routine' ? t('actionType.routine') : t('actionType.mission')}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )
+                })()}
+              </Animated.View>
+            )}
+          </>
+        )}
 
         {/* Bottom spacing */}
         <View className="h-8" />

@@ -26,6 +26,7 @@ import {
   Info,
 } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useToast } from './Toast'
 import { ActionTypeData } from './ActionTypeSelector'
@@ -78,6 +79,7 @@ export default function SubGoalEditModal({
 }: SubGoalEditModalProps) {
   const { t } = useTranslation()
   const toast = useToast()
+  const queryClient = useQueryClient()
 
   // Translated constants
   const TYPE_OPTIONS = useMemo(() => [
@@ -154,7 +156,32 @@ export default function SubGoalEditModal({
       }
       if (action.routine_frequency === 'weekly') {
         if (action.routine_weekdays && action.routine_weekdays.length > 0) {
-          const dayNames = action.routine_weekdays.map(d => {
+          // Sort weekdays starting from Monday (1-6, 0)
+          const sortedWeekdays = [...action.routine_weekdays].sort((a, b) => {
+            const aVal = a === 0 ? 7 : a
+            const bVal = b === 0 ? 7 : b
+            return aVal - bVal
+          })
+
+          // Check for weekdays (Mon-Fri): [1,2,3,4,5]
+          const isWeekdays = sortedWeekdays.length === 5 &&
+            sortedWeekdays.every((day, idx) => day === idx + 1)
+
+          // Check for weekend (Sat-Sun): [6, 0]
+          const isWeekend = sortedWeekdays.length === 2 &&
+            sortedWeekdays[0] === 6 &&
+            sortedWeekdays[1] === 0
+
+          if (isWeekdays) {
+            return t('actionType.format.weekday')
+          }
+
+          if (isWeekend) {
+            return t('actionType.format.weekend')
+          }
+
+          // Default: show individual days
+          const dayNames = sortedWeekdays.map(d => {
             const dayMap: Record<number, string> = {
               0: t('actionType.weekdayShort.sun'),
               1: t('actionType.weekdayShort.mon'),
@@ -188,7 +215,8 @@ export default function SubGoalEditModal({
       if (action.mission_completion_type === 'periodic') {
         return t(`actionType.${action.mission_period_cycle || 'monthly'}`)
       }
-      return t('mandalart.subGoalEdit.notSet')
+      // mission_completion_type이 null이면 미션 타입만 표시
+      return t('actionType.mission')
     }
     if (action.type === 'reference') {
       return t('actionType.reference')
@@ -227,6 +255,13 @@ export default function SubGoalEditModal({
 
   useEffect(() => {
     if (visible && subGoal) {
+      console.log('[useEffect] Syncing modal state from subGoal prop')
+      console.log('[useEffect] subGoal.actions:', subGoal.actions.map(a => ({
+        id: a.id.slice(0, 8),
+        title: a.title.slice(0, 20),
+        type: a.type,
+        mission_period_cycle: a.mission_period_cycle,
+      })))
       setSubGoalTitle(subGoal.title)
       setSubGoalId(subGoal.id) // Initialize subGoalId from prop
       setActions([...subGoal.actions].sort((a, b) => a.position - b.position))
@@ -331,6 +366,12 @@ export default function SubGoalEditModal({
 
   // Open type selector with action's current data
   const openTypeSelector = useCallback((action: Action) => {
+    console.log('[openTypeSelector] Action data:', {
+      id: action.id,
+      type: action.type,
+      mission_completion_type: action.mission_completion_type,
+      mission_period_cycle: action.mission_period_cycle,
+    })
     setSelectedAction(action)
     setSelectedType(action.type)
     setRoutineFrequency(action.routine_frequency || 'daily')
@@ -338,6 +379,7 @@ export default function SubGoalEditModal({
     setRoutineCountPerPeriod(action.routine_count_per_period || 1)
     setMissionCompletionType(action.mission_completion_type || 'once')
     setMissionPeriodCycle(action.mission_period_cycle || 'monthly')
+    console.log('[openTypeSelector] Setting missionPeriodCycle to:', action.mission_period_cycle || 'monthly')
 
     // Generate fresh AI suggestion
     const freshSuggestion = suggestActionType(action.title)
@@ -363,7 +405,19 @@ export default function SubGoalEditModal({
 
   // Action type save - now uses inline form state
   const handleTypeSelectorSave = useCallback(async () => {
-    if (!selectedAction) return
+    console.log('=== [handleTypeSelectorSave] START ===')
+    console.log('[handleTypeSelectorSave] selectedAction:', selectedAction?.id || 'null')
+    console.log('[handleTypeSelectorSave] All relevant state:', {
+      selectedType,
+      missionCompletionType,
+      missionPeriodCycle,
+      missionPeriodCycleType: typeof missionPeriodCycle,
+    })
+
+    if (!selectedAction) {
+      console.log('[handleTypeSelectorSave] Early return: selectedAction is null')
+      return
+    }
 
     const actionId = selectedAction.id
 
@@ -418,32 +472,45 @@ export default function SubGoalEditModal({
     setSelectedAction(null)
 
     // Save to DB
+    console.log('[DB Save] Saving typeData:', JSON.stringify(typeData, null, 2))
     try {
-      const { error } = await supabase
+      const updateData = {
+        type: typeData.type,
+        routine_frequency: typeData.routine_frequency || null,
+        routine_weekdays: typeData.routine_weekdays || null,
+        routine_count_per_period: typeData.routine_count_per_period || null,
+        mission_completion_type: typeData.mission_completion_type || null,
+        mission_period_cycle: typeData.mission_period_cycle || null,
+        mission_current_period_start: typeData.mission_current_period_start || null,
+        mission_current_period_end: typeData.mission_current_period_end || null,
+        ai_suggestion: typeData.ai_suggestion ? JSON.stringify(typeData.ai_suggestion) : null,
+      }
+      console.log('[DB Save] Update data:', JSON.stringify(updateData, null, 2))
+
+      const { error, data } = await supabase
         .from('actions')
-        .update({
-          type: typeData.type,
-          routine_frequency: typeData.routine_frequency,
-          routine_weekdays: typeData.routine_weekdays,
-          routine_count_per_period: typeData.routine_count_per_period,
-          mission_completion_type: typeData.mission_completion_type,
-          mission_period_cycle: typeData.mission_period_cycle,
-          mission_current_period_start: typeData.mission_current_period_start,
-          mission_current_period_end: typeData.mission_current_period_end,
-          ai_suggestion: typeData.ai_suggestion ? JSON.stringify(typeData.ai_suggestion) : null,
-        })
+        .update(updateData)
         .eq('id', actionId)
+        .select()
+
+      console.log('[DB Save] Result error:', error)
+      console.log('[DB Save] Result data:', JSON.stringify(data, null, 2))
+      if (data && data[0]) {
+        console.log('[DB Save] Returned mission_period_cycle:', data[0].mission_period_cycle)
+      }
 
       if (error) throw error
 
       toast.success(t('mandalart.subGoalEdit.toast.typeChanged'))
+      // Invalidate today actions cache so TodayScreen shows updated data
+      queryClient.invalidateQueries({ queryKey: ['actions'] })
       onSuccess?.()
     } catch (err) {
       console.error('Type update error:', err)
       toast.error(t('mandalart.subGoalEdit.toast.typeChangeError'))
       onSuccess?.() // Refresh to get correct data
     }
-  }, [selectedAction, selectedType, routineFrequency, routineWeekdays, routineCountPerPeriod, missionCompletionType, missionPeriodCycle, aiSuggestion, toast, onSuccess])
+  }, [selectedAction, selectedType, routineFrequency, routineWeekdays, routineCountPerPeriod, missionCompletionType, missionPeriodCycle, aiSuggestion, toast, queryClient, onSuccess])
 
   // Action delete
   const handleActionDelete = useCallback((action: Action) => {
@@ -617,7 +684,10 @@ export default function SubGoalEditModal({
                     {t('mandalart.subGoalEdit.typeSettings')}
                   </Text>
                   <Pressable
-                    onPress={handleTypeSelectorSave}
+                    onPress={() => {
+                      console.log('[Save Button] Pressed, isSaving:', isSaving)
+                      handleTypeSelectorSave()
+                    }}
                     disabled={isSaving}
                     className="p-1"
                   >
@@ -1129,7 +1199,10 @@ export default function SubGoalEditModal({
                         {MISSION_COMPLETION_OPTIONS.map((option) => (
                           <Pressable
                             key={option.value}
-                            onPress={() => setMissionCompletionType(option.value)}
+                            onPress={() => {
+                              console.log('[Completion Type] Selecting:', option.value)
+                              setMissionCompletionType(option.value)
+                            }}
                             className={`flex-row items-center p-4 rounded-lg border ${
                               missionCompletionType === option.value
                                 ? 'border-gray-900 bg-white'
@@ -1171,7 +1244,14 @@ export default function SubGoalEditModal({
                           {PERIOD_CYCLE_OPTIONS.map((option) => (
                             <Pressable
                               key={option.value}
-                              onPress={() => setMissionPeriodCycle(option.value)}
+                              onPress={() => {
+                                console.log('[Period Cycle] Button pressed. Value:', option.value, 'Type:', typeof option.value)
+                                setMissionPeriodCycle(option.value)
+                                // Log after state update (will show in next render)
+                                setTimeout(() => {
+                                  console.log('[Period Cycle] State after update should have changed')
+                                }, 100)
+                              }}
                               className={`px-4 py-2.5 rounded-lg border ${
                                 missionPeriodCycle === option.value
                                   ? 'bg-gray-900 border-gray-900'

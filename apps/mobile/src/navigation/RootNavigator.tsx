@@ -219,7 +219,7 @@ export default function RootNavigator() {
               name="Tutorial"
               component={TutorialScreen}
               options={{
-                presentation: 'modal',
+                presentation: 'fullScreenModal',
                 animation: 'slide_from_bottom',
               }}
             />

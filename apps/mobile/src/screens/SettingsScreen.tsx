@@ -678,30 +678,34 @@ export default function SettingsScreen() {
         </Animated.View>
 
         {/* Sign Out */}
-        <Pressable
-          className="bg-white rounded-2xl px-5 py-4 flex-row items-center mb-8 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-          onPress={handleSignOut}
-          disabled={loading || isSigningOut}
+        <Animated.View
+          entering={FadeInUp.delay(450).duration(400)}
         >
-          {isSigningOut ? (
-            <ActivityIndicator size="small" color="#9ca3af" />
-          ) : (
-            <LogOut size={22} color="#9ca3af" />
-          )}
-          <Text
-            className="ml-3 text-base text-gray-400"
-            style={{ fontFamily: 'Pretendard-Medium' }}
+          <Pressable
+            className="bg-white rounded-2xl px-5 py-4 flex-row items-center mb-8 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+            onPress={handleSignOut}
+            disabled={loading || isSigningOut}
           >
-            {t('settings.account.logout')}
-          </Text>
-        </Pressable>
+            {isSigningOut ? (
+              <ActivityIndicator size="small" color="#9ca3af" />
+            ) : (
+              <LogOut size={22} color="#9ca3af" />
+            )}
+            <Text
+              className="ml-3 text-base text-gray-400"
+              style={{ fontFamily: 'Pretendard-Medium' }}
+            >
+              {t('settings.account.logout')}
+            </Text>
+          </Pressable>
+        </Animated.View>
 
         {/* Footer */}
         <View className="items-center pb-8">
@@ -929,11 +933,11 @@ export default function SettingsScreen() {
       <Modal
         visible={showLanguageModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowLanguageModal(false)}
       >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl pt-4 pb-8">
+        <View className="flex-1 justify-center items-center bg-black/50 px-4">
+          <View className="bg-white rounded-2xl pt-4 pb-6 w-full" style={{ maxWidth: 400 }}>
             {/* Header */}
             <View className="flex-row items-center justify-between px-5 pb-4 border-b border-gray-100">
               <Pressable
@@ -1006,11 +1010,11 @@ export default function SettingsScreen() {
       <Modal
         visible={showTimezoneModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowTimezoneModal(false)}
       >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl pt-4 pb-8 max-h-[70%]">
+        <View className="flex-1 justify-center items-center bg-black/50 px-4">
+          <View className="bg-white rounded-2xl pt-4 pb-6 w-full max-h-[70%]" style={{ maxWidth: 400 }}>
             {/* Header */}
             <View className="flex-row items-center justify-between px-5 pb-4 border-b border-gray-100">
               <Pressable

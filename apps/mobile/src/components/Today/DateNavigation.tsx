@@ -129,7 +129,7 @@ export function DateNavigation({
                 visible={datePickerVisible}
                 selectedDate={selectedDate}
                 onClose={() => setDatePickerVisible(false)}
-                onSelectDate={handleDateSelect}
+                onSelect={handleDateSelect}
             />
         </>
     )

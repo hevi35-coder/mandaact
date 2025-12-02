@@ -165,7 +165,11 @@
     },
     "typeChanged": "타입 변경 완료",
     "typeChangedDesc": "실천 항목 타입이 변경되었습니다",
-    "typeChangeError": "타입 변경 중 오류가 발생했습니다"
+    "typeChangeError": "타입 변경 중 오류가 발생했습니다",
+    "unconfigured": {
+      "title": "설정 필요",
+      "hint": "탭하여 반복주기 설정"
+    }
   },
   "actionType": {
     "routine": "루틴",
@@ -209,14 +213,18 @@
     },
     "format": {
       "daily": "매일",
+      "weekday": "평일",
+      "weekend": "주말",
       "timesPerWeek": "주 {{count}}회",
       "timesPerWeekWithDays": "주 {{count}}회 ({{days}})",
       "weekdays": "{{days}}",
       "timesPerMonth": "월 {{count}}회",
       "onceComplete": "1회 완료",
+      "periodicDaily": "일간",
+      "periodicWeekly": "주간",
+      "periodicMonthly": "월간",
       "periodicQuarterly": "분기별",
-      "periodicYearly": "연간",
-      "periodicMonthly": "월간"
+      "periodicYearly": "연간"
     },
     "periodLabel": {
       "이번 주": "이번 주",

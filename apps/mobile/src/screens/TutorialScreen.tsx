@@ -3,8 +3,8 @@ import {
   View,
   Text,
   Pressable,
-  Dimensions,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -33,8 +33,6 @@ import type { RootStackParamList } from '../navigation/RootNavigator'
 import { trackTutorialCompleted } from '../lib'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 // Tutorial step config (without text - text comes from translations)
 interface TutorialStepConfig {
@@ -119,6 +117,7 @@ const TUTORIAL_COMPLETED_KEY = '@mandaact/tutorial_completed'
 export default function TutorialScreen() {
   const navigation = useNavigation<NavigationProp>()
   const { t } = useTranslation()
+  const { width: screenWidth } = useWindowDimensions()
   const scrollViewRef = useRef<ScrollView>(null)
   const [currentStep, setCurrentStep] = useState(0)
 
@@ -135,7 +134,7 @@ export default function TutorialScreen() {
     if (currentStep < tutorialSteps.length - 1) {
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
-      scrollViewRef.current?.scrollTo({ x: nextStep * SCREEN_WIDTH, animated: true })
+      scrollViewRef.current?.scrollTo({ x: nextStep * screenWidth, animated: true })
     }
   }
 
@@ -143,7 +142,7 @@ export default function TutorialScreen() {
     if (currentStep > 0) {
       const prevStep = currentStep - 1
       setCurrentStep(prevStep)
-      scrollViewRef.current?.scrollTo({ x: prevStep * SCREEN_WIDTH, animated: true })
+      scrollViewRef.current?.scrollTo({ x: prevStep * screenWidth, animated: true })
     }
   }
 
@@ -193,55 +192,58 @@ export default function TutorialScreen() {
           return (
             <View
               key={step.id}
-              style={{ width: SCREEN_WIDTH }}
-              className="flex-1 px-8 justify-center"
+              style={{ width: screenWidth }}
+              className="flex-1 px-8 justify-center items-center"
             >
-              {/* Icon */}
-              <View className="items-center mb-8">
-                <View
-                  className="w-24 h-24 rounded-full items-center justify-center"
-                  style={{ backgroundColor: step.iconBg }}
-                >
-                  <IconComponent size={48} color={step.iconColor} />
+              {/* Content container with max width for iPad */}
+              <View style={{ width: '100%', maxWidth: 500 }}>
+                {/* Icon */}
+                <View className="items-center mb-8">
+                  <View
+                    className="w-24 h-24 rounded-full items-center justify-center"
+                    style={{ backgroundColor: step.iconBg }}
+                  >
+                    <IconComponent size={48} color={step.iconColor} />
+                  </View>
                 </View>
-              </View>
 
-              {/* Title */}
-              <Text className="text-2xl font-bold text-gray-900 text-center mb-4">
-                {step.title}
-              </Text>
+                {/* Title */}
+                <Text className="text-2xl font-bold text-gray-900 text-center mb-4">
+                  {step.title}
+                </Text>
 
-              {/* Description */}
-              <Text className="text-base text-gray-600 text-center leading-relaxed mb-6">
-                {step.description}
-              </Text>
+                {/* Description */}
+                <Text className="text-base text-gray-600 text-center leading-relaxed mb-6">
+                  {step.description}
+                </Text>
 
-              {/* Bullets */}
-              {step.bullets && (
-                <View className="bg-gray-50 rounded-xl p-4">
-                  {step.bullets.map((bullet, bIndex) => {
-                    if (step.useIconBullets && typeof bullet === 'object' && 'icon' in bullet) {
-                      const BulletIcon = bullet.icon
+                {/* Bullets */}
+                {step.bullets && (
+                  <View className="bg-gray-50 rounded-xl p-4">
+                    {step.bullets.map((bullet, bIndex) => {
+                      if (step.useIconBullets && typeof bullet === 'object' && 'icon' in bullet) {
+                        const BulletIcon = bullet.icon
+                        return (
+                          <View key={bIndex} className="flex-row items-center mb-2">
+                            <BulletIcon size={16} color="#6b7280" />
+                            <Text className="text-sm text-gray-700 flex-1 ml-2">
+                              {t(`tutorial.content.${step.contentKey}.${bullet.textKey}`)}
+                            </Text>
+                          </View>
+                        )
+                      }
                       return (
-                        <View key={bIndex} className="flex-row items-center mb-2">
-                          <BulletIcon size={16} color="#6b7280" />
-                          <Text className="text-sm text-gray-700 flex-1 ml-2">
-                            {t(`tutorial.content.${step.contentKey}.${bullet.textKey}`)}
+                        <View key={bIndex} className="flex-row items-start mb-2">
+                          <Text className="text-primary mr-2">•</Text>
+                          <Text className="text-sm text-gray-700 flex-1">
+                            {typeof bullet === 'string' ? t(`tutorial.content.${step.contentKey}.${bullet}`) : ''}
                           </Text>
                         </View>
                       )
-                    }
-                    return (
-                      <View key={bIndex} className="flex-row items-start mb-2">
-                        <Text className="text-primary mr-2">•</Text>
-                        <Text className="text-sm text-gray-700 flex-1">
-                          {typeof bullet === 'string' ? t(`tutorial.content.${step.contentKey}.${bullet}`) : ''}
-                        </Text>
-                      </View>
-                    )
-                  })}
-                </View>
-              )}
+                    })}
+                  </View>
+                )}
+              </View>
             </View>
           )
         })}
@@ -260,28 +262,30 @@ export default function TutorialScreen() {
       </View>
 
       {/* Navigation Buttons */}
-      <View className="flex-row px-4 pb-4 gap-3">
-        {currentStep > 0 && (
-          <Pressable
-            className="flex-1 bg-gray-100 rounded-xl py-4 flex-row items-center justify-center"
-            onPress={handlePrev}
-          >
-            <ChevronLeft size={20} color="#374151" />
-            <Text className="text-gray-700 font-medium ml-1">{t('tutorial.previous')}</Text>
-          </Pressable>
-        )}
+      <View className="items-center px-4 pb-4">
+        <View className="flex-row gap-3" style={{ width: '100%', maxWidth: 500 }}>
+          {currentStep > 0 && (
+            <Pressable
+              className="flex-1 bg-gray-100 rounded-xl py-4 flex-row items-center justify-center"
+              onPress={handlePrev}
+            >
+              <ChevronLeft size={20} color="#374151" />
+              <Text className="text-gray-700 font-medium ml-1">{t('tutorial.previous')}</Text>
+            </Pressable>
+          )}
 
-        <Pressable
-          className={`flex-1 bg-primary rounded-xl py-4 flex-row items-center justify-center ${
-            currentStep === 0 ? 'flex-[2]' : ''
-          }`}
-          onPress={isLastStep ? handleComplete : handleNext}
-        >
-          <Text className="text-white font-medium mr-1">
-            {isLastStep ? t('tutorial.start') : t('tutorial.next')}
-          </Text>
-          {!isLastStep && <ChevronRight size={20} color="white" />}
-        </Pressable>
+          <Pressable
+            className={`flex-1 bg-primary rounded-xl py-4 flex-row items-center justify-center ${
+              currentStep === 0 ? 'flex-[2]' : ''
+            }`}
+            onPress={isLastStep ? handleComplete : handleNext}
+          >
+            <Text className="text-white font-medium mr-1">
+              {isLastStep ? t('tutorial.start') : t('tutorial.next')}
+            </Text>
+            {!isLastStep && <ChevronRight size={20} color="white" />}
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   )

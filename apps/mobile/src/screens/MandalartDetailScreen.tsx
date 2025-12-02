@@ -194,6 +194,18 @@ export default function MandalartDetailScreen() {
     }
   }, [mandalart])
 
+  // Sync selectedSubGoal when mandalart data changes (for modal updates)
+  React.useEffect(() => {
+    if (selectedSubGoal && mandalart) {
+      const updatedSubGoal = mandalart.sub_goals.find(
+        sg => sg.id === selectedSubGoal.id
+      ) as SubGoalWithActions | undefined
+      if (updatedSubGoal) {
+        setSelectedSubGoal(updatedSubGoal)
+      }
+    }
+  }, [mandalart])
+
   // Render 3x3 cell for main view
   const renderMainCell = (position: number) => {
     if (position === 0) {

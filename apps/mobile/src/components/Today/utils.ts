@@ -44,6 +44,20 @@ export function formatTypeDetailsLocalized(
 
         if (frequency === 'weekly') {
             if (weekdays.length > 0) {
+                // Check if weekdays = Mon-Fri (1,2,3,4,5) → show "Weekday"
+                const isWeekday = weekdays.length === 5 &&
+                    [1, 2, 3, 4, 5].every(d => weekdays.includes(d))
+                if (isWeekday) {
+                    return t('actionType.format.weekday')
+                }
+
+                // Check if weekend = Sat-Sun (6, 0) → show "Weekend"
+                const isWeekend = weekdays.length === 2 &&
+                    weekdays.includes(6) && weekdays.includes(0)
+                if (isWeekend) {
+                    return t('actionType.format.weekend')
+                }
+
                 // Sort weekdays: 1,2,3,4,5,6,0 (Mon-Sun)
                 const sortedDays = [...weekdays].sort((a, b) => {
                     const orderA = a === 0 ? 7 : a
@@ -51,9 +65,7 @@ export function formatTypeDetailsLocalized(
                     return orderA - orderB
                 })
                 const dayNames = sortedDays.map(d => t(`actionType.weekdayShort.${weekdayKeyMap[d]}`)).join(', ')
-                if (count && count > 0) {
-                    return t('actionType.format.timesPerWeekWithDays', { count, days: dayNames })
-                }
+                // Only show day names without "Nx per week" prefix
                 return t('actionType.format.weekdays', { days: dayNames })
             }
             return t('actionType.format.timesPerWeek', { count })
@@ -73,13 +85,22 @@ export function formatTypeDetailsLocalized(
         }
 
         if (completionType === 'periodic') {
+            if (periodCycle === 'daily') {
+                return t('actionType.format.periodicDaily')
+            }
+            if (periodCycle === 'weekly') {
+                return t('actionType.format.periodicWeekly')
+            }
+            if (periodCycle === 'monthly') {
+                return t('actionType.format.periodicMonthly')
+            }
             if (periodCycle === 'quarterly') {
                 return t('actionType.format.periodicQuarterly')
             }
             if (periodCycle === 'yearly') {
                 return t('actionType.format.periodicYearly')
             }
-            return t('actionType.format.periodicMonthly')
+            return t('actionType.format.periodicMonthly') // fallback
         }
     }
 

@@ -165,7 +165,11 @@
     },
     "typeChanged": "Type Changed",
     "typeChangedDesc": "Action type has been updated",
-    "typeChangeError": "Error occurred while changing type"
+    "typeChangeError": "Error occurred while changing type",
+    "unconfigured": {
+      "title": "Needs Setup",
+      "hint": "Tap to configure frequency"
+    }
   },
   "actionType": {
     "routine": "Routine",
@@ -209,14 +213,18 @@
     },
     "format": {
       "daily": "Daily",
+      "weekday": "Weekday",
+      "weekend": "Weekend",
       "timesPerWeek": "{{count}}x per week",
       "timesPerWeekWithDays": "{{count}}x per week ({{days}})",
       "weekdays": "{{days}}",
       "timesPerMonth": "{{count}}x per month",
       "onceComplete": "One-time",
+      "periodicDaily": "Daily",
+      "periodicWeekly": "Weekly",
+      "periodicMonthly": "Monthly",
       "periodicQuarterly": "Quarterly",
-      "periodicYearly": "Yearly",
-      "periodicMonthly": "Monthly"
+      "periodicYearly": "Yearly"
     },
     "periodLabel": {
       "이번 주": "This week",

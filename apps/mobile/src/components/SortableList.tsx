@@ -147,10 +147,12 @@ export default function SortableList<T>({
   const [dragOffset, setDragOffset] = useState(0)
   const [items, setItems] = useState(data)
 
-  // Sync items with data prop
+  // Sync items with data prop - use JSON comparison for deep equality check
+  const dataJson = JSON.stringify(data)
   React.useEffect(() => {
     setItems(data)
-  }, [data])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataJson])
 
   const handleDragStart = useCallback((index: number) => {
     setIsDragging(true)
@@ -212,7 +214,7 @@ export default function SortableList<T>({
     [
       keyExtractor,
       itemHeight,
-      items.length,
+      items, // Changed from items.length to items to detect content changes
       handleDragStart,
       handleDragMove,
       handleDragEnd,

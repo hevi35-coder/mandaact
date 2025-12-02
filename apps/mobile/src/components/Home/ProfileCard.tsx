@@ -110,14 +110,20 @@ export function ProfileCard({
 
                     {/* Stats Grid: Total Checks + Active Days */}
                     <View className="flex-row gap-3 mb-4">
-                        <View className="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center">
-                            <Text className="text-2xl font-bold text-primary">
+                        <View
+                            className="flex-1 bg-gray-50 rounded-xl border border-gray-100 items-center justify-center"
+                            style={{ aspectRatio: 1.6 }}
+                        >
+                            <Text className="text-2xl font-bold text-primary mb-1">
                                 {totalChecks.toLocaleString()}
                             </Text>
                             <Text className="text-xs text-gray-500">{t('home.totalChecks')}</Text>
                         </View>
-                        <View className="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center">
-                            <Text className="text-2xl font-bold text-primary">
+                        <View
+                            className="flex-1 bg-gray-50 rounded-xl border border-gray-100 items-center justify-center"
+                            style={{ aspectRatio: 1.6 }}
+                        >
+                            <Text className="text-2xl font-bold text-primary mb-1">
                                 {activeDays.toLocaleString()}
                             </Text>
                             <Text className="text-xs text-gray-500">{t('home.activeDays')}</Text>

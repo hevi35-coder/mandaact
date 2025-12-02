@@ -60,55 +60,122 @@ export const ActionItem = React.memo(({
 
             {/* Content */}
             <View className="flex-1">
-                <Text
-                    className={`text-base ${action.is_checked
-                            ? 'text-gray-500 line-through'
-                            : 'text-gray-900'
-                        }`}
-                >
-                    {action.title}
-                </Text>
-                <View className="flex-row items-center mt-1">
-                    <Text className="text-xs text-gray-400">
-                        {action.sub_goal.title}
-                    </Text>
-                </View>
+                {/* iPhone: Title + SubGoal on same line */}
+                {!isTablet ? (
+                    <>
+                        {/* Line 1: Title + SubGoal */}
+                        <View className="flex-row items-center">
+                            <Text
+                                className={`text-base flex-shrink ${action.is_checked
+                                        ? 'text-gray-500 line-through'
+                                        : 'text-gray-900'
+                                    }`}
+                                numberOfLines={1}
+                            >
+                                {action.title}
+                            </Text>
+                            <Text className="text-xs text-gray-400 ml-2" numberOfLines={1}>
+                                {action.sub_goal.title}
+                            </Text>
+                        </View>
+
+                        {/* Line 2: Badges (Type first, then Progress) */}
+                        <View className="flex-row flex-wrap items-center mt-1.5 gap-1.5">
+                            {/* Type Badge */}
+                            <Pressable
+                                onPress={() => onTypeBadgePress(action)}
+                                className="flex-row items-center bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200 active:bg-gray-200"
+                            >
+                                <ActionTypeIcon type={action.type} size={12} />
+                                <Text className="text-xs text-gray-600 ml-1">
+                                    {formatTypeDetailsLocalized(action, t) ||
+                                        t(`actionType.${action.type}`)}
+                                </Text>
+                            </Pressable>
+
+                            {/* Period Progress Badge */}
+                            {action.period_progress && action.period_progress.target !== null && (
+                                <View
+                                    className={`px-2 py-0.5 rounded-md ${action.period_progress.isCompleted
+                                            ? 'bg-green-100 border border-green-200'
+                                            : 'bg-gray-100 border border-gray-200'
+                                        }`}
+                                >
+                                    <Text
+                                        className={`text-xs ${action.period_progress.isCompleted
+                                                ? 'text-green-700'
+                                                : 'text-gray-600'
+                                            }`}
+                                    >
+                                        {t(`actionType.periodLabel.${action.period_progress.periodLabel}`, {
+                                            defaultValue: action.period_progress.periodLabel
+                                        })}{' '}
+                                        {action.period_progress.checkCount}/{action.period_progress.target}
+                                        {action.period_progress.isCompleted && ' ✓'}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    </>
+                ) : (
+                    /* iPad: Original layout */
+                    <>
+                        <Text
+                            className={`text-base ${action.is_checked
+                                    ? 'text-gray-500 line-through'
+                                    : 'text-gray-900'
+                                }`}
+                        >
+                            {action.title}
+                        </Text>
+                        <View className="flex-row items-center mt-1">
+                            <Text className="text-xs text-gray-400">
+                                {action.sub_goal.title}
+                            </Text>
+                        </View>
+                    </>
+                )}
             </View>
 
-            {/* Period Progress Badge */}
-            {action.period_progress && action.period_progress.target !== null && (
-                <View
-                    className={`px-2 py-1 rounded-lg mr-2 ${action.period_progress.isCompleted
-                            ? 'bg-green-100 border border-green-200'
-                            : 'bg-gray-100 border border-gray-200'
-                        }`}
-                >
-                    <Text
-                        className={`text-xs ${action.period_progress.isCompleted
-                                ? 'text-green-700'
-                                : 'text-gray-600'
-                            }`}
+            {/* iPad: Badges on the right side (Type first, then Progress) */}
+            {isTablet && (
+                <>
+                    {/* Type Badge */}
+                    <Pressable
+                        onPress={() => onTypeBadgePress(action)}
+                        className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200 active:bg-gray-200 mr-2"
                     >
-                        {t(`actionType.periodLabel.${action.period_progress.periodLabel}`, {
-                            defaultValue: action.period_progress.periodLabel
-                        })}{' '}
-                        {action.period_progress.checkCount}/{action.period_progress.target}
-                        {action.period_progress.isCompleted && ' ✓'}
-                    </Text>
-                </View>
-            )}
+                        <ActionTypeIcon type={action.type} size={14} />
+                        <Text className="text-xs text-gray-600 ml-1">
+                            {formatTypeDetailsLocalized(action, t) ||
+                                t(`actionType.${action.type}`)}
+                        </Text>
+                    </Pressable>
 
-            {/* Type Badge - Pressable로 변경 (타입 수정 모달 열기) */}
-            <Pressable
-                onPress={() => onTypeBadgePress(action)}
-                className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200 active:bg-gray-200"
-            >
-                <ActionTypeIcon type={action.type} size={14} />
-                <Text className="text-xs text-gray-600 ml-1">
-                    {formatTypeDetailsLocalized(action, t) ||
-                        t(`actionType.${action.type}`)}
-                </Text>
-            </Pressable>
+                    {/* Period Progress Badge */}
+                    {action.period_progress && action.period_progress.target !== null && (
+                        <View
+                            className={`px-2 py-1 rounded-lg ${action.period_progress.isCompleted
+                                    ? 'bg-green-100 border border-green-200'
+                                    : 'bg-gray-100 border border-gray-200'
+                                }`}
+                        >
+                            <Text
+                                className={`text-xs ${action.period_progress.isCompleted
+                                        ? 'text-green-700'
+                                        : 'text-gray-600'
+                                    }`}
+                            >
+                                {t(`actionType.periodLabel.${action.period_progress.periodLabel}`, {
+                                    defaultValue: action.period_progress.periodLabel
+                                })}{' '}
+                                {action.period_progress.checkCount}/{action.period_progress.target}
+                                {action.period_progress.isCompleted && ' ✓'}
+                            </Text>
+                        </View>
+                    )}
+                </>
+            )}
         </Animated.View>
     )
 })

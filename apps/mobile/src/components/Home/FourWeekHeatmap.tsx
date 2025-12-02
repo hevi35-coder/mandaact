@@ -8,11 +8,12 @@ import React from 'react'
 import { View, Text, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react-native'
+import { getUserToday } from '@mandaact/shared'
 import type { FourWeekHeatmapProps } from './types'
 
 export function FourWeekHeatmap({ fourWeekData, isLoading }: FourWeekHeatmapProps) {
     const { t } = useTranslation()
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = getUserToday() // KST timezone
 
     return (
         <View>
