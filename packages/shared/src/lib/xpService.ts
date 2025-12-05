@@ -57,7 +57,7 @@ export interface PerfectDayResult {
 }
 
 export interface XPMultiplier {
-  type: 'weekend' | 'comeback' | 'level_milestone' | 'perfect_week'
+  type: 'weekend' | 'comeback' | 'level_milestone' | 'perfect_week' | 'ad_boost'
   name: string
   multiplier: number
 }
@@ -87,6 +87,7 @@ export interface XPService {
   activateLevelMilestoneBonus: (userId: string, level: number) => Promise<boolean>
   activatePerfectWeekBonus: (userId: string) => Promise<boolean>
   checkComebackBonus: (userId: string) => Promise<boolean>
+  activateAdBoost: (userId: string, durationHours?: number) => Promise<boolean>
 
   // Combined award function
   awardXP: (userId: string, baseXP?: number, targetDate?: Date) => Promise<AwardXPResult>
@@ -335,6 +336,12 @@ export function createXPService(supabase: SupabaseClient): XPService {
               name: '완벽한 주',
               multiplier: bonus.multiplier || 2.0
             })
+          } else if (bonus.bonus_type === 'ad_boost') {
+            multipliers.push({
+              type: 'ad_boost',
+              name: '광고 부스트',
+              multiplier: bonus.multiplier || 2.0
+            })
           }
         }
       }
@@ -537,6 +544,54 @@ export function createXPService(supabase: SupabaseClient): XPService {
   }
 
   /**
+   * Activate ad boost: 2x XP for specified duration (default 1 hour)
+   * Activated by watching a rewarded ad
+   */
+  async function activateAdBoost(userId: string, durationHours: number = 1): Promise<boolean> {
+    try {
+      // Check if ad boost is already active
+      const { data: existing } = await supabase
+        .from('user_bonus_xp')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('bonus_type', 'ad_boost')
+        .gte('expires_at', new Date().toISOString())
+
+      if (existing && existing.length > 0) {
+        // Extend existing boost instead of creating new one
+        const currentExpiry = new Date(existing[0].expires_at)
+        const newExpiry = new Date(currentExpiry.getTime() + durationHours * 60 * 60 * 1000)
+
+        const { error } = await supabase
+          .from('user_bonus_xp')
+          .update({ expires_at: newExpiry.toISOString() })
+          .eq('id', existing[0].id)
+
+        return !error
+      }
+
+      // Activate new ad boost
+      const expiresAt = new Date()
+      expiresAt.setTime(expiresAt.getTime() + durationHours * 60 * 60 * 1000)
+
+      const { error } = await supabase
+        .from('user_bonus_xp')
+        .insert({
+          user_id: userId,
+          bonus_type: 'ad_boost',
+          multiplier: 2.0,
+          activated_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString()
+        })
+
+      return !error
+    } catch (error) {
+      console.error('Error activating ad boost:', error)
+      return false
+    }
+  }
+
+  /**
    * Award XP with streak bonus and multipliers
    * Also checks and activates level milestone bonus on level up
    * @param targetDate - The date for which XP is being awarded (affects weekend bonus). Defaults to today.
@@ -581,6 +636,7 @@ export function createXPService(supabase: SupabaseClient): XPService {
     activateLevelMilestoneBonus,
     activatePerfectWeekBonus,
     checkComebackBonus,
+    activateAdBoost,
     awardXP
   }
 }

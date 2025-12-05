@@ -837,5 +837,38 @@
     "unauthorized": "Login required",
     "notFound": "Not found",
     "serverError": "Server error occurred"
+  },
+  "ads": {
+    "loading": "Loading ad...",
+    "loadError": "Failed to load ad",
+    "notReady": {
+      "title": "Ad Not Ready",
+      "message": "Please try again in a moment"
+    },
+    "xpBoost": {
+      "button": "Watch Ad for 2x XP",
+      "duration": "Valid for 1 hour",
+      "activated": "XP Boost Activated!",
+      "activatedDesc": "All XP will be doubled for 1 hour",
+      "error": "Failed to activate XP boost"
+    },
+    "streakFreeze": {
+      "button": "Watch Ad to Protect Streak",
+      "duration": "1 day protection",
+      "activated": "Streak Protection Activated!",
+      "activatedDesc": "Your streak is protected until tomorrow",
+      "error": "Failed to activate streak protection"
+    },
+    "yesterdayCheck": {
+      "button": "Watch Ad for Yesterday Check",
+      "activated": "Yesterday Check Complete!",
+      "activatedDesc": "Yesterday's action has been checked",
+      "error": "Failed to check yesterday's action"
+    },
+    "reportGenerate": {
+      "button": "Watch Ad for Free Report",
+      "activated": "Generating report...",
+      "error": "Failed to generate report"
+    }
   }
 }

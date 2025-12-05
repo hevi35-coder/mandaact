@@ -837,5 +837,38 @@
     "unauthorized": "로그인이 필요합니다",
     "notFound": "찾을 수 없습니다",
     "serverError": "서버 오류가 발생했습니다"
+  },
+  "ads": {
+    "loading": "광고 준비 중...",
+    "loadError": "광고를 불러오지 못했습니다",
+    "notReady": {
+      "title": "광고 준비 중",
+      "message": "잠시 후 다시 시도해주세요"
+    },
+    "xpBoost": {
+      "button": "광고 보고 2배 XP",
+      "duration": "1시간 동안 유효",
+      "activated": "XP 부스트 활성화!",
+      "activatedDesc": "1시간 동안 모든 XP가 2배로 적용됩니다",
+      "error": "XP 부스트 활성화에 실패했습니다"
+    },
+    "streakFreeze": {
+      "button": "광고 보고 스트릭 보호",
+      "duration": "1일 보호",
+      "activated": "스트릭 보호 활성화!",
+      "activatedDesc": "내일까지 스트릭이 유지됩니다",
+      "error": "스트릭 보호 활성화에 실패했습니다"
+    },
+    "yesterdayCheck": {
+      "button": "광고 보고 어제 체크",
+      "activated": "어제 체크 완료!",
+      "activatedDesc": "어제 실천 항목이 체크되었습니다",
+      "error": "어제 체크에 실패했습니다"
+    },
+    "reportGenerate": {
+      "button": "광고 보고 무료 생성",
+      "activated": "리포트 생성 중...",
+      "error": "리포트 생성에 실패했습니다"
+    }
   }
 }
