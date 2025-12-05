@@ -216,7 +216,7 @@ function ReportCard({
           {/* Expandable Detail Section */}
           {(summary.strengths.length > 0 || summary.actionPlan.length > 0 || summary.improvements.problem) && (
             <Pressable
-              className="bg-primary/5 rounded-xl p-4 border border-primary/10"
+              className="bg-gray-100/80 rounded-xl p-4 active:opacity-70"
               onPress={onToggleExpand}
             >
               <View className="flex-row items-center justify-between">
@@ -881,6 +881,10 @@ export default function ReportsScreen() {
                     isLoading={diagnosisLoading}
                     isGenerating={generateDiagnosisMutation.isPending}
                     generatingText={t('reports.card.newDiagnosisGenerating')}
+                    viewDetailsText={t('reports.card.viewDetails')}
+                    strengthsText={t('reports.card.strengths')}
+                    improvementsText={t('reports.card.improvements')}
+                    suggestionsText={t('reports.card.suggestions')}
                   />
                 )}
 
@@ -896,6 +900,10 @@ export default function ReportsScreen() {
                     onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
                     isLoading={diagnosisLoading}
                     isGenerating={false}
+                    viewDetailsText={t('reports.card.viewDetails')}
+                    strengthsText={t('reports.card.strengths')}
+                    improvementsText={t('reports.card.improvements')}
+                    suggestionsText={t('reports.card.suggestions')}
                   />
                 )}
 
@@ -945,6 +953,10 @@ export default function ReportsScreen() {
                   isLoading={weeklyLoading}
                   isGenerating={generateWeeklyMutation.isPending}
                   generatingText={t('reports.card.newReportGenerating')}
+                  viewDetailsText={t('reports.card.viewDetails')}
+                  strengthsText={t('reports.card.strengths')}
+                  improvementsText={t('reports.card.improvements')}
+                  suggestionsText={t('reports.card.suggestions')}
                 />
               </Animated.View>
 
@@ -1111,6 +1123,10 @@ export default function ReportsScreen() {
                 isLoading={diagnosisLoading}
                 isGenerating={generateDiagnosisMutation.isPending}
                 generatingText={t('reports.card.newDiagnosisGenerating')}
+                viewDetailsText={t('reports.card.viewDetails')}
+                strengthsText={t('reports.card.strengths')}
+                improvementsText={t('reports.card.improvements')}
+                suggestionsText={t('reports.card.suggestions')}
               />
             )}
 
@@ -1127,6 +1143,10 @@ export default function ReportsScreen() {
                   onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
                   isLoading={diagnosisLoading}
                   isGenerating={false}
+                  viewDetailsText={t('reports.card.viewDetails')}
+                  strengthsText={t('reports.card.strengths')}
+                  improvementsText={t('reports.card.improvements')}
+                  suggestionsText={t('reports.card.suggestions')}
                 />
                 {/* Notice for new diagnosis */}
                 <View
@@ -1259,6 +1279,10 @@ export default function ReportsScreen() {
               isLoading={weeklyLoading}
               isGenerating={generateWeeklyMutation.isPending}
               generatingText={t('reports.card.newReportGenerating')}
+              viewDetailsText={t('reports.card.viewDetails')}
+              strengthsText={t('reports.card.strengths')}
+              improvementsText={t('reports.card.improvements')}
+              suggestionsText={t('reports.card.suggestions')}
             />
           </Animated.View>
 

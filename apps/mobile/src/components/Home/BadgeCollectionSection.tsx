@@ -30,10 +30,10 @@ export function BadgeCollectionSection({
     const categorizedBadges = categorizeBadges(badges)
 
     return (
-        <View className="p-3 bg-primary/5 rounded-xl border border-primary/10">
+        <View className="p-3 bg-gray-100/80 rounded-xl">
             <Pressable
                 onPress={() => setIsOpen(!isOpen)}
-                className="flex-row items-center justify-between"
+                className="flex-row items-center justify-between active:opacity-70"
             >
                 <View className="flex-row items-center">
                     <Target size={14} color="#0a0a0a" />
@@ -100,7 +100,7 @@ export function BadgeCollectionSection({
                             })}
 
                             {/* Fair Badge Policy */}
-                            <View className="pt-3 border-t border-primary/10">
+                            <View className="pt-3 border-t border-gray-200/60">
                                 <View className="flex-row items-center mb-2">
                                     <Info size={12} color="#2563eb" />
                                     <Text className="text-xs font-semibold text-primary ml-1">

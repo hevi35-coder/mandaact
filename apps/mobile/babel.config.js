@@ -2,22 +2,11 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: [
-      ['babel-preset-expo', {
-        jsxImportSource: 'nativewind',
-      }],
+      ['babel-preset-expo', { jsxImportSource: 'nativewind' }],
+      'nativewind/babel',
     ],
-    plugins: [
-      // NativeWind v4 babel plugin (without worklets - using reanimated instead)
-      require('react-native-css-interop/dist/babel-plugin').default,
-      [
-        '@babel/plugin-transform-react-jsx',
-        {
-          runtime: 'automatic',
-          importSource: 'react-native-css-interop',
-        },
-      ],
-      // Use reanimated plugin instead of worklets (worklets is incompatible with RN 0.76)
-      'react-native-reanimated/plugin',
-    ],
+    // NOTE: react-native-reanimated/plugin is automatically configured by babel-preset-expo
+    // Do NOT manually add it here - it causes "TypeError: property is not writable" errors
+    // See: https://docs.expo.dev/versions/latest/sdk/reanimated/
   };
 };
