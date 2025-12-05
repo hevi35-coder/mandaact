@@ -69,41 +69,62 @@
 
 ---
 
-### 10.2 AdMob 광고 연동 ⏳ **대기 중**
+### 10.2 AdMob 광고 연동 ⏳ **계획 완료, 구현 대기**
 
-**목표**: 앱 출시 전 광고 통합으로 첫 심사에서 완전한 버전 제출
+**목표**: 유저 불편 최소화 + 세련된 수익화 모델 구축
+**상세 전략 문서**: [`docs/features/ADMOB_MONETIZATION_STRATEGY.md`](../features/ADMOB_MONETIZATION_STRATEGY.md)
 
-**작업 목록**:
+#### 10.2.1 AdMob SDK 통합 (Phase 1) - 1일
 - [ ] AdMob 계정 설정
   - [ ] Google AdMob 계정 생성
   - [ ] iOS/Android 앱 등록
   - [ ] 광고 단위 ID 발급 (배너, 전면, 보상형)
   - [ ] 테스트 기기 등록
-- [ ] `react-native-google-mobile-ads` 통합
-  - [ ] 라이브러리 설치 및 설정
-  - [ ] iOS/Android 네이티브 설정
-  - [ ] app.json 설정 추가
-- [ ] 광고 위치 구현
-  - [ ] **하단 배너**: TodayScreen, HomeScreen
-  - [ ] **전면 광고**: 만다라트 생성 완료 시
-  - [ ] **보상형 광고**: XP 2배 획득 (선택)
-- [ ] 정책 준수 UI
-  - [ ] GDPR 동의 배너 (EU 사용자)
-  - [ ] ATT 권한 요청 (iOS 14.5+)
-  - [ ] COPPA 대응 (어린이 보호)
-- [ ] 테스트 광고 검증
-  - [ ] iOS 시뮬레이터 테스트
-  - [ ] Android 에뮬레이터 테스트
-  - [ ] 실제 기기 테스트
+- [ ] `react-native-google-mobile-ads` 설치
+- [ ] iOS/Android 네이티브 설정 (`app.json`)
+- [ ] **배너 광고 구현**: HomeScreen, TodayScreen, MandalartListScreen 하단
 
-**광고 정책**:
-| 광고 유형 | 위치 | 타이밍 | 빈도 |
-|----------|------|--------|------|
-| 배너 | 화면 하단 | 상시 | - |
-| 전면 | 만다라트 생성 후 | 완료 시 1회 | 세션당 1-2회 |
-| 보상형 | XP 획득 화면 | 사용자 선택 | 무제한 |
+#### 10.2.2 보상형 광고 시스템 (Phase 2-3) - 2일
+- [ ] DB 마이그레이션
+  - [ ] `xp_boosts` 테이블 생성
+  - [ ] `ad_watch_history` 테이블 생성
+  - [ ] `rewarded_ad_cooldowns` 테이블 생성
+  - [ ] `report_usage` 테이블 생성
+- [ ] **XP 2배 부스트**: 광고 시청 → 30분간 XP 2배
+  - [ ] `xpMultipliers.ts`에 `ad_boost` 타입 추가
+  - [ ] HomeScreen에 "광고 보고 XP 2배 받기" 버튼
+- [ ] **AI 리포트 생성**: 주 1회 무료, 추가는 광고 시청
+  - [ ] `generate-report` Edge Function에 사용량 체크 추가
+  - [ ] ReportsScreen에 "광고 보고 지금 생성" 버튼
+- [ ] **스트릭 프리즈**: 광고 시청으로 주 1회 프리즈 획득
+  - [ ] `streak-warning` Edge Function에 광고 옵션 안내
+- [ ] **어제 체크 복구**: 광고 시청으로 어제 체크 허용 (신규 기능)
 
-**예상 소요**: 1-2일
+#### 10.2.3 전면 광고 + 피로도 관리 (Phase 4-5) - 1일
+- [ ] **전면 광고**: 만다라트 생성 완료 시 (세션당 1회)
+- [ ] **Frequency Capping**: 일 2회, 주 5회 제한
+- [ ] **신규 유저 보호 기간**
+  - [ ] Day 1-3: 광고 완전 미노출
+  - [ ] Day 4-7: 배너만 노출
+  - [ ] Day 8+: 전체 광고 활성화
+- [ ] **충성 유저 우대**: 주간 30회+ 체크 시 광고 최소화
+
+#### 10.2.4 정책 준수 UI (Phase 4와 병행)
+- [ ] **Apple ATT**: iOS 14.5+ 추적 동의 요청 (`expo-tracking-transparency`)
+- [ ] **GDPR**: EU 유저 동의 배너
+- [ ] **광고 라벨**: Google Play 정책 준수
+
+#### 기존 시스템 영향도 (필수 확인)
+> 작업 전 [`ADMOB_MONETIZATION_STRATEGY.md` 섹션 11](../features/ADMOB_MONETIZATION_STRATEGY.md#11-기존-시스템-영향도-분석) 참조
+
+| 시스템 | 영향받는 파일 | 변경 내용 |
+|--------|-------------|----------|
+| **XP 시스템** | `xpMultipliers.ts`, `stats.ts` | `ad_boost` 배율 추가 |
+| **스트릭** | `stats.ts`, `streak-warning/` | 프리즈 획득 경로 추가 |
+| **리포트** | `generate-report/`, `ReportsPage.tsx` | 사용량 제한 + 광고 옵션 |
+| **푸시 알림** | `streak-warning/`, `comeback-notification/` | 광고 CTA 포함 |
+
+**예상 소요**: 4일 (Phase 1-5)
 
 ---
 
@@ -141,21 +162,63 @@
 
 ---
 
+### 10.4 Premium 구독 시스템 ⏳ **계획 완료, 구현 대기**
+
+**목표**: 무료/유료 모델로 지속 가능한 수익 구조 확립
+**상세 전략**: [`ADMOB_MONETIZATION_STRATEGY.md` 섹션 5](../features/ADMOB_MONETIZATION_STRATEGY.md#5-무료유료-모델-설계)
+
+#### 10.4.1 무료 vs Premium 기능 비교
+| 기능 | 무료 | Premium |
+|------|------|---------|
+| 만다라트 | 3개 | 무제한 |
+| AI 리포트 | 주 1회 (or 광고) | 무제한 |
+| 광고 | 배너 + 전면 | 없음 |
+| XP 부스트 | 광고 시청 | 매일 1회 무료 |
+| 스트릭 프리즈 | 광고 시청 | 월 4회 무료 |
+
+#### 10.4.2 가격 전략
+| 옵션 | 가격 | 월 환산 |
+|------|------|---------|
+| 월간 구독 | 4,900원/월 | 4,900원 |
+| 연간 구독 | 39,000원/년 | 3,250원 (33% 할인) |
+| 평생 이용권 | 99,000원 | 일회성 |
+
+#### 10.4.3 구현 작업 목록 (Phase 6-7) - 3일
+- [ ] DB 마이그레이션
+  - [ ] `user_subscriptions` 테이블 생성
+- [ ] IAP SDK 통합
+  - [ ] `react-native-purchases` (RevenueCat) 설치
+  - [ ] iOS/Android 상품 등록
+- [ ] 구독 상태 관리
+  - [ ] `useSubscription` 훅 구현
+  - [ ] `SubscriptionContext` 전역 상태
+- [ ] Premium 기능 분기 처리
+  - [ ] 만다라트 개수 제한 체크
+  - [ ] 광고 표시 조건 분기
+  - [ ] 리포트/프리즈 무제한 해제
+
+**예상 소요**: 3일 (Phase 6-7)
+
+---
+
 ### 진행 순서 (최적화됨)
 
 ```
-Phase 10.1: CI/CD 파이프라인
+Phase 10.1: CI/CD 파이프라인 ✅ 완료
     └→ 이후 모든 작업의 품질 보장
 
-Phase 10.2: AdMob 광고 연동
-    ├→ 광고 위치 확정 (하단 배너, 전면 광고 타이밍)
-    ├→ GDPR/ATT 동의 UI
-    └→ 테스트 광고로 레이아웃 검증
+Phase 10.2: AdMob 광고 연동 (4일)
+    ├→ Phase 1: SDK + 배너 (1일)
+    ├→ Phase 2-3: 보상형 광고 (2일)
+    └→ Phase 4-5: 전면 광고 + 피로도 관리 (1일)
 
-Phase 10.3: 스토어 배포
+Phase 10.3: 스토어 배포 (1-2일)
     ├→ 광고 포함된 최종 버전으로 첫 심사
-    ├→ 앱 메타데이터/스크린샷
     └→ 정책 준수 상태로 심사 (리젝 위험 감소)
+
+Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
+    ├→ Phase 6: IAP 연동 (2일)
+    └→ Phase 7: 기능 분기 처리 (1일)
 ```
 
 **이점**:
@@ -163,6 +226,7 @@ Phase 10.3: 스토어 배포
 - ✅ CI/CD로 품질 자동 검증
 - ✅ 출시 첫날부터 광고 수익 발생
 - ✅ GDPR/ATT 사전 구현으로 리젝 방지
+- ✅ Premium 구독은 출시 후 추가 가능 (긴급하지 않음)
 
 ---
 
