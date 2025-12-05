@@ -22,7 +22,7 @@ import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
 import { parseMandalartText } from '../../services/ocrService'
 import { logger } from '../../lib'
-import type { InputStepProps } from './types'
+import type { InputStepProps, MandalartData } from './types'
 
 export function TextInputStep({ onBack, onNext, setLoading }: InputStepProps) {
     const { t } = useTranslation()
@@ -39,7 +39,15 @@ export function TextInputStep({ onBack, onNext, setLoading }: InputStepProps) {
         setLoading(true, 'analyzing')
 
         try {
-            const mandalartData = await parseMandalartText(pasteText)
+            const ocrResult = await parseMandalartText(pasteText)
+
+            // Convert OCRResult to MandalartData
+            const mandalartData: MandalartData = {
+                title: ocrResult.center_goal || '',
+                center_goal: ocrResult.center_goal || '',
+                sub_goals: ocrResult.sub_goals,
+            }
+
             onNext(mandalartData)
         } catch (error) {
             logger.error('Text parse error', error)

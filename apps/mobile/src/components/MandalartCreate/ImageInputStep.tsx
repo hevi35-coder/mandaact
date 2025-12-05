@@ -20,15 +20,17 @@ import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
-import { runOCRFlowFromUri } from '../../services/ocrService'
+import { runOCRFlowFromUri, type UploadProgress } from '../../services/ocrService'
 import { useResponsive } from '../../hooks/useResponsive'
+import { useAuthStore } from '../../store/authStore'
 import { logger } from '../../lib'
-import type { InputStepProps } from './types'
+import type { InputStepProps, MandalartData } from './types'
 
 export function ImageInputStep({ onBack, onNext, setLoading }: InputStepProps) {
     const { t } = useTranslation()
     const { width: screenWidth } = useWindowDimensions()
     const { isTablet } = useResponsive()
+    const { user } = useAuthStore()
 
     const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
@@ -95,16 +97,28 @@ export function ImageInputStep({ onBack, onNext, setLoading }: InputStepProps) {
     }
 
     const handleProcessOCR = async () => {
-        if (!selectedImageUri) return
+        if (!selectedImageUri || !user) return
 
         setIsProcessing(true)
         setLoading(true, 'uploading')
 
         try {
-            const mandalartData = await runOCRFlowFromUri(
+            const ocrResult = await runOCRFlowFromUri(
+                user.id,
                 selectedImageUri,
-                (progress) => setLoading(true, progress.message)
+                (progress: UploadProgress) => setLoading(true, progress.message)
             )
+
+            if (!ocrResult) {
+                throw new Error('OCR result is null')
+            }
+
+            // Convert OCRResult to MandalartData
+            const mandalartData: MandalartData = {
+                title: ocrResult.center_goal || '',
+                center_goal: ocrResult.center_goal || '',
+                sub_goals: ocrResult.sub_goals,
+            }
 
             onNext(mandalartData)
         } catch (error) {

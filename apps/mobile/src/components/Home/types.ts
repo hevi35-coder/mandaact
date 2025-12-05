@@ -45,8 +45,8 @@ export interface BadgeCollectionSectionProps {
 export interface StreakCardProps {
     currentStreak: number
     longestStreak: number
-    lastCheckDate: string | Date | null
-    longestStreakDate: string | Date | null
+    lastCheckDate?: string | Date | null
+    longestStreakDate?: string | Date | null
     isNewRecord: boolean
     fourWeekData: Array<{
         date: string

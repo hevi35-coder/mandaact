@@ -21,8 +21,7 @@ import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
 import SubGoalModal from '../SubGoalModal'
 import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '..'
-import type { PreviewStepProps, MandalartData } from './types'
-import type { SubGoal, Action } from '@mandaact/shared'
+import type { PreviewStepProps } from './types'
 
 // Grid layout constants
 const CONTAINER_PADDING = 16
@@ -74,20 +73,21 @@ export function PreviewStep({
         setSubGoalModalOpen(true)
     }
 
-    const handleCoreGoalSave = (newGoal: string) => {
+    const handleCoreGoalSave = (saveData: { title: string; centerGoal: string }) => {
         onUpdateData({
             ...data,
-            center_goal: newGoal,
+            title: saveData.title,
+            center_goal: saveData.centerGoal,
         })
     }
 
-    const handleSubGoalSave = (updatedSubGoal: SubGoal & { actions: Action[] }) => {
+    const handleSubGoalSave = (saveData: { position: number; title: string; actions: Array<{ position: number; title: string; type?: string }> }) => {
         const newSubGoals = data.sub_goals.map((sg) =>
-            sg.position === updatedSubGoal.position
+            sg.position === saveData.position
                 ? {
                     ...sg,
-                    title: updatedSubGoal.title,
-                    actions: updatedSubGoal.actions.map((a) => ({
+                    title: saveData.title,
+                    actions: saveData.actions.map((a) => ({
                         position: a.position,
                         title: a.title,
                     })),
@@ -372,24 +372,25 @@ export function PreviewStep({
             {/* Modals */}
             <CoreGoalModal
                 visible={coreGoalModalOpen}
-                initialValue={data.center_goal}
+                initialTitle={data.title}
+                initialCenterGoal={data.center_goal}
                 onClose={() => setCoreGoalModalOpen(false)}
                 onSave={handleCoreGoalSave}
             />
 
-            <SubGoalModal
-                visible={subGoalModalOpen}
-                subGoal={
-                    selectedSubGoalPosition !== null
-                        ? (getSubGoalByPosition(selectedSubGoalPosition) as any)
-                        : null
-                }
-                onClose={() => {
-                    setSubGoalModalOpen(false)
-                    setSelectedSubGoalPosition(null)
-                }}
-                onSave={handleSubGoalSave}
-            />
+            {selectedSubGoalPosition !== null && (
+                <SubGoalModal
+                    visible={subGoalModalOpen}
+                    position={selectedSubGoalPosition}
+                    initialTitle={getSubGoalByPosition(selectedSubGoalPosition)?.title || ''}
+                    initialActions={getSubGoalByPosition(selectedSubGoalPosition)?.actions || []}
+                    onClose={() => {
+                        setSubGoalModalOpen(false)
+                        setSelectedSubGoalPosition(null)
+                    }}
+                    onSave={handleSubGoalSave}
+                />
+            )}
         </SafeAreaView>
     )
 }

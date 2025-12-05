@@ -41,7 +41,6 @@ export {
   getPostHog,
   identifyUser,
   resetUser,
-  trackEvent,
   trackScreen,
   trackMandalartCreated,
   trackActionChecked,
