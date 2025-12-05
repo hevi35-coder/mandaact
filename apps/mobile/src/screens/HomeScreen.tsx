@@ -29,6 +29,7 @@ import type { RootStackParamList, MainTabParamList } from '../navigation/RootNav
 
 // Sub-components
 import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal } from '../components/Home'
+import { BannerAd } from '../components/ads'
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList>,
@@ -194,6 +195,9 @@ export default function HomeScreen() {
         visible={!!selectedBadge}
         onClose={() => setSelectedBadge(null)}
       />
+
+      {/* Banner Ad */}
+      <BannerAd location="home" />
     </View>
   )
 }

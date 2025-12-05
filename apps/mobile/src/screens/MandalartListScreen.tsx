@@ -34,6 +34,7 @@ import {
   EmptyState,
   type Mandalart,
 } from '../components/MandalartList'
+import { BannerAd } from '../components/ads'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -240,6 +241,9 @@ export default function MandalartListScreen() {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
+
+      {/* Banner Ad */}
+      <BannerAd location="list" />
     </View>
   )
 }

@@ -57,3 +57,13 @@ export {
 
 // Environment validation
 export { getEnv, validateEnv, isDev, isSentryConfigured } from './env'
+
+// AdMob
+export {
+  AD_UNITS,
+  AD_CONFIG,
+  getAdUnitId,
+  canShowInterstitial,
+  markInterstitialShown,
+  getNewUserAdRestriction,
+} from './ads'

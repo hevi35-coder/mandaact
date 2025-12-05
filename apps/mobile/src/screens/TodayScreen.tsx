@@ -51,6 +51,7 @@ import {
 import { Grid3X3, ChevronDown, ChevronRight, Settings } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { BannerAd } from '../components/ads'
 
 export default function TodayScreen() {
   const { t } = useTranslation()
@@ -890,6 +891,9 @@ export default function TodayScreen() {
           onSave={handleTypeSave}
         />
       )}
+
+      {/* Banner Ad */}
+      <BannerAd location="today" />
     </View>
   )
 }
