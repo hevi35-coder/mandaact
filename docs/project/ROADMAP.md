@@ -52,19 +52,20 @@
 > **목표**: CI/CD → AdMob 광고 → 스토어 배포 순서로 진행
 > **예상 기간**: 3-5일
 
-### 10.1 CI/CD 파이프라인 ⏳ **대기 중**
+### 10.1 CI/CD 파이프라인 ✅ **완료** (2025-12-06)
 
 **목표**: 모든 PR에서 자동 품질 검증
 
-**작업 목록**:
-- [ ] GitHub Actions 워크플로우 생성 (`.github/workflows/ci.yml`)
-  - [ ] `pnpm type-check` 자동 실행
-  - [ ] `pnpm lint` 자동 실행
-  - [ ] `pnpm build:web` 검증
-- [ ] PR 체크 설정 (main 브랜치 보호)
-- [ ] 빌드 상태 배지 추가
-
-**예상 소요**: 0.5일
+**완료 사항**:
+- ✅ GitHub Actions 워크플로우 생성 (`.github/workflows/ci.yml`)
+  - ✅ pnpm 워크스페이스 지원 (pnpm/action-setup@v4)
+  - ✅ `pnpm type-check` 자동 실행
+  - ✅ `pnpm lint` 자동 실행
+  - ✅ `pnpm test` 자동 실행
+  - ✅ `pnpm build:web` 검증
+- ✅ 빌드 아티팩트 업로드 (7일 보관)
+- ✅ README에 빌드 상태 배지 추가
+- [ ] PR 체크 설정 (main 브랜치 보호) - GitHub 설정에서 수동 설정 필요
 
 ---
 

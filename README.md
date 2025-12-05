@@ -1,5 +1,7 @@
 # MandaAct
 
+[![CI](https://github.com/hevi35-coder/mandaact/actions/workflows/ci.yml/badge.svg)](https://github.com/hevi35-coder/mandaact/actions/workflows/ci.yml)
+
 AI-powered Mandalart (9x9 goal framework) action tracker with gamification, AI coaching, and comprehensive progress analytics.
 
 ## Overview
@@ -11,7 +13,6 @@ MandaAct transforms your Mandalart goals into actionable daily habits with a com
 - ✅ **Smart Action Tracking**: 3 action types (루틴/미션/참고) with intelligent daily display logic
 - 🎮 **Gamification System**: XP points, levels, badges, and streaks for motivation
 - 🤖 **AI Coaching**: Personalized coaching via LLM API with context-aware responses
-- 📊 **Analytics & Reports**: Weekly AI reports, goal diagnostics, and progress insights
 - 📊 **Analytics & Reports**: Weekly AI reports, goal diagnostics, and progress insights
 - 🔔 **Native Push Notifications**: Daily reminders and achievement alerts (Mobile)
 - 📱 **Cross-Platform**: Available on Web, iOS, and Android (with iPad support)
@@ -137,7 +138,6 @@ Smart display logic shows only relevant actions based on frequency, completion s
 - **[Notification System](./docs/features/NOTIFICATION_SYSTEM_PROGRESS.md)** - PWA push notifications
 - **[Action Types v2](./docs/features/ACTION_TYPE_IMPROVEMENT_V2.md)** - Routine, mission, reference types
 
-### 🎨 UI/UX Guidelines
 ### 🎨 UI/UX Guidelines
 - **[UI Guidelines](./docs/guidelines/UI_GUIDELINES.md)** - **(New)** Unified Web/Mobile UI patterns & diffs
 - **[Animation Guide](./docs/guidelines/ANIMATION_GUIDE.md)** - Animation best practices

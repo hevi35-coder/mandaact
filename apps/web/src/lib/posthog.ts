@@ -24,7 +24,6 @@ import {
   type LevelUpData,
   type WeeklyReportGeneratedData,
   type GoalDiagnosisViewedData,
-  type LoginData,
 } from '@mandaact/shared'
 
 // PostHog 초기화 여부
