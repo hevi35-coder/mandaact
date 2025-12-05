@@ -8,6 +8,7 @@ import * as Notifications from 'expo-notifications'
 import * as Font from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { View } from 'react-native'
+import mobileAds from 'react-native-google-mobile-ads'
 
 import RootNavigator from './src/navigation/RootNavigator'
 import { useAuthStore } from './src/store/authStore'
@@ -29,6 +30,16 @@ initSentry().then(() => {
   // Track app opened event
   trackAppOpened()
 })
+
+// Initialize Google Mobile Ads SDK
+mobileAds()
+  .initialize()
+  .then((adapterStatuses) => {
+    console.log('[AdMob] SDK initialized successfully', adapterStatuses)
+  })
+  .catch((error) => {
+    console.warn('[AdMob] SDK initialization failed', error)
+  })
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync()

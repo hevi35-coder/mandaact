@@ -10,6 +10,7 @@ import {
   BannerAd as GoogleBannerAd,
   BannerAdSize,
   useForeground,
+  TestIds,
 } from 'react-native-google-mobile-ads'
 import { AD_UNITS, getNewUserAdRestriction } from '../../lib/ads'
 import { useAuthStore } from '../../store/authStore'
@@ -40,19 +41,26 @@ export function BannerAd({ location, style }: BannerAdProps) {
 
   // Check new user protection
   const adRestriction = getNewUserAdRestriction(user?.created_at ?? null)
+
   if (adRestriction === 'no_ads') {
     return null
   }
 
-  const adUnitId = LOCATION_TO_AD_UNIT[location]
+  // Use TestIds.BANNER in development for guaranteed test ads
+  const adUnitId = __DEV__ ? TestIds.BANNER : LOCATION_TO_AD_UNIT[location]
 
-  const handleAdLoaded = useCallback(() => {
+  const handleAdLoaded = useCallback((dimensions: { width: number; height: number }) => {
+    if (__DEV__) {
+      console.log('[BannerAd] Ad loaded:', location, dimensions)
+    }
     setIsLoaded(true)
     setHasError(false)
-  }, [])
+  }, [location])
 
   const handleAdFailed = useCallback((error: Error) => {
-    console.warn(`Banner ad failed to load (${location}):`, error.message)
+    if (__DEV__) {
+      console.warn(`[BannerAd] Failed (${location}):`, error.message)
+    }
     setHasError(true)
     setIsLoaded(false)
   }, [location])
@@ -63,16 +71,21 @@ export function BannerAd({ location, style }: BannerAdProps) {
   }
 
   return (
-    <View style={[styles.container, !isLoaded && styles.hidden, style]}>
+    <View style={[styles.container, style]}>
       <GoogleBannerAd
         unitId={adUnitId}
-        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+        size={BannerAdSize.BANNER}
         requestOptions={{
           requestNonPersonalizedAdsOnly: false,
         }}
         onAdLoaded={handleAdLoaded}
         onAdFailedToLoad={handleAdFailed}
       />
+      {!isLoaded && (
+        <View style={styles.placeholder}>
+          {/* Loading placeholder */}
+        </View>
+      )}
     </View>
   )
 }
@@ -82,10 +95,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     backgroundColor: 'transparent',
+    minHeight: 50,
   },
-  hidden: {
-    opacity: 0,
-    height: 0,
+  placeholder: {
+    height: 50,
+    backgroundColor: '#f0f0f0',
+    width: '100%',
   },
 })
 

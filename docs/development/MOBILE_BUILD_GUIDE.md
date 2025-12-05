@@ -282,7 +282,103 @@ WARN Expo Push Notifications: Must use physical device for push notifications
 
 ---
 
+---
+
+## 6. AdMob 통합 테스트 빌드 (2025-12-06)
+
+### 6.1 배경
+AdMob SDK (`react-native-google-mobile-ads` v16.0.0) 통합 후 첫 네이티브 빌드 테스트.
+- Phase 1: 배너 광고 (Home, Today, List 화면)
+- Phase 2: 보상형 광고 훅 및 XP 부스트 버튼
+
+### 6.2 추가된 네이티브 모듈
+- `react-native-google-mobile-ads` v16.0.0
+- iOS AdMob App ID: `ca-app-pub-3170834290529005~1573851405`
+- SKAdNetwork identifiers 10개 추가
+- NSUserTrackingUsageDescription (ATT 권한)
+
+### 6.3 빌드 진행 로그
+
+**시작 시간**: 2025-12-06 02:XX KST
+
+**Step 1: 기존 빌드 아티팩트 제거**
+```bash
+cd apps/mobile
+rm -rf ios node_modules/.cache .expo
+```
+- [x] 완료 ✅
+
+**Step 2: Prebuild (네이티브 프로젝트 생성)**
+```bash
+npx expo prebuild --clean
+```
+- [x] 완료 ✅
+- 출력: "Created native directories", "Finished prebuild", "Installed CocoaPods"
+- 경고: "No 'androidAppId' was provided" - iOS만 구현 중이므로 정상
+
+**Step 3: iOS 시뮬레이터 빌드 및 실행**
+```bash
+npx expo run:ios
+```
+- [x] 완료 ✅
+- 빌드 시간: 약 7분
+- 대상 시뮬레이터: iPhone 16 Pro (iOS 18.0)
+- Google Mobile Ads SDK 리소스 정상 빌드됨
+- GoogleUserMessagingPlatform (UMP) 정상 포함됨
+
+### 6.4 검증 체크리스트
+- [x] 앱이 스플래시 화면을 넘어 정상 실행되는가? ✅
+- [x] AdMob SDK 초기화 성공? ✅ (`GADMobileAds state = Ready`)
+- [ ] Home 화면 하단에 배너 광고가 표시되는가? ⚠️ 시뮬레이터 제한
+- [ ] Today 화면 하단에 배너 광고가 표시되는가? ⚠️ 시뮬레이터 제한
+- [ ] MandalartList 화면 하단에 배너 광고가 표시되는가? ⚠️ 시뮬레이터 제한
+- [x] Metro 터미널에 AdMob 관련 에러가 없는가? ✅
+
+### 6.5 결과
+
+**빌드 성공** ✅
+
+iOS 네이티브 빌드가 성공적으로 완료되었습니다:
+- AdMob SDK (`react-native-google-mobile-ads` v16.0.0) 정상 통합
+- Google Mobile Ads SDK 초기화 성공
+- 테스트 광고 Unit ID 설정 완료 (`ca-app-pub-3940256099942544/2934735716`)
+
+**시뮬레이터 제한사항** ⚠️
+
+시뮬레이터에서 배너 광고가 표시되지 않습니다:
+- SDK 초기화는 성공 (`GADMobileAds state = Ready`)
+- `onAdLoaded` / `onAdFailedToLoad` 콜백이 호출되지 않음
+- iOS 시뮬레이터에서 Google AdMob 테스트 광고 로드 제한 가능성
+
+**필요한 추가 조치**:
+1. **실제 기기 테스트** 필요 (TestFlight 또는 개발자 빌드)
+2. EAS Build로 `.ipa` 생성 후 실기기 설치
+3. 실기기에서 테스트 광고 로드 검증
+
+### 6.6 코드 변경 사항
+
+**App.tsx**: AdMob SDK 초기화 추가
+```typescript
+import mobileAds from 'react-native-google-mobile-ads'
+
+mobileAds()
+  .initialize()
+  .then((adapterStatuses) => {
+    console.log('[AdMob] SDK initialized successfully', adapterStatuses)
+  })
+```
+
+**BannerAd.tsx**: 개발 환경에서 TestIds 사용
+```typescript
+import { TestIds } from 'react-native-google-mobile-ads'
+
+const adUnitId = __DEV__ ? TestIds.BANNER : LOCATION_TO_AD_UNIT[location]
+```
+
+---
+
 **참고 문서**:
 - [Expo SDK 52 Upgrade Guide](https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/)
 - [React Native Polyfills](https://docs.expo.dev/guides/using-libraries/#using-third-party-libraries)
 - [NativeWind v4 Migration](https://www.nativewind.dev/v4/overview)
+- [react-native-google-mobile-ads Docs](https://docs.page/invertase/react-native-google-mobile-ads)
