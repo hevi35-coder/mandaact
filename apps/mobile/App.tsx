@@ -140,7 +140,7 @@ export default function App() {
               }}
             >
               <ToastProvider>
-                <StatusBar style="auto" />
+                <StatusBar style="dark" />
                 <AppContent />
               </ToastProvider>
             </PersistQueryClientProvider>

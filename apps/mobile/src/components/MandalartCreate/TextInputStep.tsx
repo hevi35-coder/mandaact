@@ -16,9 +16,8 @@ import {
     Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { ArrowLeft, Check } from 'lucide-react-native'
+import { ArrowLeft } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
 import { parseMandalartText } from '../../services/ocrService'
 import { logger } from '../../lib'
@@ -86,26 +85,12 @@ export function TextInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                             colors={['#2563eb', '#9333ea', '#db2777']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
-                            style={{ padding: 1, borderRadius: 16 }}
+                            style={{ padding: 2, borderRadius: 16 }}
                         >
-                            <View className="bg-white rounded-2xl px-5 py-2.5 items-center justify-center">
-                                <MaskedView
-                                    maskElement={
-                                        <Text style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                                            {t('mandalart.create.textPaste.analyze')}
-                                        </Text>
-                                    }
-                                >
-                                    <LinearGradient
-                                        colors={['#2563eb', '#9333ea', '#db2777']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                    >
-                                        <Text style={{ fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
-                                            {t('mandalart.create.textPaste.analyze')}
-                                        </Text>
-                                    </LinearGradient>
-                                </MaskedView>
+                            <View style={{ backgroundColor: '#ffffff', borderRadius: 14, paddingHorizontal: 18, paddingVertical: 8 }}>
+                                <Text style={{ fontFamily: 'Pretendard-SemiBold', color: '#7c3aed' }}>
+                                    {t('mandalart.create.textPaste.analyze')}
+                                </Text>
                             </View>
                         </LinearGradient>
                     </Pressable>
@@ -133,20 +118,8 @@ export function TextInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                         onChangeText={setPasteText}
                     />
 
-                    {/* Example Format */}
-                    <View className="mt-6 mb-10">
-                        <Text
-                            className="text-sm font-semibold text-gray-900 mb-2"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
-                        >
-                            {t('mandalart.create.textPaste.exampleTitle')}
-                        </Text>
-                        <View className="bg-gray-100 rounded-xl p-4">
-                            <Text className="text-xs text-gray-600 font-mono leading-5">
-                                {t('mandalart.create.textPaste.exampleContent')}
-                            </Text>
-                        </View>
-                    </View>
+                    {/* Bottom padding */}
+                    <View className="h-10" />
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>

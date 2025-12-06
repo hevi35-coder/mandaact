@@ -32,15 +32,20 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "production"
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://gxnvovnwlqjstpcsprqr.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4bnZvdm53bHFqc3RwY3NwcnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3MDEzNTgsImV4cCI6MjA3NzI3NzM1OH0.OhPreVo70eIGok7D3L9lgvxJH0JfuqHCp9vPro1uXQU",
+        "EXPO_PUBLIC_APP_NAME": "MandaAct",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://839f0391a0b522280de65f6fb6fd69bb@o4510420835696640.ingest.us.sentry.io/4510420840611840",
+        "EXPO_PUBLIC_POSTHOG_API_KEY": "phc_PbuIoR20q4SxL2w4wS35lm5KmEUiJqbTPa37DQuJmI6",
+        "EXPO_PUBLIC_POSTHOG_HOST": "https://app.posthog.com"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id"
+        "ascAppId": "6756198473"
       },
       "android": {
         "serviceAccountKeyPath": "./google-services.json",

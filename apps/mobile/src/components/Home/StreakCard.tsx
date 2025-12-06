@@ -48,10 +48,14 @@ export function StreakCard({
                 {/* Current Streak */}
                 <View className="flex-1 p-4 rounded-xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 items-center">
                     <Flame size={32} color="#f97316" />
-                    <Text className="text-4xl font-bold text-orange-500 my-1">
-                        {currentStreak}
-                    </Text>
-                    <Text className="text-sm font-semibold text-gray-500">{t('home.streak.consecutive')}</Text>
+                    <View className="flex-row items-baseline my-1">
+                        <Text className="text-4xl text-orange-500" style={{ fontFamily: 'Pretendard-Bold' }}>
+                            {currentStreak}
+                        </Text>
+                        <Text className="text-sm text-orange-500 ml-1" style={{ fontFamily: 'Pretendard-Medium' }}>
+                            {t('home.streak.consecutive')}
+                        </Text>
+                    </View>
                     {currentStreak > 0 && lastCheckDate && (() => {
                         const isoString = lastCheckDate instanceof Date
                             ? lastCheckDate.toISOString()
@@ -60,10 +64,7 @@ export function StreakCard({
                                 : String(lastCheckDate)
                         const formatted = formatUserDateTime(isoString)
                         return (
-                            <View className="mt-2 items-center">
-                                <Text className="text-xs text-gray-400">{formatted.date}</Text>
-                                <Text className="text-xs text-gray-400">{formatted.time}</Text>
-                            </View>
+                            <Text className="text-xs text-gray-400 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>{t('common.lastCheck', { date: formatted.date })}</Text>
                         )
                     })()}
                 </View>
@@ -72,24 +73,25 @@ export function StreakCard({
                 <View className="flex-1 p-4 rounded-xl border border-gray-200 bg-gray-50 items-center relative">
                     {isNewRecord && (
                         <View className="absolute -top-2 -right-2 px-2 py-1 bg-yellow-100 rounded-full border border-yellow-300">
-                            <Text className="text-xs font-bold text-yellow-700">{t('home.streak.newRecord')}</Text>
+                            <Text className="text-xs text-yellow-700" style={{ fontFamily: 'Pretendard-Bold' }}>{t('home.streak.newRecord')}</Text>
                         </View>
                     )}
                     <Trophy size={32} color="#eab308" />
-                    <Text className="text-4xl font-bold text-gray-900 my-1">
-                        {longestStreak}
-                    </Text>
-                    <Text className="text-sm font-semibold text-gray-500">{t('home.streak.longest')}</Text>
+                    <View className="flex-row items-baseline my-1">
+                        <Text className="text-4xl text-gray-900" style={{ fontFamily: 'Pretendard-Bold' }}>
+                            {longestStreak}
+                        </Text>
+                        <Text className="text-sm text-gray-500 ml-1" style={{ fontFamily: 'Pretendard-Medium' }}>
+                            {t('home.streak.consecutive')}
+                        </Text>
+                    </View>
                     {longestStreak > 0 && longestStreakDate && (() => {
                         const isoString = longestStreakDate instanceof Date
                             ? longestStreakDate.toISOString()
                             : longestStreakDate
                         const formatted = formatUserDateTime(isoString)
                         return (
-                            <View className="mt-2 items-center">
-                                <Text className="text-xs text-gray-400">{formatted.date}</Text>
-                                <Text className="text-xs text-gray-400">{formatted.time}</Text>
-                            </View>
+                            <Text className="text-xs text-gray-400 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>{t('common.recordDate', { date: formatted.date })}</Text>
                         )
                     })()}
                 </View>

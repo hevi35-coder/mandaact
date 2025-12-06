@@ -79,14 +79,15 @@ export default function MandalartCreateScreen() {
     setInputMethod(method)
     if (method === 'manual') {
       // Initialize empty data for manual mode
+      // Position convention: 1-8 (consistent with web app and database)
       const emptyData: MandalartData = {
         title: '',
         center_goal: '',
         sub_goals: Array.from({ length: 8 }, (_, i) => ({
-          position: i < 4 ? i : i + 1, // Skip center (4)
+          position: i + 1,
           title: '',
           actions: Array.from({ length: 8 }, (_, j) => ({
-            position: j < 4 ? j : j + 1,
+            position: j + 1,
             title: '',
           })),
         })),
@@ -118,13 +119,16 @@ export default function MandalartCreateScreen() {
     setIsSaving(true)
     try {
       // 1. Create Mandalart
+      // Map InputMethod to DB input_method value
+      const dbInputMethod = inputMethod === 'image' ? 'image' : inputMethod === 'text' ? 'text' : 'manual'
+
       const { data: mandalart, error: mandalartError } = await supabase
         .from('mandalarts')
         .insert({
           user_id: user.id,
           title: mandalartData.title.trim(),
           center_goal: mandalartData.center_goal.trim() || mandalartData.title.trim(),
-          start_date: new Date().toISOString(),
+          input_method: dbInputMethod,
         })
         .select()
         .single()

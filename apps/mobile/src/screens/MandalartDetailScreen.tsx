@@ -322,11 +322,11 @@ export default function MandalartDetailScreen() {
     <View className="flex-1 bg-gray-50">
       {/* Loading overlay */}
       {isExporting && (
-        <View className="absolute inset-0 bg-black/50 z-50 items-center justify-center">
-          <View className="bg-white rounded-2xl p-6 items-center">
+        <View className="absolute inset-0 bg-black/50 z-50 justify-center items-center">
+          <View className="bg-white rounded-2xl p-6 items-center justify-center">
             <ActivityIndicator size="large" color="#2563eb" />
             <Text
-              className="text-gray-900 mt-4"
+              className="text-gray-900 mt-4 text-center"
               style={{ fontFamily: 'Pretendard-SemiBold' }}
             >
               {t('common.exporting')}

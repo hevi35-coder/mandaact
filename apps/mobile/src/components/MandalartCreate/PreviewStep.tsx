@@ -14,8 +14,7 @@ import {
     useWindowDimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { ArrowLeft, Check, ChevronLeft } from 'lucide-react-native'
-import { LinearGradient } from 'expo-linear-gradient'
+import { ArrowLeft, ChevronLeft } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
@@ -50,9 +49,24 @@ export function PreviewStep({
     const [subGoalModalOpen, setSubGoalModalOpen] = useState(false)
     const [selectedSubGoalPosition, setSelectedSubGoalPosition] = useState<number | null>(null)
 
-    // Helper to get sub-goal
-    const getSubGoalByPosition = (position: number) => {
-        return data.sub_goals.find((sg) => sg.position === position)
+    /**
+     * Convert visual grid position (0-8) to data position (1-8)
+     * Visual grid:    Data positions:
+     *   0 1 2           1 2 3
+     *   3 4 5    ->     4 C 5  (C = center, no sub-goal)
+     *   6 7 8           6 7 8
+     *
+     * Sequential mapping: Visual 0,1,2,3,5,6,7,8 -> Data 1,2,3,4,5,6,7,8
+     */
+    const visualToDataPosition = (visualPos: number): number => {
+        if (visualPos < 4) return visualPos + 1  // 0,1,2,3 -> 1,2,3,4
+        if (visualPos > 4) return visualPos      // 5,6,7,8 -> 5,6,7,8
+        return 0  // center (4) has no sub-goal
+    }
+
+    // Helper to get sub-goal by data position (1-8)
+    const getSubGoalByDataPosition = (dataPosition: number) => {
+        return data.sub_goals.find((sg) => sg.position === dataPosition)
     }
 
     // Handlers
@@ -60,16 +74,17 @@ export function PreviewStep({
         setCoreGoalModalOpen(true)
     }
 
-    const handleSubGoalPress = (position: number) => {
-        setExpandedSection(position)
+    // Note: These handlers work with DATA positions (1-8), not visual positions
+    const handleSubGoalPress = (dataPosition: number) => {
+        setExpandedSection(dataPosition)
         // Scroll to top when expanding
         setTimeout(() => {
             scrollRef.current?.scrollTo({ y: 0, animated: true })
         }, 100)
     }
 
-    const handleSubGoalEdit = (position: number) => {
-        setSelectedSubGoalPosition(position)
+    const handleSubGoalEdit = (dataPosition: number) => {
+        setSelectedSubGoalPosition(dataPosition)
         setSubGoalModalOpen(true)
     }
 
@@ -102,13 +117,16 @@ export function PreviewStep({
     }
 
     // Render cell for expanded section view
-    const renderExpandedCell = (sectionPos: number, cellPos: number) => {
-        const subGoal = getSubGoalByPosition(sectionPos)
+    // sectionDataPos: data position of the sub-goal (1-8)
+    // cellVisualPos: visual grid position (0-8, where 4 is center)
+    const renderExpandedCell = (sectionDataPos: number, cellVisualPos: number) => {
+        const subGoal = getSubGoalByDataPosition(sectionDataPos)
 
-        if (cellPos === 4) {
-            // Center: Sub-goal title
+        if (cellVisualPos === 4) {
+            // Center: Sub-goal title (clickable to edit)
             return (
-                <View
+                <Pressable
+                    onPress={() => handleSubGoalEdit(sectionDataPos)}
                     className="flex-1 items-center justify-center p-2"
                     style={{
                         backgroundColor: '#eff6ff', // bg-blue-50
@@ -140,45 +158,19 @@ export function PreviewStep({
                             {t('mandalart.create.preview.subGoal')}
                         </Text>
                     )}
-                </View>
+                </Pressable>
             )
         }
 
-        // Actions
-        // Map 3x3 grid position (0-8) to action position logic
-        // Action positions are usually 0-7 excluding center
-        // But here we map visual grid index to action index
-        // Visual: 0 1 2 / 3 4 5 / 6 7 8
-        // Center is 4.
-        // We need to map visual index to action index if needed, or just find action by visual index if that's how it's stored.
-        // In our data model, actions have 'position' 0-7.
-        // Let's assume visual mapping:
-        // 0 1 2
-        // 3 X 4
-        // 5 6 7
-        // This mapping depends on how actions are stored.
-        // Let's use a standard mapping where center is excluded.
-        let actionIndex = cellPos
-        if (cellPos > 4) actionIndex = cellPos - 1
-
-        // However, the previous code used a specific mapping or just displayed based on position.
-        // Let's look at the original code's logic if possible, or implement standard behavior.
-        // Original code: const action = subGoal?.actions.find((a) => a.position === cellPos)
-        // This implies actions are stored with positions 0-8 (including center? or skipping?)
-        // Actually, in `SubGoalModal`, actions are 0-7. 
-        // Let's assume standard mapping: 0,1,2,3, (skip 4), 5,6,7,8 -> mapped to 0..7
-
-        // Wait, the original code (lines 853) was:
-        // const action = subGoal?.actions.find((a) => a.position === cellPos)
-        // This suggests actions might have positions matching the grid (0-8).
-        // But usually center is sub-goal title.
-        // Let's stick to the visual representation.
-
-        const action = subGoal?.actions.find((a) => a.position === cellPos)
+        // Actions - convert visual position to data position
+        // Visual: 0 1 2 / 3 C 5 / 6 7 8 (C=center at 4)
+        // Data:   1 2 3 / 4 - 5 / 6 7 8
+        const actionDataPos = visualToDataPosition(cellVisualPos)
+        const action = subGoal?.actions.find((a) => a.position === actionDataPos)
 
         return (
             <Pressable
-                onPress={() => handleSubGoalEdit(sectionPos)}
+                onPress={() => handleSubGoalEdit(sectionDataPos)}
                 className="flex-1 items-center justify-center p-2 active:bg-gray-50"
                 style={{
                     backgroundColor: '#ffffff',
@@ -218,6 +210,7 @@ export function PreviewStep({
                         value={data.title}
                         onChangeText={handleTitleChange}
                         placeholder={t('mandalart.create.preview.titlePlaceholder')}
+                        placeholderTextColor="#9ca3af"
                         className="flex-1 ml-2 text-xl text-gray-900 font-bold p-0"
                         style={{ fontFamily: 'Pretendard-Bold' }}
                     />
@@ -299,39 +292,18 @@ export function PreviewStep({
                                             )
                                         }
 
-                                        // Sub Goals
-                                        // Map visual position to data position
-                                        // Visual: 0 1 2 / 3 4 5 / 6 7 8
-                                        // Data: 1 2 3 / 8 - 4 / 7 6 5 (Standard Mandalart)
-                                        // OR simple mapping: 0->0, 1->1 ...
-                                        // Let's use the position from data directly if possible.
-                                        // In our data, sub_goals have 'position' 0-7 (excluding center).
-                                        // Let's assume standard visual mapping for now:
-                                        // 0 1 2
-                                        // 3 C 4
-                                        // 5 6 7
-                                        // Center is 4.
-                                        // If pos < 4, subGoal index = pos
-                                        // If pos > 4, subGoal index = pos - 1
-
-                                        // Wait, `getSubGoalByPosition` uses the stored position.
-                                        // Let's assume the stored position matches the visual grid slot (excluding center).
-                                        // Or maybe it matches the 0-8 grid?
-                                        // Let's look at `MandalartFullGrid`. It expects sub_goals to have position.
-
-                                        // Let's just iterate 0-8 and find matching sub-goal.
-                                        // If we use `getSubGoalByPosition(pos)`, we assume pos is 0-8.
-
-                                        const subGoal = getSubGoalByPosition(pos)
+                                        // Sub Goals - convert visual position to data position
+                                        const dataPos = visualToDataPosition(pos)
+                                        const subGoal = getSubGoalByDataPosition(dataPos)
 
                                         return (
                                             <View key={pos} style={{ width: '33.33%', height: '33.33%', padding: 2 }}>
                                                 <SubGoalCell
                                                     title={subGoal?.title || ''}
                                                     size={cellSize}
-                                                    position={pos}
-                                                    filledActions={subGoal?.actions.filter(a => a.title.trim()).length || 0}
-                                                    onPress={() => handleSubGoalPress(pos)}
+                                                    position={dataPos}
+                                                    filledActions={subGoal?.actions?.filter(a => a.title?.trim()).length || 0}
+                                                    onPress={() => handleSubGoalPress(dataPos)}
                                                     variant="overview"
                                                 />
                                             </View>
@@ -382,8 +354,8 @@ export function PreviewStep({
                 <SubGoalModal
                     visible={subGoalModalOpen}
                     position={selectedSubGoalPosition}
-                    initialTitle={getSubGoalByPosition(selectedSubGoalPosition)?.title || ''}
-                    initialActions={getSubGoalByPosition(selectedSubGoalPosition)?.actions || []}
+                    initialTitle={getSubGoalByDataPosition(selectedSubGoalPosition)?.title || ''}
+                    initialActions={getSubGoalByDataPosition(selectedSubGoalPosition)?.actions || []}
                     onClose={() => {
                         setSubGoalModalOpen(false)
                         setSelectedSubGoalPosition(null)

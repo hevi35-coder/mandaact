@@ -4,8 +4,10 @@
     "error": "Error",
     "retry": "Retry",
     "save": "Save",
+    "saving": "Saving...",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "discard": "Exit",
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close",
@@ -27,7 +29,9 @@
     "dateSelect": "Select Date",
     "back": "Back",
     "skip": "Skip",
-    "start": "Get Started"
+    "start": "Get Started",
+    "lastCheck": "Last: {{date}}",
+    "recordDate": "Set: {{date}}"
   },
   "datePicker": {
     "title": "Select Date",
@@ -108,14 +112,16 @@
     },
     "streak": {
       "title": "Streak",
-      "subtitle": "Consecutive Practice Record",
-      "consecutive": "Days in a row",
-      "longest": "Longest Record",
+      "subtitle": "Consecutive Practice",
+      "consecutive": "days",
+      "consecutiveLabel": "Consecutive",
+      "longest": "Best",
+      "longestLabel": "Record",
       "newRecord": "New Record!",
-      "recent4Weeks": "Last 4 Weeks Activity",
-      "startNew": "Start a new streak today!",
-      "keepGoing": "{{days}} days left to reach 7 days. Keep going!",
-      "amazing": "Amazing! Consistency is becoming a habit"
+      "recent4Weeks": "Last 4 Weeks",
+      "startNew": "Start your streak today!",
+      "keepGoing": "{{days}} more to hit 7 days!",
+      "amazing": "You're on fire! Keep it up!"
     },
     "nickname": {
       "title": "Change Nickname",
@@ -244,6 +250,11 @@
     }
   },
   "mandalart": {
+    "cell": {
+      "subGoalLabel": "Sub {{position}}",
+      "subGoalPlaceholder": "Sub-goal",
+      "actionCount": "{{filled}}/{{total}}"
+    },
     "list": {
       "title": "Mandalart",
       "subtitle": "Goal Management",
@@ -278,7 +289,7 @@
       "coreGoal": {
         "title": "Core Goal Settings",
         "mandalartTitle": "Mandalart Title",
-        "titlePlaceholder": "e.g., 2024 Goals, Healthy Life",
+        "titlePlaceholder": "e.g., Healthy Life, Self-Improvement",
         "coreGoalLabel": "Core Goal",
         "coreGoalPlaceholder": "Enter your core goal"
       },
@@ -352,6 +363,7 @@
         "description": "Upload a photo if you have an existing mandalart",
         "hint": "Auto-extract text from your mandalart image",
         "selectImage": "Select Image",
+        "selectSource": "Select Source",
         "camera": "Camera",
         "gallery": "Gallery",
         "permissionRequired": "Permission Required",
@@ -369,12 +381,21 @@
         "processing": "Analyzing text...",
         "enterText": "Please enter text.",
         "parseError": "Error parsing text.",
-        "placeholder": "(Example) Core Goal: Healthy Life\n\n1. Exercise\n   - Walk 30 min daily\n   - Strength training 3x/week\n   - Stretching routine\n   - Yoga class\n   - Go hiking\n   - Learn swimming\n   - Home workout\n   - Cycling\n\n2. Eating Habits\n   - Don't skip breakfast\n   - Drink 2L water\n   - Vegetable-focused diet\n   - Reduce processed food\n\n... (Total 8 sub-goals, 8 actions each)"
+        "placeholder": "(Example) Core Goal: Healthy Life\n\n1. Exercise\n   - Walk 30 min daily\n   - Strength training 3x/week\n   - Stretching routine\n   - Yoga class\n   - Go hiking\n   - Learn swimming\n   - Home workout\n   - Cycling\n\n2. Eating Habits\n   - Don't skip breakfast\n   - Drink 2L water\n   - Vegetable-focused diet\n   - Reduce processed food\n\n... (Total 8 sub-goals, 8 actions each)",
+        "exampleTitle": "Text Format Example",
+        "exampleContent": "Core Goal: Healthy Life\n\n1. Exercise\n- Walk 30 min daily\n- Gym 3x/week\n...\n\n2. Eating Habits\n- Drink 2L water\n..."
       },
       "manualInput": {
         "title": "Manual Input",
         "description": "Create from scratch in empty grid",
         "tapToEdit": "Tap cells to enter goals and actions"
+      },
+      "confirmDiscard": "Are you sure you want to discard changes?",
+      "progress": {
+        "uploading": "Uploading image...",
+        "uploadComplete": "Upload complete",
+        "processing": "Processing...",
+        "done": "Done"
       },
       "preview": {
         "title": "Review & Edit",
@@ -382,7 +403,11 @@
         "subGoal": "Sub-goal",
         "action": "Action",
         "back": "Back",
-        "saving": "Saving..."
+        "saving": "Saving...",
+        "titlePlaceholder": "Enter mandalart title",
+        "backToOverview": "Back to overview",
+        "tapToEdit": "Tap cells to edit",
+        "tapActionToEdit": "Tap action to edit"
       },
       "validation": {
         "enterTitle": "Please enter a title.",
@@ -395,7 +420,10 @@
       "errors": {
         "imageSelect": "Error selecting image.",
         "ocrProcess": "Error processing OCR.",
-        "save": "Error saving."
+        "save": "Error saving.",
+        "emptyText": "Please enter text.",
+        "parseFailed": "Failed to analyze text. Please check the format.",
+        "titleRequired": "Please enter a title."
       },
       "ocr": {
         "picking": "Selecting image...",
@@ -837,6 +865,12 @@
     "unauthorized": "Login required",
     "notFound": "Not found",
     "serverError": "Server error occurred"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred.\nPlease restart the app or try again later.",
+    "retry": "Try Again",
+    "goHome": "Go to Home"
   },
   "ads": {
     "loading": "Loading ad...",

@@ -4,8 +4,10 @@
     "error": "오류",
     "retry": "다시 시도",
     "save": "저장",
+    "saving": "저장 중...",
     "cancel": "취소",
-    "confirm": "확인",
+    "confirm": "안내",
+    "discard": "나가기",
     "delete": "삭제",
     "edit": "수정",
     "close": "닫기",
@@ -27,7 +29,9 @@
     "dateSelect": "날짜 선택",
     "back": "뒤로",
     "skip": "건너뛰기",
-    "start": "시작하기"
+    "start": "시작하기",
+    "lastCheck": "마지막: {{date}}",
+    "recordDate": "달성: {{date}}"
   },
   "datePicker": {
     "title": "날짜 선택",
@@ -244,6 +248,11 @@
     }
   },
   "mandalart": {
+    "cell": {
+      "subGoalLabel": "세부 {{position}}",
+      "subGoalPlaceholder": "세부목표",
+      "actionCount": "{{filled}}/{{total}}개"
+    },
     "list": {
       "title": "만다라트",
       "subtitle": "목표 관리",
@@ -278,7 +287,7 @@
       "coreGoal": {
         "title": "핵심 목표 설정",
         "mandalartTitle": "만다라트 제목",
-        "titlePlaceholder": "예: 2024 목표, 건강한 삶",
+        "titlePlaceholder": "예: 건강한 삶, 자기계발",
         "coreGoalLabel": "핵심 목표",
         "coreGoalPlaceholder": "이루고 싶은 핵심 목표를 입력하세요"
       },
@@ -352,6 +361,7 @@
         "description": "만들어둔 만다라트가 있다면 사진 찍어 업로드",
         "hint": "만다라트 이미지를 업로드하면 자동으로 텍스트를 추출합니다",
         "selectImage": "이미지 선택",
+        "selectSource": "이미지 선택",
         "camera": "카메라",
         "gallery": "갤러리",
         "permissionRequired": "권한 필요",
@@ -369,12 +379,21 @@
         "processing": "텍스트 분석 중...",
         "enterText": "텍스트를 입력해주세요.",
         "parseError": "텍스트 파싱 중 오류가 발생했습니다.",
-        "placeholder": "(예시) 핵심 목표: 건강한 삶\n\n1. 운동\n   - 매일 30분 걷기\n   - 주 3회 근력 운동\n   - 스트레칭 루틴\n   - 요가 수업\n   - 등산 가기\n   - 수영 배우기\n   - 홈트레이닝\n   - 자전거 타기\n\n2. 식습관\n   - 아침 거르지 않기\n   - 물 2L 마시기\n   - 채소 위주 식단\n   - 가공식품 줄이기\n\n... (총 8개 세부 목표, 각 8개 실천 항목)"
+        "placeholder": "(예시) 핵심 목표: 건강한 삶\n\n1. 운동\n   - 매일 30분 걷기\n   - 주 3회 근력 운동\n   - 스트레칭 루틴\n   - 요가 수업\n   - 등산 가기\n   - 수영 배우기\n   - 홈트레이닝\n   - 자전거 타기\n\n2. 식습관\n   - 아침 거르지 않기\n   - 물 2L 마시기\n   - 채소 위주 식단\n   - 가공식품 줄이기\n\n... (총 8개 세부 목표, 각 8개 실천 항목)",
+        "exampleTitle": "텍스트 형식 예시",
+        "exampleContent": "핵심 목표: 건강한 삶\n\n1. 운동\n- 매일 30분 걷기\n- 주 3회 헬스장\n...\n\n2. 식습관\n- 물 2L 마시기\n..."
       },
       "manualInput": {
         "title": "직접 입력",
         "description": "아직 없다면 빈 그리드에서 처음부터 작성",
         "tapToEdit": "셀을 탭하여 목표와 실천 항목을 입력하세요"
+      },
+      "confirmDiscard": "작성 중인 내용을 취소하시겠습니까?",
+      "progress": {
+        "uploading": "이미지 업로드 중...",
+        "uploadComplete": "업로드 완료",
+        "processing": "분석 중...",
+        "done": "완료"
       },
       "preview": {
         "title": "확인 및 수정",
@@ -382,7 +401,11 @@
         "subGoal": "세부목표",
         "action": "실천",
         "back": "뒤로",
-        "saving": "저장 중..."
+        "saving": "저장 중...",
+        "titlePlaceholder": "만다라트 제목을 입력하세요",
+        "backToOverview": "전체 보기로 돌아가기",
+        "tapToEdit": "셀을 탭하여 수정하세요",
+        "tapActionToEdit": "실천 항목을 탭하여 수정하세요"
       },
       "validation": {
         "enterTitle": "제목을 입력해주세요.",
@@ -395,7 +418,10 @@
       "errors": {
         "imageSelect": "이미지 선택 중 오류가 발생했습니다.",
         "ocrProcess": "OCR 처리 중 오류가 발생했습니다.",
-        "save": "저장 중 오류가 발생했습니다."
+        "save": "저장 중 오류가 발생했습니다.",
+        "emptyText": "텍스트를 입력해주세요.",
+        "parseFailed": "텍스트 분석에 실패했습니다. 형식을 확인해주세요.",
+        "titleRequired": "제목을 입력해주세요."
       },
       "ocr": {
         "picking": "이미지 선택 중...",
@@ -837,6 +863,12 @@
     "unauthorized": "로그인이 필요합니다",
     "notFound": "찾을 수 없습니다",
     "serverError": "서버 오류가 발생했습니다"
+  },
+  "errorBoundary": {
+    "title": "문제가 발생했습니다",
+    "description": "예기치 않은 오류가 발생했습니다.\n앱을 다시 시작하거나 나중에 다시 시도해주세요.",
+    "retry": "다시 시도",
+    "goHome": "홈으로 이동"
   },
   "ads": {
     "loading": "광고 준비 중...",

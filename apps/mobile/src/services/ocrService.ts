@@ -113,6 +113,10 @@ interface RawOCRResponse {
 
 /**
  * Convert raw edge function response to OCRResult format
+ *
+ * Position convention (consistent with web app):
+ * - Sub-goals: position 1-8
+ * - Actions: position 1-8
  */
 function convertToOCRResult(raw: RawOCRResponse): OCRResult {
   return {

@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { useTranslation } from 'react-i18next'
 
 interface SubGoalCellProps {
   /** Sub-goal title to display */
@@ -41,6 +42,7 @@ export default function SubGoalCell({
   variant = 'overview',
   numberOfLines = 2,
 }: SubGoalCellProps) {
+  const { t } = useTranslation()
   const isOverview = variant === 'overview'
   const isCenter = variant === 'center'
 
@@ -56,8 +58,8 @@ export default function SubGoalCell({
       ]}
     >
       {/* Position label - only in overview variant */}
-      {isOverview && position && (
-        <Text style={styles.positionLabel}>세부 {position}</Text>
+      {isOverview && position !== undefined && (
+        <Text style={styles.positionLabel}>{t('mandalart.cell.subGoalLabel', { position })}</Text>
       )}
 
       {/* Sub-goal title */}
@@ -74,13 +76,13 @@ export default function SubGoalCell({
       ) : isOverview ? (
         <Text style={styles.emptyTitle}>-</Text>
       ) : (
-        <Text style={styles.placeholder}>세부목표</Text>
+        <Text style={styles.placeholder}>{t('mandalart.cell.subGoalPlaceholder')}</Text>
       )}
 
       {/* Action count - only in overview variant when title exists */}
       {isOverview && title && filledActions !== undefined && (
         <Text style={styles.actionCount}>
-          {filledActions}/{totalActions}개
+          {t('mandalart.cell.actionCount', { filled: filledActions, total: totalActions })}
         </Text>
       )}
     </View>

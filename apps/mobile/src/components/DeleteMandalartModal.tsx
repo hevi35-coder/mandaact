@@ -215,15 +215,16 @@ export default function DeleteMandalartModal({
               <Pressable
                 onPress={handleDeactivate}
                 disabled={isProcessing}
-                className="rounded-lg overflow-hidden mb-3"
+                className="mb-3"
+                style={{ borderRadius: 12, overflow: 'hidden' }}
               >
                 <LinearGradient
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={{ padding: 1, borderRadius: 12 }}
+                  style={{ padding: 1.5 }}
                 >
-                  <View className="bg-white rounded-lg py-4 items-center justify-center">
+                  <View className="bg-white py-4 items-center justify-center" style={{ borderRadius: 10 }}>
                     {processingAction === 'deactivate' ? (
                       <ActivityIndicator size="small" color="#2563eb" />
                     ) : (

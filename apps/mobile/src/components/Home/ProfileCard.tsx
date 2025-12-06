@@ -57,12 +57,12 @@ export function ProfileCard({
                         <View>
                             <View className="flex-row items-center gap-2 mb-1">
                                 <Trophy size={24} color="#eab308" />
-                                <Text className="text-2xl font-bold text-gray-900">
+                                <Text className="text-2xl text-gray-900" style={{ fontFamily: 'Pretendard-Bold' }}>
                                     {t('home.level')} {currentLevel}
                                 </Text>
                             </View>
                             <View className="flex-row items-center">
-                                <Text className="text-base text-gray-500">{nickname}</Text>
+                                <Text className="text-base text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>{nickname}</Text>
                                 <Pressable
                                     onPress={onEditNickname}
                                     className="ml-2 p-1 rounded-full active:bg-gray-100"
@@ -72,8 +72,8 @@ export function ProfileCard({
                             </View>
                         </View>
                         <View className="items-end">
-                            <Text className="text-sm text-gray-400">{t('home.totalXP')}</Text>
-                            <Text className="text-2xl font-bold text-primary">
+                            <Text className="text-sm text-gray-400" style={{ fontFamily: 'Pretendard-Regular' }}>{t('home.totalXP')}</Text>
+                            <Text className="text-2xl text-primary" style={{ fontFamily: 'Pretendard-Bold' }}>
                                 {totalXP.toLocaleString()}
                             </Text>
                         </View>
@@ -84,11 +84,11 @@ export function ProfileCard({
                         <View className="flex-row items-center justify-between mb-2">
                             <View className="flex-row items-center">
                                 <Zap size={14} color="#6b7280" />
-                                <Text className="text-sm text-gray-500 ml-1">
+                                <Text className="text-sm text-gray-500 ml-1" style={{ fontFamily: 'Pretendard-Regular' }}>
                                     {t('home.toNextLevel', { level: currentLevel + 1 })}
                                 </Text>
                             </View>
-                            <Text className="text-sm font-mono font-semibold text-gray-900">
+                            <Text className="text-sm text-gray-900" style={{ fontFamily: 'Pretendard-SemiBold' }}>
                                 {xpProgress.toLocaleString()} / {xpRequired.toLocaleString()} XP
                             </Text>
                         </View>
@@ -114,19 +114,19 @@ export function ProfileCard({
                             className="flex-1 bg-gray-50 rounded-xl border border-gray-100 items-center justify-center"
                             style={{ aspectRatio: 1.6 }}
                         >
-                            <Text className="text-2xl font-bold text-primary mb-1">
+                            <Text className="text-2xl text-primary mb-1" style={{ fontFamily: 'Pretendard-Bold' }}>
                                 {totalChecks.toLocaleString()}
                             </Text>
-                            <Text className="text-xs text-gray-500">{t('home.totalChecks')}</Text>
+                            <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>{t('home.totalChecks')}</Text>
                         </View>
                         <View
                             className="flex-1 bg-gray-50 rounded-xl border border-gray-100 items-center justify-center"
                             style={{ aspectRatio: 1.6 }}
                         >
-                            <Text className="text-2xl font-bold text-primary mb-1">
+                            <Text className="text-2xl text-primary mb-1" style={{ fontFamily: 'Pretendard-Bold' }}>
                                 {activeDays.toLocaleString()}
                             </Text>
-                            <Text className="text-xs text-gray-500">{t('home.activeDays')}</Text>
+                            <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>{t('home.activeDays')}</Text>
                         </View>
                     </View>
 

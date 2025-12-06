@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react-native'
 import { logger } from '../lib/logger'
+import i18n from '../i18n'
 
 interface Props {
   children: ReactNode
@@ -48,6 +49,9 @@ export default class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback
       }
 
+      // Use i18n directly since we can't use hooks in class components
+      const t = (key: string) => i18n.t(key)
+
       return (
         <SafeAreaView className="flex-1 bg-gray-50">
           <ScrollView
@@ -62,12 +66,11 @@ export default class ErrorBoundary extends Component<Props, State> {
             </View>
 
             {/* Error Message */}
-            <Text className="text-xl font-bold text-gray-900 text-center mb-2">
-              문제가 발생했습니다
+            <Text className="text-xl font-bold text-gray-900 text-center mb-2" style={{ fontFamily: 'Pretendard-Bold' }}>
+              {t('errorBoundary.title')}
             </Text>
-            <Text className="text-gray-500 text-center mb-6">
-              예기치 않은 오류가 발생했습니다.{'\n'}
-              앱을 다시 시작하거나 나중에 다시 시도해주세요.
+            <Text className="text-gray-500 text-center mb-6" style={{ fontFamily: 'Pretendard-Regular' }}>
+              {t('errorBoundary.description')}
             </Text>
 
             {/* Error Details (Debug) */}
@@ -91,7 +94,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 onPress={this.handleReset}
               >
                 <RefreshCw size={20} color="white" />
-                <Text className="text-white font-semibold ml-2">다시 시도</Text>
+                <Text className="text-white ml-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>{t('errorBoundary.retry')}</Text>
               </Pressable>
 
               <Pressable
@@ -102,7 +105,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 }}
               >
                 <Home size={20} color="#374151" />
-                <Text className="text-gray-700 font-semibold ml-2">홈으로 이동</Text>
+                <Text className="text-gray-700 ml-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>{t('errorBoundary.goHome')}</Text>
               </Pressable>
             </View>
           </ScrollView>

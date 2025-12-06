@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, Upload } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 import { runOCRFlowFromUri, type UploadProgress } from '../../services/ocrService'
@@ -155,26 +154,12 @@ export function ImageInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                             colors={['#2563eb', '#9333ea', '#db2777']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
-                            style={{ padding: 1, borderRadius: 16 }}
+                            style={{ padding: 2, borderRadius: 16 }}
                         >
-                            <View className="bg-white rounded-2xl px-5 py-2.5 items-center justify-center">
-                                <MaskedView
-                                    maskElement={
-                                        <Text style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                                            {t('mandalart.create.imageUpload.extractText')}
-                                        </Text>
-                                    }
-                                >
-                                    <LinearGradient
-                                        colors={['#2563eb', '#9333ea', '#db2777']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                    >
-                                        <Text style={{ fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
-                                            {t('mandalart.create.imageUpload.extractText')}
-                                        </Text>
-                                    </LinearGradient>
-                                </MaskedView>
+                            <View style={{ backgroundColor: '#ffffff', borderRadius: 14, paddingHorizontal: 18, paddingVertical: 8 }}>
+                                <Text style={{ fontFamily: 'Pretendard-SemiBold', color: '#7c3aed' }}>
+                                    {t('mandalart.create.imageUpload.extractText')}
+                                </Text>
                             </View>
                         </LinearGradient>
                     </Pressable>
