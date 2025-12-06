@@ -1,7 +1,7 @@
-# MandaAct 개발 로드맵 v3.7
+# MandaAct 개발 로드맵 v3.8
 
-**최종 업데이트**: 2025-12-05 (Latest) - 모바일 빌드 성공, NativeWind 복구 진행 중
-**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | **Phase 10 진행 중** 🔄
+**최종 업데이트**: 2025-12-07 (Latest) - AdMob Phase 1-2 완료, Build 18 TestFlight 제출
+**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | **Phase 10.2 AdMob 진행 중** 🔄
 
 ---
 
@@ -69,47 +69,48 @@
 
 ---
 
-### 10.2 AdMob 광고 연동 ⏳ **계획 완료, 구현 대기**
+### 10.2 AdMob 광고 연동 🔄 **Phase 1-2 완료, Phase 3-4 진행 중**
 
 **목표**: 유저 불편 최소화 + 세련된 수익화 모델 구축
-**상세 전략 문서**: [`docs/features/ADMOB_MONETIZATION_STRATEGY.md`](../features/ADMOB_MONETIZATION_STRATEGY.md)
+**상세 전략 문서**: [`docs/features/ADMOB_INTEGRATION.md`](../features/ADMOB_INTEGRATION.md)
+**현재 빌드**: Build 18 (TestFlight 제출 완료)
 
-#### 10.2.1 AdMob SDK 통합 (Phase 1) - 1일
-- [ ] AdMob 계정 설정
-  - [ ] Google AdMob 계정 생성
-  - [ ] iOS/Android 앱 등록
-  - [ ] 광고 단위 ID 발급 (배너, 전면, 보상형)
-  - [ ] 테스트 기기 등록
-- [ ] `react-native-google-mobile-ads` 설치
-- [ ] iOS/Android 네이티브 설정 (`app.json`)
-- [ ] **배너 광고 구현**: HomeScreen, TodayScreen, MandalartListScreen 하단
+#### 10.2.1 AdMob SDK 통합 (Phase 1) ✅ **완료**
+- [x] AdMob 계정 설정
+  - [x] Google AdMob 계정 생성
+  - [x] iOS 앱 등록 (`ca-app-pub-3170834290529005~1573851405`)
+  - [x] 광고 단위 ID 발급 (배너 3개, 전면 3개, 보상형 4개)
+  - [x] 테스트 Ad Unit ID 자동 적용 (`__DEV__` 환경)
+- [x] `react-native-google-mobile-ads` v14.x 설치
+- [x] iOS 네이티브 설정 (`app.json` - GADApplicationIdentifier)
+- [x] **배너 광고 구현**: HomeScreen, TodayScreen, MandalartListScreen 하단
+- [x] **신규 사용자 보호 정책 적용**: 0-3일 광고 없음, 4-7일 배너만
 
-#### 10.2.2 보상형 광고 시스템 (Phase 2-3) - 2일
-- [ ] DB 마이그레이션
-  - [ ] `xp_boosts` 테이블 생성
-  - [ ] `ad_watch_history` 테이블 생성
-  - [ ] `rewarded_ad_cooldowns` 테이블 생성
-  - [ ] `report_usage` 테이블 생성
-- [ ] **XP 2배 부스트**: 광고 시청 → 30분간 XP 2배
-  - [ ] `xpMultipliers.ts`에 `ad_boost` 타입 추가
-  - [ ] HomeScreen에 "광고 보고 XP 2배 받기" 버튼
-- [ ] **AI 리포트 생성**: 주 1회 무료, 추가는 광고 시청
-  - [ ] `generate-report` Edge Function에 사용량 체크 추가
-  - [ ] ReportsScreen에 "광고 보고 지금 생성" 버튼
-- [ ] **스트릭 프리즈**: 광고 시청으로 주 1회 프리즈 획득
-  - [ ] `streak-warning` Edge Function에 광고 옵션 안내
-- [ ] **어제 체크 복구**: 광고 시청으로 어제 체크 허용 (신규 기능)
+#### 10.2.2 보상형 광고 시스템 (Phase 2) ✅ **완료**
+- [x] `useRewardedAd` 훅 구현 (광고 로드/표시/보상 처리)
+- [x] **XP 2배 부스트** (1시간)
+  - [x] `XPBoostButton` 컴포넌트 구현
+  - [x] HomeScreen 배치 (ProfileCard와 StreakCard 사이)
+  - [x] TodayScreen 배치 (ProgressCard 아래)
+  - [x] `xp_multipliers` 테이블 연동
 
-#### 10.2.3 전면 광고 + 피로도 관리 (Phase 4-5) - 1일
-- [ ] **전면 광고**: 만다라트 생성 완료 시 (세션당 1회)
-- [ ] **Frequency Capping**: 일 2회, 주 5회 제한
-- [ ] **신규 유저 보호 기간**
-  - [ ] Day 1-3: 광고 완전 미노출
-  - [ ] Day 4-7: 배너만 노출
-  - [ ] Day 8+: 전체 광고 활성화
-- [ ] **충성 유저 우대**: 주간 30회+ 체크 시 광고 최소화
+#### 10.2.3 추가 보상형 광고 (Phase 3) 🔄 **컴포넌트 완료, 화면 연동 대기**
+- [x] `StreakFreezeButton` 컴포넌트 구현
+- [x] `YesterdayCheckButton` 컴포넌트 구현
+- [x] `ReportGenerateButton` 컴포넌트 구현
+- [ ] **StreakFreezeButton 화면 연동**: StreakCard 내 배치
+- [ ] **YesterdayCheckButton 화면 연동**: TodayScreen 어제 미완료 액션에 표시
+- [ ] **ReportGenerateButton 화면 연동**: ReportsScreen에 배치
+- [ ] 어제 체크 삽입 로직 구현 (check_history에 어제 날짜로 삽입)
+- [ ] 스트릭 재계산 트리거 구현
 
-#### 10.2.4 정책 준수 UI (Phase 4와 병행)
+#### 10.2.4 전면 광고 (Phase 4) 🔄 **훅 완료, 트리거 연동 대기**
+- [x] `useInterstitialAd` 훅 구현 (빈도 제한 포함: 3분 쿨다운, 일 5회)
+- [ ] 만다라트 생성 완료 시 전면 광고 트리거
+- [ ] 리포트 확인 후 전면 광고 트리거
+- [ ] 레벨업 달성 시 전면 광고 트리거
+
+#### 10.2.5 정책 준수 UI ⏳ **대기**
 - [ ] **Apple ATT**: iOS 14.5+ 추적 동의 요청 (`expo-tracking-transparency`)
 - [ ] **GDPR**: EU 유저 동의 배너
 - [ ] **광고 라벨**: Google Play 정책 준수
@@ -207,10 +208,12 @@
 Phase 10.1: CI/CD 파이프라인 ✅ 완료
     └→ 이후 모든 작업의 품질 보장
 
-Phase 10.2: AdMob 광고 연동 (4일)
-    ├→ Phase 1: SDK + 배너 (1일)
-    ├→ Phase 2-3: 보상형 광고 (2일)
-    └→ Phase 4-5: 전면 광고 + 피로도 관리 (1일)
+Phase 10.2: AdMob 광고 연동 🔄 진행 중
+    ├→ Phase 1: SDK + 배너 ✅ 완료
+    ├→ Phase 2: XP 부스트 보상형 광고 ✅ 완료
+    ├→ Phase 3: 추가 보상형 광고 (화면 연동 필요) 🔄
+    ├→ Phase 4: 전면 광고 (트리거 연동 필요) 🔄
+    └→ Phase 5: 정책 준수 UI (ATT, GDPR) ⏳
 
 Phase 10.3: 스토어 배포 (1-2일)
     ├→ 광고 포함된 최종 버전으로 첫 심사
@@ -220,6 +223,12 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
     ├→ Phase 6: IAP 연동 (2일)
     └→ Phase 7: 기능 분기 처리 (1일)
 ```
+
+**현재 상태** (Build 18):
+- ✅ 배너 광고 3개 화면 적용 (Home, Today, List)
+- ✅ XP 부스트 버튼 2개 화면 적용 (Home, Today)
+- 🔄 추가 보상형 광고 컴포넌트 구현 완료, 화면 연동 대기
+- 🔄 전면 광고 훅 구현 완료, 트리거 연동 대기
 
 **이점**:
 - ✅ 첫 심사에 완전한 버전 제출 (재심사 불필요)
@@ -1065,20 +1074,27 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ## 🎉 주요 성과
 
-### 현재 진행 중 (2025-12-05)
-🔄 **모바일 빌드 복구 및 스타일링 작업**
-  - ✅ iOS 빌드 성공 (expo-doctor 17/17 통과)
-  - ✅ 로그인 화면 정상 표시 확인
-  - ✅ package-lock.json 중복 문제 해결
-  - ✅ metro.config.js 경고 수정
-  - 🔄 NativeWind 스타일링 복구 진행 중
-  - ⏳ Sentry 에러 트래킹 복구 (Mock 상태)
+### 현재 진행 중 (2025-12-07)
+🔄 **Phase 10.2 AdMob 광고 연동**
+  - ✅ Build 18 TestFlight 제출 완료
+  - ✅ AdMob SDK 통합 및 배너 광고 (Phase 1 완료)
+  - ✅ XP 부스트 보상형 광고 (Phase 2 완료)
+  - ✅ 추가 보상형 광고 컴포넌트 구현 (StreakFreeze, YesterdayCheck, ReportGenerate)
+  - ✅ 전면 광고 훅 구현 (useInterstitialAd)
+  - 🔄 보상형 광고 화면 연동 작업 대기 (Phase 3)
+  - 🔄 전면 광고 트리거 연동 대기 (Phase 4)
 
-### 이전 진행 (2025-12-03)
-🔄 **Phase 10 스토어 배포 준비 시작**
-  - 작업 순서 최적화: CI/CD → AdMob → 스토어 배포
-  - 광고 포함 첫 심사로 재심사 방지
-  - GDPR/ATT 사전 구현으로 리젝 위험 감소
+### 이전 진행 (2025-12-06)
+✅ **Phase 10.1 CI/CD 파이프라인 완료**
+  - GitHub Actions 워크플로우 생성
+  - TypeScript, ESLint, 테스트 자동 실행
+  - 빌드 아티팩트 업로드
+
+### 이전 진행 (2025-12-05)
+✅ **모바일 빌드 복구 완료**
+  - iOS 빌드 성공 (expo-doctor 17/17 통과)
+  - NativeWind 스타일링 복구 완료
+  - Build 14-17 TestFlight 배포
 
 ### 최근 완료 (2025-11-30)
 ✅ **Phase 9.2 글로벌 대응 (i18n) 완료**
@@ -1157,6 +1173,6 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ---
 
-**문서 버전**: 3.7
-**최종 수정**: 2025-12-05
+**문서 버전**: 3.8
+**최종 수정**: 2025-12-07
 **작성자**: Development Team

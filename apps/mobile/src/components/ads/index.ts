@@ -1,2 +1,5 @@
 export { BannerAd } from './BannerAd'
 export { XPBoostButton } from './XPBoostButton'
+export { StreakFreezeButton } from './StreakFreezeButton'
+export { YesterdayCheckButton } from './YesterdayCheckButton'
+export { ReportGenerateButton } from './ReportGenerateButton'

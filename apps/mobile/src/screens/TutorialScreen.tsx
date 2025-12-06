@@ -267,7 +267,7 @@ export default function TutorialScreen() {
 
       {/* Navigation Buttons */}
       <View className="px-4 pb-4">
-        <View className="flex-row justify-center" style={{ gap: 12, maxWidth: 500, alignSelf: 'center', width: '100%' }}>
+        <View className="flex-row" style={{ gap: 12, maxWidth: 500, alignSelf: 'center', width: '100%' }}>
           {currentStep > 0 && (
             <Pressable
               className="flex-1 bg-gray-100 rounded-xl py-4 flex-row items-center justify-center"
@@ -280,7 +280,6 @@ export default function TutorialScreen() {
 
           <Pressable
             className="flex-1 bg-primary rounded-xl py-4 flex-row items-center justify-center"
-            style={currentStep === 0 ? { flex: 2 } : undefined}
             onPress={isLastStep ? handleComplete : handleNext}
           >
             <Text className="text-white font-medium mr-1">

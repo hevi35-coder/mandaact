@@ -158,6 +158,18 @@ export default function HomeScreen() {
               />
             </View>
 
+            {/* XP Boost Section - Between Profile and Streak on Phone */}
+            {!isTablet && (
+              <XPBoostButton
+                onBoostActivated={() => {
+                  // Refresh active multipliers after boost activation
+                  if (user?.id) {
+                    xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
+                  }
+                }}
+              />
+            )}
+
             {/* Streak Card */}
             <View style={isTablet ? { flex: 1 } : undefined}>
               <StreakCard
@@ -170,20 +182,19 @@ export default function HomeScreen() {
                 fourWeekLoading={fourWeekLoading}
               />
             </View>
+
+            {/* XP Boost Section - After cards on Tablet */}
+            {isTablet && (
+              <XPBoostButton
+                onBoostActivated={() => {
+                  if (user?.id) {
+                    xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
+                  }
+                }}
+              />
+            )}
           </View>
           {/* End of iPad 2-column layout */}
-
-          {/* XP Boost Section */}
-          <View className="mt-2 mb-2">
-            <XPBoostButton
-              onBoostActivated={() => {
-                // Refresh active multipliers after boost activation
-                if (user?.id) {
-                  xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
-                }
-              }}
-            />
-          </View>
 
           {/* Bottom spacing */}
           <View className="h-8" />

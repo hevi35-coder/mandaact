@@ -303,6 +303,34 @@ eas build --profile production --platform android
     ```
     `--clear` 플래그를 사용하여 번들러 캐시를 초기화.
 
+### 5.6 EAS CLI Interactive Mode 에러
+
+*   **증상**: `Input is required, but stdin is not readable` 에러 발생
+*   **원인**: EAS CLI가 사용자 입력을 기다리지만 non-interactive 환경에서 실행됨
+*   **해결**:
+
+    **반드시 `--non-interactive` 플래그 사용**:
+    ```bash
+    # ✅ 올바른 방법
+    eas build --platform ios --profile production --non-interactive --auto-submit --no-wait
+
+    # ❌ 잘못된 방법 (interactive 모드 요구)
+    eas build --platform ios --profile production
+    ```
+
+    **주요 프롬프트 발생 원인**:
+    1. **expo-updates 설치 프롬프트**: `channel` 설정이 있으면 expo-updates 설치 여부를 물어봄
+       - `--non-interactive` 플래그로 건너뜀
+    2. **Apple 계정 로그인**: credentials 검증을 위해 Apple ID 요청
+       - 이미 설정된 credentials가 있으면 자동으로 사용됨
+    3. **프로젝트 설정**: EAS 프로젝트 연결 여부 확인
+       - `app.json`의 `extra.eas.projectId` 설정으로 해결
+
+    **⚠️ 주의사항**:
+    - `eas.json`의 `channel` 설정을 **절대 제거하지 마세요**
+    - channel을 제거하면 expo-updates 관련 프롬프트가 발생하고, 이후 credentials 프롬프트가 연쇄적으로 발생
+    - 항상 `--non-interactive` 플래그를 사용하여 자동화된 빌드 수행
+
 ---
 
 ## 6. 체크리스트 (Before Build)
@@ -313,3 +341,4 @@ eas build --profile production --platform android
 - [ ] `npx expo-doctor`를 통과했는가?
 - [ ] 필요한 환경 변수가 `.env` (로컬) 또는 EAS Secrets (클라우드)에 있는가?
 - [ ] `app.json`의 버전(`version`, `buildNumber`, `versionCode`)을 업데이트했는가?
+- [ ] `eas.json`의 `channel` 설정이 유지되어 있는가? (제거 금지)

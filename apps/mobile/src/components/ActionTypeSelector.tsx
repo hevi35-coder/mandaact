@@ -242,6 +242,7 @@ export default function ActionTypeSelector({
       onClose()
     } catch (error) {
       logger.error('Error saving action type', error)
+      throw error  // Re-throw to propagate to caller
     } finally {
       setSaving(false)
     }

@@ -48,6 +48,7 @@ import {
   ActionTypeIcon,
   type ActionWithContext,
 } from '../components/Today'
+import { XPBoostButton } from '../components/ads'
 import { Grid3X3, ChevronDown, ChevronRight, Settings } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
@@ -167,8 +168,9 @@ export default function TodayScreen() {
       // Await refetch to ensure data is updated before modal closes
       await refetch()
     } catch (error) {
-      logger.error('Error saving action type', error)
-      toast.error(t('common.error'), t('today.typeChangeError'))
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error('Error saving action type', { error: errorMessage, actionId: selectedActionForTypeEdit.id })
+      toast.error(t('common.error'), `${t('today.typeChangeError')}\n${errorMessage}`)
     }
   }, [selectedActionForTypeEdit, updateAction, refetch, toast, t])
 
@@ -211,6 +213,12 @@ export default function TodayScreen() {
       // Apply shouldShowToday logic
       const shouldShow = shouldShowToday(action, selectedDate)
       if (!shouldShow) return false
+
+      // Hide actions that have completed their period target
+      // UNLESS they are checked on the current selected date (so user can uncheck)
+      if (action.period_progress?.isCompleted && !action.is_checked) {
+        return false
+      }
 
       // Apply type filters (multiple selection)
       // If no filters selected, show all types
@@ -525,10 +533,12 @@ export default function TodayScreen() {
             onToggleTypeFilter={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
             onToggleFilter={toggleFilter}
             onClearAllFilters={clearAllFilters}
-            onBoostActivated={() => {
-              // XP boost activated - toast is shown by XPBoostButton
-            }}
           />
+        )}
+
+        {/* XP Boost Button - Below Progress Card */}
+        {actions.length > 0 && (
+          <XPBoostButton />
         )}
 
         {/* Empty State - 액션이 없을 때 */}
@@ -740,10 +750,10 @@ export default function TodayScreen() {
                               {action.sub_goal.title}
                             </Text>
                           </View>
-                          <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200">
+                          <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
                             <ActionTypeIcon type={action.type} size={14} />
-                            <Text className="text-xs text-gray-600 ml-1">
-                              {action.type === 'routine' ? t('actionType.routine') : t('actionType.mission')}
+                            <Text className="text-xs text-amber-600 ml-1">
+                              {t('actionType.unconfigured')}
                             </Text>
                           </View>
                         </Pressable>
@@ -846,10 +856,10 @@ export default function TodayScreen() {
                               {action.sub_goal.title}
                             </Text>
                           </View>
-                          <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200">
+                          <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
                             <ActionTypeIcon type={action.type} size={14} />
-                            <Text className="text-xs text-gray-600 ml-1">
-                              {action.type === 'routine' ? t('actionType.routine') : t('actionType.mission')}
+                            <Text className="text-xs text-amber-600 ml-1">
+                              {t('actionType.unconfigured')}
                             </Text>
                           </View>
                         </Pressable>

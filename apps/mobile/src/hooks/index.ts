@@ -76,3 +76,4 @@ export type { UserProfile } from './useUserProfile'
 
 // Ad hooks
 export { useRewardedAd } from './useRewardedAd'
+export { useInterstitialAd } from './useInterstitialAd'

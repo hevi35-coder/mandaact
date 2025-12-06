@@ -360,7 +360,7 @@ export default function SettingsScreen() {
                       className="text-sm"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) })}
+                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) + 1 })}
                     </Text>
                   }
                 >
@@ -373,7 +373,7 @@ export default function SettingsScreen() {
                       className="text-sm opacity-0"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) })}
+                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) + 1 })}
                     </Text>
                   </LinearGradient>
                 </MaskedView>

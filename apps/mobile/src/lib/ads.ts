@@ -95,15 +95,18 @@ export const AD_CONFIG = {
   // Banner ad refresh interval (ms) - 60 seconds recommended
   BANNER_REFRESH_INTERVAL: 60000,
 
-  // Interstitial frequency cap - show once per X minutes
-  INTERSTITIAL_COOLDOWN: 3 * 60 * 1000, // 3 minutes
+  // Interstitial frequency cap - show once per X hours (보수적 정책)
+  INTERSTITIAL_COOLDOWN: 3 * 60 * 60 * 1000, // 3 hours (기존 전략 복구)
 
   // New user protection period (days)
   NEW_USER_NO_ADS_DAYS: 3,
   NEW_USER_BANNER_ONLY_DAYS: 7,
 
-  // Daily interstitial limit
-  DAILY_INTERSTITIAL_LIMIT: 5,
+  // Daily interstitial limit (보수적 정책)
+  DAILY_INTERSTITIAL_LIMIT: 2, // 일 2회 (기존 전략 복구)
+
+  // Weekly interstitial limit
+  WEEKLY_INTERSTITIAL_LIMIT: 5,
 
   // Request configuration
   REQUEST_NON_PERSONALIZED: false,

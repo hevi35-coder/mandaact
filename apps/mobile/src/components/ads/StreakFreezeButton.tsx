@@ -1,26 +1,25 @@
 /**
- * XP Boost Button Component
+ * Streak Freeze Button Component
  *
- * Shows a button to watch a rewarded ad and earn 2x XP boost for 1 hour
- * Styled to match app's card design pattern
+ * Shows a button to watch a rewarded ad and protect streak for 1 day
  */
 
 import React, { useState, useCallback } from 'react'
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native'
-import { Play, Zap, Clock, Sparkles } from 'lucide-react-native'
+import { Play, Shield, Clock } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useRewardedAd } from '../../hooks/useRewardedAd'
 import { useAuthStore } from '../../store/authStore'
-import { xpService } from '../../lib/xp'
 import { useToast } from '../Toast'
 import { logger } from '../../lib/logger'
+import { supabase } from '../../lib/supabase'
 
-interface XPBoostButtonProps {
-  onBoostActivated?: () => void
+interface StreakFreezeButtonProps {
+  onFreezeActivated?: () => void
 }
 
-export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
+export function StreakFreezeButton({ onFreezeActivated }: StreakFreezeButtonProps) {
   const { t } = useTranslation()
   const toast = useToast()
   const user = useAuthStore((state) => state.user)
@@ -31,35 +30,44 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
 
     setIsActivating(true)
     try {
-      // Activate 2x XP boost for 1 hour
-      await xpService.activateAdBoost(user.id)
+      // Activate streak freeze for 1 day
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(23, 59, 59, 999)
+
+      await supabase
+        .from('user_gamification')
+        .update({
+          streak_freeze_until: tomorrow.toISOString(),
+        })
+        .eq('user_id', user.id)
 
       toast.success(
-        t('ads.xpBoost.activated'),
-        t('ads.xpBoost.activatedDesc')
+        t('ads.streakFreeze.activated'),
+        t('ads.streakFreeze.activatedDesc')
       )
 
-      onBoostActivated?.()
-      logger.info('XP boost activated via rewarded ad')
+      onFreezeActivated?.()
+      logger.info('Streak freeze activated via rewarded ad')
     } catch (error) {
-      logger.error('Failed to activate XP boost', error)
-      toast.error(t('common.error'), t('ads.xpBoost.error'))
+      logger.error('Failed to activate streak freeze', error)
+      toast.error(t('common.error'), t('ads.streakFreeze.error'))
     } finally {
       setIsActivating(false)
     }
-  }, [user?.id, toast, t, onBoostActivated])
+  }, [user?.id, toast, t, onFreezeActivated])
 
   const handleAdClosed = useCallback(() => {
     // Ad was closed, reload for next time
   }, [])
 
   const handleError = useCallback((error: Error) => {
-    logger.error('XP Boost ad error', error)
+    logger.error('Streak freeze ad error', error)
     toast.error(t('common.error'), t('ads.loadError'))
   }, [toast, t])
 
   const { isLoaded, isLoading, show } = useRewardedAd({
-    adType: 'REWARDED_XP_BOOST',
+    adType: 'REWARDED_STREAK_FREEZE',
     onRewardEarned: handleRewardEarned,
     onAdClosed: handleAdClosed,
     onError: handleError,
@@ -82,7 +90,7 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
     return (
       <Animated.View
         entering={FadeInUp.delay(100).duration(400)}
-        className="bg-white rounded-2xl p-4 mb-5 border border-gray-100"
+        className="bg-white rounded-2xl p-4 mb-3 border border-gray-100"
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
@@ -107,7 +115,7 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
   return (
     <Animated.View
       entering={FadeInUp.delay(100).duration(400)}
-      className="bg-white rounded-2xl mb-5 border border-gray-100 overflow-hidden"
+      className="bg-white rounded-2xl mb-3 border border-gray-100 overflow-hidden"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -126,12 +134,12 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
           <View className="flex-row items-center flex-1">
             <View
               className="w-10 h-10 rounded-xl items-center justify-center mr-3"
-              style={{ backgroundColor: isLoaded ? '#fef3c7' : '#f3f4f6' }}
+              style={{ backgroundColor: isLoaded ? '#dbeafe' : '#f3f4f6' }}
             >
               {isActivating ? (
-                <ActivityIndicator size="small" color="#d97706" />
+                <ActivityIndicator size="small" color="#2563eb" />
               ) : (
-                <Zap size={20} color={isLoaded ? '#d97706' : '#9ca3af'} />
+                <Shield size={20} color={isLoaded ? '#2563eb' : '#9ca3af'} />
               )}
             </View>
             <View className="flex-1">
@@ -139,7 +147,7 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
                 className={`text-base ${isLoaded ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                {t('ads.xpBoost.button')}
+                {t('ads.streakFreeze.button')}
               </Text>
               <View className="flex-row items-center mt-0.5">
                 <Clock size={12} color="#9ca3af" />
@@ -147,7 +155,7 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
                   className="text-xs text-gray-400 ml-1"
                   style={{ fontFamily: 'Pretendard-Regular' }}
                 >
-                  {t('ads.xpBoost.duration')}
+                  {t('ads.streakFreeze.duration')}
                 </Text>
               </View>
             </View>
@@ -156,7 +164,7 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
           {/* Right: Play Icon */}
           <View
             className="w-8 h-8 rounded-full items-center justify-center"
-            style={{ backgroundColor: isLoaded ? '#f59e0b' : '#e5e7eb' }}
+            style={{ backgroundColor: isLoaded ? '#2563eb' : '#e5e7eb' }}
           >
             <Play
               size={14}
@@ -170,4 +178,4 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
   )
 }
 
-export default XPBoostButton
+export default StreakFreezeButton

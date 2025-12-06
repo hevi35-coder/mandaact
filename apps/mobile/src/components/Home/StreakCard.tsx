@@ -9,7 +9,6 @@ import { View, Text } from 'react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { Flame, Trophy } from 'lucide-react-native'
-import { formatUserDateTime } from '@mandaact/shared'
 import { FourWeekHeatmap } from './FourWeekHeatmap'
 import type { StreakCardProps } from './types'
 
@@ -57,14 +56,24 @@ export function StreakCard({
                         </Text>
                     </View>
                     {currentStreak > 0 && lastCheckDate && (() => {
-                        const isoString = lastCheckDate instanceof Date
-                            ? lastCheckDate.toISOString()
-                            : typeof lastCheckDate === 'string'
-                                ? lastCheckDate
-                                : String(lastCheckDate)
-                        const formatted = formatUserDateTime(isoString)
+                        const dateObj = lastCheckDate instanceof Date
+                            ? lastCheckDate
+                            : new Date(lastCheckDate)
+                        const dateStr = dateObj.toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                        }).replace(/\. /g, '.').replace(/\.$/, '')
+                        const timeStr = dateObj.toLocaleTimeString('ko-KR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        })
                         return (
-                            <Text className="text-xs text-gray-400 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>{t('common.lastCheck', { date: formatted.date })}</Text>
+                            <View className="mt-2 items-center">
+                                <Text className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard-Regular' }}>{dateStr}</Text>
+                                <Text className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard-Regular' }}>{timeStr}</Text>
+                            </View>
                         )
                     })()}
                 </View>
@@ -86,12 +95,24 @@ export function StreakCard({
                         </Text>
                     </View>
                     {longestStreak > 0 && longestStreakDate && (() => {
-                        const isoString = longestStreakDate instanceof Date
-                            ? longestStreakDate.toISOString()
-                            : longestStreakDate
-                        const formatted = formatUserDateTime(isoString)
+                        const dateObj = longestStreakDate instanceof Date
+                            ? longestStreakDate
+                            : new Date(longestStreakDate)
+                        const dateStr = dateObj.toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                        }).replace(/\. /g, '.').replace(/\.$/, '')
+                        const timeStr = dateObj.toLocaleTimeString('ko-KR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        })
                         return (
-                            <Text className="text-xs text-gray-400 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>{t('common.recordDate', { date: formatted.date })}</Text>
+                            <View className="mt-2 items-center">
+                                <Text className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard-Regular' }}>{dateStr}</Text>
+                                <Text className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard-Regular' }}>{timeStr}</Text>
+                            </View>
                         )
                     })()}
                 </View>

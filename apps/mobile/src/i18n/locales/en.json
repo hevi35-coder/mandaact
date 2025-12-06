@@ -181,6 +181,7 @@
     "routine": "Routine",
     "mission": "Mission",
     "reference": "Reference",
+    "unconfigured": "Not Set",
     "daily": "Daily",
     "weekly": "Weekly",
     "monthly": "Monthly",
