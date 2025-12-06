@@ -26,6 +26,7 @@ export interface ProgressCardProps {
     onToggleTypeFilter: () => void
     onToggleFilter: (type: ActionType) => void
     onClearAllFilters: () => void
+    onBoostActivated?: () => void
 }
 
 export interface TypeFilterSectionProps {

@@ -11,6 +11,7 @@ import { ChevronDown, ChevronRight, Info } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { TypeFilterSection } from './TypeFilterSection'
+import { XPBoostButton } from '../ads'
 import type { ProgressCardProps } from './types'
 
 export function ProgressCard({
@@ -22,6 +23,7 @@ export function ProgressCard({
     onToggleTypeFilter,
     onToggleFilter,
     onClearAllFilters,
+    onBoostActivated,
 }: ProgressCardProps) {
     const { t } = useTranslation()
 
@@ -99,6 +101,11 @@ export function ProgressCard({
                         onClearAllFilters={onClearAllFilters}
                     />
                 )}
+            </View>
+
+            {/* XP Boost Button */}
+            <View className="border-t border-gray-100 mt-4 pt-4">
+                <XPBoostButton onBoostActivated={onBoostActivated} />
             </View>
         </Animated.View>
     )

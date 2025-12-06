@@ -525,6 +525,9 @@ export default function TodayScreen() {
             onToggleTypeFilter={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
             onToggleFilter={toggleFilter}
             onClearAllFilters={clearAllFilters}
+            onBoostActivated={() => {
+              // XP boost activated - toast is shown by XPBoostButton
+            }}
           />
         )}
 

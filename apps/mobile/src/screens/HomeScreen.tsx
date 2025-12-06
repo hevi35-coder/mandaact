@@ -29,7 +29,7 @@ import type { RootStackParamList, MainTabParamList } from '../navigation/RootNav
 
 // Sub-components
 import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal } from '../components/Home'
-import { BannerAd } from '../components/ads'
+import { BannerAd, XPBoostButton } from '../components/ads'
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList>,
@@ -172,6 +172,18 @@ export default function HomeScreen() {
             </View>
           </View>
           {/* End of iPad 2-column layout */}
+
+          {/* XP Boost Section */}
+          <View className="mt-2 mb-2">
+            <XPBoostButton
+              onBoostActivated={() => {
+                // Refresh active multipliers after boost activation
+                if (user?.id) {
+                  xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
+                }
+              }}
+            />
+          </View>
 
           {/* Bottom spacing */}
           <View className="h-8" />
