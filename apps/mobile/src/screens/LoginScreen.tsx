@@ -22,8 +22,8 @@ import { parseError, ERROR_MESSAGES } from '../lib/errorHandling'
 import { trackLogin, trackSignup, identifyUser } from '../lib'
 
 const LANGUAGES = [
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'ko', label: '한국어' },
+  { code: 'en', label: 'English' },
 ]
 
 export default function LoginScreen() {
@@ -208,7 +208,7 @@ export default function LoginScreen() {
                   >
                     <Globe size={16} color="#6b7280" />
                     <Text className="text-sm text-gray-700 ml-1.5 mr-1" style={{ fontFamily: 'Pretendard-Medium' }}>
-                      {currentLanguage.flag} {currentLanguage.code.toUpperCase()}
+                      {currentLanguage.code.toUpperCase()}
                     </Text>
                     <ChevronDown size={14} color="#6b7280" />
                   </Pressable>
@@ -227,15 +227,12 @@ export default function LoginScreen() {
                             lang.code === i18n.language ? 'bg-primary/5' : ''
                           }`}
                         >
-                          <View className="flex-row items-center">
-                            <Text className="text-base mr-2">{lang.flag}</Text>
-                            <Text
-                              className={`text-sm ${lang.code === i18n.language ? 'text-primary' : 'text-gray-700'}`}
-                              style={{ fontFamily: lang.code === i18n.language ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
-                            >
-                              {lang.label}
-                            </Text>
-                          </View>
+                          <Text
+                            className={`text-sm ${lang.code === i18n.language ? 'text-primary' : 'text-gray-700'}`}
+                            style={{ fontFamily: lang.code === i18n.language ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
+                          >
+                            {lang.label}
+                          </Text>
                           {lang.code === i18n.language && (
                             <Check size={16} color="#2563eb" />
                           )}
