@@ -49,6 +49,7 @@ import {
   type ActionWithContext,
 } from '../components/Today'
 import { XPBoostButton } from '../components/ads'
+import { useInterstitialAd } from '../hooks/useInterstitialAd'
 import { Grid3X3, ChevronDown, ChevronRight, Settings, CheckCircle } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
@@ -92,6 +93,17 @@ export default function TodayScreen() {
   // Action type selector state
   const [typeSelectorVisible, setTypeSelectorVisible] = useState(false)
   const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionWithContext | null>(null)
+
+  // Interstitial ad for level up
+  const { show: showLevelUpAd } = useInterstitialAd({
+    adType: 'INTERSTITIAL_LEVEL_UP',
+    onAdClosed: () => {
+      // Ad closed after level up
+    },
+    onError: (error) => {
+      logger.error('Level up interstitial ad error', error)
+    },
+  })
 
   // Date navigation - use user's timezone
   const today = useMemo(() => getUserToday(), [getUserToday])
@@ -345,10 +357,12 @@ export default function TodayScreen() {
               toast.success(t('today.xp.earned', { xp: xpResult.finalXP }), t('today.xp.completed'))
             }
 
-            // Show level up toast (level tracking is done on server side)
+            // Show level up toast and interstitial ad
             if (xpResult.leveledUp) {
-              setTimeout(() => {
+              setTimeout(async () => {
                 toast.success(`🎉 ${t('today.xp.levelUp')}`, t('today.xp.levelUpDesc'))
+                // Show interstitial ad after level up
+                await showLevelUpAd()
               }, 1500)
             }
 
@@ -444,7 +458,7 @@ export default function TodayScreen() {
         })
       }
     },
-    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck, queryClient, refetch, t]
+    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck, queryClient, refetch, t, showLevelUpAd]
   )
 
   // Loading state

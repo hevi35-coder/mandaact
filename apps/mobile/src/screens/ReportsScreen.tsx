@@ -28,6 +28,9 @@ import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
 import { Header } from '../components'
+import { BannerAd, ReportGenerateButton } from '../components/ads'
+import { useInterstitialAd } from '../hooks/useInterstitialAd'
+import { logger } from '../lib/logger'
 
 import { useAuthStore } from '../store/authStore'
 import { trackWeeklyReportGenerated, trackGoalDiagnosisViewed } from '../lib'
@@ -617,6 +620,17 @@ export default function ReportsScreen() {
   const generateWeeklyMutation = useGenerateWeeklyReport()
   const generateDiagnosisMutation = useGenerateGoalDiagnosis()
 
+  // Interstitial ad for after report generation
+  const { show: showInterstitialAd } = useInterstitialAd({
+    adType: 'INTERSTITIAL_AFTER_REPORT',
+    onAdClosed: () => {
+      // Ad closed
+    },
+    onError: (error) => {
+      logger.error('Interstitial ad error', error)
+    },
+  })
+
   // Parse reports
   const weeklySummary = useMemo(() => {
     if (!weeklyReport?.report_content) return null
@@ -658,6 +672,9 @@ export default function ReportsScreen() {
         week_start: new Date().toISOString().split('T')[0],
         generated: true,
       })
+
+      // Show interstitial ad after report generation
+      await showInterstitialAd()
     } catch {
       Alert.alert(t('common.error'), t('reports.error'))
     }
@@ -858,6 +875,18 @@ export default function ReportsScreen() {
                   </MaskedView>
                 </View>
               </LinearGradient>
+            </View>
+          )}
+
+          {/* ReportGenerateButton - Generate new report with rewarded ad */}
+          {hasExistingReports && hasMandalarts && (
+            <View className="mt-4">
+              <ReportGenerateButton
+                onGenerateReport={() => {
+                  // Generate new report after watching ad
+                  handleGenerateAll()
+                }}
+              />
             </View>
           )}
         </View>
@@ -1473,6 +1502,9 @@ export default function ReportsScreen() {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
+
+      {/* Banner Ad */}
+      <BannerAd location="list" />
     </View>
   )
 }

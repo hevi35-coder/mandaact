@@ -180,6 +180,12 @@ export default function HomeScreen() {
                 isNewRecord={isNewRecord}
                 fourWeekData={fourWeekData}
                 fourWeekLoading={fourWeekLoading}
+                onFreezeActivated={() => {
+                  // Refresh gamification data after streak freeze activation
+                  if (user?.id) {
+                    queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
+                  }
+                }}
               />
             </View>
 
