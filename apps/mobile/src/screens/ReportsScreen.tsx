@@ -43,7 +43,7 @@ import {
   useGenerateGoalDiagnosis,
   useReportHistory,
 } from '../hooks/useReports'
-import { parseWeeklyReport, parseDiagnosisReport, type ReportSummary } from '../lib/reportParser'
+import { parseWeeklyReport, parseDiagnosisReport, getMetricLabelKey, type ReportSummary } from '../lib/reportParser'
 
 // Get week dates for display
 function formatWeekDates(weekStart: string, weekEnd: string, isEnglish: boolean): string {
@@ -87,6 +87,7 @@ function ReportCard({
   strengthsText,
   improvementsText,
   suggestionsText,
+  translateLabel,
 }: {
   title: string
   subtitle: string
@@ -103,6 +104,7 @@ function ReportCard({
   strengthsText?: string
   improvementsText?: string
   suggestionsText?: string
+  translateLabel?: (label: string) => string
 }) {
   if (isLoading) {
     return (
@@ -203,7 +205,7 @@ function ReportCard({
                     className="text-sm text-gray-500"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    {metric.label}:{' '}
+                    {translateLabel ? translateLabel(metric.label) : metric.label}:{' '}
                   </Text>
                   <Text
                     className="text-sm text-gray-900"
@@ -406,7 +408,7 @@ function EmptyReportState({
               </Text>
             </View>
             <Text className={`text-sm ${hasMandalarts ? 'text-gray-400 line-through' : 'text-gray-600'}`} style={{ fontFamily: 'Pretendard-Regular' }}>
-              {t('reports.empty.step1')}
+              {hasMandalarts ? '' : '① '}{t('reports.empty.step1')}
             </Text>
           </View>
           <View className="flex-row items-center">
@@ -495,7 +497,7 @@ function EmptyReportState({
           </Pressable>
           <Pressable
             className="flex-1 rounded-xl overflow-hidden"
-            onPress={() => navigation.navigate('Main' as never)}
+            onPress={() => navigation.navigate('Main', { screen: 'Today' } as never)}
           >
             <LinearGradient
               colors={['#2563eb', '#9333ea', '#db2777']}
@@ -649,6 +651,19 @@ export default function ReportsScreen() {
   // 첫 리포트 생성 조건: 리포트 0개 + 실천 1회 이상
   const canGenerateFirstReport = !hasExistingReports && hasChecks && hasMandalarts
 
+  // Translate metric labels using i18n
+  const translateLabel = useCallback(
+    (label: string): string => {
+      const i18nKey = getMetricLabelKey(label)
+      // If it's an i18n key, translate it; otherwise return original
+      if (i18nKey.startsWith('reports.metrics.')) {
+        return t(i18nKey)
+      }
+      return label
+    },
+    [t]
+  )
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await refetchWeekly()
@@ -682,8 +697,11 @@ export default function ReportsScreen() {
 
   const isGenerating = generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending
 
-  // True empty state - no mandalarts AND no existing reports/diagnosis
-  const showEmptyState = !weeklyLoading && !diagnosisLoading && !weeklyReport && !diagnosis && !hasMandalarts
+  // Empty state conditions:
+  // 1. No mandalarts at all
+  // 2. Has mandalarts but no checks (first practice needed)
+  // 3. Has mandalarts + checks but no reports yet → show "generate first report" button
+  const showEmptyState = !weeklyLoading && !diagnosisLoading && !weeklyReport && !diagnosis && (!hasMandalarts || !hasChecks)
 
   if (showEmptyState) {
     return (
@@ -914,6 +932,7 @@ export default function ReportsScreen() {
                     strengthsText={t('reports.card.strengths')}
                     improvementsText={t('reports.card.improvements')}
                     suggestionsText={t('reports.card.suggestions')}
+                    translateLabel={translateLabel}
                   />
                 )}
 
@@ -933,6 +952,7 @@ export default function ReportsScreen() {
                     strengthsText={t('reports.card.strengths')}
                     improvementsText={t('reports.card.improvements')}
                     suggestionsText={t('reports.card.suggestions')}
+                    translateLabel={translateLabel}
                   />
                 )}
 
@@ -986,6 +1006,7 @@ export default function ReportsScreen() {
                   strengthsText={t('reports.card.strengths')}
                   improvementsText={t('reports.card.improvements')}
                   suggestionsText={t('reports.card.suggestions')}
+                  translateLabel={translateLabel}
                 />
               </Animated.View>
 
@@ -1156,6 +1177,7 @@ export default function ReportsScreen() {
                 strengthsText={t('reports.card.strengths')}
                 improvementsText={t('reports.card.improvements')}
                 suggestionsText={t('reports.card.suggestions')}
+                translateLabel={translateLabel}
               />
             )}
 
@@ -1176,6 +1198,7 @@ export default function ReportsScreen() {
                   strengthsText={t('reports.card.strengths')}
                   improvementsText={t('reports.card.improvements')}
                   suggestionsText={t('reports.card.suggestions')}
+                  translateLabel={translateLabel}
                 />
                 {/* Notice for new diagnosis */}
                 <View
@@ -1312,6 +1335,7 @@ export default function ReportsScreen() {
               strengthsText={t('reports.card.strengths')}
               improvementsText={t('reports.card.improvements')}
               suggestionsText={t('reports.card.suggestions')}
+              translateLabel={translateLabel}
             />
           </Animated.View>
 
@@ -1397,7 +1421,7 @@ export default function ReportsScreen() {
                                     className="text-sm text-gray-500"
                                     style={{ fontFamily: 'Pretendard-Regular' }}
                                   >
-                                    {metric.label}:{' '}
+                                    {translateLabel(metric.label)}:{' '}
                                   </Text>
                                   <Text
                                     className="text-sm text-gray-900"

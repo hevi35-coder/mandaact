@@ -23,6 +23,8 @@ export const MandalartSection = React.memo(({
     canCheck,
     checkingActions,
     isTablet,
+    yesterdayMissedIds,
+    onYesterdayCheckCompleted,
 }: MandalartSectionProps) => {
     const { t } = useTranslation()
 
@@ -79,6 +81,8 @@ export const MandalartSection = React.memo(({
                             canCheck={canCheck}
                             isChecking={checkingActions.has(action.id)}
                             isTablet={isTablet}
+                            showYesterdayButton={yesterdayMissedIds?.has(action.id)}
+                            onYesterdayCheckCompleted={onYesterdayCheckCompleted}
                         />
                     ))}
                 </View>

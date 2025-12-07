@@ -1,6 +1,6 @@
 /**
  * ActionItem Component
- * 
+ *
  * Individual action item with checkbox, title, and type badge
  */
 
@@ -11,6 +11,8 @@ import { Check } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { ActionTypeIcon } from './ActionTypeIcon'
 import { formatTypeDetailsLocalized } from './utils'
+// YesterdayCheckButton DISABLED - rewarded ad feature removed per AdMob policy review
+// import { YesterdayCheckButton } from '../ads'
 import type { ActionItemProps } from './types'
 
 export const ActionItem = React.memo(({
@@ -20,6 +22,9 @@ export const ActionItem = React.memo(({
     canCheck,
     isChecking,
     isTablet,
+    // YesterdayCheckButton props DISABLED - rewarded ad feature removed
+    // showYesterdayButton,
+    // onYesterdayCheckCompleted,
 }: ActionItemProps) => {
     const { t } = useTranslation()
 
@@ -115,6 +120,15 @@ export const ActionItem = React.memo(({
                                     </Text>
                                 </View>
                             )}
+
+                            {/* Yesterday Check Button DISABLED - rewarded ad feature removed per AdMob policy review */}
+                            {/* {showYesterdayButton && !action.is_checked && (
+                                <YesterdayCheckButton
+                                    actionId={action.id}
+                                    actionTitle={action.title}
+                                    onCheckCompleted={onYesterdayCheckCompleted}
+                                />
+                            )} */}
                         </View>
                     </>
                 ) : (

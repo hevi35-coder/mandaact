@@ -31,6 +31,7 @@ import {
   useTodayActions,
   useToggleActionCheck,
   useUpdateAction,
+  // useYesterdayMissed, // DISABLED - rewarded ad feature removed per AdMob policy review
 } from '../hooks/useActions'
 import { useDailyStats, useXPUpdate, statsKeys } from '../hooks/useStats'
 import { badgeKeys } from '../hooks/useBadges'
@@ -49,11 +50,11 @@ import {
   type ActionWithContext,
 } from '../components/Today'
 import { XPBoostButton } from '../components/ads'
-import { useInterstitialAd } from '../hooks/useInterstitialAd'
+// import { useInterstitialAd } from '../hooks/useInterstitialAd' // DISABLED - level up ad harms UX
+// import { BannerAd } from '../components/ads' // REMOVED - TodayScreen is Clean Zone (focus protection)
 import { Grid3X3, ChevronDown, ChevronRight, Settings, CheckCircle } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
-import { BannerAd } from '../components/ads'
 
 export default function TodayScreen() {
   const { t } = useTranslation()
@@ -94,16 +95,16 @@ export default function TodayScreen() {
   const [typeSelectorVisible, setTypeSelectorVisible] = useState(false)
   const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionWithContext | null>(null)
 
-  // Interstitial ad for level up
-  const { show: showLevelUpAd } = useInterstitialAd({
-    adType: 'INTERSTITIAL_LEVEL_UP',
-    onAdClosed: () => {
-      // Ad closed after level up
-    },
-    onError: (error) => {
-      logger.error('Level up interstitial ad error', error)
-    },
-  })
+  // Interstitial ad for level up - DISABLED (harms user experience)
+  // const { show: showLevelUpAd } = useInterstitialAd({
+  //   adType: 'INTERSTITIAL_LEVEL_UP',
+  //   onAdClosed: () => {
+  //     // Ad closed after level up
+  //   },
+  //   onError: (error) => {
+  //     logger.error('Level up interstitial ad error', error)
+  //   },
+  // })
 
   // Date navigation - use user's timezone
   const today = useMemo(() => getUserToday(), [getUserToday])
@@ -136,6 +137,13 @@ export default function TodayScreen() {
     refetch,
   } = useTodayActions(user?.id, selectedDate)
   const { data: _dailyStats, refetch: refetchStats } = useDailyStats(user?.id)
+
+  // DISABLED - rewarded ad feature removed per AdMob policy review
+  // Fetch yesterday's missed actions (only shown on "today" view)
+  // const { data: yesterdayMissedIds, refetch: refetchYesterdayMissed } = useYesterdayMissed(
+  //   isToday ? user?.id : undefined,  // Only fetch when viewing today
+  //   timezone
+  // )
 
   // Mutations
   const toggleCheck = useToggleActionCheck()
@@ -308,6 +316,12 @@ export default function TodayScreen() {
     setRefreshing(false)
   }, [refetch, refetchStats])
 
+  // DISABLED - rewarded ad feature removed per AdMob policy review
+  // Handle yesterday check completed - refresh data
+  // const handleYesterdayCheckCompleted = useCallback(async () => {
+  //   await Promise.all([refetch(), refetchStats(), refetchYesterdayMissed()])
+  // }, [refetch, refetchStats, refetchYesterdayMissed])
+
   const handleToggleCheck = useCallback(
     async (action: ActionWithContext) => {
       if (!user) return
@@ -361,8 +375,7 @@ export default function TodayScreen() {
             if (xpResult.leveledUp) {
               setTimeout(async () => {
                 toast.success(`🎉 ${t('today.xp.levelUp')}`, t('today.xp.levelUpDesc'))
-                // Show interstitial ad after level up
-                await showLevelUpAd()
+                // Level up interstitial ad DISABLED - harms user experience
               }, 1500)
             }
 
@@ -458,7 +471,7 @@ export default function TodayScreen() {
         })
       }
     },
-    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck, queryClient, refetch, t, showLevelUpAd]
+    [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck, queryClient, refetch, t]
   )
 
   // Loading state
@@ -693,6 +706,9 @@ export default function TodayScreen() {
                       canCheck={canCheck}
                       checkingActions={checkingActions}
                       isTablet={isTablet}
+                      // DISABLED - rewarded ad feature removed per AdMob policy review
+                      // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
+                      // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
                     />
                   )
                 )
@@ -799,6 +815,9 @@ export default function TodayScreen() {
                       canCheck={canCheck}
                       checkingActions={checkingActions}
                       isTablet={isTablet}
+                      // DISABLED - rewarded ad feature removed per AdMob policy review
+                      // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
+                      // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
                     />
                   )
                 )}
@@ -992,8 +1011,8 @@ export default function TodayScreen() {
         />
       )}
 
-      {/* Banner Ad */}
-      <BannerAd location="today" />
+      {/* Banner Ad REMOVED - TodayScreen is Clean Zone (focus protection) */}
+      {/* See ADMOB_MONETIZATION_STRATEGY.md for details */}
     </View>
   )
 }

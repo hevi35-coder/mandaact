@@ -170,7 +170,7 @@ export default function TutorialScreen() {
   const isLastStep = currentStep === tutorialSteps.length - 1
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'left', 'right']}>
       {/* Skip Button */}
       <View className="flex-row justify-end px-4 py-2">
         <Pressable onPress={handleSkip} className="px-4 py-2">
@@ -185,7 +185,7 @@ export default function TutorialScreen() {
         pagingEnabled
         scrollEnabled={true}
         showsHorizontalScrollIndicator={false}
-        className="flex-1"
+        style={{ flex: 1 }}
         onMomentumScrollEnd={(e) => {
           const newStep = Math.round(e.nativeEvent.contentOffset.x / screenWidth)
           setCurrentStep(newStep)
@@ -265,30 +265,32 @@ export default function TutorialScreen() {
         ))}
       </View>
 
-      {/* Navigation Buttons */}
-      <View className="px-4 pb-8">
-        <View className="flex-row" style={{ gap: 12, maxWidth: 500, alignSelf: 'center', width: '100%' }}>
-          {currentStep > 0 && (
-            <Pressable
-              className="flex-1 bg-gray-100 rounded-xl py-4 flex-row items-center justify-center"
-              onPress={handlePrev}
-            >
-              <ChevronLeft size={20} color="#374151" />
-              <Text className="text-gray-700 font-medium ml-1">{t('tutorial.previous')}</Text>
-            </Pressable>
-          )}
+      {/* Navigation Buttons - SafeAreaView bottom edge removed, use pb-10 for home indicator */}
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: 'white' }}>
+        <View className="px-4 pb-4">
+          <View className="flex-row" style={{ gap: 12, maxWidth: 500, alignSelf: 'center', width: '100%' }}>
+            {currentStep > 0 && (
+              <Pressable
+                className="flex-1 bg-gray-100 rounded-xl py-4 flex-row items-center justify-center"
+                onPress={handlePrev}
+              >
+                <ChevronLeft size={20} color="#374151" />
+                <Text className="text-gray-700 font-medium ml-1">{t('tutorial.previous')}</Text>
+              </Pressable>
+            )}
 
-          <Pressable
-            className="flex-1 bg-primary rounded-xl py-4 flex-row items-center justify-center"
-            onPress={isLastStep ? handleComplete : handleNext}
-          >
-            <Text className="text-white font-medium mr-1">
-              {isLastStep ? t('tutorial.start') : t('tutorial.next')}
-            </Text>
-            {!isLastStep && <ChevronRight size={20} color="white" />}
-          </Pressable>
+            <Pressable
+              className="flex-1 bg-primary rounded-xl py-4 flex-row items-center justify-center"
+              onPress={isLastStep ? handleComplete : handleNext}
+            >
+              <Text className="text-white font-medium mr-1">
+                {isLastStep ? t('tutorial.start') : t('tutorial.next')}
+              </Text>
+              {!isLastStep && <ChevronRight size={20} color="white" />}
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     </SafeAreaView>
   )
 }

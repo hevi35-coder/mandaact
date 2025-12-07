@@ -636,8 +636,13 @@ export function useXPUpdate() {
       const totalMultiplier = xpService.calculateTotalMultiplier(multipliers)
       const finalXP = Math.floor(subtotalXP * totalMultiplier)
 
-      // Subtract XP (negative value)
-      await xpService.updateUserXP(userId, -finalXP)
+      // Subtract XP (negative value) - check result
+      const result = await xpService.updateUserXP(userId, -finalXP)
+
+      if (!result.success) {
+        console.error('Failed to subtract XP: updateUserXP returned success=false')
+        return { finalXP: 0 }
+      }
 
       // Invalidate gamification queries
       queryClient.invalidateQueries({ queryKey: statsKeys.gamification(userId) })

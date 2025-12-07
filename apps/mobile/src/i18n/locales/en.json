@@ -377,9 +377,16 @@
         "permissionRequired": "Permission Required",
         "cameraPermission": "Camera access permission is required.",
         "galleryPermission": "Gallery access permission is required.",
-        "extractText": "Extract Text",
+        "extractText": "Analyze Image",
         "processing": "Processing OCR...",
-        "tapToSelect": "Tap to select image (max 5MB)"
+        "tapToSelect": "Tap to select image (max 5MB)",
+        "guideTitle": "Image Analysis Guide",
+        "guideItems": [
+          "Capture full 9×9 mandalart grid",
+          "Use clear, readable images",
+          "Avoid tilted or angled shots"
+        ],
+        "tapToChange": "Tap to select different image"
       },
       "textPaste": {
         "title": "Paste Text",
@@ -396,7 +403,13 @@
       "manualInput": {
         "title": "Manual Input",
         "description": "Create from scratch in empty grid",
-        "tapToEdit": "Tap cells to enter goals and actions"
+        "tapToEdit": "Tap cells to enter goals and actions",
+        "guideTitle": "How to Create Mandalart",
+        "guideItems": [
+          "Start with your core goal in the center",
+          "Add 8 sub-goals in surrounding cells",
+          "Fill in 8 action items for each sub-goal"
+        ]
       },
       "confirmDiscard": "Are you sure you want to discard changes?",
       "progress": {
@@ -533,6 +546,9 @@
       "appInfo": "App Info",
       "appInfoFormat": "{{appName}}\n\nVersion: {{version}} ({{build}})\nPlatform: React Native + Expo\n\n© 2025 {{appName}}",
       "privacyPolicy": "Privacy Policy"
+    },
+    "focus": {
+      "title": "Focus Mode"
     },
     "notifications": {
       "pushNotifications": "Push Notifications",
@@ -857,6 +873,19 @@
       "newDiagnosisGenerating": "Generating new diagnosis...",
       "newReportGenerating": "Generating new report..."
     },
+    "metrics": {
+      "practiceDays": "Practice Days",
+      "totalChecks": "Total Checks",
+      "vsLastWeek": "vs Last Week",
+      "completeness": "Completeness",
+      "expressionClarity": "Expression Clarity",
+      "measurability": "Measurability",
+      "weeklyGoal": "Weekly Goal",
+      "dailyAverage": "Daily Average",
+      "bestDay": "Best Day",
+      "consistency": "Consistency",
+      "actionClarity": "Action Clarity"
+    },
     "history": {
       "title": "Past Practice Reports",
       "weeklyReport": "Weekly Practice Report"
@@ -888,29 +917,42 @@
       "message": "Please try again in a moment"
     },
     "xpBoost": {
-      "button": "Watch Ad for 2x XP",
-      "duration": "Valid for 1 hour",
+      "button": "Watch Ad for XP Boost",
+      "duration": "Double XP for 1 hour",
       "activated": "XP Boost Activated!",
       "activatedDesc": "All XP will be doubled for 1 hour",
       "error": "Failed to activate XP boost"
     },
     "streakFreeze": {
       "button": "Watch Ad to Protect Streak",
-      "duration": "1 day protection",
+      "duration": "Keep streak even if you miss today",
       "activated": "Streak Protection Activated!",
       "activatedDesc": "Your streak is protected until tomorrow",
       "error": "Failed to activate streak protection"
     },
     "yesterdayCheck": {
-      "button": "Watch Ad for Yesterday Check",
+      "button": "Yesterday",
       "activated": "Yesterday Check Complete!",
       "activatedDesc": "Yesterday's action has been checked",
+      "alreadyChecked": "Already Checked",
+      "alreadyCheckedDesc": "This action was already checked yesterday",
       "error": "Failed to check yesterday's action"
     },
     "reportGenerate": {
-      "button": "Watch Ad for Free Report",
+      "button": "Watch Ad for Report",
+      "subtitle": "Generate AI report instantly",
       "activated": "Generating report...",
       "error": "Failed to generate report"
+    },
+    "adFree": {
+      "button": "Watch Ad for Focus Mode",
+      "subtitle": "Hide banner ads for 24 hours",
+      "activated": "Focus Mode activated!",
+      "activatedDesc": "Banner ads will be hidden for 24 hours",
+      "activeTitle": "Focus Mode",
+      "remaining": "{{time}} remaining",
+      "alreadyActive": "Already active",
+      "error": "Failed to activate"
     }
   }
 }

@@ -45,6 +45,10 @@ export interface MandalartSectionProps {
     canCheck: boolean
     checkingActions: Set<string>
     isTablet: boolean
+    /** Set of action IDs that were missed yesterday */
+    yesterdayMissedIds?: Set<string>
+    /** Callback when yesterday check is completed */
+    onYesterdayCheckCompleted?: () => void
 }
 
 export interface ActionItemProps {
@@ -54,4 +58,8 @@ export interface ActionItemProps {
     canCheck: boolean
     isChecking: boolean
     isTablet: boolean
+    /** Show yesterday check button for missed actions (only on Today view) */
+    showYesterdayButton?: boolean
+    /** Callback when yesterday check is completed */
+    onYesterdayCheckCompleted?: () => void
 }

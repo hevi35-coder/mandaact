@@ -53,7 +53,6 @@ export interface StreakCardProps {
         percentage: number
     }>
     fourWeekLoading: boolean
-    onFreezeActivated?: () => void
 }
 
 export interface FourWeekHeatmapProps {

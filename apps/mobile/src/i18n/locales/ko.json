@@ -6,7 +6,7 @@
     "save": "저장",
     "saving": "저장 중...",
     "cancel": "취소",
-    "confirm": "안내",
+    "confirm": "확인",
     "discard": "나가기",
     "delete": "삭제",
     "edit": "수정",
@@ -375,9 +375,16 @@
         "permissionRequired": "권한 필요",
         "cameraPermission": "카메라 접근 권한이 필요합니다.",
         "galleryPermission": "갤러리 접근 권한이 필요합니다.",
-        "extractText": "텍스트 추출",
+        "extractText": "이미지 분석",
         "processing": "OCR 처리 중...",
-        "tapToSelect": "탭하여 이미지 선택 (최대 5MB)"
+        "tapToSelect": "탭하여 이미지 선택 (최대 5MB)",
+        "guideTitle": "이미지 분석 안내",
+        "guideItems": [
+          "9×9 만다라트 전체가 보이도록 촬영",
+          "글씨가 선명하게 보이는 이미지 권장",
+          "기울어지지 않은 정면 촬영 권장"
+        ],
+        "tapToChange": "탭하여 다른 이미지 선택"
       },
       "textPaste": {
         "title": "텍스트 붙여넣기",
@@ -394,7 +401,13 @@
       "manualInput": {
         "title": "직접 입력",
         "description": "아직 없다면 빈 그리드에서 처음부터 작성",
-        "tapToEdit": "셀을 탭하여 목표와 실천 항목을 입력하세요"
+        "tapToEdit": "셀을 탭하여 목표와 실천 항목을 입력하세요",
+        "guideTitle": "만다라트 작성 안내",
+        "guideItems": [
+          "중앙의 핵심 목표를 먼저 작성하세요",
+          "주변 8칸에 세부 목표를 작성하세요",
+          "각 세부 목표마다 8개의 실천 항목을 추가하세요"
+        ]
       },
       "confirmDiscard": "작성 중인 내용을 취소하시겠습니까?",
       "progress": {
@@ -531,6 +544,9 @@
       "appInfo": "앱 정보",
       "appInfoFormat": "{{appName}}\n\n버전: {{version}} ({{build}})\n플랫폼: React Native + Expo\n\n© 2025 {{appName}}",
       "privacyPolicy": "개인정보 처리방침"
+    },
+    "focus": {
+      "title": "집중 모드"
     },
     "notifications": {
       "pushNotifications": "푸시 알림",
@@ -855,6 +871,19 @@
       "newDiagnosisGenerating": "새 진단 생성 중...",
       "newReportGenerating": "새 리포트 생성 중..."
     },
+    "metrics": {
+      "practiceDays": "실천일수",
+      "totalChecks": "총 실천횟수",
+      "vsLastWeek": "전주대비 실천횟수",
+      "completeness": "완성도",
+      "expressionClarity": "표현명확도",
+      "measurability": "측정가능성",
+      "weeklyGoal": "주간 목표",
+      "dailyAverage": "일평균 실천",
+      "bestDay": "최고 실천일",
+      "consistency": "일관성",
+      "actionClarity": "실천 설계"
+    },
     "history": {
       "title": "지난 실천리포트",
       "weeklyReport": "주간 실천 리포트"
@@ -886,29 +915,42 @@
       "message": "잠시 후 다시 시도해주세요"
     },
     "xpBoost": {
-      "button": "광고 보고 2배 XP",
-      "duration": "1시간 동안 유효",
+      "button": "광고 보고 XP 부스트",
+      "duration": "1시간 동안 XP 2배 획득",
       "activated": "XP 부스트 활성화!",
       "activatedDesc": "1시간 동안 모든 XP가 2배로 적용됩니다",
       "error": "XP 부스트 활성화에 실패했습니다"
     },
     "streakFreeze": {
       "button": "광고 보고 스트릭 보호",
-      "duration": "1일 보호",
+      "duration": "오늘 체크를 놓쳐도 스트릭 유지",
       "activated": "스트릭 보호 활성화!",
       "activatedDesc": "내일까지 스트릭이 유지됩니다",
       "error": "스트릭 보호 활성화에 실패했습니다"
     },
     "yesterdayCheck": {
-      "button": "광고 보고 어제 체크",
+      "button": "어제 체크",
       "activated": "어제 체크 완료!",
       "activatedDesc": "어제 실천 항목이 체크되었습니다",
+      "alreadyChecked": "이미 체크됨",
+      "alreadyCheckedDesc": "어제 이미 체크된 항목입니다",
       "error": "어제 체크에 실패했습니다"
     },
     "reportGenerate": {
-      "button": "광고 보고 무료 생성",
+      "button": "광고 보고 리포트 생성",
+      "subtitle": "AI 리포트 즉시 생성",
       "activated": "리포트 생성 중...",
       "error": "리포트 생성에 실패했습니다"
+    },
+    "adFree": {
+      "button": "광고 보고 집중 모드",
+      "subtitle": "24시간 배너 광고 숨김",
+      "activated": "집중 모드 활성화!",
+      "activatedDesc": "24시간 동안 배너 광고가 보이지 않습니다",
+      "activeTitle": "집중 모드",
+      "remaining": "{{time}} 남음",
+      "alreadyActive": "이미 활성화됨",
+      "error": "활성화에 실패했습니다"
     }
   }
 }

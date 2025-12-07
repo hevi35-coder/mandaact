@@ -18,9 +18,11 @@ import { logger } from '../../lib/logger'
 
 interface XPBoostButtonProps {
   onBoostActivated?: () => void
+  /** If false, the button will not be rendered */
+  hasActiveMandalarts?: boolean
 }
 
-export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
+export function XPBoostButton({ onBoostActivated, hasActiveMandalarts = true }: XPBoostButtonProps) {
   const { t } = useTranslation()
   const toast = useToast()
   const user = useAuthStore((state) => state.user)
@@ -54,9 +56,10 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
   }, [])
 
   const handleError = useCallback((error: Error) => {
-    logger.error('XP Boost ad error', error)
-    toast.error(t('common.error'), t('ads.loadError'))
-  }, [toast, t])
+    // Silently log error - don't show toast for preload failures
+    // Users will see "ad not ready" message if they try to use the feature
+    logger.warn('XP Boost ad preload error', { message: error.message })
+  }, [])
 
   const { isLoaded, isLoading, show } = useRewardedAd({
     adType: 'REWARDED_XP_BOOST',
@@ -76,6 +79,11 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
       )
     }
   }, [isLoaded, isActivating, show, t])
+
+  // Don't render if no active mandalarts
+  if (!hasActiveMandalarts) {
+    return null
+  }
 
   // Loading state - compact style
   if (isLoading) {
@@ -154,14 +162,11 @@ export function XPBoostButton({ onBoostActivated }: XPBoostButtonProps) {
           </View>
 
           {/* Right: Play Icon */}
-          <View
-            className="w-8 h-8 rounded-full items-center justify-center"
-            style={{ backgroundColor: isLoaded ? '#f59e0b' : '#e5e7eb' }}
-          >
+          <View className="w-8 h-8 rounded-full items-center justify-center bg-gray-100">
             <Play
               size={14}
-              color={isLoaded ? '#fff' : '#9ca3af'}
-              fill={isLoaded ? '#fff' : '#9ca3af'}
+              color="#6b7280"
+              fill="#6b7280"
             />
           </View>
         </View>

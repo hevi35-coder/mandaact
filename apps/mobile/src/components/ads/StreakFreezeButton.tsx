@@ -62,9 +62,10 @@ export function StreakFreezeButton({ onFreezeActivated }: StreakFreezeButtonProp
   }, [])
 
   const handleError = useCallback((error: Error) => {
-    logger.error('Streak freeze ad error', error)
-    toast.error(t('common.error'), t('ads.loadError'))
-  }, [toast, t])
+    // Silently log error - don't show toast for preload failures
+    // Users will see "ad not ready" message if they try to use the feature
+    logger.warn('Streak freeze ad preload error', { message: error.message })
+  }, [])
 
   const { isLoaded, isLoading, show } = useRewardedAd({
     adType: 'REWARDED_STREAK_FREEZE',
@@ -162,14 +163,11 @@ export function StreakFreezeButton({ onFreezeActivated }: StreakFreezeButtonProp
           </View>
 
           {/* Right: Play Icon */}
-          <View
-            className="w-8 h-8 rounded-full items-center justify-center"
-            style={{ backgroundColor: isLoaded ? '#2563eb' : '#e5e7eb' }}
-          >
+          <View className="w-8 h-8 rounded-full items-center justify-center bg-gray-100">
             <Play
               size={14}
-              color={isLoaded ? '#fff' : '#9ca3af'}
-              fill={isLoaded ? '#fff' : '#9ca3af'}
+              color="#6b7280"
+              fill="#6b7280"
             />
           </View>
         </View>

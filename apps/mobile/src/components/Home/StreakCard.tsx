@@ -10,7 +10,6 @@ import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { Flame, Trophy } from 'lucide-react-native'
 import { FourWeekHeatmap } from './FourWeekHeatmap'
-import { StreakFreezeButton } from '../ads'
 import type { StreakCardProps } from './types'
 
 export function StreakCard({
@@ -21,7 +20,6 @@ export function StreakCard({
     isNewRecord,
     fourWeekData,
     fourWeekLoading,
-    onFreezeActivated,
 }: StreakCardProps) {
     const { t } = useTranslation()
 
@@ -156,13 +154,6 @@ export function StreakCard({
                     >
                         {t('home.streak.keepGoing', { days: 7 - currentStreak })} 💪
                     </Text>
-                </View>
-            )}
-
-            {/* Streak Freeze Button - Protect streak with rewarded ad */}
-            {currentStreak > 0 && (
-                <View className="mt-4">
-                    <StreakFreezeButton onFreezeActivated={onFreezeActivated} />
                 </View>
             )}
         </Animated.View>

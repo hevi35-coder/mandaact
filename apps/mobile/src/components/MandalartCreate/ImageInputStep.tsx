@@ -15,7 +15,7 @@ import {
     Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { ArrowLeft, Upload } from 'lucide-react-native'
+import { ArrowLeft, Upload, Info, Check } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
@@ -190,17 +190,51 @@ export function ImageInputStep({ onBack, onNext, setLoading }: InputStepProps) {
                         </Text>
                     </Pressable>
                 ) : (
-                    // Image preview
-                    <Pressable
-                        onPress={handleImageSourceSelect}
-                        className="bg-white rounded-2xl overflow-hidden border border-gray-100 active:opacity-90"
-                    >
-                        <Image
-                            source={{ uri: selectedImageUri }}
-                            style={{ width: imageWidth, height: imageWidth }}
-                            resizeMode="contain"
-                        />
-                    </Pressable>
+                    // Image preview with guide card
+                    <>
+                        <Pressable
+                            onPress={handleImageSourceSelect}
+                            className="bg-white rounded-2xl overflow-hidden border border-gray-100 active:opacity-90"
+                        >
+                            <Image
+                                source={{ uri: selectedImageUri }}
+                                style={{ width: imageWidth, height: imageWidth }}
+                                resizeMode="contain"
+                            />
+                        </Pressable>
+                        <Text
+                            className="text-sm text-gray-400 text-center mt-2"
+                            style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                            {t('mandalart.create.imageUpload.tapToChange')}
+                        </Text>
+
+                        {/* Guide Card */}
+                        <View
+                            className="bg-blue-50 rounded-2xl p-4 mt-4 border border-blue-100"
+                        >
+                            <View className="flex-row items-center mb-3">
+                                <Info size={18} color="#3b82f6" />
+                                <Text
+                                    className="text-sm text-blue-700 ml-2"
+                                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                                >
+                                    {t('mandalart.create.imageUpload.guideTitle')}
+                                </Text>
+                            </View>
+                            {(t('mandalart.create.imageUpload.guideItems', { returnObjects: true }) as string[]).map((item, index) => (
+                                <View key={index} className="flex-row items-start mb-1.5">
+                                    <Check size={14} color="#3b82f6" style={{ marginTop: 2 }} />
+                                    <Text
+                                        className="text-sm text-blue-600 ml-2 flex-1"
+                                        style={{ fontFamily: 'Pretendard-Regular' }}
+                                    >
+                                        {item}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    </>
                 )}
             </ScrollView>
         </SafeAreaView>

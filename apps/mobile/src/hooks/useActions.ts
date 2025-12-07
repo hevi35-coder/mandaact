@@ -1,8 +1,9 @@
+import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { getDayBoundsUTC, getPeriodBounds, getMissionPeriodBounds, getActionPeriodTarget, getCurrentUTC, type RoutineFrequency } from '@mandaact/shared'
+import { getDayBoundsUTC, getPeriodBounds, getMissionPeriodBounds, getActionPeriodTarget, getCurrentUTC, userDateTimeToUTC, type RoutineFrequency } from '@mandaact/shared'
 import type { Action, SubGoal, Mandalart, CheckHistory } from '@mandaact/shared'
-import { format } from 'date-fns'
+import { format, subDays } from 'date-fns'
 
 /**
  * Query key factory for actions
@@ -461,6 +462,159 @@ export function useUpdateAction() {
       queryClient.invalidateQueries({ queryKey: actionKeys.lists() })
       // Also invalidate mandalart details to reflect action changes
       queryClient.invalidateQueries({ queryKey: ['mandalarts', 'detail'] })
+    },
+  })
+}
+
+/**
+ * Hook to fetch yesterday's missed actions (not checked yesterday)
+ * Returns a Set of action IDs that were not checked yesterday
+ */
+export function useYesterdayMissed(
+  userId: string | undefined,
+  timezone: string = 'Asia/Seoul'
+) {
+  // Calculate yesterday's date string
+  const yesterdayStr = useMemo(() => {
+    const now = new Date()
+    const yesterday = subDays(now, 1)
+    return format(yesterday, 'yyyy-MM-dd')
+  }, [])
+
+  return useQuery({
+    queryKey: ['actions', 'yesterdayMissed', userId, yesterdayStr],
+    queryFn: async () => {
+      if (!userId) return new Set<string>()
+
+      // Get all configured actions (exclude reference)
+      const { data: actionsData, error: actionsError } = await supabase
+        .from('actions')
+        .select(`
+          id,
+          type,
+          sub_goal:sub_goals (
+            mandalart:mandalarts (
+              user_id,
+              is_active
+            )
+          )
+        `)
+        .neq('type', 'reference')
+
+      if (actionsError) throw actionsError
+
+      // Filter to user's active mandalart actions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userActions = (actionsData || []).filter((a: any) => {
+        const subGoal = a.sub_goal
+        const mandalart = subGoal?.mandalart
+        return mandalart?.user_id === userId && mandalart?.is_active !== false
+      })
+
+      // Get yesterday's check bounds
+      const { start: dayStart, end: dayEnd } = getDayBoundsUTC(yesterdayStr, timezone)
+
+      // Fetch yesterday's checks
+      const { data: checksData, error: checksError } = await supabase
+        .from('check_history')
+        .select('action_id')
+        .eq('user_id', userId)
+        .gte('checked_at', dayStart)
+        .lt('checked_at', dayEnd)
+
+      if (checksError) throw checksError
+
+      // Create set of checked action IDs
+      const checkedIds = new Set(checksData?.map(c => c.action_id) || [])
+
+      // Return IDs that were NOT checked yesterday
+      const missedIds = new Set<string>()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      userActions.forEach((action: any) => {
+        if (!checkedIds.has(action.id)) {
+          missedIds.add(action.id)
+        }
+      })
+
+      return missedIds
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+/**
+ * Hook to insert a check for yesterday's date (via rewarded ad)
+ * This allows users to recover missed checks from yesterday
+ */
+export function useYesterdayCheck() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      actionId,
+      userId,
+      timezone = 'Asia/Seoul',
+    }: {
+      actionId: string
+      userId: string
+      timezone?: string
+    }) => {
+      // Calculate yesterday's date string in user's timezone
+      const now = new Date()
+      const yesterday = subDays(now, 1)
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd')
+
+      // Create a timestamp for yesterday at noon (12:00) to avoid edge cases
+      // Using userDateTimeToUTC to properly convert to UTC
+      const yesterdayTimestamp = userDateTimeToUTC(yesterdayStr, 12, 0, 0, timezone)
+
+      // Check if already checked yesterday
+      const { start: dayStart, end: dayEnd } = getDayBoundsUTC(yesterdayStr, timezone)
+
+      const { data: existingCheck, error: checkError } = await supabase
+        .from('check_history')
+        .select('id')
+        .eq('action_id', actionId)
+        .eq('user_id', userId)
+        .gte('checked_at', dayStart)
+        .lt('checked_at', dayEnd)
+        .maybeSingle()
+
+      if (checkError) {
+        throw new Error(`Check error: ${checkError.message}`)
+      }
+
+      if (existingCheck) {
+        throw new Error('ALREADY_CHECKED')
+      }
+
+      // Insert check for yesterday
+      const { data: checkData, error: insertError } = await supabase
+        .from('check_history')
+        .insert({
+          action_id: actionId,
+          user_id: userId,
+          checked_at: yesterdayTimestamp,
+        })
+        .select()
+        .single()
+
+      if (insertError) {
+        throw new Error(`Insert error: ${insertError.message || insertError.code || JSON.stringify(insertError)}`)
+      }
+
+      return {
+        actionId,
+        checkId: checkData.id,
+        yesterdayDate: yesterdayStr,
+      }
+    },
+    onSuccess: (_data, { userId }) => {
+      // Invalidate all action lists to refresh UI
+      queryClient.invalidateQueries({ queryKey: actionKeys.lists() })
+      // Invalidate stats to recalculate streaks
+      queryClient.invalidateQueries({ queryKey: ['stats', 'user', userId] })
     },
   })
 }

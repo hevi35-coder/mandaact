@@ -18,6 +18,7 @@ import { useResponsive } from '../hooks/useResponsive'
 import { useAuthStore } from '../store/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUserGamification, use4WeekHeatmap, useProfileStats, statsKeys } from '../hooks/useStats'
+import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useBadgeDefinitions, useUserBadges, useBadgeProgress, useTranslateBadge, isBadgeUnlocked, getBadgeUnlockDate, getBadgeRepeatCount, type BadgeDefinition } from '../hooks/useBadges'
 import {
   getXPForCurrentLevel,
@@ -66,6 +67,8 @@ export default function HomeScreen() {
   const { data: badges = [], isLoading: badgesLoading } = useBadgeDefinitions()
   const { data: userBadges = [] } = useUserBadges(user?.id)
   const { data: badgeProgress = [] } = useBadgeProgress(user?.id)
+  const { data: activeMandalarts = [] } = useActiveMandalarts(user?.id)
+  const hasActiveMandalarts = activeMandalarts.length > 0
 
   const isLoading = gamificationLoading || profileStatsLoading
 
@@ -160,14 +163,18 @@ export default function HomeScreen() {
 
             {/* XP Boost Section - Between Profile and Streak on Phone */}
             {!isTablet && (
-              <XPBoostButton
-                onBoostActivated={() => {
-                  // Refresh active multipliers after boost activation
-                  if (user?.id) {
-                    xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
-                  }
-                }}
-              />
+              <>
+                <XPBoostButton
+                  hasActiveMandalarts={hasActiveMandalarts}
+                  onBoostActivated={() => {
+                    // Refresh active multipliers after boost activation
+                    if (user?.id) {
+                      xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
+                    }
+                  }}
+                />
+
+              </>
             )}
 
             {/* Streak Card */}
@@ -180,24 +187,22 @@ export default function HomeScreen() {
                 isNewRecord={isNewRecord}
                 fourWeekData={fourWeekData}
                 fourWeekLoading={fourWeekLoading}
-                onFreezeActivated={() => {
-                  // Refresh gamification data after streak freeze activation
-                  if (user?.id) {
-                    queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
-                  }
-                }}
               />
             </View>
 
-            {/* XP Boost Section - After cards on Tablet */}
+            {/* XP Boost & Streak Freeze Section - After cards on Tablet */}
             {isTablet && (
-              <XPBoostButton
-                onBoostActivated={() => {
-                  if (user?.id) {
-                    xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
-                  }
-                }}
-              />
+              <>
+                <XPBoostButton
+                  hasActiveMandalarts={hasActiveMandalarts}
+                  onBoostActivated={() => {
+                    if (user?.id) {
+                      xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
+                    }
+                  }}
+                />
+
+              </>
             )}
           </View>
           {/* End of iPad 2-column layout */}

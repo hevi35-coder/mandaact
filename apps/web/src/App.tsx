@@ -22,6 +22,7 @@ const TodayChecklistPage = lazy(() => import('@/pages/TodayChecklistPage'))
 const NotificationSettingsPage = lazy(() => import('@/pages/NotificationSettingsPage'))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
 const TutorialPage = lazy(() => import('@/pages/TutorialPage'))
+const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
 
 // Loading component
 function PageLoader() {
@@ -219,6 +220,7 @@ function AnimatedRoutes() {
               }
             />
             <Route path="/tutorial" element={<TutorialPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
             {/* More routes will be added in future phases */}
           </Routes>
         </Suspense>

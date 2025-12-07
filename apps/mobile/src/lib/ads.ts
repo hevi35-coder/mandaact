@@ -132,7 +132,8 @@ export function markInterstitialShown(): void {
 export function getNewUserAdRestriction(
   userCreatedAt: Date | string | null
 ): 'no_ads' | 'banner_only' | 'full' {
-  if (!userCreatedAt) return 'full'
+  // Safety first: if we don't know when user was created, assume new user (no ads)
+  if (!userCreatedAt) return 'no_ads'
 
   const createdDate = new Date(userCreatedAt)
   const now = new Date()
@@ -149,4 +150,62 @@ export function getNewUserAdRestriction(
   }
 
   return 'full'
+}
+
+/**
+ * Ad-Free Time (Focus Mode) System
+ *
+ * Users can watch a rewarded ad to get 24 hours of banner-free experience.
+ * This is stored in AsyncStorage as 'ad_free_until' timestamp.
+ */
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+const AD_FREE_STORAGE_KEY = '@mandaact/ad_free_until'
+const AD_FREE_DURATION = 24 * 60 * 60 * 1000 // 24 hours in ms
+
+/**
+ * Check if Ad-Free mode is currently active
+ */
+export async function isAdFreeActive(): Promise<boolean> {
+  try {
+    const adFreeUntil = await AsyncStorage.getItem(AD_FREE_STORAGE_KEY)
+    if (!adFreeUntil) return false
+
+    const expiryTime = parseInt(adFreeUntil, 10)
+    return Date.now() < expiryTime
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Get remaining Ad-Free time in milliseconds
+ */
+export async function getAdFreeRemainingTime(): Promise<number> {
+  try {
+    const adFreeUntil = await AsyncStorage.getItem(AD_FREE_STORAGE_KEY)
+    if (!adFreeUntil) return 0
+
+    const expiryTime = parseInt(adFreeUntil, 10)
+    const remaining = expiryTime - Date.now()
+    return remaining > 0 ? remaining : 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Activate Ad-Free mode for 24 hours
+ */
+export async function activateAdFree(): Promise<Date> {
+  const expiryTime = Date.now() + AD_FREE_DURATION
+  await AsyncStorage.setItem(AD_FREE_STORAGE_KEY, expiryTime.toString())
+  return new Date(expiryTime)
+}
+
+/**
+ * Clear Ad-Free mode (for testing or expiry)
+ */
+export async function clearAdFree(): Promise<void> {
+  await AsyncStorage.removeItem(AD_FREE_STORAGE_KEY)
 }

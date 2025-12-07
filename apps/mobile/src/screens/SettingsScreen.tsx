@@ -34,6 +34,7 @@ import {
   Sparkles,
   Pencil,
   Globe,
+  Play,
 } from 'lucide-react-native'
 import * as Application from 'expo-application'
 import { useNavigation } from '@react-navigation/native'
@@ -41,6 +42,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Header } from '../components'
 import { Toggle } from '../components/ui/Toggle'
 import { useAuthStore } from '../store/authStore'
+import { useAdFree, useRewardedAd } from '../hooks'
+import { useToast } from '../components/Toast'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { useUserGamification, statsKeys } from '../hooks/useStats'
 import { useNotifications } from '../hooks/useNotifications'
@@ -113,6 +116,45 @@ export default function SettingsScreen() {
   const { timezone, updateTimezone } = useUserProfile(user?.id)
   const [showTimezoneModal, setShowTimezoneModal] = useState(false)
   const [isSavingTimezone, setIsSavingTimezone] = useState(false)
+
+  // Ad-free focus mode
+  const toast = useToast()
+  const { isAdFree, remainingTimeFormatted, isLoading: isAdFreeLoading, activate } = useAdFree()
+  const [isActivatingFocus, setIsActivatingFocus] = useState(false)
+
+  const { isLoading: isAdLoading, show: showAd } = useRewardedAd({
+    adType: 'REWARDED_XP_BOOST',
+    onRewardEarned: async () => {
+      try {
+        setIsActivatingFocus(true)
+        await activate()
+        toast.success(
+          t('ads.adFree.activated'),
+          t('ads.adFree.activatedDesc')
+        )
+      } catch (error) {
+        console.error('[SettingsScreen] Failed to activate focus mode:', error)
+        toast.error(t('common.error'), t('ads.adFree.error'))
+      } finally {
+        setIsActivatingFocus(false)
+      }
+    },
+    onError: (error) => {
+      console.error('[SettingsScreen] Ad error:', error)
+    },
+  })
+
+  const handleFocusModePress = useCallback(async () => {
+    if (isAdFree) {
+      // Already active, show info
+      toast.info(
+        t('ads.adFree.alreadyActive'),
+        t('ads.adFree.remaining', { time: remainingTimeFormatted })
+      )
+      return
+    }
+    await showAd()
+  }, [isAdFree, remainingTimeFormatted, showAd, toast, t])
 
   const currentLevel = gamification?.current_level || 1
   const totalXP = gamification?.total_xp || 0
@@ -241,7 +283,7 @@ export default function SettingsScreen() {
   }, [t])
 
   const handlePrivacyPolicy = useCallback(() => {
-    handleOpenURL('https://mandaact.com/privacy')
+    handleOpenURL('https://mandaact.vercel.app/privacy')
   }, [handleOpenURL])
 
   const handleFeedback = useCallback(() => {
@@ -249,7 +291,7 @@ export default function SettingsScreen() {
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('settings.support.feedbackEmail'),
-        onPress: () => handleOpenURL('mailto:support@mandaact.com?subject=MandaAct Feedback'),
+        onPress: () => handleOpenURL('mailto:support@unwrittenbd.com?subject=MandaAct Feedback'),
       },
     ])
   }, [handleOpenURL, t])
@@ -444,6 +486,66 @@ export default function SettingsScreen() {
           </Pressable>
         </Animated.View>
 
+        {/* Focus Mode Section */}
+        <Text
+          className="text-sm text-gray-500 mb-2 ml-1"
+          style={{ fontFamily: 'Pretendard-SemiBold' }}
+        >
+          {t('settings.focus.title')}
+        </Text>
+        <Animated.View
+          entering={FadeInUp.delay(175).duration(400)}
+          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
+          }}
+        >
+          <Pressable
+            onPress={handleFocusModePress}
+            disabled={isAdLoading || isActivatingFocus || isAdFreeLoading}
+            className="flex-row items-center px-5 py-4"
+          >
+            <Shield size={20} color={isAdFree ? '#7c3aed' : '#6b7280'} />
+            <View className="flex-1 ml-3">
+              <Text
+                className={`text-base ${isAdFree ? 'text-violet-700' : 'text-gray-900'}`}
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                {t('ads.adFree.button')}
+              </Text>
+              <Text
+                className={`text-xs mt-0.5 ${isAdFree ? 'text-violet-500' : 'text-gray-500'}`}
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {isAdFree
+                  ? t('ads.adFree.remaining', { time: remainingTimeFormatted })
+                  : t('ads.adFree.subtitle')
+                }
+              </Text>
+            </View>
+            {isAdLoading || isActivatingFocus ? (
+              <ActivityIndicator size="small" color="#7c3aed" />
+            ) : isAdFree ? (
+              <View className="bg-violet-100 px-2 py-1 rounded-full">
+                <Text
+                  className="text-xs text-violet-700"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  {t('ads.adFree.activeTitle')}
+                </Text>
+              </View>
+            ) : (
+              <View className="w-8 h-8 rounded-full items-center justify-center bg-gray-100">
+                <Play size={14} color="#6b7280" fill="#6b7280" />
+              </View>
+            )}
+          </Pressable>
+        </Animated.View>
+
         {/* Notification Settings */}
         <Text
           className="text-sm text-gray-500 mb-2 ml-1"
@@ -565,6 +667,7 @@ export default function SettingsScreen() {
               />
             </View>
           </View>
+
         </Animated.View>
 
         {/* Support Section */}

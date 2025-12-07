@@ -13,8 +13,8 @@ import {
     TextInput,
     useWindowDimensions,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { ArrowLeft, ChevronLeft } from 'lucide-react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ChevronLeft, Info, Check } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
@@ -38,6 +38,7 @@ export function PreviewStep({
     const { width: screenWidth, height: screenHeight } = useWindowDimensions()
     const { isTablet } = useResponsive()
     const scrollRef = useRef<ScrollView>(null)
+    const insets = useSafeAreaInsets()
 
     // Calculate cell size dynamically
     const gridWidth = screenWidth - (CONTAINER_PADDING * 2) - (CARD_PADDING * 2)
@@ -199,35 +200,52 @@ export function PreviewStep({
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
-            {/* Header */}
-            <View className="flex-row items-center justify-between px-5 h-16 border-b border-gray-100 bg-white">
-                <View className="flex-row items-center flex-1 mr-4">
-                    <Pressable onPress={onBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
-                        <ArrowLeft size={24} color="#374151" />
-                    </Pressable>
-                    <TextInput
-                        value={data.title}
-                        onChangeText={handleTitleChange}
-                        placeholder={t('mandalart.create.preview.titlePlaceholder')}
-                        placeholderTextColor="#9ca3af"
-                        className="flex-1 ml-2 text-xl text-gray-900 font-bold p-0"
-                        style={{ fontFamily: 'Pretendard-Bold' }}
-                    />
-                </View>
-                <Pressable
-                    onPress={onSave}
-                    disabled={isSaving || !data.title.trim()}
-                    className={`px-4 py-2 rounded-xl ${isSaving || !data.title.trim() ? 'bg-gray-200' : 'bg-gray-900'
-                        }`}
-                >
-                    <Text
-                        className={`font-semibold ${isSaving || !data.title.trim() ? 'text-gray-400' : 'text-white'
+        <View className="flex-1 bg-gray-50">
+            {/* Header - Similar to MandalartDetailScreen */}
+            <View
+                className="bg-white border-b border-gray-100"
+                style={{
+                    paddingTop: insets.top,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.03,
+                    shadowRadius: 8,
+                    elevation: 2,
+                }}
+            >
+                <View className="flex-row items-center justify-between px-5 h-16">
+                    <View className="flex-row items-center flex-1">
+                        <Pressable
+                            onPress={onBack}
+                            className="p-2 -ml-2 rounded-full active:bg-gray-100"
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <ChevronLeft size={28} color="#4b5563" />
+                        </Pressable>
+                        <TextInput
+                            value={data.title}
+                            onChangeText={handleTitleChange}
+                            placeholder={t('mandalart.create.preview.titlePlaceholder')}
+                            placeholderTextColor="#9ca3af"
+                            className="flex-1 ml-1 text-xl text-gray-900 p-0"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        />
+                    </View>
+                    <Pressable
+                        onPress={onSave}
+                        disabled={isSaving || !data.title.trim()}
+                        className={`px-5 py-2.5 rounded-2xl ${isSaving || !data.title.trim() ? 'bg-gray-200' : 'bg-gray-900'
                             }`}
                     >
-                        {isSaving ? t('common.saving') : t('common.save')}
-                    </Text>
-                </Pressable>
+                        <Text
+                            className={`${isSaving || !data.title.trim() ? 'text-gray-400' : 'text-white'
+                                }`}
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                            {isSaving ? t('common.saving') : t('common.save')}
+                        </Text>
+                    </Pressable>
+                </View>
             </View>
 
             <ScrollView ref={scrollRef} className="flex-1">
@@ -337,6 +355,34 @@ export function PreviewStep({
                                 ? t('mandalart.create.preview.tapToEdit')
                                 : t('mandalart.create.preview.tapActionToEdit')}
                         </Text>
+
+                        {/* Guide Card - Only show on overview (not expanded) */}
+                        {expandedSection === null && (
+                            <View
+                                className="bg-blue-50 rounded-2xl p-4 mt-4 border border-blue-100"
+                            >
+                                <View className="flex-row items-center mb-3">
+                                    <Info size={18} color="#3b82f6" />
+                                    <Text
+                                        className="text-sm text-blue-700 ml-2"
+                                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                                    >
+                                        {t('mandalart.create.manualInput.guideTitle')}
+                                    </Text>
+                                </View>
+                                {(t('mandalart.create.manualInput.guideItems', { returnObjects: true }) as string[]).map((item, index) => (
+                                    <View key={index} className="flex-row items-start mb-1.5">
+                                        <Check size={14} color="#3b82f6" style={{ marginTop: 2 }} />
+                                        <Text
+                                            className="text-sm text-blue-600 ml-2 flex-1"
+                                            style={{ fontFamily: 'Pretendard-Regular' }}
+                                        >
+                                            {item}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
                     </View>
                 )}
             </ScrollView>
@@ -363,6 +409,6 @@ export function PreviewStep({
                     onSave={handleSubGoalSave}
                 />
             )}
-        </SafeAreaView>
+        </View>
     )
 }

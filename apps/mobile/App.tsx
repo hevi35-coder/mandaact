@@ -33,9 +33,11 @@ initSentry().then(() => {
 })
 
 // Request ATT permission (iOS only) and then initialize AdMob
+// Called from AppContent useEffect to ensure proper timing
 async function initializeAds() {
   try {
     // Request ATT permission on iOS 14.5+
+    // This must be called after the app UI is visible for the popup to show
     if (Platform.OS === 'ios') {
       const { status } = await requestTrackingPermissionsAsync()
       console.log('[ATT] Tracking permission status:', status)
@@ -49,9 +51,6 @@ async function initializeAds() {
   }
 }
 
-// Call initialization
-initializeAds()
-
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync()
 
@@ -62,9 +61,20 @@ function AppContent() {
   const { initialize } = useAuthStore()
   const notificationListener = useRef<Notifications.EventSubscription>()
   const responseListener = useRef<Notifications.EventSubscription>()
+  const adsInitialized = useRef(false)
 
   useEffect(() => {
     initialize()
+
+    // Initialize ATT + AdMob after app UI is visible
+    // Only run once to prevent duplicate ATT prompts
+    if (!adsInitialized.current) {
+      adsInitialized.current = true
+      // Small delay to ensure UI is fully rendered before showing ATT popup
+      setTimeout(() => {
+        initializeAds()
+      }, 1000)
+    }
 
     // Set up notification listeners
     notificationListener.current = addNotificationReceivedListener(

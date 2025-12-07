@@ -1,6 +1,6 @@
-# MandaAct 개발 로드맵 v3.9
+# MandaAct 개발 로드맵 v3.10
 
-**최종 업데이트**: 2025-12-07 (Latest) - AdMob Phase 1-5 완료
+**최종 업데이트**: 2025-12-07 (Latest) - AdMob Phase 10.2.6 수익화 고도화 완료
 **현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | **Phase 10.2 AdMob 완료** ✅
 
 ---
@@ -104,16 +104,22 @@
 - [ ] 스트릭 재계산 트리거 구현 - Backlog
 
 #### 10.2.4 전면 광고 (Phase 4) ✅ **완료** (2025-12-07)
-- [x] `useInterstitialAd` 훅 구현 (빈도 제한 포함: 3분 쿨다운, 일 5회)
+- [x] `useInterstitialAd` 훅 구현 (빈도 제한: 3시간 쿨다운, 일 2회)
 - [x] 만다라트 생성 완료 시 전면 광고 트리거
 - [x] 리포트 생성 완료 후 전면 광고 트리거
-- [x] 레벨업 달성 시 전면 광고 트리거
+- [x] ~~레벨업 달성 시 전면 광고 트리거~~ → ❌ 비활성화 (사용자 경험 저하)
 
 #### 10.2.5 정책 준수 UI ✅ **완료** (2025-12-07)
 - [x] **Apple ATT**: iOS 14.5+ 추적 동의 요청 (`expo-tracking-transparency`)
 - [x] BannerAd: ReportsScreen 하단에 추가
 - [ ] **GDPR**: EU 유저 동의 배너 - 추후 EU 출시 시 구현
 - [ ] **광고 라벨**: Google Play 정책 준수 - Android 출시 시 추가
+
+#### 10.2.6 수익화 고도화 (Optimization) ✅ **완료** (2025-12-07)
+- [x] **TodayScreen 배너 제거**: Clean Zone 정책 적용 (집중력 보호)
+- [x] **Ad-Free Time (집중 모드)**: useAdFree 훅 + AdFreeButton 구현 (24시간 배너 제거)
+- [ ] **AdFreeButton 화면 배치**: SettingsScreen에 배치 필요
+- [ ] **Feedback Loop**: 배너 닫기 버튼(`x`) → Premium 유도 모달 (추후)
 
 #### 기존 시스템 영향도 (필수 확인)
 > 작업 전 [`ADMOB_MONETIZATION_STRATEGY.md` 섹션 11](../features/ADMOB_MONETIZATION_STRATEGY.md#11-기존-시스템-영향도-분석) 참조
@@ -208,12 +214,12 @@
 Phase 10.1: CI/CD 파이프라인 ✅ 완료
     └→ 이후 모든 작업의 품질 보장
 
-Phase 10.2: AdMob 광고 연동 🔄 진행 중
+Phase 10.2: AdMob 광고 연동 ✅ 완료
     ├→ Phase 1: SDK + 배너 ✅ 완료
     ├→ Phase 2: XP 부스트 보상형 광고 ✅ 완료
-    ├→ Phase 3: 추가 보상형 광고 (화면 연동 필요) 🔄
-    ├→ Phase 4: 전면 광고 (트리거 연동 필요) 🔄
-    └→ Phase 5: 정책 준수 UI (ATT, GDPR) ⏳
+    ├→ Phase 3: 추가 보상형 광고 ✅ 완료 (StreakFreeze, ReportGenerate)
+    ├→ Phase 4: 전면 광고 ✅ 완료 (레벨업 광고 비활성화)
+    └→ Phase 5: 정책 준수 UI ✅ 완료 (ATT)
 
 Phase 10.3: 스토어 배포 (1-2일)
     ├→ 광고 포함된 최종 버전으로 첫 심사
@@ -224,11 +230,15 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
     └→ Phase 7: 기능 분기 처리 (1일)
 ```
 
-**현재 상태** (Build 18):
-- ✅ 배너 광고 3개 화면 적용 (Home, Today, List)
-- ✅ XP 부스트 버튼 2개 화면 적용 (Home, Today)
-- 🔄 추가 보상형 광고 컴포넌트 구현 완료, 화면 연동 대기
-- 🔄 전면 광고 훅 구현 완료, 트리거 연동 대기
+**현재 상태** (Build 37):
+- ✅ 배너 광고 3개 화면 적용 (Home, List, Reports) - TodayScreen Clean Zone
+- ✅ XP 부스트 버튼 2개 화면 적용 (Home, Today) - 활성 만다라트 없으면 숨김
+- ✅ 보상형 광고 화면 연동 완료 (StreakFreeze, ReportGenerate)
+- ✅ 전면 광고 트리거 연동 완료 (만다라트 생성, 리포트 생성)
+- ✅ 레벨업 전면 광고 비활성화 (사용자 경험 우선)
+- ✅ ATT 권한 요청 팝업 타이밍 수정
+- ✅ Ad-Free Time 시스템 구현 (useAdFree 훅, AdFreeButton 컴포넌트)
+- ✅ TodayScreen Clean Zone 정책 적용 (배너 광고 제거)
 
 **이점**:
 - ✅ 첫 심사에 완전한 버전 제출 (재심사 불필요)
@@ -1075,14 +1085,23 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 ## 🎉 주요 성과
 
 ### 현재 진행 중 (2025-12-07)
-🔄 **Phase 10.2 AdMob 광고 연동**
-  - ✅ Build 18 TestFlight 제출 완료
+✅ **Phase 10.2 AdMob 광고 연동 완료**
+  - ✅ Build 35 TestFlight 제출 완료
   - ✅ AdMob SDK 통합 및 배너 광고 (Phase 1 완료)
   - ✅ XP 부스트 보상형 광고 (Phase 2 완료)
-  - ✅ 추가 보상형 광고 컴포넌트 구현 (StreakFreeze, YesterdayCheck, ReportGenerate)
-  - ✅ 전면 광고 훅 구현 (useInterstitialAd)
-  - 🔄 보상형 광고 화면 연동 작업 대기 (Phase 3)
-  - 🔄 전면 광고 트리거 연동 대기 (Phase 4)
+  - ✅ 추가 보상형 광고 화면 연동 완료 (Phase 3 완료)
+    - StreakFreezeButton: StreakCard 내 배치
+    - ReportGenerateButton: ReportsScreen에 배치
+  - ✅ 전면 광고 트리거 연동 완료 (Phase 4 완료)
+    - 만다라트 생성 완료 시, 리포트 생성 완료 시
+    - ❌ 레벨업 전면 광고 비활성화 (사용자 경험 저하)
+  - ✅ ATT 권한 요청 팝업 타이밍 수정 (Phase 5 완료)
+
+🔄 **Build 37 준비 중**
+  - TodayScreen Clean Zone 적용 (배너 광고 제거)
+  - Ad-Free Time 시스템 (useAdFree 훅, AdFreeButton 컴포넌트)
+  - BannerAd에 Ad-Free 상태 체크 로직 추가
+  - 영문/한국어 번역 추가 (ads.adFree 섹션)
 
 ### 이전 진행 (2025-12-06)
 ✅ **Phase 10.1 CI/CD 파이프라인 완료**
@@ -1173,6 +1192,6 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ---
 
-**문서 버전**: 3.8
+**문서 버전**: 3.10
 **최종 수정**: 2025-12-07
 **작성자**: Development Team

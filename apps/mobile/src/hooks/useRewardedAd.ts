@@ -25,6 +25,8 @@ interface UseRewardedAdOptions {
   onRewardEarned?: (reward: { type: string; amount: number }) => void
   onAdClosed?: () => void
   onError?: (error: Error) => void
+  /** If false, ad will not auto-load on mount. Call load() manually. Default: true */
+  autoLoad?: boolean
 }
 
 interface UseRewardedAdReturn {
@@ -40,6 +42,7 @@ export function useRewardedAd({
   onRewardEarned,
   onAdClosed,
   onError,
+  autoLoad = true,
 }: UseRewardedAdOptions): UseRewardedAdReturn {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -149,14 +152,14 @@ export function useRewardedAd({
     }
   }, [canShowAds, isLoaded])
 
-  // Auto-load on mount if ads are allowed
+  // Auto-load on mount if ads are allowed and autoLoad is true
   useEffect(() => {
-    if (canShowAds) {
+    if (canShowAds && autoLoad) {
       load()
     }
 
     return cleanup
-  }, [canShowAds]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [canShowAds, autoLoad]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     isLoaded: canShowAds ? isLoaded : true, // Always "ready" for new users (they skip ads)
