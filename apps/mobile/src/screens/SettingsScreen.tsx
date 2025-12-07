@@ -1081,25 +1081,19 @@ export default function SettingsScreen() {
                       : 'bg-gray-50 border border-gray-100'
                   }`}
                 >
-                  <Globe
-                    size={20}
-                    color={currentLang === lang.code ? '#2563eb' : '#6b7280'}
-                  />
-                  <View className="flex-1 ml-3">
-                    <Text
-                      className={`text-base ${
-                        currentLang === lang.code ? 'text-primary' : 'text-gray-900'
-                      }`}
-                      style={{
-                        fontFamily:
-                          currentLang === lang.code
-                            ? 'Pretendard-SemiBold'
-                            : 'Pretendard-Regular',
-                      }}
-                    >
-                      {lang.nativeName}
-                    </Text>
-                  </View>
+                  <Text
+                    className={`flex-1 text-base ${
+                      currentLang === lang.code ? 'text-primary' : 'text-gray-900'
+                    }`}
+                    style={{
+                      fontFamily:
+                        currentLang === lang.code
+                          ? 'Pretendard-SemiBold'
+                          : 'Pretendard-Regular',
+                    }}
+                  >
+                    {lang.nativeName}
+                  </Text>
                   {currentLang === lang.code && (
                     <Check size={20} color="#2563eb" />
                   )}
