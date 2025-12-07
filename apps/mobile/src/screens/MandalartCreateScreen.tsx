@@ -18,6 +18,7 @@ import type { RootStackParamList } from '../navigation/RootNavigator'
 import { suggestActionType } from '@mandaact/shared'
 import { logger, trackMandalartCreated } from '../lib'
 import { mandalartKeys } from '../hooks/useMandalarts'
+import { useInterstitialAd } from '../hooks/useInterstitialAd'
 import {
   MethodSelector,
   ProgressOverlay,
@@ -47,6 +48,17 @@ export default function MandalartCreateScreen() {
   const [progressMessage, setProgressMessage] = useState('')
   const [mandalartData, setMandalartData] = useState<MandalartData | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Interstitial ad for after creation
+  const { show: showInterstitialAd } = useInterstitialAd({
+    adType: 'INTERSTITIAL_AFTER_CREATE',
+    onAdClosed: () => {
+      // Ad closed, navigate back
+    },
+    onError: (error) => {
+      logger.error('Interstitial ad error', error)
+    },
+  })
 
   // Handlers
   const handleBack = useCallback(() => {
@@ -221,6 +233,9 @@ export default function MandalartCreateScreen() {
         actions_count: actionsCount,
       })
 
+      // Show interstitial ad before success alert
+      await showInterstitialAd()
+
       Alert.alert(t('mandalart.create.success.title'), t('mandalart.create.success.created'), [
         {
           text: t('common.confirm'),
@@ -233,7 +248,7 @@ export default function MandalartCreateScreen() {
     } finally {
       setIsSaving(false)
     }
-  }, [user, mandalartData, inputMethod, navigation, queryClient, t])
+  }, [user, mandalartData, inputMethod, navigation, queryClient, t, showInterstitialAd])
 
   // Render
   return (

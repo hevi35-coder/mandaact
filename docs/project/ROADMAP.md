@@ -1,7 +1,7 @@
-# MandaAct 개발 로드맵 v3.8
+# MandaAct 개발 로드맵 v3.9
 
-**최종 업데이트**: 2025-12-07 (Latest) - AdMob Phase 1-2 완료, Build 18 TestFlight 제출
-**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | **Phase 10.2 AdMob 진행 중** 🔄
+**최종 업데이트**: 2025-12-07 (Latest) - AdMob Phase 1-5 완료
+**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | **Phase 10.2 AdMob 완료** ✅
 
 ---
 
@@ -69,11 +69,10 @@
 
 ---
 
-### 10.2 AdMob 광고 연동 🔄 **Phase 1-2 완료, Phase 3-4 진행 중**
+### 10.2 AdMob 광고 연동 ✅ **완료** (2025-12-07)
 
 **목표**: 유저 불편 최소화 + 세련된 수익화 모델 구축
 **상세 전략 문서**: [`docs/features/ADMOB_INTEGRATION.md`](../features/ADMOB_INTEGRATION.md)
-**현재 빌드**: Build 18 (TestFlight 제출 완료)
 
 #### 10.2.1 AdMob SDK 통합 (Phase 1) ✅ **완료**
 - [x] AdMob 계정 설정
@@ -94,26 +93,27 @@
   - [x] TodayScreen 배치 (ProgressCard 아래)
   - [x] `xp_multipliers` 테이블 연동
 
-#### 10.2.3 추가 보상형 광고 (Phase 3) 🔄 **컴포넌트 완료, 화면 연동 대기**
+#### 10.2.3 추가 보상형 광고 (Phase 3) ✅ **완료** (2025-12-07)
 - [x] `StreakFreezeButton` 컴포넌트 구현
 - [x] `YesterdayCheckButton` 컴포넌트 구현
 - [x] `ReportGenerateButton` 컴포넌트 구현
-- [ ] **StreakFreezeButton 화면 연동**: StreakCard 내 배치
-- [ ] **YesterdayCheckButton 화면 연동**: TodayScreen 어제 미완료 액션에 표시
-- [ ] **ReportGenerateButton 화면 연동**: ReportsScreen에 배치
-- [ ] 어제 체크 삽입 로직 구현 (check_history에 어제 날짜로 삽입)
-- [ ] 스트릭 재계산 트리거 구현
+- [x] **StreakFreezeButton 화면 연동**: StreakCard 내 배치
+- [x] **ReportGenerateButton 화면 연동**: ReportsScreen에 배치
+- [ ] **YesterdayCheckButton 화면 연동**: 백엔드 로직 필요 (어제 체크 삽입 API)
+- [ ] 어제 체크 삽입 로직 구현 (check_history에 어제 날짜로 삽입) - Backlog
+- [ ] 스트릭 재계산 트리거 구현 - Backlog
 
-#### 10.2.4 전면 광고 (Phase 4) 🔄 **훅 완료, 트리거 연동 대기**
+#### 10.2.4 전면 광고 (Phase 4) ✅ **완료** (2025-12-07)
 - [x] `useInterstitialAd` 훅 구현 (빈도 제한 포함: 3분 쿨다운, 일 5회)
-- [ ] 만다라트 생성 완료 시 전면 광고 트리거
-- [ ] 리포트 확인 후 전면 광고 트리거
-- [ ] 레벨업 달성 시 전면 광고 트리거
+- [x] 만다라트 생성 완료 시 전면 광고 트리거
+- [x] 리포트 생성 완료 후 전면 광고 트리거
+- [x] 레벨업 달성 시 전면 광고 트리거
 
-#### 10.2.5 정책 준수 UI ⏳ **대기**
-- [ ] **Apple ATT**: iOS 14.5+ 추적 동의 요청 (`expo-tracking-transparency`)
-- [ ] **GDPR**: EU 유저 동의 배너
-- [ ] **광고 라벨**: Google Play 정책 준수
+#### 10.2.5 정책 준수 UI ✅ **완료** (2025-12-07)
+- [x] **Apple ATT**: iOS 14.5+ 추적 동의 요청 (`expo-tracking-transparency`)
+- [x] BannerAd: ReportsScreen 하단에 추가
+- [ ] **GDPR**: EU 유저 동의 배너 - 추후 EU 출시 시 구현
+- [ ] **광고 라벨**: Google Play 정책 준수 - Android 출시 시 추가
 
 #### 기존 시스템 영향도 (필수 확인)
 > 작업 전 [`ADMOB_MONETIZATION_STRATEGY.md` 섹션 11](../features/ADMOB_MONETIZATION_STRATEGY.md#11-기존-시스템-영향도-분석) 참조

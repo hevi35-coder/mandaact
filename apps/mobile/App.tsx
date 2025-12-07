@@ -7,8 +7,9 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import * as Notifications from 'expo-notifications'
 import * as Font from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
-import { View } from 'react-native'
+import { Platform, View } from 'react-native'
 import mobileAds from 'react-native-google-mobile-ads'
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency'
 
 import RootNavigator from './src/navigation/RootNavigator'
 import { useAuthStore } from './src/store/authStore'
@@ -31,15 +32,25 @@ initSentry().then(() => {
   trackAppOpened()
 })
 
-// Initialize Google Mobile Ads SDK
-mobileAds()
-  .initialize()
-  .then((adapterStatuses) => {
+// Request ATT permission (iOS only) and then initialize AdMob
+async function initializeAds() {
+  try {
+    // Request ATT permission on iOS 14.5+
+    if (Platform.OS === 'ios') {
+      const { status } = await requestTrackingPermissionsAsync()
+      console.log('[ATT] Tracking permission status:', status)
+    }
+
+    // Initialize Google Mobile Ads SDK after ATT prompt
+    const adapterStatuses = await mobileAds().initialize()
     console.log('[AdMob] SDK initialized successfully', adapterStatuses)
-  })
-  .catch((error) => {
-    console.warn('[AdMob] SDK initialization failed', error)
-  })
+  } catch (error) {
+    console.warn('[AdMob] Initialization error:', error)
+  }
+}
+
+// Call initialization
+initializeAds()
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync()

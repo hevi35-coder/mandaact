@@ -15,7 +15,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
-      "buildNumber": "11",
+      "buildNumber": "34",
       "supportsTablet": true,
       "requireFullScreen": false,
       "infoPlist": {
@@ -132,6 +132,12 @@
         "react-native-google-mobile-ads",
         {
           "iosAppId": "ca-app-pub-3170834290529005~1573851405"
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "맞춤형 광고 제공을 위해 사용자 추적 권한이 필요합니다"
         }
       ]
     ],

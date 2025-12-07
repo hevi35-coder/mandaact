@@ -40,6 +40,7 @@
     "expo-sharing": "catalog:",
     "expo-splash-screen": "~0.29.24",
     "expo-status-bar": "catalog:",
+    "expo-tracking-transparency": "^6.0.8",
     "i18next": "^25.6.3",
     "lucide-react-native": "catalog:",
     "posthog-react-native": "^4.14.0",
