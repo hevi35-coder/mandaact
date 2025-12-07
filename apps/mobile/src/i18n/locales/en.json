@@ -593,7 +593,8 @@
       "select": "Select your timezone"
     },
     "daysWithUs": "{{days}} days with us",
-    "footer": "Turn goals into action, {{appName}}"
+    "footer": "Turn goals into action, {{appName}}",
+    "copyright": "© 2025 {{appName}} by UnwrittenBD"
   },
   "login": {
     "title": "Log In",

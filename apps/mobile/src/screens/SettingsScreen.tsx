@@ -823,7 +823,7 @@ export default function SettingsScreen() {
             className="text-xs text-gray-300 mt-1"
             style={{ fontFamily: 'Pretendard-Regular' }}
           >
-            © 2025 {APP_NAME}
+            {t('settings.copyright', { appName: APP_NAME })}
           </Text>
         </View>
         </View>{/* End Content Container */}
