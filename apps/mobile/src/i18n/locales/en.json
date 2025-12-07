@@ -113,6 +113,8 @@
     "streak": {
       "title": "Streak",
       "subtitle": "Consecutive Practice",
+      "current": "Current",
+      "record": "Record",
       "consecutive": "days",
       "consecutiveLabel": "Consecutive",
       "longest": "Best",
@@ -175,6 +177,11 @@
     "unconfigured": {
       "title": "Needs Setup",
       "hint": "Tap to configure frequency"
+    },
+    "completed": {
+      "title": "Completed",
+      "hint": "Period target achieved",
+      "badge": "Done"
     }
   },
   "actionType": {

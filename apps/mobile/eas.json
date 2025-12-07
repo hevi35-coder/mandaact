@@ -29,8 +29,8 @@
       }
     },
     "production": {
-      "channel": "production",
       "autoIncrement": true,
+      "credentialsSource": "local",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_SUPABASE_URL": "https://gxnvovnwlqjstpcsprqr.supabase.co",

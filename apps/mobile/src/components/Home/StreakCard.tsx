@@ -46,6 +46,9 @@ export function StreakCard({
             <View className="flex-row gap-3 mb-4">
                 {/* Current Streak */}
                 <View className="flex-1 p-4 rounded-xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 items-center">
+                    <Text className="text-xs text-orange-400 mb-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                        {t('home.streak.current')}
+                    </Text>
                     <Flame size={32} color="#f97316" />
                     <View className="flex-row items-baseline my-1">
                         <Text className="text-4xl text-orange-500" style={{ fontFamily: 'Pretendard-Bold' }}>
@@ -85,6 +88,9 @@ export function StreakCard({
                             <Text className="text-xs text-yellow-700" style={{ fontFamily: 'Pretendard-Bold' }}>{t('home.streak.newRecord')}</Text>
                         </View>
                     )}
+                    <Text className="text-xs text-gray-400 mb-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                        {t('home.streak.record')}
+                    </Text>
                     <Trophy size={32} color="#eab308" />
                     <View className="flex-row items-baseline my-1">
                         <Text className="text-4xl text-gray-900" style={{ fontFamily: 'Pretendard-Bold' }}>

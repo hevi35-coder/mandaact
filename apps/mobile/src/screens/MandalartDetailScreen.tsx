@@ -322,7 +322,19 @@ export default function MandalartDetailScreen() {
     <View className="flex-1 bg-gray-50">
       {/* Loading overlay */}
       {isExporting && (
-        <View className="absolute inset-0 bg-black/50 z-50 flex justify-center items-center">
+        <View
+          className="z-50"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           <View className="bg-white rounded-2xl p-6 items-center">
             <ActivityIndicator size="large" color="#2563eb" />
             <Text

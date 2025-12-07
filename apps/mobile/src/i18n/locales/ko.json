@@ -113,6 +113,8 @@
     "streak": {
       "title": "스트릭",
       "subtitle": "연속 실천 기록",
+      "current": "현재",
+      "record": "기록",
       "consecutive": "일 연속",
       "longest": "최장 기록",
       "newRecord": "신기록!",
@@ -173,6 +175,11 @@
     "unconfigured": {
       "title": "설정 필요",
       "hint": "탭하여 반복주기 설정"
+    },
+    "completed": {
+      "title": "달성 완료",
+      "hint": "이번 기간 목표를 달성한 항목",
+      "badge": "완료"
     }
   },
   "actionType": {

@@ -170,7 +170,7 @@ export default function TutorialScreen() {
   const isLastStep = currentStep === tutorialSteps.length - 1
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom', 'left', 'right']}>
       {/* Skip Button */}
       <View className="flex-row justify-end px-4 py-2">
         <Pressable onPress={handleSkip} className="px-4 py-2">
@@ -266,7 +266,7 @@ export default function TutorialScreen() {
       </View>
 
       {/* Navigation Buttons */}
-      <View className="px-4 pb-4">
+      <View className="px-4 pb-8">
         <View className="flex-row" style={{ gap: 12, maxWidth: 500, alignSelf: 'center', width: '100%' }}>
           {currentStep > 0 && (
             <Pressable

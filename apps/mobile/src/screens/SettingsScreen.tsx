@@ -48,6 +48,7 @@ import { useUserProfile, getDeviceTimezone } from '../hooks/useUserProfile'
 import { APP_NAME } from '@mandaact/shared'
 import { supabase } from '../lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
+import { differenceInCalendarDays } from 'date-fns'
 import { changeLanguage, getCurrentLanguage, supportedLanguages, type SupportedLanguage } from '../i18n'
 
 // Common timezone options for selection
@@ -360,7 +361,7 @@ export default function SettingsScreen() {
                       className="text-sm"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) + 1 })}
+                      {t('settings.daysWithUs', { days: differenceInCalendarDays(new Date(), new Date(user.created_at)) + 1 })}
                     </Text>
                   }
                 >
@@ -373,7 +374,7 @@ export default function SettingsScreen() {
                       className="text-sm opacity-0"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      {t('settings.daysWithUs', { days: Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) + 1 })}
+                      {t('settings.daysWithUs', { days: differenceInCalendarDays(new Date(), new Date(user.created_at)) + 1 })}
                     </Text>
                   </LinearGradient>
                 </MaskedView>

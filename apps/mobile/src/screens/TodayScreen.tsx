@@ -49,7 +49,7 @@ import {
   type ActionWithContext,
 } from '../components/Today'
 import { XPBoostButton } from '../components/ads'
-import { Grid3X3, ChevronDown, ChevronRight, Settings } from 'lucide-react-native'
+import { Grid3X3, ChevronDown, ChevronRight, Settings, CheckCircle } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { BannerAd } from '../components/ads'
@@ -191,20 +191,24 @@ export default function TodayScreen() {
     setActiveFilters(new Set())
   }, [])
 
-  // Separate configured and unconfigured actions
-  const { configuredActions, unconfiguredActions } = useMemo(() => {
+  // Separate configured, unconfigured, and completed actions
+  const { configuredActions, unconfiguredActions, completedActions } = useMemo(() => {
     const configured: typeof actions = []
     const unconfigured: typeof actions = []
+    const completed: typeof actions = []
 
     actions.forEach((action) => {
-      if (isActionConfigured(action)) {
-        configured.push(action)
-      } else {
+      if (!isActionConfigured(action)) {
         unconfigured.push(action)
+      } else if (action.period_progress?.isCompleted && !action.is_checked) {
+        // Period target completed and not checked today - move to completed section
+        completed.push(action)
+      } else {
+        configured.push(action)
       }
     })
 
-    return { configuredActions: configured, unconfiguredActions: unconfigured }
+    return { configuredActions: configured, unconfiguredActions: unconfigured, completedActions: completed }
   }, [actions])
 
   // Filter configured actions based on type and shouldShowToday logic
@@ -213,12 +217,6 @@ export default function TodayScreen() {
       // Apply shouldShowToday logic
       const shouldShow = shouldShowToday(action, selectedDate)
       if (!shouldShow) return false
-
-      // Hide actions that have completed their period target
-      // UNLESS they are checked on the current selected date (so user can uncheck)
-      if (action.period_progress?.isCompleted && !action.is_checked) {
-        return false
-      }
 
       // Apply type filters (multiple selection)
       // If no filters selected, show all types
@@ -229,8 +227,9 @@ export default function TodayScreen() {
     })
   }, [configuredActions, activeFilters, selectedDate])
 
-  // State for unconfigured section collapse
+  // State for unconfigured and completed section collapse
   const [unconfiguredCollapsed, setUnconfiguredCollapsed] = useState(true)
+  const [completedCollapsed, setCompletedCollapsed] = useState(true)
 
   // Group actions by mandalart and sort by sub_goal.position, then action.position
   const actionsByMandalart = useMemo(() => {
@@ -867,6 +866,80 @@ export default function TodayScreen() {
                     </View>
                   )
                 })()}
+              </Animated.View>
+            )}
+
+            {/* Completed Actions Section - Period target achieved */}
+            {completedActions.length > 0 && (
+              <Animated.View
+                entering={FadeInUp.delay(400).duration(400)}
+                className="mb-4"
+              >
+                {/* Section Header */}
+                <Pressable
+                  onPress={() => setCompletedCollapsed(!completedCollapsed)}
+                  className="flex-row items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200"
+                >
+                  <View className="flex-1">
+                    <View className="flex-row items-center">
+                      <CheckCircle size={16} color="#16a34a" />
+                      <Text
+                        className="text-base font-semibold text-gray-900 ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('today.completed.title')}
+                      </Text>
+                      <Text className="text-sm text-gray-500 ml-2">
+                        {completedActions.length}
+                      </Text>
+                    </View>
+                    <Text
+                      className="text-sm text-gray-500 mt-1"
+                      numberOfLines={1}
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('today.completed.hint')}
+                    </Text>
+                  </View>
+                  {completedCollapsed ? (
+                    <ChevronRight size={20} color="#16a34a" />
+                  ) : (
+                    <ChevronDown size={20} color="#16a34a" />
+                  )}
+                </Pressable>
+
+                {/* Completed Items */}
+                {!completedCollapsed && (
+                  <View className="mt-2 space-y-2">
+                    {completedActions.map((action) => (
+                      <View
+                        key={action.id}
+                        className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200 opacity-60"
+                      >
+                        <View className="flex-1">
+                          <Text
+                            className="text-base text-gray-900"
+                            numberOfLines={1}
+                          >
+                            {action.title}
+                          </Text>
+                          <Text
+                            className="text-xs text-gray-400 mt-1"
+                            numberOfLines={1}
+                          >
+                            {action.sub_goal.title}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center bg-green-50 px-2 py-1 rounded-lg border border-green-200">
+                          <CheckCircle size={14} color="#16a34a" />
+                          <Text className="text-xs text-green-600 ml-1">
+                            {t('today.completed.badge')}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </Animated.View>
             )}
           </>
