@@ -215,9 +215,10 @@ export default function LoginScreen() {
 
                   {/* Language Dropdown */}
                   {showLanguageDropdown && (
-                    <View
+                    <Pressable
                       className="absolute top-12 right-0 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
                       style={{ minWidth: 140, elevation: 5 }}
+                      onPress={(e) => e.stopPropagation()}
                     >
                       {LANGUAGES.map((lang) => (
                         <Pressable
@@ -238,7 +239,7 @@ export default function LoginScreen() {
                           )}
                         </Pressable>
                       ))}
-                    </View>
+                    </Pressable>
                   )}
                 </View>
               </View>
