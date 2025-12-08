@@ -570,6 +570,8 @@ function getLocalizedPrompts(language: Language) {
       system: isEnglish
         ? `You are a data analysis expert. Analyze user's practice patterns and provide insights.
 
+IMPORTANT: You MUST respond in English only. The input data may contain non-English text (like Korean), but your response MUST be entirely in English.
+
 You must respond ONLY in valid JSON format. Do NOT use markdown code blocks.
 
 Exact JSON format:
@@ -675,7 +677,7 @@ Analysis Perspectives:
 3. Interpret week-over-week change trends
 4. Provide 1 actionable step for next week
 
-Respond in JSON format with actual numbers in key_metrics.`
+IMPORTANT: Respond in JSON format with actual numbers in key_metrics. Write ALL text content in English only.`
           : `다음 데이터에서 패턴을 찾아 인사이트를 제공하세요:
 
 [실천 현황]
@@ -712,6 +714,8 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
     diagnosis: {
       system: isEnglish
         ? `You are a Mandalart plan review expert. Provide specific and actionable improvement directions.
+
+IMPORTANT: You MUST respond in English only. The input data may contain non-English text (like Korean), but your response MUST be entirely in English.
 
 You must respond ONLY in valid JSON format. Do NOT use markdown code blocks.
 
@@ -812,7 +816,7 @@ Analysis Perspectives:
 3. Measurability evaluation (whether achievement can be verified by frequency settings)
 4. Balanced goal composition (excluding reference items)
 
-Respond in JSON format with actual numbers in structure_metrics.`
+IMPORTANT: Respond in JSON format with actual numbers in structure_metrics. Write ALL text content in English only.`
           : `만다라트 구조를 분석하여 개선점을 제시하세요:
 
 [기본 정보]
@@ -841,7 +845,9 @@ JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함�
 
     default: {
       system: isEnglish
-        ? `You are a goal achievement coach. Provide simple and useful insights.`
+        ? `You are a goal achievement coach. Provide simple and useful insights.
+
+IMPORTANT: You MUST respond in English only, regardless of input data language.`
         : `당신은 목표 달성 코치입니다. 간단하고 유용한 인사이트를 제공하세요.`,
     },
 

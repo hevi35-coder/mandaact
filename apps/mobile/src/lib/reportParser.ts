@@ -9,7 +9,11 @@ import {
   parseWeeklyReport as sharedParseWeeklyReport,
   parseDiagnosisReport as sharedParseDiagnosisReport,
   ReportSummary as SharedReportSummary,
+  ReportErrorReason,
 } from '@mandaact/shared'
+
+// Re-export ReportErrorReason for use in components
+export type { ReportErrorReason } from '@mandaact/shared'
 
 /**
  * Mapping of Korean metric labels to i18n keys
@@ -60,6 +64,7 @@ export interface ReportSummary {
     }>
   }
   actionPlan: string[]
+  errorReason?: ReportErrorReason
 }
 
 /**
@@ -72,6 +77,7 @@ function adaptToMobileFormat(shared: SharedReportSummary): ReportSummary {
     strengths: [],
     improvements: {},
     actionPlan: [],
+    errorReason: shared.errorReason,
   }
 
   // Parse markdown detailContent into structured arrays
@@ -119,11 +125,12 @@ export function parseWeeklyReport(content: string): ReportSummary {
   } catch (error) {
     console.error('Error parsing weekly report:', error)
     return {
-      headline: '리포트를 분석할 수 없습니다',
+      headline: '',
       metrics: [],
       strengths: [],
       improvements: {},
       actionPlan: [],
+      errorReason: 'parseError',
     }
   }
 }
@@ -139,11 +146,12 @@ export function parseDiagnosisReport(content: string): ReportSummary {
   } catch (error) {
     console.error('Error parsing diagnosis report:', error)
     return {
-      headline: '진단을 분석할 수 없습니다',
+      headline: '',
       metrics: [],
       strengths: [],
       improvements: {},
       actionPlan: [],
+      errorReason: 'parseError',
     }
   }
 }
