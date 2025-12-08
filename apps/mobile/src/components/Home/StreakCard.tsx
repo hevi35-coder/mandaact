@@ -21,7 +21,8 @@ export function StreakCard({
     fourWeekData,
     fourWeekLoading,
 }: StreakCardProps) {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
+    const locale = i18n.language === 'ko' ? 'ko-KR' : 'en-US'
 
     return (
         <Animated.View
@@ -62,12 +63,12 @@ export function StreakCard({
                         const dateObj = lastCheckDate instanceof Date
                             ? lastCheckDate
                             : new Date(lastCheckDate)
-                        const dateStr = dateObj.toLocaleDateString('ko-KR', {
+                        const dateStr = dateObj.toLocaleDateString(locale, {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
                         }).replace(/\. /g, '.').replace(/\.$/, '')
-                        const timeStr = dateObj.toLocaleTimeString('ko-KR', {
+                        const timeStr = dateObj.toLocaleTimeString(locale, {
                             hour: '2-digit',
                             minute: '2-digit',
                             hour12: true
@@ -104,12 +105,12 @@ export function StreakCard({
                         const dateObj = longestStreakDate instanceof Date
                             ? longestStreakDate
                             : new Date(longestStreakDate)
-                        const dateStr = dateObj.toLocaleDateString('ko-KR', {
+                        const dateStr = dateObj.toLocaleDateString(locale, {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
                         }).replace(/\. /g, '.').replace(/\.$/, '')
-                        const timeStr = dateObj.toLocaleTimeString('ko-KR', {
+                        const timeStr = dateObj.toLocaleTimeString(locale, {
                             hour: '2-digit',
                             minute: '2-digit',
                             hour12: true
