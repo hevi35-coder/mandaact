@@ -18,42 +18,42 @@ export const BADGE_CATEGORIES: BadgeCategory[] = [
     key: 'first_steps',
     icon: '🌱',
     title: '시작의 용기',
-    subtitle: 'First Steps',
+    subtitle: 'Getting Started',
     description: '천 리 길도 한 걸음부터'
   },
   {
     key: 'streak',
     icon: '🔥',
     title: '시간의 여정',
-    subtitle: 'The Journey of Time',
+    subtitle: 'Streak Badges',
     description: '3일의 시작에서 150일의 마스터까지'
   },
   {
     key: 'volume',
     icon: '💯',
     title: '반복의 미학',
-    subtitle: 'The Art of Repetition',
+    subtitle: 'Check Milestones',
     description: '첫 50회에서 5000회까지의 여정'
   },
   {
     key: 'achievement',
     icon: '⭐',
     title: '특별한 순간',
-    subtitle: 'Special Moments',
+    subtitle: 'Achievements',
     description: '오늘의 완성과 성장의 나무'
   },
   {
     key: 'monthly',
     icon: '🏆',
     title: '매달의 도전',
-    subtitle: 'Monthly Challenge',
+    subtitle: 'Monthly Challenges',
     description: '매달 새로운 도전, 반복되는 성취'
   },
   {
     key: 'secret',
     icon: '🌙',
     title: '숨겨진 이야기',
-    subtitle: 'Hidden Stories',
+    subtitle: 'Secret Badges',
     description: '예상치 못한 순간의 발견'
   }
 ]
