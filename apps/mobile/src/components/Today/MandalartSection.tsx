@@ -7,7 +7,7 @@
 import React from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, ChevronRight } from 'lucide-react-native'
+import { ChevronDown, ChevronRight, Grid3X3 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { ActionItem } from './ActionItem'
 import type { MandalartSectionProps } from './types'
@@ -48,7 +48,11 @@ export const MandalartSection = React.memo(({
             >
                 <View className="flex-1">
                     <View className="flex-row items-center">
-                        <Text className="text-base font-semibold text-gray-900">
+                        <Grid3X3 size={16} color="#6b7280" />
+                        <Text
+                            className="text-base font-semibold text-gray-900 ml-2"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
                             {mandalartTitle}
                         </Text>
                         <Text className="text-sm text-gray-500 ml-2">
@@ -58,6 +62,7 @@ export const MandalartSection = React.memo(({
                     <Text
                         className="text-sm text-gray-500 mt-1"
                         numberOfLines={1}
+                        style={{ fontFamily: 'Pretendard-Regular' }}
                     >
                         {t('today.coreGoal')}: {coreGoal}
                     </Text>
