@@ -1,6 +1,6 @@
-# MandaAct 개발 로드맵 v3.11
+# MandaAct 개발 로드맵 v3.12
 
-**최종 업데이트**: 2025-12-08 (Latest) - App Store 스크린샷/메타데이터 완료, 심사 제출 대기
+**최종 업데이트**: 2025-12-08 20:46 - Build 53 TestFlight 제출 완료
 **현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포 진행 중** 🔄
 
 ---
@@ -157,7 +157,8 @@
   - [ ] Android Tablet (추후)
 - [ ] iOS App Store 제출 ⏳ **심사 제출 대기**
   - [x] App Store Connect 앱 생성
-  - [x] TestFlight 베타 테스트 완료 (Build 40)
+  - [x] TestFlight 베타 테스트 (Build 53)
+  - [x] App Store Connect 메타데이터 입력 (가격, 연령등급, 개인정보)
   - [ ] 심사 제출 (다음 단계)
 - [ ] Android Google Play 제출 (추후 진행)
   - [ ] Google Play Console 앱 생성
@@ -243,7 +244,7 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
     └→ Phase 7: 기능 분기 처리 (1일)
 ```
 
-**현재 상태** (Build 37):
+**현재 상태** (Build 53):
 - ✅ 배너 광고 3개 화면 적용 (Home, List, Reports) - TodayScreen Clean Zone
 - ✅ XP 부스트 버튼 2개 화면 적용 (Home, Today) - 활성 만다라트 없으면 숨김
 - ✅ 보상형 광고 화면 연동 완료 (StreakFreeze, ReportGenerate)
@@ -252,6 +253,9 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 - ✅ ATT 권한 요청 팝업 타이밍 수정
 - ✅ Ad-Free Time 시스템 구현 (useAdFree 훅, AdFreeButton 컴포넌트)
 - ✅ TodayScreen Clean Zone 정책 적용 (배너 광고 제거)
+- ✅ iPad XP Boost 버튼 위치 수정 (ProfileCard 아래로 이동)
+- ✅ Supabase RLS 정책 수정 (user_subscriptions INSERT/UPDATE 허용)
+- ✅ 구독 시스템 코드 구현 완료 (useSubscription, SubscriptionScreen)
 
 **이점**:
 - ✅ 첫 심사에 완전한 버전 제출 (재심사 불필요)
