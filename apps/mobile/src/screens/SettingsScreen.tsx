@@ -35,6 +35,7 @@ import {
   Pencil,
   Globe,
   Play,
+  Crown,
 } from 'lucide-react-native'
 import * as Application from 'expo-application'
 import { useNavigation } from '@react-navigation/native'
@@ -423,6 +424,76 @@ export default function SettingsScreen() {
               </>
             )}
           </View>
+        </Animated.View>
+
+        {/* Premium Card */}
+        <Animated.View
+          entering={FadeInUp.delay(125).duration(400)}
+          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
+          }}
+        >
+          <Pressable
+            onPress={() => {
+              // TODO: Navigate to Premium screen
+            }}
+            className="flex-row items-center px-5 py-4"
+          >
+            {/* Gradient Crown Icon */}
+            <MaskedView
+              maskElement={
+                <Crown size={22} color="#000" />
+              }
+            >
+              <LinearGradient
+                colors={['#2563eb', '#9333ea', '#db2777']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Crown size={22} style={{ opacity: 0 }} />
+              </LinearGradient>
+            </MaskedView>
+
+            <View className="flex-1 ml-3">
+              {/* Gradient Title */}
+              <MaskedView
+                maskElement={
+                  <Text
+                    className="text-base"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
+                    {t('settings.premium.title')}
+                  </Text>
+                }
+              >
+                <LinearGradient
+                  colors={['#2563eb', '#9333ea', '#db2777']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text
+                    className="text-base opacity-0"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
+                    {t('settings.premium.title')}
+                  </Text>
+                </LinearGradient>
+              </MaskedView>
+              <Text
+                className="text-xs text-gray-500 mt-0.5"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.premium.benefits')}
+              </Text>
+            </View>
+
+            <ChevronRight size={18} color="#9ca3af" />
+          </Pressable>
         </Animated.View>
 
         {/* App Settings Section */}
