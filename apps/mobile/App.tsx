@@ -19,6 +19,7 @@ import {
   persistOptions,
 } from './src/lib/queryPersister'
 import { ErrorBoundary, ToastProvider } from './src/components'
+import { SubscriptionProvider } from './src/context'
 import {
   addNotificationResponseListener,
   addNotificationReceivedListener,
@@ -161,8 +162,10 @@ export default function App() {
               }}
             >
               <ToastProvider>
-                <StatusBar style="dark" />
-                <AppContent />
+                <SubscriptionProvider>
+                  <StatusBar style="dark" />
+                  <AppContent />
+                </SubscriptionProvider>
               </ToastProvider>
             </PersistQueryClientProvider>
           </ErrorBoundary>

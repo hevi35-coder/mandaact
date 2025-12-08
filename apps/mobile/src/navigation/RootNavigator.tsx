@@ -41,6 +41,7 @@ import ReportsScreen from '../screens/ReportsScreen'
 import TutorialScreen from '../screens/TutorialScreen'
 import LoginScreen from '../screens/LoginScreen'
 import LoadingScreen from '../screens/LoadingScreen'
+import SubscriptionScreen from '../screens/SubscriptionScreen'
 
 export type RootStackParamList = {
   Main: undefined
@@ -49,6 +50,7 @@ export type RootStackParamList = {
   CreateMandalart: undefined
   Settings: undefined
   Tutorial: undefined
+  Subscription: undefined
 }
 
 export type MainTabParamList = {
@@ -221,6 +223,13 @@ export default function RootNavigator() {
               options={{
                 presentation: 'fullScreenModal',
                 animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
+              name="Subscription"
+              component={SubscriptionScreen}
+              options={{
+                animation: 'slide_from_right',
               }}
             />
           </>

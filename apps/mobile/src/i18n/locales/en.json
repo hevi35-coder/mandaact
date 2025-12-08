@@ -241,6 +241,7 @@
       "periodicYearly": "Yearly"
     },
     "periodLabel": {
+      "오늘": "Today",
       "이번 주": "This week",
       "이번달": "This month",
       "이번 달": "This month",
@@ -629,7 +630,7 @@
     "email": "Email",
     "emailPlaceholder": "user@email.com",
     "password": "Password",
-    "passwordPlaceholder": "Password (8+ characters)",
+    "passwordPlaceholder": "Password (6+ characters)",
     "confirmPassword": "Confirm Password",
     "confirmPlaceholder": "Re-enter password",
     "signUpButton": "Sign Up",
@@ -637,7 +638,7 @@
     "login": "Sign In",
     "errors": {
       "passwordMismatch": "Passwords do not match",
-      "weakPassword": "Password must be at least 8 characters",
+      "weakPassword": "Password must be at least 6 characters",
       "emailInUse": "This email is already in use"
     }
   },
@@ -964,6 +965,59 @@
       "remaining": "{{time}} remaining",
       "alreadyActive": "Already active",
       "error": "Failed to activate"
+    }
+  },
+  "subscription": {
+    "title": "Premium",
+    "freePlan": "Free Plan",
+    "freeLimit": "{{count}} mandalarts limit",
+    "premiumActive": "Premium Active",
+    "activeSubscription": "Premium subscription active",
+    "lifetimeAccess": "Lifetime access",
+    "expiresAt": "Valid until {{date}}",
+    "autoRenew": "Auto-renews",
+    "cancelledNoRenew": "Will not renew",
+    "premiumBenefits": "Premium Benefits",
+    "benefits": {
+      "unlimitedMandalarts": "Unlimited mandalarts",
+      "unlimitedReports": "Unlimited AI reports",
+      "noAds": "Remove all ads",
+      "prioritySupport": "Priority support"
+    },
+    "choosePlan": "Choose Plan",
+    "plans": {
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "lifetime": "Lifetime"
+    },
+    "period": {
+      "month": "/ month",
+      "year": "/ year",
+      "once": "one-time"
+    },
+    "save": "Save {{percent}}%",
+    "bestValue": "Most Popular",
+    "oneTimePurchase": "One-time purchase, forever access",
+    "loadingPlans": "Loading plans...",
+    "noPlansAvailable": "No plans available at the moment",
+    "restorePurchases": "Restore Purchases",
+    "restoreTitle": "Restore Purchases",
+    "noSubscriptionFound": "No subscription to restore",
+    "restoreSuccess": "Restore Complete!",
+    "restoreSuccessDesc": "Your premium has been restored",
+    "restoreError": "Failed to restore purchases",
+    "purchaseSuccess": "Purchase Complete!",
+    "welcomePremium": "Welcome to Premium",
+    "purchaseError": "Purchase failed. Please try again.",
+    "manageSubscription": "Manage Subscription",
+    "manageTitle": "Manage Subscription",
+    "manageDescription": "You can manage your subscription in App Store settings.",
+    "termsNotice": "Payment will be charged to your Apple ID account. Subscription automatically renews 24 hours before the current period ends.",
+    "limitReached": {
+      "title": "Mandalart Limit",
+      "message": "Free plan allows up to {{count}} mandalarts.",
+      "upgrade": "Upgrade to Premium",
+      "later": "Later"
     }
   }
 }

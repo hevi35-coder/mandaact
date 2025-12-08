@@ -16,7 +16,7 @@ import {
   useWindowDimensions,
   Platform,
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { useScrollToTop } from '../navigation/RootNavigator'
@@ -31,6 +31,7 @@ import {
   useTodayActions,
   useToggleActionCheck,
   useUpdateAction,
+  actionKeys,
   // useYesterdayMissed, // DISABLED - rewarded ad feature removed per AdMob policy review
 } from '../hooks/useActions'
 import { useDailyStats, useXPUpdate, statsKeys } from '../hooks/useStats'
@@ -149,6 +150,18 @@ export default function TodayScreen() {
   const toggleCheck = useToggleActionCheck()
   const updateAction = useUpdateAction()
   const { awardXP, subtractXP, checkPerfectDay, checkPerfectWeek } = useXPUpdate()
+
+  // Invalidate and refetch data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        // Invalidate actions query to ensure fresh data
+        queryClient.invalidateQueries({ queryKey: actionKeys.lists() })
+        refetch()
+        refetchStats()
+      }
+    }, [user?.id, queryClient, refetch, refetchStats])
+  )
 
   // Handle date selection from picker
   const handleDateSelect = useCallback((date: Date) => {

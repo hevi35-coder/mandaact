@@ -258,9 +258,10 @@ export default function TutorialScreen() {
         {tutorialSteps.map((_, index) => (
           <View
             key={index}
-            className={`w-2 h-2 rounded-full mx-1 ${
-              index === currentStep ? 'bg-primary' : 'bg-gray-300'
-            }`}
+            className="w-2 h-2 rounded-full mx-1"
+            style={{
+              backgroundColor: index === currentStep ? '#667eea' : '#d1d5db',
+            }}
           />
         ))}
       </View>
@@ -271,7 +272,8 @@ export default function TutorialScreen() {
           <View className="flex-row" style={{ gap: 12, maxWidth: 500, alignSelf: 'center', width: '100%' }}>
             {currentStep > 0 && (
               <Pressable
-                className="flex-1 bg-gray-100 rounded-xl py-4 flex-row items-center justify-center"
+                className="flex-1 rounded-xl py-4 flex-row items-center justify-center"
+                style={{ backgroundColor: '#f3f4f6' }}
                 onPress={handlePrev}
               >
                 <ChevronLeft size={20} color="#374151" />
@@ -280,7 +282,8 @@ export default function TutorialScreen() {
             )}
 
             <Pressable
-              className="flex-1 bg-primary rounded-xl py-4 flex-row items-center justify-center"
+              className="flex-1 rounded-xl py-4 flex-row items-center justify-center"
+              style={{ backgroundColor: '#667eea' }}
               onPress={isLastStep ? handleComplete : handleNext}
             >
               <Text className="text-white font-medium mr-1">

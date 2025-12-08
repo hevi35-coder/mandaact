@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -10,13 +10,14 @@ import {
   Modal,
   ActivityIndicator,
   ScrollView,
+  type TextInput as TextInputType,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { X, Mail, Lock, Eye, EyeOff, Globe, ChevronDown, Check } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { changeLanguage, getCurrentLanguage, type SupportedLanguage } from '../i18n'
 import { useAuthStore } from '../store/authStore'
 import { parseError, ERROR_MESSAGES } from '../lib/errorHandling'
 import { trackLogin, trackSignup, identifyUser } from '../lib'
@@ -27,17 +28,23 @@ const LANGUAGES = [
 ]
 
 export default function LoginScreen() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false)
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getCurrentLanguage())
+  const passwordInputRef = useRef<TextInputType>(null)
 
   const handleLanguageChange = useCallback(async (langCode: string) => {
-    await i18n.changeLanguage(langCode)
-    await AsyncStorage.setItem('userLanguage', langCode)
+    // Close dropdown first
     setShowLanguageDropdown(false)
-  }, [i18n])
+    // Update local state immediately for UI responsiveness
+    setCurrentLang(langCode as SupportedLanguage)
+    // Use the centralized changeLanguage function from i18n module
+    // This ensures proper AsyncStorage key (@app_language) is used
+    await changeLanguage(langCode as SupportedLanguage)
+  }, [])
 
-  const currentLanguage = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0]
+  const currentLanguage = LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0]
   const [password, setPassword] = useState('')
   const [_confirmPassword, _setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -201,7 +208,7 @@ export default function LoginScreen() {
                 <Text className="text-2xl font-bold text-black">{t('login.title')}</Text>
 
                 {/* Language Selector */}
-                <View className="relative z-50">
+                <View>
                   <Pressable
                     onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
                     className="flex-row items-center bg-gray-100 rounded-full px-3 py-2"
@@ -212,35 +219,6 @@ export default function LoginScreen() {
                     </Text>
                     <ChevronDown size={14} color="#6b7280" />
                   </Pressable>
-
-                  {/* Language Dropdown */}
-                  {showLanguageDropdown && (
-                    <Pressable
-                      className="absolute top-12 right-0 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-                      style={{ minWidth: 140, elevation: 5 }}
-                      onPress={(e) => e.stopPropagation()}
-                    >
-                      {LANGUAGES.map((lang) => (
-                        <Pressable
-                          key={lang.code}
-                          onPress={() => handleLanguageChange(lang.code)}
-                          className={`flex-row items-center justify-between px-4 py-3 ${
-                            lang.code === i18n.language ? 'bg-primary/5' : ''
-                          }`}
-                        >
-                          <Text
-                            className={`text-sm ${lang.code === i18n.language ? 'text-primary' : 'text-gray-700'}`}
-                            style={{ fontFamily: lang.code === i18n.language ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
-                          >
-                            {lang.label}
-                          </Text>
-                          {lang.code === i18n.language && (
-                            <Check size={16} color="#2563eb" />
-                          )}
-                        </Pressable>
-                      ))}
-                    </Pressable>
-                  )}
                 </View>
               </View>
 
@@ -262,6 +240,9 @@ export default function LoginScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType="next"
+                    onSubmitEditing={() => passwordInputRef.current?.focus()}
+                    blurOnSubmit={false}
                   />
                 </View>
               </View>
@@ -275,6 +256,7 @@ export default function LoginScreen() {
                 >
                   <Lock size={18} color="#9ca3af" />
                   <TextInput
+                    ref={passwordInputRef}
                     className="flex-1 px-3 text-gray-900"
                     style={{ fontSize: 16, includeFontPadding: false, padding: 0, margin: 0 }}
                     placeholder={t('login.passwordPlaceholder')}
@@ -282,6 +264,8 @@ export default function LoginScreen() {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
+                    returnKeyType="go"
+                    onSubmitEditing={handleLogin}
                   />
                   <Pressable onPress={() => setShowPassword(!showPassword)} className="p-1">
                     {showPassword ? (
@@ -599,6 +583,63 @@ export default function LoginScreen() {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLanguageDropdown}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLanguageDropdown(false)}
+      >
+        <Pressable
+          className="flex-1 justify-center items-center bg-black/30"
+          onPress={() => setShowLanguageDropdown(false)}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl overflow-hidden"
+            style={{
+              minWidth: 200,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+              elevation: 8,
+            }}
+          >
+            {/* Header */}
+            <View className="px-4 py-3 border-b border-gray-100">
+              <Text className="text-base font-semibold text-gray-900" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                {t('settings.app.language')}
+              </Text>
+            </View>
+
+            {/* Language Options */}
+            {LANGUAGES.map((lang, index) => (
+              <Pressable
+                key={lang.code}
+                onPress={() => handleLanguageChange(lang.code)}
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? '#f3f4f6' : lang.code === currentLang ? 'rgba(37, 99, 235, 0.05)' : 'white',
+                })}
+                className={`flex-row items-center justify-between px-4 py-3.5 ${
+                  index < LANGUAGES.length - 1 ? 'border-b border-gray-100' : ''
+                }`}
+              >
+                <Text
+                  className={`text-base ${lang.code === currentLang ? 'text-primary' : 'text-gray-700'}`}
+                  style={{ fontFamily: lang.code === currentLang ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
+                >
+                  {lang.label}
+                </Text>
+                {lang.code === currentLang && (
+                  <Check size={18} color="#2563eb" />
+                )}
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   )

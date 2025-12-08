@@ -15,7 +15,10 @@ import {
   RefreshControl,
   useWindowDimensions,
   Platform,
+  Modal,
 } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Crown, X } from 'lucide-react-native'
 import { useScrollToTop } from '../navigation/RootNavigator'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -26,6 +29,7 @@ import {
   useToggleMandalartActive,
 } from '../hooks/useMandalarts'
 import { useAuthStore } from '../store/authStore'
+import { useSubscriptionContext, FREE_MANDALART_LIMIT } from '../context'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import { logger } from '../lib/logger'
 import {
@@ -42,6 +46,7 @@ export default function MandalartListScreen() {
   const { t } = useTranslation()
   const navigation = useNavigation<NavigationProp>()
   const { user } = useAuthStore()
+  const { canCreateMandalart, isPremium } = useSubscriptionContext()
 
   // iPad detection
   const { width: screenWidth } = useWindowDimensions()
@@ -53,6 +58,7 @@ export default function MandalartListScreen() {
 
   const [refreshing, setRefreshing] = useState(false)
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
+  const [showLimitModal, setShowLimitModal] = useState(false)
 
   // Data fetching
   const {
@@ -97,7 +103,17 @@ export default function MandalartListScreen() {
   )
 
   const handleCreateNew = useCallback(() => {
+    // Check mandalart limit for free users
+    if (!canCreateMandalart(mandalarts.length)) {
+      setShowLimitModal(true)
+      return
+    }
     navigation.navigate('CreateMandalart')
+  }, [navigation, canCreateMandalart, mandalarts.length])
+
+  const handleUpgradePremium = useCallback(() => {
+    setShowLimitModal(false)
+    navigation.navigate('Subscription')
   }, [navigation])
 
   const handleViewDetail = useCallback(
@@ -244,6 +260,86 @@ export default function MandalartListScreen() {
 
       {/* Banner Ad */}
       <BannerAd location="list" />
+
+      {/* Premium Limit Modal */}
+      <Modal
+        visible={showLimitModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLimitModal(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-4">
+          <View
+            className="bg-white rounded-2xl w-full overflow-hidden"
+            style={{ maxWidth: 400 }}
+          >
+            {/* Gradient Header */}
+            <LinearGradient
+              colors={['#7c3aed', '#2563eb']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="px-6 py-8 items-center"
+            >
+              <View className="w-16 h-16 rounded-full bg-white/20 items-center justify-center mb-4">
+                <Crown size={32} color="#fbbf24" fill="#fbbf24" />
+              </View>
+              <Text
+                className="text-xl text-white text-center"
+                style={{ fontFamily: 'Pretendard-Bold' }}
+              >
+                {t('subscription.limitReached.title')}
+              </Text>
+              <Text
+                className="text-white/80 text-center mt-2"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('subscription.limitReached.message', { count: FREE_MANDALART_LIMIT })}
+              </Text>
+            </LinearGradient>
+
+            {/* Actions */}
+            <View className="p-6">
+              <Pressable
+                onPress={handleUpgradePremium}
+                className="bg-violet-600 rounded-xl py-4 items-center mb-3"
+                style={{
+                  shadowColor: '#7c3aed',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <Text
+                  className="text-white text-base"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  {t('subscription.limitReached.upgrade')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowLimitModal(false)}
+                className="py-3 items-center"
+              >
+                <Text
+                  className="text-gray-500 text-base"
+                  style={{ fontFamily: 'Pretendard-Medium' }}
+                >
+                  {t('subscription.limitReached.later')}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Close Button */}
+            <Pressable
+              onPress={() => setShowLimitModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 items-center justify-center"
+            >
+              <X size={18} color="white" />
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }

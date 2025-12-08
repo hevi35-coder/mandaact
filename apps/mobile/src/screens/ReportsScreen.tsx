@@ -152,7 +152,17 @@ function ReportCard({
     >
       {/* Loading Overlay - shown when generating */}
       {isGenerating && (
-        <View className="absolute inset-0 bg-white/80 z-10 items-center justify-center rounded-2xl">
+        <View
+          className="absolute z-10 bg-white/90 rounded-2xl"
+          style={{
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           <ActivityIndicator size="large" color="#2563eb" />
           <Text
             className="text-sm text-gray-700 mt-2"

@@ -243,6 +243,9 @@ importers:
       react-native-google-mobile-ads:
         specifier: ^16.0.0
         version: 16.0.0(expo@52.0.47(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      react-native-purchases:
+        specifier: ^9.6.9
+        version: 9.6.9(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1)
       react-native-reanimated:
         specifier: 'catalog:'
         version: 3.16.7(@babel/core@7.28.5)(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1)
@@ -2489,6 +2492,15 @@ packages:
   '@remix-run/router@1.23.1':
     resolution: {integrity: sha512-vDbaOzF7yT2Qs4vO6XV1MHcJv+3dgR1sT+l3B8xxOVhUC336prMvqrvsLL/9Dnw2xr6Qhz4J0dmS0llNAbnUmQ==}
     engines: {node: '>=14.0.0'}
+
+  '@revenuecat/purchases-js-hybrid-mappings@17.21.2':
+    resolution: {integrity: sha512-bUVtF95Rl6bsD/Abw9lotTCdi1JV1e4qLHWPoLhi1P5Ay1zAUZdX9PCxQ1rIQar207+8dM1AGmT9vFcYAJW2hA==}
+
+  '@revenuecat/purchases-js@1.18.4':
+    resolution: {integrity: sha512-Fygh0NHzKDg94Soib6BpJMoK4AyTsomeo/NyM3OQqDMAc0zpZfJc3Bvo+TnnZa0KeYMUR9dCmlYVxGc5U4IdeQ==}
+
+  '@revenuecat/purchases-typescript-internal@17.21.2':
+    resolution: {integrity: sha512-zsGlzUCO91oMPMz9RNXSzJiFemxGZ6ir2YFobWlkRPjP6dXOHcex6i1HPY0vsL6v6a75Tbv+c2Fo4N76PF5EFg==}
 
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
@@ -6112,6 +6124,16 @@ packages:
       expo: '>=47.0.0'
     peerDependenciesMeta:
       expo:
+        optional: true
+
+  react-native-purchases@9.6.9:
+    resolution: {integrity: sha512-Fk5ZpMKPE0H0wNjpDjizLP1QcO+erh2uv54B6lXn6+ZKZJsHzFuUq9HUPwykT3j2yzMZ0Zd+i/tvwTpLedWmMg==}
+    peerDependencies:
+      react: '>= 16.6.3'
+      react-native: '>= 0.73.0'
+      react-native-web: '*'
+    peerDependenciesMeta:
+      react-native-web:
         optional: true
 
   react-native-reanimated@3.16.7:
@@ -9874,6 +9896,14 @@ snapshots:
       react-redux: 9.2.0(@types/react@18.3.27)(react@18.3.1)(redux@5.0.1)
 
   '@remix-run/router@1.23.1': {}
+
+  '@revenuecat/purchases-js-hybrid-mappings@17.21.2':
+    dependencies:
+      '@revenuecat/purchases-js': 1.18.4
+
+  '@revenuecat/purchases-js@1.18.4': {}
+
+  '@revenuecat/purchases-typescript-internal@17.21.2': {}
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
@@ -13935,6 +13965,13 @@ snapshots:
       expo: 52.0.47(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - react
+
+  react-native-purchases@9.6.9(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@revenuecat/purchases-js-hybrid-mappings': 17.21.2
+      '@revenuecat/purchases-typescript-internal': 17.21.2
+      react: 18.3.1
+      react-native: 0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1)
 
   react-native-reanimated@3.16.7(@babel/core@7.28.5)(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1):
     dependencies:

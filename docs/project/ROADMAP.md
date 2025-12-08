@@ -1,7 +1,7 @@
-# MandaAct 개발 로드맵 v3.10
+# MandaAct 개발 로드맵 v3.11
 
-**최종 업데이트**: 2025-12-07 (Latest) - AdMob Phase 10.2.6 수익화 고도화 완료
-**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | **Phase 10.2 AdMob 완료** ✅
+**최종 업데이트**: 2025-12-08 (Latest) - App Store 스크린샷/메타데이터 완료, 심사 제출 대기
+**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포 진행 중** 🔄
 
 ---
 
@@ -135,44 +135,43 @@
 
 ---
 
-### 10.3 스토어 배포 ⏳ **대기 중**
+### 10.3 스토어 배포 🔄 **진행 중** (2025-12-08)
 
 **목표**: iOS App Store + Android Google Play 동시 배포
 
 **작업 목록**:
-- [ ] EAS Build 설정
-  - [ ] `eas.json` 설정 (production 프로필)
-  - [ ] iOS 인증서/프로비저닝 설정
+- [x] EAS Build 설정
+  - [x] `eas.json` 설정 (production 프로필)
+  - [x] iOS 인증서/프로비저닝 설정
   - [ ] Android 키스토어 생성
-- [ ] 앱 메타데이터 준비
-  - [ ] 앱 이름, 부제목
-  - [ ] 앱 설명 (한국어/영어)
-  - [ ] 키워드
-  - [ ] 카테고리 선택 (생산성)
-  - [ ] 개인정보처리방침 URL
-- [ ] 앱 스크린샷 (광고 포함 상태)
-  - [ ] iPhone 6.7" (iPhone 15 Pro Max)
-  - [ ] iPhone 6.5" (iPhone 14 Plus)
-  - [ ] iPad Pro 12.9"
-  - [ ] Android Phone
-  - [ ] Android Tablet
-- [ ] iOS App Store 제출
-  - [ ] App Store Connect 앱 생성
-  - [ ] TestFlight 베타 테스트 (선택)
-  - [ ] 심사 제출
-- [ ] Android Google Play 제출
+- [x] 앱 메타데이터 준비 ✅ **완료** (2025-12-08)
+  - [x] 앱 이름, 부제목
+  - [x] 앱 설명 (한국어/영어)
+  - [x] 키워드
+  - [x] 카테고리 선택 (생산성)
+  - [x] 개인정보처리방침 URL
+- [x] 앱 스크린샷 ✅ **완료** (2025-12-08)
+  - [x] iPhone 6.7" (1284x2778) - 영어/한국어 각 5장
+  - [ ] iPad Pro 12.9" (추후)
+  - [ ] Android Phone (추후)
+  - [ ] Android Tablet (추후)
+- [ ] iOS App Store 제출 ⏳ **심사 제출 대기**
+  - [x] App Store Connect 앱 생성
+  - [x] TestFlight 베타 테스트 완료 (Build 40)
+  - [ ] 심사 제출 (다음 단계)
+- [ ] Android Google Play 제출 (추후 진행)
   - [ ] Google Play Console 앱 생성
   - [ ] 내부 테스트 트랙
   - [ ] 프로덕션 출시
 
-**예상 소요**: 1-2일
+**예상 소요**: 심사 제출 후 1-3일 (Apple 심사 기간)
 
 ---
 
-### 10.4 Premium 구독 시스템 ⏳ **계획 완료, 구현 대기**
+### 10.4 Premium 구독 시스템 🔄 **코드 구현 완료, 설정 대기**
 
 **목표**: 무료/유료 모델로 지속 가능한 수익 구조 확립
-**상세 전략**: [`ADMOB_MONETIZATION_STRATEGY.md` 섹션 5](../features/ADMOB_MONETIZATION_STRATEGY.md#5-무료유료-모델-설계)
+**상세 전략**: [`PREMIUM_PRICING_PLAN.md`](../features/PREMIUM_PRICING_PLAN.md)
 
 #### 10.4.1 무료 vs Premium 기능 비교
 | 기능 | 무료 | Premium |
@@ -181,30 +180,44 @@
 | AI 리포트 | 주 1회 (or 광고) | 무제한 |
 | 광고 | 배너 + 전면 | 없음 |
 | XP 부스트 | 광고 시청 | 매일 1회 무료 |
-| 스트릭 프리즈 | 광고 시청 | 월 4회 무료 |
 
-#### 10.4.2 가격 전략
-| 옵션 | 가격 | 월 환산 |
-|------|------|---------|
-| 월간 구독 | 4,900원/월 | 4,900원 |
-| 연간 구독 | 39,000원/년 | 3,250원 (33% 할인) |
-| 평생 이용권 | 99,000원 | 일회성 |
+#### 10.4.2 가격 전략 (확정)
+| 옵션 | KRW | USD | 비고 |
+|------|-----|-----|------|
+| 월간 구독 | ₩4,400 | $3.99 | 기본 요금 |
+| 연간 구독 | ₩33,000 | $29.99 | 38% 할인 |
 
-#### 10.4.3 구현 작업 목록 (Phase 6-7) - 3일
-- [ ] DB 마이그레이션
-  - [ ] `user_subscriptions` 테이블 생성
-- [ ] IAP SDK 통합
-  - [ ] `react-native-purchases` (RevenueCat) 설치
-  - [ ] iOS/Android 상품 등록
-- [ ] 구독 상태 관리
-  - [ ] `useSubscription` 훅 구현
-  - [ ] `SubscriptionContext` 전역 상태
-- [ ] Premium 기능 분기 처리
-  - [ ] 만다라트 개수 제한 체크
-  - [ ] 광고 표시 조건 분기
-  - [ ] 리포트/프리즈 무제한 해제
+#### 10.4.3 구현 작업 목록
+- [x] DB 마이그레이션 준비 ✅
+  - [x] `user_subscriptions` 테이블 스키마 (`20251207000001_add_user_subscriptions.sql`)
+  - [ ] 프로덕션 DB에 마이그레이션 실행 (`npx supabase db push`)
+- [x] IAP SDK 통합 ✅
+  - [x] `react-native-purchases` v9.6.9 설치
+  - [x] RevenueCat 초기화 코드 (`initializeRevenueCat`)
+  - [ ] **App Store Connect IAP 상품 등록** (월간/연간)
+  - [ ] **RevenueCat 대시보드 설정** (Products, Offerings)
+- [x] 구독 상태 관리 ✅
+  - [x] `useSubscription` 훅 구현 (350줄)
+  - [x] `SubscriptionContext` 전역 상태
+  - [x] `SubscriptionScreen` UI 완성 (498줄)
+- [x] Premium 기능 분기 처리 ✅
+  - [x] MandalartListScreen: 만다라트 개수 제한 체크
+  - [x] SettingsScreen: 구독 상태 표시
+  - [x] BannerAd: isPremium 시 광고 숨김 (구현 필요)
 
-**예상 소요**: 3일 (Phase 6-7)
+#### 10.4.4 남은 작업 (외부 설정)
+1. **App Store Connect**
+   - [ ] IAP 상품 생성 (Auto-Renewable Subscription)
+   - [ ] Product ID: `com.mandaact.sub.premium.monthly`, `com.mandaact.sub.premium.yearly`
+   - [ ] 가격 설정 (KRW ₩4,400 / $3.99)
+2. **RevenueCat Dashboard**
+   - [ ] Products 추가 (App Store Connect 연동)
+   - [ ] Offering 생성 및 Current로 설정
+   - [ ] Entitlement "premium" 생성
+3. **Supabase**
+   - [ ] `npx supabase db push` 실행 (user_subscriptions 테이블)
+
+**예상 소요**: 0.5일 (외부 설정만 남음)
 
 ---
 
@@ -1084,24 +1097,27 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ## 🎉 주요 성과
 
-### 현재 진행 중 (2025-12-07)
+### 현재 진행 중 (2025-12-08)
+🔄 **Phase 10.3 스토어 배포 진행 중**
+  - ✅ App Store 스크린샷 완료 (영어/한국어 각 5장, 1284x2778)
+  - ✅ 앱 메타데이터 입력 완료 (이름, 설명, 키워드)
+  - ✅ Build 40 TestFlight 배포 완료
+  - ⏳ 심사 제출 대기 중 (다음 단계)
+
+### 이전 완료 (2025-12-07)
 ✅ **Phase 10.2 AdMob 광고 연동 완료**
-  - ✅ Build 35 TestFlight 제출 완료
+  - ✅ Build 35-40 TestFlight 제출 완료
   - ✅ AdMob SDK 통합 및 배너 광고 (Phase 1 완료)
   - ✅ XP 부스트 보상형 광고 (Phase 2 완료)
   - ✅ 추가 보상형 광고 화면 연동 완료 (Phase 3 완료)
-    - StreakFreezeButton: StreakCard 내 배치
     - ReportGenerateButton: ReportsScreen에 배치
+    - ❌ StreakFreezeButton, YesterdayCheckButton: AdMob 정책으로 비활성화
   - ✅ 전면 광고 트리거 연동 완료 (Phase 4 완료)
     - 만다라트 생성 완료 시, 리포트 생성 완료 시
     - ❌ 레벨업 전면 광고 비활성화 (사용자 경험 저하)
   - ✅ ATT 권한 요청 팝업 타이밍 수정 (Phase 5 완료)
-
-🔄 **Build 37 준비 중**
-  - TodayScreen Clean Zone 적용 (배너 광고 제거)
-  - Ad-Free Time 시스템 (useAdFree 훅, AdFreeButton 컴포넌트)
-  - BannerAd에 Ad-Free 상태 체크 로직 추가
-  - 영문/한국어 번역 추가 (ads.adFree 섹션)
+  - ✅ TodayScreen Clean Zone 적용 (배너 광고 제거)
+  - ✅ Ad-Free Time 시스템 구현 (useAdFree 훅, AdFreeButton 컴포넌트)
 
 ### 이전 진행 (2025-12-06)
 ✅ **Phase 10.1 CI/CD 파이프라인 완료**
@@ -1192,6 +1208,6 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ---
 
-**문서 버전**: 3.10
-**최종 수정**: 2025-12-07
+**문서 버전**: 3.11
+**최종 수정**: 2025-12-08
 **작성자**: Development Team

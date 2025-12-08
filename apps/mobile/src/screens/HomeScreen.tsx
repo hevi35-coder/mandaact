@@ -159,6 +159,18 @@ export default function HomeScreen() {
                 translateBadge={translateBadge}
                 onBadgePress={(badge) => setSelectedBadge(badge)}
               />
+
+              {/* XP Boost Button - Below ProfileCard on iPad */}
+              {isTablet && (
+                <XPBoostButton
+                  hasActiveMandalarts={hasActiveMandalarts}
+                  onBoostActivated={() => {
+                    if (user?.id) {
+                      xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
+                    }
+                  }}
+                />
+              )}
             </View>
 
             {/* XP Boost Section - Between Profile and Streak on Phone */}
@@ -189,21 +201,6 @@ export default function HomeScreen() {
                 fourWeekLoading={fourWeekLoading}
               />
             </View>
-
-            {/* XP Boost & Streak Freeze Section - After cards on Tablet */}
-            {isTablet && (
-              <>
-                <XPBoostButton
-                  hasActiveMandalarts={hasActiveMandalarts}
-                  onBoostActivated={() => {
-                    if (user?.id) {
-                      xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
-                    }
-                  }}
-                />
-
-              </>
-            )}
           </View>
           {/* End of iPad 2-column layout */}
 

@@ -78,3 +78,13 @@ export type { UserProfile } from './useUserProfile'
 export { useRewardedAd } from './useRewardedAd'
 export { useInterstitialAd } from './useInterstitialAd'
 export { useAdFree } from './useAdFree'
+
+// Subscription hooks
+export {
+  useSubscription,
+  initializeRevenueCat,
+  hasActiveEntitlement,
+  FREE_MANDALART_LIMIT,
+  FREE_WEEKLY_REPORT_LIMIT,
+} from './useSubscription'
+export type { SubscriptionStatus, SubscriptionInfo } from './useSubscription'

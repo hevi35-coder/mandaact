@@ -16,6 +16,7 @@ import {
   markInterstitialShown,
 } from '../lib/ads'
 import { useAuthStore } from '../store/authStore'
+import { useSubscriptionContextSafe } from '../context'
 import { logger } from '../lib/logger'
 
 type InterstitialAdType =
@@ -49,9 +50,13 @@ export function useInterstitialAd({
   const adRef = useRef<InterstitialAd | null>(null)
   const unsubscribersRef = useRef<(() => void)[]>([])
 
+  // Check premium status - don't show ads to premium users
+  const subscription = useSubscriptionContextSafe()
+  const isPremium = subscription?.isPremium ?? false
+
   // Check new user protection - don't show interstitial ads to new users
   const adRestriction = getNewUserAdRestriction(user?.created_at ?? null)
-  const canShowAds = adRestriction === 'full'
+  const canShowAds = !isPremium && adRestriction === 'full'
 
   const adUnitId = AD_UNITS[adType]
 

@@ -43,6 +43,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Header } from '../components'
 import { Toggle } from '../components/ui/Toggle'
 import { useAuthStore } from '../store/authStore'
+import { useSubscriptionContext } from '../context'
 import { useAdFree, useRewardedAd } from '../hooks'
 import { useToast } from '../components/Toast'
 import type { RootStackParamList } from '../navigation/RootNavigator'
@@ -84,6 +85,7 @@ export default function SettingsScreen() {
   const queryClient = useQueryClient()
   const { t, i18n } = useTranslation()
   const { user, signOut, loading } = useAuthStore()
+  const { isPremium, subscriptionInfo } = useSubscriptionContext()
   const { data: gamification } = useUserGamification(user?.id)
   const {
     isEnabled: notificationsEnabled,
@@ -345,519 +347,10 @@ export default function SettingsScreen() {
         {/* Content Container - max width for tablet */}
         <View style={{ width: '100%', maxWidth: 500 }}>
 
-        {/* User Info Card */}
-        <Animated.View
-          entering={FadeInUp.delay(100).duration(400)}
-          className="bg-white rounded-2xl p-5 mb-5 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-        >
-          {/* Nickname and Email row */}
-          <View className="flex-row items-center">
-            <Pressable
-              onPress={handleOpenNicknameModal}
-              className="flex-row items-center"
-            >
-              <Text
-                className="text-base text-gray-900"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                {nickname || t('home.nickname.placeholder')}
-              </Text>
-              <Pencil size={14} color="#9ca3af" style={{ marginLeft: 4 }} />
-            </Pressable>
-            <Text
-              className="text-sm text-gray-400 ml-2"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {user?.email}
-            </Text>
-          </View>
-
-          {/* Stats row */}
-          <View className="flex-row items-center mt-2">
-            <View className="bg-primary/10 px-2 py-0.5 rounded-full">
-              <Text
-                className="text-xs text-primary"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                Lv. {currentLevel}
-              </Text>
-            </View>
-            <Text
-              className="text-sm text-gray-500 ml-2"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {totalXP.toLocaleString()} XP
-            </Text>
-            {user?.created_at && (
-              <>
-                <Text className="text-gray-300 mx-2">·</Text>
-                <MaskedView
-                  maskElement={
-                    <Text
-                      className="text-sm"
-                      style={{ fontFamily: 'Pretendard-Medium' }}
-                    >
-                      {t('settings.daysWithUs', { days: differenceInCalendarDays(new Date(), new Date(user.created_at)) + 1 })}
-                    </Text>
-                  }
-                >
-                  <LinearGradient
-                    colors={['#2563eb', '#9333ea', '#db2777']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Text
-                      className="text-sm opacity-0"
-                      style={{ fontFamily: 'Pretendard-Medium' }}
-                    >
-                      {t('settings.daysWithUs', { days: differenceInCalendarDays(new Date(), new Date(user.created_at)) + 1 })}
-                    </Text>
-                  </LinearGradient>
-                </MaskedView>
-              </>
-            )}
-          </View>
-        </Animated.View>
-
-        {/* Premium Card */}
-        <Animated.View
-          entering={FadeInUp.delay(125).duration(400)}
-          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-        >
-          <Pressable
-            onPress={() => {
-              // TODO: Navigate to Premium screen
-            }}
-            className="flex-row items-center px-5 py-4"
-          >
-            {/* Gradient Crown Icon */}
-            <MaskedView
-              maskElement={
-                <Crown size={22} color="#000" />
-              }
-            >
-              <LinearGradient
-                colors={['#2563eb', '#9333ea', '#db2777']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Crown size={22} style={{ opacity: 0 }} />
-              </LinearGradient>
-            </MaskedView>
-
-            <View className="flex-1 ml-3">
-              {/* Gradient Title */}
-              <MaskedView
-                maskElement={
-                  <Text
-                    className="text-base"
-                    style={{ fontFamily: 'Pretendard-SemiBold' }}
-                  >
-                    {t('settings.premium.title')}
-                  </Text>
-                }
-              >
-                <LinearGradient
-                  colors={['#2563eb', '#9333ea', '#db2777']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text
-                    className="text-base opacity-0"
-                    style={{ fontFamily: 'Pretendard-SemiBold' }}
-                  >
-                    {t('settings.premium.title')}
-                  </Text>
-                </LinearGradient>
-              </MaskedView>
-              <Text
-                className="text-xs text-gray-500 mt-0.5"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {t('settings.premium.benefits')}
-              </Text>
-            </View>
-
-            <ChevronRight size={18} color="#9ca3af" />
-          </Pressable>
-        </Animated.View>
-
-        {/* App Settings Section */}
-        <Text
-          className="text-sm text-gray-500 mb-2 ml-1"
-          style={{ fontFamily: 'Pretendard-SemiBold' }}
-        >
-          {t('settings.app.title')}
-        </Text>
-        <Animated.View
-          entering={FadeInUp.delay(150).duration(400)}
-          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-        >
-          {/* Language Setting */}
-          <Pressable
-            onPress={() => setShowLanguageModal(true)}
-            className="flex-row items-center px-5 py-4 border-b border-gray-100"
-          >
-            <Globe size={22} color="#6b7280" />
-            <Text
-              className="flex-1 ml-3 text-base text-gray-900"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('settings.app.language')}
-            </Text>
-            <Text
-              className="text-sm text-gray-400 mr-1"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {currentLanguageDisplay}
-            </Text>
-            <ChevronRight size={18} color="#9ca3af" />
-          </Pressable>
-
-          {/* Timezone Setting */}
-          <Pressable
-            onPress={() => setShowTimezoneModal(true)}
-            className="flex-row items-center px-5 py-4"
-          >
-            <Clock size={22} color="#6b7280" />
-            <Text
-              className="flex-1 ml-3 text-base text-gray-900"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('settings.app.timezone')}
-            </Text>
-            <Text
-              className="text-sm text-gray-400 mr-1"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {currentTimezoneDisplay}
-            </Text>
-            <ChevronRight size={18} color="#9ca3af" />
-          </Pressable>
-        </Animated.View>
-
-        {/* Focus Mode Section */}
-        <Text
-          className="text-sm text-gray-500 mb-2 ml-1"
-          style={{ fontFamily: 'Pretendard-SemiBold' }}
-        >
-          {t('settings.focus.title')}
-        </Text>
-        <Animated.View
-          entering={FadeInUp.delay(175).duration(400)}
-          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-        >
-          <Pressable
-            onPress={handleFocusModePress}
-            disabled={isAdLoading || isActivatingFocus || isAdFreeLoading}
-            className="flex-row items-center px-5 py-4"
-          >
-            <Shield size={20} color={isAdFree ? '#7c3aed' : '#6b7280'} />
-            <View className="flex-1 ml-3">
-              <Text
-                className={`text-base ${isAdFree ? 'text-violet-700' : 'text-gray-900'}`}
-                style={{ fontFamily: 'Pretendard-Medium' }}
-              >
-                {t('ads.adFree.button')}
-              </Text>
-              <Text
-                className={`text-xs mt-0.5 ${isAdFree ? 'text-violet-500' : 'text-gray-500'}`}
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {isAdFree
-                  ? t('ads.adFree.remaining', { time: remainingTimeFormatted })
-                  : t('ads.adFree.subtitle')
-                }
-              </Text>
-            </View>
-            {isAdLoading || isActivatingFocus ? (
-              <ActivityIndicator size="small" color="#7c3aed" />
-            ) : isAdFree ? (
-              <View className="bg-violet-100 px-2 py-1 rounded-full">
-                <Text
-                  className="text-xs text-violet-700"
-                  style={{ fontFamily: 'Pretendard-SemiBold' }}
-                >
-                  {t('ads.adFree.activeTitle')}
-                </Text>
-              </View>
-            ) : (
-              <View className="w-8 h-8 rounded-full items-center justify-center bg-gray-100">
-                <Play size={14} color="#6b7280" fill="#6b7280" />
-              </View>
-            )}
-          </Pressable>
-        </Animated.View>
-
-        {/* Notification Settings */}
-        <Text
-          className="text-sm text-gray-500 mb-2 ml-1"
-          style={{ fontFamily: 'Pretendard-SemiBold' }}
-        >
-          {t('settings.app.notifications')}
-        </Text>
-        <Animated.View
-          entering={FadeInUp.delay(200).duration(400)}
-          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-        >
-          {/* Master Push Notification Toggle */}
-          <View className="flex-row items-center px-5 py-4 border-b border-gray-100">
-            <Bell size={22} color="#6b7280" />
-            <View className="flex-1 ml-3">
-              <Text
-                className="text-base text-gray-900"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {t('settings.notifications.pushNotifications')}
-              </Text>
-              {isPermissionDenied && (
-                <Text
-                  className="text-xs text-red-500 mt-0.5"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('settings.notifications.permissionDenied')}
-                </Text>
-              )}
-            </View>
-            <Toggle
-              value={notificationsEnabled}
-              onValueChange={handleToggleNotifications}
-              loading={notificationLoading}
-            />
-          </View>
-
-          {/* Notification Types - Always visible, disabled when master is off */}
-          {/* 실천 리마인더 */}
-          <View className={`px-5 pb-3 pt-2 ${!notificationsEnabled ? 'opacity-50' : ''}`}>
-            <View className="flex-row items-center py-3">
-              <AlarmClock size={20} color={notificationsEnabled ? '#6b7280' : '#d1d5db'} />
-              <View className="flex-1 ml-3">
-                <Text
-                  className={`text-base ${notificationsEnabled ? 'text-gray-900' : 'text-gray-400'}`}
-                  style={{ fontFamily: 'Pretendard-Medium' }}
-                >
-                  {t('settings.notifications.reminder')}
-                </Text>
-                <Text
-                  className={`text-xs mt-0.5 ${notificationsEnabled ? 'text-gray-500' : 'text-gray-400'}`}
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('settings.notifications.reminderDesc')}
-                </Text>
-              </View>
-              <Toggle
-                value={notificationsEnabled && reminderEnabled}
-                onValueChange={(value) => { toggleReminder(value) }}
-                disabled={!notificationsEnabled || notificationLoading}
-                size="sm"
-              />
-            </View>
-
-            {/* Time Setting - Only show when both master and reminder are enabled */}
-            {notificationsEnabled && reminderEnabled && (
-              <Pressable
-                onPress={handleOpenTimePicker}
-                className="flex-row items-center ml-8 py-2 pl-3 pr-2 bg-gray-50 rounded-xl"
-              >
-                <Clock size={16} color="#9ca3af" />
-                <Text
-                  className="flex-1 ml-2 text-sm text-gray-600"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('settings.notifications.reminderTime')}
-                </Text>
-                <Text
-                  className="text-sm text-primary mr-1"
-                  style={{ fontFamily: 'Pretendard-Medium' }}
-                >
-                  {formatReminderTime()}
-                </Text>
-                <ChevronRight size={16} color="#9ca3af" />
-              </Pressable>
-            )}
-          </View>
-
-          {/* 맞춤 메시지 */}
-          <View className={`px-5 pb-4 border-t border-gray-100 pt-3 ${!notificationsEnabled ? 'opacity-50' : ''}`}>
-            <View className="flex-row items-center py-3">
-              <Sparkles size={20} color={notificationsEnabled ? '#6b7280' : '#d1d5db'} />
-              <View className="flex-1 ml-3">
-                <Text
-                  className={`text-base ${notificationsEnabled ? 'text-gray-900' : 'text-gray-400'}`}
-                  style={{ fontFamily: 'Pretendard-Medium' }}
-                >
-                  {t('settings.notifications.customMessage')}
-                </Text>
-                <Text
-                  className={`text-xs mt-0.5 ${notificationsEnabled ? 'text-gray-500' : 'text-gray-400'}`}
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('settings.notifications.customMessageDesc')}
-                </Text>
-              </View>
-              <Toggle
-                value={notificationsEnabled && customMessageEnabled}
-                onValueChange={(value) => { toggleCustomMessage(value) }}
-                disabled={!notificationsEnabled || notificationLoading}
-                size="sm"
-              />
-            </View>
-          </View>
-
-        </Animated.View>
-
-        {/* Support Section */}
-        <Text
-          className="text-sm text-gray-500 mb-2 ml-1"
-          style={{ fontFamily: 'Pretendard-SemiBold' }}
-        >
-          {t('settings.support.title')}
-        </Text>
-        <Animated.View
-          entering={FadeInUp.delay(300).duration(400)}
-          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-        >
-          <Pressable
-            onPress={() => navigation.navigate('Tutorial')}
-            className="flex-row items-center px-5 py-4 border-b border-gray-100"
-          >
-            <HelpCircle size={22} color="#6b7280" />
-            <Text
-              className="flex-1 ml-3 text-base text-gray-900"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('settings.app.tutorial')}
-            </Text>
-            <ChevronRight size={18} color="#9ca3af" />
-          </Pressable>
-          <Pressable
-            onPress={handleFeedback}
-            className="flex-row items-center px-5 py-4 border-b border-gray-100"
-          >
-            <MessageCircle size={22} color="#6b7280" />
-            <Text
-              className="flex-1 ml-3 text-base text-gray-900"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('settings.support.feedback')}
-            </Text>
-            <ChevronRight size={18} color="#9ca3af" />
-          </Pressable>
-          <Pressable
-            onPress={handleRateApp}
-            className="flex-row items-center px-5 py-4"
-          >
-            <Star size={22} color="#6b7280" />
-            <Text
-              className="flex-1 ml-3 text-base text-gray-900"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('settings.support.rateApp')}
-            </Text>
-            <ChevronRight size={18} color="#9ca3af" />
-          </Pressable>
-        </Animated.View>
-
-        {/* Info Section */}
-        <Text
-          className="text-sm text-gray-500 mb-2 ml-1"
-          style={{ fontFamily: 'Pretendard-SemiBold' }}
-        >
-          {t('settings.info.title')}
-        </Text>
-        <Animated.View
-          entering={FadeInUp.delay(400).duration(400)}
-          className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 3,
-          }}
-        >
-          <Pressable
-            onPress={handleShowAppInfo}
-            className="flex-row items-center px-5 py-4 border-b border-gray-100"
-          >
-            <Info size={22} color="#6b7280" />
-            <Text
-              className="flex-1 ml-3 text-base text-gray-900"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('settings.info.appInfo')}
-            </Text>
-            <Text
-              className="text-sm text-gray-400 mr-1"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {Application.nativeApplicationVersion || '1.0.0'}
-            </Text>
-            <ChevronRight size={18} color="#9ca3af" />
-          </Pressable>
-          <Pressable
-            onPress={handlePrivacyPolicy}
-            className="flex-row items-center px-5 py-4"
-          >
-            <Shield size={22} color="#6b7280" />
-            <Text
-              className="flex-1 ml-3 text-base text-gray-900"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('settings.info.privacyPolicy')}
-            </Text>
-            <ExternalLink size={16} color="#9ca3af" />
-          </Pressable>
-        </Animated.View>
-
-        {/* Sign Out */}
-        <Animated.View
-          entering={FadeInUp.delay(450).duration(400)}
-        >
-          <Pressable
-            className="bg-white rounded-2xl px-5 py-4 flex-row items-center mb-8 border border-gray-100"
+          {/* User Info Card */}
+          <Animated.View
+            entering={FadeInUp.delay(100).duration(400)}
+            className="bg-white rounded-2xl p-5 mb-5 border border-gray-100"
             style={{
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
@@ -865,38 +358,555 @@ export default function SettingsScreen() {
               shadowRadius: 12,
               elevation: 3,
             }}
-            onPress={handleSignOut}
-            disabled={loading || isSigningOut}
           >
-            {isSigningOut ? (
-              <ActivityIndicator size="small" color="#9ca3af" />
-            ) : (
-              <LogOut size={22} color="#9ca3af" />
-            )}
+            {/* Nickname and Email row */}
+            <View className="flex-row items-center">
+              <Pressable
+                onPress={handleOpenNicknameModal}
+                className="flex-row items-center"
+              >
+                <Text
+                  className="text-base text-gray-900"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  {nickname || t('home.nickname.placeholder')}
+                </Text>
+                <Pencil size={14} color="#9ca3af" style={{ marginLeft: 4 }} />
+              </Pressable>
+              <Text
+                className="text-sm text-gray-400 ml-2"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {user?.email}
+              </Text>
+            </View>
+
+            {/* Stats row */}
+            <View className="flex-row items-center mt-2">
+              <View className="bg-primary/10 px-2 py-0.5 rounded-full">
+                <Text
+                  className="text-xs text-primary"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  Lv. {currentLevel}
+                </Text>
+              </View>
+              <Text
+                className="text-sm text-gray-500 ml-2"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {totalXP.toLocaleString()} XP
+              </Text>
+              {user?.created_at && (
+                <>
+                  <Text className="text-gray-300 mx-2">·</Text>
+                  <MaskedView
+                    maskElement={
+                      <Text
+                        className="text-sm"
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        {t('settings.daysWithUs', { days: differenceInCalendarDays(new Date(), new Date(user.created_at)) + 1 })}
+                      </Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#2563eb', '#9333ea', '#db2777']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Text
+                        className="text-sm opacity-0"
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        {t('settings.daysWithUs', { days: differenceInCalendarDays(new Date(), new Date(user.created_at)) + 1 })}
+                      </Text>
+                    </LinearGradient>
+                  </MaskedView>
+                </>
+              )}
+            </View>
+          </Animated.View>
+
+          {/* Premium Section */}
+          <Animated.View
+            entering={FadeInUp.delay(125).duration(400)}
+            className="mb-5"
+          >
+            <Pressable
+              onPress={() => navigation.navigate('Subscription')}
+              className="overflow-hidden rounded-2xl"
+            >
+              {isPremium ? (
+                // Premium Active Card
+                <LinearGradient
+                  colors={['#7c3aed', '#2563eb']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="px-5 py-4 flex-row items-center"
+                >
+                  <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
+                    <Crown size={20} color="#fbbf24" fill="#fbbf24" />
+                  </View>
+                  <View className="flex-1 ml-3">
+                    <Text
+                      className="text-base text-white"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      {t('subscription.premiumActive')}
+                    </Text>
+                    <Text
+                      className="text-xs text-white/70"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('subscription.manageSubscription')}
+                    </Text>
+                  </View>
+                  <ChevronRight size={20} color="white" />
+                </LinearGradient>
+              ) : (
+                // Free Tier - Upgrade CTA
+                <View
+                  className="bg-white border border-violet-200 px-5 py-4 flex-row items-center"
+                  style={{
+                    shadowColor: '#7c3aed',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <View className="w-10 h-10 rounded-full bg-violet-100 items-center justify-center">
+                    <Crown size={20} color="#7c3aed" />
+                  </View>
+                  <View className="flex-1 ml-3">
+                    <Text
+                      className="text-base text-gray-900"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      {t('subscription.title')}
+                    </Text>
+                    <Text
+                      className="text-xs text-gray-500"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('subscription.premiumBenefits')}
+                    </Text>
+                  </View>
+                  <View className="bg-violet-600 px-3 py-1.5 rounded-full">
+                    <Text
+                      className="text-xs text-white"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      {t('subscription.limitReached.upgrade')}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </Pressable>
+          </Animated.View>
+
+          {/* App Settings Section */}
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.app.title')}
+          </Text>
+          <Animated.View
+            entering={FadeInUp.delay(150).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            {/* Language Setting */}
+            <Pressable
+              onPress={() => setShowLanguageModal(true)}
+              className="flex-row items-center px-5 py-4 border-b border-gray-100"
+            >
+              <Globe size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.app.language')}
+              </Text>
+              <Text
+                className="text-sm text-gray-400 mr-1"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {currentLanguageDisplay}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Pressable>
+
+            {/* Timezone Setting */}
+            <Pressable
+              onPress={() => setShowTimezoneModal(true)}
+              className="flex-row items-center px-5 py-4"
+            >
+              <Clock size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.app.timezone')}
+              </Text>
+              <Text
+                className="text-sm text-gray-400 mr-1"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {currentTimezoneDisplay}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Pressable>
+          </Animated.View>
+
+          {/* Focus Mode Section */}
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.focus.title')}
+          </Text>
+          <Animated.View
+            entering={FadeInUp.delay(175).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            <Pressable
+              onPress={handleFocusModePress}
+              disabled={isAdLoading || isActivatingFocus || isAdFreeLoading}
+              className="flex-row items-center px-5 py-4"
+            >
+              <Shield size={20} color={isAdFree ? '#7c3aed' : '#6b7280'} />
+              <View className="flex-1 ml-3">
+                <Text
+                  className={`text-base ${isAdFree ? 'text-violet-700' : 'text-gray-900'}`}
+                  style={{ fontFamily: 'Pretendard-Medium' }}
+                >
+                  {t('ads.adFree.button')}
+                </Text>
+                <Text
+                  className={`text-xs mt-0.5 ${isAdFree ? 'text-violet-500' : 'text-gray-500'}`}
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {isAdFree
+                    ? t('ads.adFree.remaining', { time: remainingTimeFormatted })
+                    : t('ads.adFree.subtitle')
+                  }
+                </Text>
+              </View>
+              {isAdLoading || isActivatingFocus ? (
+                <ActivityIndicator size="small" color="#7c3aed" />
+              ) : isAdFree ? (
+                <View className="bg-violet-100 px-2 py-1 rounded-full">
+                  <Text
+                    className="text-xs text-violet-700"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
+                    {t('ads.adFree.activeTitle')}
+                  </Text>
+                </View>
+              ) : (
+                <View className="w-8 h-8 rounded-full items-center justify-center bg-gray-100">
+                  <Play size={14} color="#6b7280" fill="#6b7280" />
+                </View>
+              )}
+            </Pressable>
+          </Animated.View>
+
+          {/* Notification Settings */}
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.app.notifications')}
+          </Text>
+          <Animated.View
+            entering={FadeInUp.delay(200).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            {/* Master Push Notification Toggle */}
+            <View className="flex-row items-center px-5 py-4 border-b border-gray-100">
+              <Bell size={22} color="#6b7280" />
+              <View className="flex-1 ml-3">
+                <Text
+                  className="text-base text-gray-900"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {t('settings.notifications.pushNotifications')}
+                </Text>
+                {isPermissionDenied && (
+                  <Text
+                    className="text-xs text-red-500 mt-0.5"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {t('settings.notifications.permissionDenied')}
+                  </Text>
+                )}
+              </View>
+              <Toggle
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                loading={notificationLoading}
+              />
+            </View>
+
+            {/* Notification Types - Always visible, disabled when master is off */}
+            {/* 실천 리마인더 */}
+            <View className={`px-5 pb-3 pt-2 ${!notificationsEnabled ? 'opacity-50' : ''}`}>
+              <View className="flex-row items-center py-3">
+                <AlarmClock size={20} color={notificationsEnabled ? '#6b7280' : '#d1d5db'} />
+                <View className="flex-1 ml-3">
+                  <Text
+                    className={`text-base ${notificationsEnabled ? 'text-gray-900' : 'text-gray-400'}`}
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    {t('settings.notifications.reminder')}
+                  </Text>
+                  <Text
+                    className={`text-xs mt-0.5 ${notificationsEnabled ? 'text-gray-500' : 'text-gray-400'}`}
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {t('settings.notifications.reminderDesc')}
+                  </Text>
+                </View>
+                <Toggle
+                  value={notificationsEnabled && reminderEnabled}
+                  onValueChange={(value) => { toggleReminder(value) }}
+                  disabled={!notificationsEnabled || notificationLoading}
+                  size="sm"
+                />
+              </View>
+
+              {/* Time Setting - Only show when both master and reminder are enabled */}
+              {notificationsEnabled && reminderEnabled && (
+                <Pressable
+                  onPress={handleOpenTimePicker}
+                  className="flex-row items-center ml-8 py-2 pl-3 pr-2 bg-gray-50 rounded-xl"
+                >
+                  <Clock size={16} color="#9ca3af" />
+                  <Text
+                    className="flex-1 ml-2 text-sm text-gray-600"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {t('settings.notifications.reminderTime')}
+                  </Text>
+                  <Text
+                    className="text-sm text-primary mr-1"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    {formatReminderTime()}
+                  </Text>
+                  <ChevronRight size={16} color="#9ca3af" />
+                </Pressable>
+              )}
+            </View>
+
+            {/* 맞춤 메시지 */}
+            <View className={`px-5 pb-4 border-t border-gray-100 pt-3 ${!notificationsEnabled ? 'opacity-50' : ''}`}>
+              <View className="flex-row items-center py-3">
+                <Sparkles size={20} color={notificationsEnabled ? '#6b7280' : '#d1d5db'} />
+                <View className="flex-1 ml-3">
+                  <Text
+                    className={`text-base ${notificationsEnabled ? 'text-gray-900' : 'text-gray-400'}`}
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    {t('settings.notifications.customMessage')}
+                  </Text>
+                  <Text
+                    className={`text-xs mt-0.5 ${notificationsEnabled ? 'text-gray-500' : 'text-gray-400'}`}
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {t('settings.notifications.customMessageDesc')}
+                  </Text>
+                </View>
+                <Toggle
+                  value={notificationsEnabled && customMessageEnabled}
+                  onValueChange={(value) => { toggleCustomMessage(value) }}
+                  disabled={!notificationsEnabled || notificationLoading}
+                  size="sm"
+                />
+              </View>
+            </View>
+
+          </Animated.View>
+
+          {/* Support Section */}
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.support.title')}
+          </Text>
+          <Animated.View
+            entering={FadeInUp.delay(300).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            <Pressable
+              onPress={() => navigation.navigate('Tutorial')}
+              className="flex-row items-center px-5 py-4 border-b border-gray-100"
+            >
+              <HelpCircle size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.app.tutorial')}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Pressable>
+            <Pressable
+              onPress={handleFeedback}
+              className="flex-row items-center px-5 py-4 border-b border-gray-100"
+            >
+              <MessageCircle size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.support.feedback')}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Pressable>
+            <Pressable
+              onPress={handleRateApp}
+              className="flex-row items-center px-5 py-4"
+            >
+              <Star size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.support.rateApp')}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Pressable>
+          </Animated.View>
+
+          {/* Info Section */}
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.info.title')}
+          </Text>
+          <Animated.View
+            entering={FadeInUp.delay(400).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            <Pressable
+              onPress={handleShowAppInfo}
+              className="flex-row items-center px-5 py-4 border-b border-gray-100"
+            >
+              <Info size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.info.appInfo')}
+              </Text>
+              <Text
+                className="text-sm text-gray-400 mr-1"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {Application.nativeApplicationVersion || '1.0.0'}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Pressable>
+            <Pressable
+              onPress={handlePrivacyPolicy}
+              className="flex-row items-center px-5 py-4"
+            >
+              <Shield size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.info.privacyPolicy')}
+              </Text>
+              <ExternalLink size={16} color="#9ca3af" />
+            </Pressable>
+          </Animated.View>
+
+          {/* Sign Out */}
+          <Animated.View
+            entering={FadeInUp.delay(450).duration(400)}
+          >
+            <Pressable
+              className="bg-white rounded-2xl px-5 py-4 flex-row items-center mb-8 border border-gray-100"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+                elevation: 3,
+              }}
+              onPress={handleSignOut}
+              disabled={loading || isSigningOut}
+            >
+              {isSigningOut ? (
+                <ActivityIndicator size="small" color="#9ca3af" />
+              ) : (
+                <LogOut size={22} color="#9ca3af" />
+              )}
+              <Text
+                className="ml-3 text-base text-gray-400"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                {t('settings.account.logout')}
+              </Text>
+            </Pressable>
+          </Animated.View>
+
+          {/* Footer */}
+          <View className="items-center pb-8">
             <Text
-              className="ml-3 text-base text-gray-400"
+              className="text-xs text-gray-400"
               style={{ fontFamily: 'Pretendard-Medium' }}
             >
-              {t('settings.account.logout')}
+              {t('settings.footer', { appName: APP_NAME })}
             </Text>
-          </Pressable>
-        </Animated.View>
-
-        {/* Footer */}
-        <View className="items-center pb-8">
-          <Text
-            className="text-xs text-gray-400"
-            style={{ fontFamily: 'Pretendard-Medium' }}
-          >
-            {t('settings.footer', { appName: APP_NAME })}
-          </Text>
-          <Text
-            className="text-xs text-gray-300 mt-1"
-            style={{ fontFamily: 'Pretendard-Regular' }}
-          >
-            {t('settings.copyright', { appName: APP_NAME })}
-          </Text>
-        </View>
+            <Text
+              className="text-xs text-gray-300 mt-1"
+              style={{ fontFamily: 'Pretendard-Regular' }}
+            >
+              {t('settings.copyright', { appName: APP_NAME })}
+            </Text>
+          </View>
         </View>{/* End Content Container */}
       </ScrollView>
 
@@ -948,9 +958,8 @@ export default function SettingsScreen() {
                     <Pressable
                       key={hour}
                       onPress={() => setSelectedHour(hour)}
-                      className={`py-2 px-6 ${
-                        selectedHour === hour ? 'bg-primary/10 rounded-xl' : ''
-                      }`}
+                      className={`py-2 px-6 ${selectedHour === hour ? 'bg-primary/10 rounded-xl' : ''
+                        }`}
                     >
                       <Text
                         className="text-2xl"
@@ -991,11 +1000,10 @@ export default function SettingsScreen() {
                     <Pressable
                       key={minute}
                       onPress={() => setSelectedMinute(minute)}
-                      className={`py-2 px-6 ${
-                        selectedMinute === minute
+                      className={`py-2 px-6 ${selectedMinute === minute
                           ? 'bg-primary/10 rounded-xl'
                           : ''
-                      }`}
+                        }`}
                     >
                       <Text
                         className="text-2xl"
@@ -1146,16 +1154,14 @@ export default function SettingsScreen() {
                 <Pressable
                   key={lang.code}
                   onPress={() => handleLanguageSelect(lang.code)}
-                  className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${
-                    currentLang === lang.code
+                  className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${currentLang === lang.code
                       ? 'bg-primary/10 border border-primary/30'
                       : 'bg-gray-50 border border-gray-100'
-                  }`}
+                    }`}
                 >
                   <Text
-                    className={`flex-1 text-base ${
-                      currentLang === lang.code ? 'text-primary' : 'text-gray-900'
-                    }`}
+                    className={`flex-1 text-base ${currentLang === lang.code ? 'text-primary' : 'text-gray-900'
+                      }`}
                     style={{
                       fontFamily:
                         currentLang === lang.code
@@ -1219,11 +1225,10 @@ export default function SettingsScreen() {
                   key={tz.value}
                   onPress={() => handleTimezoneSelect(tz.value)}
                   disabled={isSavingTimezone}
-                  className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${
-                    timezone === tz.value
+                  className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${timezone === tz.value
                       ? 'bg-primary/10 border border-primary/30'
                       : 'bg-gray-50 border border-gray-100'
-                  } ${isSavingTimezone ? 'opacity-50' : ''}`}
+                    } ${isSavingTimezone ? 'opacity-50' : ''}`}
                 >
                   <Clock
                     size={20}
@@ -1231,9 +1236,8 @@ export default function SettingsScreen() {
                   />
                   <View className="flex-1 ml-3">
                     <Text
-                      className={`text-base ${
-                        timezone === tz.value ? 'text-primary' : 'text-gray-900'
-                      }`}
+                      className={`text-base ${timezone === tz.value ? 'text-primary' : 'text-gray-900'
+                        }`}
                       style={{
                         fontFamily:
                           timezone === tz.value

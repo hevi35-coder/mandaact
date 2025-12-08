@@ -15,7 +15,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
-      "buildNumber": "41",
+      "buildNumber": "52",
       "supportsTablet": true,
       "requireFullScreen": false,
       "infoPlist": {
@@ -144,7 +144,9 @@
     "extra": {
       "eas": {
         "projectId": "82af50e1-a4ad-4097-8d96-a58c0d717a59"
-      }
+      },
+      "revenuecatIosApiKey": "appl_oYQCBGlliGNmiMqViuNGbHUesJR",
+      "revenuecatAndroidApiKey": ""
     },
     "owner": "hevi35"
   }

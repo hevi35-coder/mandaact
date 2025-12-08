@@ -27,12 +27,15 @@ const METRIC_LABEL_MAP: Record<string, string> = {
   '주간 목표': 'reports.metrics.weeklyGoal',
   '일평균 실천': 'reports.metrics.dailyAverage',
   '최고 실천일': 'reports.metrics.bestDay',
-  // Goal Diagnosis metrics
+  // Goal Diagnosis metrics (both with and without spaces for AI variations)
   '완성도': 'reports.metrics.completeness',
   '표현명확도': 'reports.metrics.expressionClarity',
+  '표현 명확도': 'reports.metrics.expressionClarity',
   '측정가능성': 'reports.metrics.measurability',
+  '측정 가능성': 'reports.metrics.measurability',
   '일관성': 'reports.metrics.consistency',
   '실천 설계': 'reports.metrics.actionClarity',
+  '실천설계': 'reports.metrics.actionClarity',
 }
 
 /**
