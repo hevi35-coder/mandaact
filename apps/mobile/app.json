@@ -9,9 +9,9 @@
     "newArchEnabled": false,
     "scheme": "mandaact",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#667eea"
+      "backgroundColor": "#7c3aed"
     },
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
