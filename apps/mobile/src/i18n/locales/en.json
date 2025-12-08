@@ -513,6 +513,10 @@
   },
   "settings": {
     "title": "Settings",
+    "premium": {
+      "title": "Premium",
+      "benefits": "Premium Benefits"
+    },
     "account": {
       "title": "Account",
       "email": "Email",

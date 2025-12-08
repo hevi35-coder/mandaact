@@ -511,6 +511,10 @@
   },
   "settings": {
     "title": "설정",
+    "premium": {
+      "title": "프리미엄",
+      "benefits": "프리미엄 혜택"
+    },
     "account": {
       "title": "계정",
       "email": "이메일",
