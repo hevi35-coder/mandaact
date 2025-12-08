@@ -895,7 +895,13 @@
     "mandalartNeeded": "Mandalart Needed",
     "mandalartNeededDesc": "Create or activate a mandalart\nto receive goal diagnosis",
     "newDiagnosisNotice": "Create or activate a mandalart to receive new diagnosis",
-    "error": "Failed to generate report. Please try again later."
+    "error": "Failed to generate report. Please try again later.",
+    "errorReasons": {
+      "noActivity": "No practice data for this period. Start practicing to generate a report!",
+      "parseError": "Failed to analyze the report content. Please try again.",
+      "emptyContent": "Report content is empty. Please try generating again.",
+      "aiError": "AI service temporarily unavailable. Please try again later."
+    }
   },
   "errors": {
     "generic": "An error occurred",

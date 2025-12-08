@@ -3,6 +3,13 @@
  * Extracts key metrics and structures content for display
  */
 
+export type ReportErrorReason =
+  | 'noActivity'      // No practice data for the period
+  | 'parseError'      // Failed to parse AI response
+  | 'emptyContent'    // Report content is empty
+  | 'aiError'         // AI service error
+  | null              // No error
+
 export interface ReportSummary {
   headline: string
   metrics: Array<{
@@ -11,6 +18,7 @@ export interface ReportSummary {
     variant?: 'default' | 'secondary' | 'outline'
   }>
   detailContent: string
+  errorReason?: ReportErrorReason
 }
 
 /**
@@ -85,9 +93,38 @@ interface DiagnosisReportData {
  * New reports are stored as JSON, old reports may be markdown
  */
 export function parseWeeklyReport(content: string): ReportSummary {
+  // Check for empty content
+  if (!content || content.trim() === '') {
+    return {
+      headline: '',
+      metrics: [],
+      detailContent: '',
+      errorReason: 'emptyContent',
+    }
+  }
+
   // Try JSON parsing first (new format)
   try {
     const data = JSON.parse(content) as WeeklyReportData
+
+    // Check for noActivity message in the data
+    if (data.headline && (
+      data.headline.includes('활동이 없습니다') ||
+      data.headline.includes('No activity') ||
+      data.headline.includes('no activity') ||
+      data.headline.includes('기간 내 활동')
+    )) {
+      return {
+        headline: data.headline,
+        metrics: data.key_metrics?.map((m) => ({
+          label: m.label,
+          value: m.value,
+          variant: 'default' as const
+        })) || [],
+        detailContent: '',
+        errorReason: 'noActivity',
+      }
+    }
 
     if (data.headline && data.key_metrics) {
       // Build detail content from strengths, improvements, and action_plan
@@ -191,7 +228,8 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
   }
 
   if (!summary.headline) {
-    summary.headline = '리포트를 생성할 수 없습니다'
+    summary.headline = ''
+    summary.errorReason = 'parseError'
   }
 
   return summary

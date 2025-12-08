@@ -43,7 +43,7 @@ import {
   useGenerateGoalDiagnosis,
   useReportHistory,
 } from '../hooks/useReports'
-import { parseWeeklyReport, parseDiagnosisReport, getMetricLabelKey, type ReportSummary } from '../lib/reportParser'
+import { parseWeeklyReport, parseDiagnosisReport, getMetricLabelKey, type ReportSummary, type ReportErrorReason } from '../lib/reportParser'
 
 // Get week dates for display
 function formatWeekDates(weekStart: string, weekEnd: string, isEnglish: boolean): string {
@@ -70,6 +70,12 @@ function getNextMonday(isEnglish: boolean): string {
   return `${nextMonday.getMonth() + 1}월 ${nextMonday.getDate()}일 (월)`
 }
 
+// Helper function to get error reason message
+function getErrorReasonMessage(errorReason: ReportErrorReason | undefined, t: (key: string) => string): string | null {
+  if (!errorReason) return null
+  return t(`reports.errorReasons.${errorReason}`)
+}
+
 // Report Card Component - Matches web design
 function ReportCard({
   title,
@@ -88,6 +94,7 @@ function ReportCard({
   improvementsText,
   suggestionsText,
   translateLabel,
+  t,
 }: {
   title: string
   subtitle: string
@@ -105,6 +112,7 @@ function ReportCard({
   improvementsText?: string
   suggestionsText?: string
   translateLabel?: (label: string) => string
+  t?: (key: string) => string
 }) {
   if (isLoading) {
     return (
@@ -188,16 +196,30 @@ function ReportCard({
       {/* Summary Content */}
       {summary && (
         <View className="p-5">
-          {/* Headline */}
-          <Text
-            className="text-base text-gray-900 leading-relaxed mb-4"
-            style={{ fontFamily: 'Pretendard-SemiBold' }}
-          >
-            {summary.headline}
-          </Text>
+          {/* Error Reason Message */}
+          {summary.errorReason && t && (
+            <View className="bg-gray-50 rounded-xl p-4 mb-4">
+              <Text
+                className="text-sm text-gray-600 leading-relaxed"
+                style={{ fontFamily: 'Pretendard-Medium' }}
+              >
+                {getErrorReasonMessage(summary.errorReason, t)}
+              </Text>
+            </View>
+          )}
+
+          {/* Headline - only show if no error and headline exists */}
+          {!summary.errorReason && summary.headline && (
+            <Text
+              className="text-base text-gray-900 leading-relaxed mb-4"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              {summary.headline}
+            </Text>
+          )}
 
           {/* Key Metrics */}
-          {summary.metrics.length > 0 && (
+          {!summary.errorReason && summary.metrics.length > 0 && (
             <View className="gap-2 mb-4">
               {summary.metrics.map((metric, idx) => (
                 <View key={idx} className="flex-row">
@@ -218,8 +240,8 @@ function ReportCard({
             </View>
           )}
 
-          {/* Expandable Detail Section */}
-          {(summary.strengths.length > 0 || summary.actionPlan.length > 0 || summary.improvements.problem) && (
+          {/* Expandable Detail Section - only show when no error */}
+          {!summary.errorReason && (summary.strengths.length > 0 || summary.actionPlan.length > 0 || summary.improvements.problem) && (
             <Pressable
               className="bg-gray-100/80 rounded-xl p-4 active:opacity-70"
               onPress={onToggleExpand}
@@ -933,6 +955,7 @@ export default function ReportsScreen() {
                     improvementsText={t('reports.card.improvements')}
                     suggestionsText={t('reports.card.suggestions')}
                     translateLabel={translateLabel}
+                    t={t}
                   />
                 )}
 
@@ -953,6 +976,7 @@ export default function ReportsScreen() {
                     improvementsText={t('reports.card.improvements')}
                     suggestionsText={t('reports.card.suggestions')}
                     translateLabel={translateLabel}
+                    t={t}
                   />
                 )}
 
@@ -1007,6 +1031,7 @@ export default function ReportsScreen() {
                   improvementsText={t('reports.card.improvements')}
                   suggestionsText={t('reports.card.suggestions')}
                   translateLabel={translateLabel}
+                  t={t}
                 />
               </Animated.View>
 
@@ -1178,6 +1203,7 @@ export default function ReportsScreen() {
                 improvementsText={t('reports.card.improvements')}
                 suggestionsText={t('reports.card.suggestions')}
                 translateLabel={translateLabel}
+                t={t}
               />
             )}
 
@@ -1199,6 +1225,7 @@ export default function ReportsScreen() {
                   improvementsText={t('reports.card.improvements')}
                   suggestionsText={t('reports.card.suggestions')}
                   translateLabel={translateLabel}
+                  t={t}
                 />
                 {/* Notice for new diagnosis */}
                 <View
@@ -1336,6 +1363,7 @@ export default function ReportsScreen() {
               improvementsText={t('reports.card.improvements')}
               suggestionsText={t('reports.card.suggestions')}
               translateLabel={translateLabel}
+              t={t}
             />
           </Animated.View>
 
