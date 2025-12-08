@@ -516,8 +516,8 @@
     "account": {
       "title": "Account",
       "email": "Email",
-      "logout": "Log Out",
-      "logoutConfirm": "Are you sure you want to log out?",
+      "logout": "Sign Out",
+      "logoutConfirm": "Are you sure you want to sign out?",
       "deleteAccount": "Delete Account",
       "deleteConfirm": "Are you sure you want to delete your account?\nAll data will be deleted and cannot be recovered."
     },
@@ -597,15 +597,15 @@
     "copyright": "© 2025 {{appName}} by UnwrittenBD"
   },
   "login": {
-    "title": "Log In",
+    "title": "Sign In",
     "subtitle": "Turn goals into action",
     "email": "Email",
     "emailPlaceholder": "your@email.com",
     "password": "Password",
     "passwordPlaceholder": "Enter your password",
     "forgotPassword": "Forgot password?",
-    "loginButton": "Log In",
-    "loggingIn": "Logging in...",
+    "loginButton": "Sign In",
+    "loggingIn": "Signing in...",
     "noAccount": "Don't have an account?",
     "signUp": "Sign Up",
     "inputError": "Input Error",
@@ -630,7 +630,7 @@
     "confirmPlaceholder": "Re-enter password",
     "signUpButton": "Sign Up",
     "hasAccount": "Already have an account?",
-    "login": "Log In",
+    "login": "Sign In",
     "errors": {
       "passwordMismatch": "Passwords do not match",
       "weakPassword": "Password must be at least 8 characters",
