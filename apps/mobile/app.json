@@ -9,15 +9,21 @@
     "newArchEnabled": false,
     "scheme": "mandaact",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#7c3aed"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
-      "buildNumber": "52",
+      "buildNumber": "53",
       "supportsTablet": true,
       "requireFullScreen": false,
+      "splash": {
+        "image": "./assets/splash.png",
+        "tabletImage": "./assets/splash-tablet.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "만다라트 이미지 촬영에 카메라가 필요합니다",
         "NSPhotoLibraryUsageDescription": "만다라트 이미지 선택에 사진 접근이 필요합니다",

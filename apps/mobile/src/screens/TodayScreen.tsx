@@ -575,8 +575,8 @@ export default function TodayScreen() {
           />
         )}
 
-        {/* XP Boost Button - Below Progress Card */}
-        {actions.length > 0 && (
+        {/* XP Boost Button - Below Progress Card (Phone only, iPad has it in right column) */}
+        {!isTablet && actions.length > 0 && (
           <XPBoostButton />
         )}
 
@@ -699,8 +699,8 @@ export default function TodayScreen() {
           </Animated.View>
         )}
 
-        {/* iPad: 2-column layout (Left: Configured, Right: Unconfigured) */}
-        {isTablet && (filteredActions.length > 0 || unconfiguredActions.length > 0) && (
+        {/* iPad: 2-column layout (Left: Configured, Right: XP Boost + Unconfigured + Completed) */}
+        {isTablet && (filteredActions.length > 0 || unconfiguredActions.length > 0 || completedActions.length > 0) && (
           <View style={{ flexDirection: 'row', gap: 16 }} className="pb-4">
             {/* Left Column - Configured Actions */}
             <View style={{ flex: 1 }}>
@@ -719,9 +719,9 @@ export default function TodayScreen() {
                       canCheck={canCheck}
                       checkingActions={checkingActions}
                       isTablet={isTablet}
-                      // DISABLED - rewarded ad feature removed per AdMob policy review
-                      // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
-                      // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
+                    // DISABLED - rewarded ad feature removed per AdMob policy review
+                    // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
+                    // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
                     />
                   )
                 )
@@ -732,10 +732,17 @@ export default function TodayScreen() {
               )}
             </View>
 
-            {/* Right Column - Unconfigured Actions */}
+            {/* Right Column - XP Boost + Unconfigured + Completed */}
             <View style={{ flex: 1 }}>
+              {/* XP Boost Button - Top of right column on iPad */}
+              <XPBoostButton />
+
+              {/* Unconfigured Actions - iPad */}
               {unconfiguredActions.length > 0 && (
-                <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+                <Animated.View
+                  entering={FadeInUp.delay(300).duration(400)}
+                  className="mb-4"
+                >
                   {/* Section Header */}
                   <Pressable
                     onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
@@ -804,6 +811,79 @@ export default function TodayScreen() {
                   )}
                 </Animated.View>
               )}
+
+              {/* Completed Actions Section - iPad */}
+              {completedActions.length > 0 && (
+                <Animated.View
+                  entering={FadeInUp.delay(400).duration(400)}
+                >
+                  {/* Section Header */}
+                  <Pressable
+                    onPress={() => setCompletedCollapsed(!completedCollapsed)}
+                    className="flex-row items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200"
+                  >
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <CheckCircle size={16} color="#16a34a" />
+                        <Text
+                          className="text-base font-semibold text-gray-900 ml-2"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('today.completed.title')}
+                        </Text>
+                        <Text className="text-sm text-gray-500 ml-2">
+                          {completedActions.length}
+                        </Text>
+                      </View>
+                      <Text
+                        className="text-sm text-gray-500 mt-1"
+                        numberOfLines={1}
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
+                        {t('today.completed.hint')}
+                      </Text>
+                    </View>
+                    {completedCollapsed ? (
+                      <ChevronRight size={20} color="#16a34a" />
+                    ) : (
+                      <ChevronDown size={20} color="#16a34a" />
+                    )}
+                  </Pressable>
+
+                  {/* Completed Items */}
+                  {!completedCollapsed && (
+                    <View className="mt-2 space-y-2">
+                      {completedActions.map((action) => (
+                        <View
+                          key={action.id}
+                          className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200 opacity-60"
+                        >
+                          <View className="flex-1">
+                            <Text
+                              className="text-base text-gray-900"
+                              numberOfLines={1}
+                            >
+                              {action.title}
+                            </Text>
+                            <Text
+                              className="text-xs text-gray-400 mt-1"
+                              numberOfLines={1}
+                            >
+                              {action.sub_goal.title}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center bg-green-50 px-2 py-1 rounded-lg border border-green-200">
+                            <CheckCircle size={14} color="#16a34a" />
+                            <Text className="text-xs text-green-600 ml-1">
+                              {t('today.completed.badge')}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </Animated.View>
+              )}
             </View>
           </View>
         )}
@@ -828,9 +908,9 @@ export default function TodayScreen() {
                       canCheck={canCheck}
                       checkingActions={checkingActions}
                       isTablet={isTablet}
-                      // DISABLED - rewarded ad feature removed per AdMob policy review
-                      // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
-                      // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
+                    // DISABLED - rewarded ad feature removed per AdMob policy review
+                    // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
+                    // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
                     />
                   )
                 )}

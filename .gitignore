@@ -15,9 +15,10 @@ build/
 *.tsbuildinfo
 
 # Expo / React Native
+.expo/
 apps/mobile/.expo/
 apps/mobile/ios/
-apps/mobile/android/
+apps-mobile/android/
 *.jks
 *.p8
 *.p12

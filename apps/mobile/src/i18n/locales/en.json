@@ -35,7 +35,15 @@
   },
   "datePicker": {
     "title": "Select Date",
-    "weekDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "weekDays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "monthFormat": "{{year}} {{month}}"
   },
   "months": {
@@ -603,7 +611,7 @@
   },
   "login": {
     "title": "Sign In",
-    "subtitle": "Turn goals into action",
+    "subtitle": "Turn Goals into Action",
     "email": "Email",
     "emailPlaceholder": "your@email.com",
     "password": "Password",

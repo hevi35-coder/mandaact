@@ -1,5 +1,10 @@
 {
   "ios": {
     "bundleIdentifier": "com.hevi35.mandaact"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "82af50e1-a4ad-4097-8d96-a58c0d717a59"
+    }
   }
 }
