@@ -477,10 +477,17 @@ export default function SettingsScreen() {
           >
             <Pressable
               onPress={() => navigation.navigate('Subscription')}
-              className="overflow-hidden rounded-2xl"
+              className="bg-white rounded-2xl overflow-hidden border border-gray-100"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+                elevation: 3,
+              }}
             >
               {isPremium ? (
-                // Premium Active Card
+                // Premium Active Card - Strong gradient to show status
                 <LinearGradient
                   colors={['#7c3aed', '#2563eb']}
                   start={{ x: 0, y: 0 }}
@@ -507,17 +514,8 @@ export default function SettingsScreen() {
                   <ChevronRight size={20} color="white" />
                 </LinearGradient>
               ) : (
-                // Free Tier - Upgrade CTA
-                <View
-                  className="bg-white border border-violet-200 px-5 py-4 flex-row items-center"
-                  style={{
-                    shadowColor: '#7c3aed',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 8,
-                    elevation: 2,
-                  }}
-                >
+                // Free Tier - Upgrade CTA. Consistent container, emphasized content.
+                <View className="px-5 py-4 flex-row items-center">
                   <View className="w-10 h-10 rounded-full bg-violet-100 items-center justify-center">
                     <Crown size={20} color="#7c3aed" />
                   </View>
@@ -535,14 +533,31 @@ export default function SettingsScreen() {
                       {t('subscription.premiumBenefits')}
                     </Text>
                   </View>
-                  <View className="bg-violet-600 px-3 py-1.5 rounded-full">
-                    <Text
-                      className="text-xs text-white"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  {/* Gradient text CTA for emphasis */}
+                  <MaskedView
+                    maskElement={
+                      <Text
+                        className="text-sm"
+                        style={{ fontFamily: 'Pretendard-Bold' }}
+                      >
+                        {t('subscription.limitReached.upgrade')}
+                      </Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#2563eb', '#9333ea', '#db2777']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
                     >
-                      {t('subscription.limitReached.upgrade')}
-                    </Text>
-                  </View>
+                      <Text
+                        className="text-sm opacity-0"
+                        style={{ fontFamily: 'Pretendard-Bold' }}
+                      >
+                        {t('subscription.limitReached.upgrade')}
+                      </Text>
+                    </LinearGradient>
+                  </MaskedView>
+                  <ChevronRight size={18} color="#9ca3af" style={{ marginLeft: 2 }} />
                 </View>
               )}
             </Pressable>
