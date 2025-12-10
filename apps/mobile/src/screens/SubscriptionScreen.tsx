@@ -6,6 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -481,14 +482,44 @@ export default function SubscriptionScreen() {
             </Animated.View>
           )}
 
-          {/* Footer */}
+          {/* Footer - Subscription Terms */}
           <View className="items-center py-6">
             <Text
-              className="text-xs text-gray-400 text-center px-4"
+              className="text-xs text-gray-400 text-center px-4 leading-5"
               style={{ fontFamily: 'Pretendard-Regular' }}
             >
               {t('subscription.termsNotice')}
             </Text>
+
+            {/* Terms of Use and Privacy Policy Links */}
+            <View className="flex-row items-center justify-center mt-3 flex-wrap">
+              <Pressable
+                onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
+              >
+                <Text
+                  className="text-xs text-primary underline"
+                  style={{ fontFamily: 'Pretendard-Medium' }}
+                >
+                  {t('subscription.termsOfUse')}
+                </Text>
+              </Pressable>
+              <Text
+                className="text-xs text-gray-400 mx-2"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('subscription.and')}
+              </Text>
+              <Pressable
+                onPress={() => Linking.openURL('https://hevi35-coder.github.io/mandaact-privacy/')}
+              >
+                <Text
+                  className="text-xs text-primary underline"
+                  style={{ fontFamily: 'Pretendard-Medium' }}
+                >
+                  {t('subscription.privacyPolicy')}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </ScrollView>

@@ -1,6 +1,6 @@
-# MandaAct 개발 로드맵 v3.12
+# MandaAct 개발 로드맵 v3.13
 
-**최종 업데이트**: 2025-12-08 20:46 - Build 53 TestFlight 제출 완료
+**최종 업데이트**: 2025-12-10 23:50 - Build 54 심사 재제출 준비
 **현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포 진행 중** 🔄
 
 ---
@@ -135,7 +135,7 @@
 
 ---
 
-### 10.3 스토어 배포 🔄 **진행 중** (2025-12-08)
+### 10.3 스토어 배포 🔄 **진행 중** (2025-12-10)
 
 **목표**: iOS App Store + Android Google Play 동시 배포
 
@@ -155,15 +155,34 @@
   - [ ] iPad Pro 12.9" (추후)
   - [ ] Android Phone (추후)
   - [ ] Android Tablet (추후)
-- [ ] iOS App Store 제출 ⏳ **심사 제출 대기**
+- [ ] iOS App Store 제출 🔄 **심사 반려 대응 중**
   - [x] App Store Connect 앱 생성
   - [x] TestFlight 베타 테스트 (Build 53)
   - [x] App Store Connect 메타데이터 입력 (가격, 연령등급, 개인정보)
-  - [ ] 심사 제출 (다음 단계)
+  - [x] Build 53 심사 제출 → **반려** (2025-12-10)
+  - [ ] Build 54 심사 재제출 (진행 중)
 - [ ] Android Google Play 제출 (추후 진행)
   - [ ] Google Play Console 앱 생성
   - [ ] 내부 테스트 트랙
   - [ ] 프로덕션 출시
+
+#### Build 53 심사 반려 사유 및 대응 (2025-12-10)
+
+**반려 사유 1: Guideline 4.0 - Design (권한 요청 언어 불일치)**
+- 문제: 앱 Primary Language가 English인데 권한 요청 문구가 한국어
+- 대응: ✅ 완료
+  - `app.json` infoPlist 권한 설명 영어로 변경
+  - expo-image-picker, expo-media-library, expo-tracking-transparency 플러그인 권한 영어로 변경
+  - Android 알림 채널 이름/설명 영어로 변경 (`notificationService.ts`)
+
+**반려 사유 2: Guideline 3.1.2 - Business (구독 정보 누락)**
+- 문제: 자동 갱신 구독 앱에서 필수 정보 누락
+  - 앱 바이너리: Terms of Use (EULA) 링크 누락
+  - 앱 메타데이터: EULA 링크 누락
+- 대응: 🔄 진행 중
+  - [ ] 이용약관(EULA) 페이지 생성 또는 Apple 표준 EULA 사용
+  - [ ] SubscriptionScreen에 이용약관 링크 추가
+  - [ ] App Store Connect 메타데이터에 EULA 링크 추가
 
 **예상 소요**: 심사 제출 후 1-3일 (Apple 심사 기간)
 

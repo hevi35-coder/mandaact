@@ -522,7 +522,11 @@
       "logout": "로그아웃",
       "logoutConfirm": "로그아웃 하시겠습니까?",
       "deleteAccount": "계정 삭제",
-      "deleteConfirm": "정말 계정을 삭제하시겠습니까?\n모든 데이터가 삭제되며 복구할 수 없습니다."
+      "deleteConfirm": "정말 계정을 삭제하시겠습니까? 만다라트, 진행 현황, 배지 등 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.",
+      "deleteButton": "계정 삭제하기",
+      "deleting": "계정 삭제 중...",
+      "deleteSuccess": "계정이 삭제되었습니다",
+      "deleteError": "계정 삭제에 실패했습니다. 다시 시도해주세요."
     },
     "app": {
       "title": "앱",
@@ -1010,7 +1014,10 @@
     "manageSubscription": "구독 관리",
     "manageTitle": "구독 관리",
     "manageDescription": "App Store 설정에서 구독을 관리할 수 있습니다.",
-    "termsNotice": "결제는 Apple ID 계정으로 청구됩니다. 구독은 현재 기간이 끝나기 24시간 전에 자동 갱신됩니다.",
+    "termsNotice": "결제는 Apple ID 계정으로 청구됩니다. 구독은 현재 기간 종료 최소 24시간 전에 취소하지 않으면 자동 갱신됩니다. 구매 후 계정 설정에서 구독을 관리할 수 있습니다.",
+    "termsOfUse": "이용약관",
+    "privacyPolicy": "개인정보처리방침",
+    "and": "및",
     "limitReached": {
       "title": "만다라트 제한",
       "message": "무료 플랜에서는 최대 {{count}}개의 만다라트만 생성할 수 있습니다.",

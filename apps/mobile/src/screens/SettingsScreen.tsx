@@ -36,6 +36,7 @@ import {
   Globe,
   Play,
   Crown,
+  Trash2,
 } from 'lucide-react-native'
 import * as Application from 'expo-application'
 import { useNavigation } from '@react-navigation/native'
@@ -101,6 +102,7 @@ export default function SettingsScreen() {
     formatReminderTime,
   } = useNotifications()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [selectedHour, setSelectedHour] = useState(reminderTime.hour)
   const [selectedMinute, setSelectedMinute] = useState(reminderTime.minute)
@@ -180,6 +182,46 @@ export default function SettingsScreen() {
       },
     ])
   }, [signOut, t])
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      t('settings.account.deleteAccount'),
+      t('settings.account.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.account.deleteButton'),
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingAccount(true)
+            try {
+              // Delete user data from Supabase
+              // The database has CASCADE delete set up, so deleting from auth will cascade
+              const { error } = await supabase.rpc('delete_user_account')
+
+              if (error) {
+                // If RPC doesn't exist, try direct auth deletion
+                const { error: authError } = await supabase.auth.admin.deleteUser(user?.id || '')
+                if (authError) {
+                  throw authError
+                }
+              }
+
+              // Sign out after deletion
+              await signOut()
+
+              Alert.alert(t('common.success'), t('settings.account.deleteSuccess'))
+            } catch (error) {
+              console.error('[SettingsScreen] Delete account error:', error)
+              Alert.alert(t('common.error'), t('settings.account.deleteError'))
+            } finally {
+              setIsDeletingAccount(false)
+            }
+          },
+        },
+      ]
+    )
+  }, [signOut, user?.id, t])
 
   const handleOpenNicknameModal = useCallback(() => {
     setNicknameInput(nickname)
@@ -862,32 +904,59 @@ export default function SettingsScreen() {
             </Pressable>
           </Animated.View>
 
-          {/* Sign Out */}
+          {/* Account Actions */}
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.account.title')}
+          </Text>
           <Animated.View
             entering={FadeInUp.delay(450).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
           >
+            {/* Sign Out */}
             <Pressable
-              className="bg-white rounded-2xl px-5 py-4 flex-row items-center mb-8 border border-gray-100"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.06,
-                shadowRadius: 12,
-                elevation: 3,
-              }}
+              className="flex-row items-center px-5 py-4 border-b border-gray-100"
               onPress={handleSignOut}
-              disabled={loading || isSigningOut}
+              disabled={loading || isSigningOut || isDeletingAccount}
             >
               {isSigningOut ? (
                 <ActivityIndicator size="small" color="#9ca3af" />
               ) : (
-                <LogOut size={22} color="#9ca3af" />
+                <LogOut size={22} color="#6b7280" />
               )}
               <Text
-                className="ml-3 text-base text-gray-400"
-                style={{ fontFamily: 'Pretendard-Medium' }}
+                className="ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
               >
                 {t('settings.account.logout')}
+              </Text>
+            </Pressable>
+
+            {/* Delete Account */}
+            <Pressable
+              className="flex-row items-center px-5 py-4"
+              onPress={handleDeleteAccount}
+              disabled={loading || isSigningOut || isDeletingAccount}
+            >
+              {isDeletingAccount ? (
+                <ActivityIndicator size="small" color="#ef4444" />
+              ) : (
+                <Trash2 size={22} color="#ef4444" />
+              )}
+              <Text
+                className="ml-3 text-base text-red-500"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.account.deleteAccount')}
               </Text>
             </Pressable>
           </Animated.View>

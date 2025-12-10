@@ -83,8 +83,8 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     })
 
     await Notifications.setNotificationChannelAsync('reminders', {
-      name: '실천 리마인더',
-      description: '오늘의 실천을 완료하도록 알려드립니다.',
+      name: 'Practice Reminders',
+      description: 'Reminds you to complete your daily practice.',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#2563eb',

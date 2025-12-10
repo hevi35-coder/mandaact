@@ -15,20 +15,20 @@
     },
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
-      "buildNumber": "53",
+      "buildNumber": "54",
       "supportsTablet": true,
       "requireFullScreen": false,
       "splash": {
         "image": "./assets/splash.png",
-        "tabletImage": "./assets/splash-tablet.png",
+        "tabletImage": "./assets/splash.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
       "infoPlist": {
-        "NSCameraUsageDescription": "만다라트 이미지 촬영에 카메라가 필요합니다",
-        "NSPhotoLibraryUsageDescription": "만다라트 이미지 선택에 사진 접근이 필요합니다",
-        "NSPhotoLibraryAddUsageDescription": "만다라트 이미지 저장에 사진 접근이 필요합니다",
-        "NSUserTrackingUsageDescription": "맞춤형 광고 제공을 위해 사용자 추적 권한이 필요합니다",
+        "NSCameraUsageDescription": "Camera access is required to capture Mandalart images.",
+        "NSPhotoLibraryUsageDescription": "Photo library access is required to select Mandalart images.",
+        "NSPhotoLibraryAddUsageDescription": "Photo library access is required to save Mandalart images.",
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
         "SKAdNetworkItems": [
           {
             "SKAdNetworkIdentifier": "cstr6suwn9.skadnetwork"
@@ -123,15 +123,15 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "만다라트 이미지 선택에 사진 접근이 필요합니다",
-          "cameraPermission": "만다라트 이미지 촬영에 카메라가 필요합니다"
+          "photosPermission": "Photo library access is required to select Mandalart images.",
+          "cameraPermission": "Camera access is required to capture Mandalart images."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "만다라트 이미지 저장에 사진 접근이 필요합니다",
-          "savePhotosPermission": "만다라트 이미지를 갤러리에 저장합니다"
+          "photosPermission": "Photo library access is required to save Mandalart images.",
+          "savePhotosPermission": "Photo library access is required to save images to your gallery."
         }
       ],
       [
@@ -143,7 +143,7 @@
       [
         "expo-tracking-transparency",
         {
-          "userTrackingPermission": "맞춤형 광고 제공을 위해 사용자 추적 권한이 필요합니다"
+          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you."
         }
       ]
     ],

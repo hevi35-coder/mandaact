@@ -532,7 +532,11 @@
       "logout": "Sign Out",
       "logoutConfirm": "Are you sure you want to sign out?",
       "deleteAccount": "Delete Account",
-      "deleteConfirm": "Are you sure you want to delete your account?\nAll data will be deleted and cannot be recovered."
+      "deleteConfirm": "Are you sure you want to delete your account? All your data including mandalarts, progress, and achievements will be permanently deleted. This action cannot be undone.",
+      "deleteButton": "Delete My Account",
+      "deleting": "Deleting account...",
+      "deleteSuccess": "Account deleted successfully",
+      "deleteError": "Failed to delete account. Please try again."
     },
     "app": {
       "title": "App",
@@ -1020,7 +1024,10 @@
     "manageSubscription": "Manage Subscription",
     "manageTitle": "Manage Subscription",
     "manageDescription": "You can manage your subscription in App Store settings.",
-    "termsNotice": "Payment will be charged to your Apple ID account. Subscription automatically renews 24 hours before the current period ends.",
+    "termsNotice": "Payment will be charged to your Apple ID account. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Manage subscriptions in Account Settings after purchase.",
+    "termsOfUse": "Terms of Use",
+    "privacyPolicy": "Privacy Policy",
+    "and": "and",
     "limitReached": {
       "title": "Mandalart Limit",
       "message": "Free plan allows up to {{count}} mandalarts.",
