@@ -57,8 +57,9 @@ describe('reportParser', () => {
         it('should handle empty report', () => {
             const result = parseWeeklyReport('')
 
-            expect(result.headline).toBe('리포트를 생성할 수 없습니다')
+            expect(result.headline).toBe('')
             expect(result.metrics).toEqual([])
+            expect(result.errorReason).toBe('emptyContent')
         })
     })
 

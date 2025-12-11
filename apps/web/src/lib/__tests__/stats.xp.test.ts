@@ -21,17 +21,22 @@ describe('stats - XP and Level calculations', () => {
             expect(calculateLevelFromXP(449)).toBe(3)
         })
 
-        it('should calculate higher levels correctly', () => {
+        it('should calculate levels 4-6 correctly', () => {
             expect(calculateLevelFromXP(450)).toBe(4)  // Level 4: 450-699
             expect(calculateLevelFromXP(700)).toBe(5)  // Level 5: 700-999
             expect(calculateLevelFromXP(1000)).toBe(6) // Level 6: 1000-1349
-            expect(calculateLevelFromXP(2000)).toBe(8) // Level 8: 1750-2199
+        })
+
+        it('should calculate higher levels correctly', () => {
+            expect(calculateLevelFromXP(2000)).toBe(8)  // Level 8: 1750-2199
             expect(calculateLevelFromXP(3000)).toBe(10) // Level 10: 2700-3299
+            expect(calculateLevelFromXP(10000)).toBeGreaterThan(13)
         })
     })
 
     describe('getXPForNextLevel', () => {
         it('should return correct XP thresholds for each level', () => {
+            // getXPForNextLevel returns minimum XP to BE at that level
             expect(getXPForNextLevel(1)).toBe(0)     // Level 1 starts at 0 XP
             expect(getXPForNextLevel(2)).toBe(100)   // Level 2 starts at 100 XP
             expect(getXPForNextLevel(3)).toBe(250)   // Level 3 starts at 250 XP
