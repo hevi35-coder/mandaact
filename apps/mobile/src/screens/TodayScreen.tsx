@@ -48,6 +48,7 @@ import {
   ProgressCard,
   MandalartSection,
   ActionTypeIcon,
+  FilteredEmptyState,
   type ActionWithContext,
 } from '../components/Today'
 import { XPBoostButton } from '../components/ads'
@@ -224,6 +225,29 @@ export default function TodayScreen() {
     setActiveFilters(new Set())
   }, [])
 
+  // Handler for empty state actions
+  const handleEmptyStateAction = useCallback(() => {
+    if (!emptyStateScenario) return
+
+    switch (emptyStateScenario) {
+      case 'unconfigured':
+        // Expand unconfigured section and scroll to it
+        setUnconfiguredCollapsed(false)
+        break
+      case 'noFilterMatch':
+        // Clear all filters
+        clearAllFilters()
+        break
+      case 'allCompleted':
+        // Expand completed section
+        setCompletedCollapsed(false)
+        break
+      case 'noneToday':
+        // No action needed - informational only
+        break
+    }
+  }, [emptyStateScenario, clearAllFilters])
+
   // Separate configured, unconfigured, and completed actions
   const { configuredActions, unconfiguredActions, completedActions } = useMemo(() => {
     const configured: typeof actions = []
@@ -263,6 +287,34 @@ export default function TodayScreen() {
   // State for unconfigured and completed section collapse
   const [unconfiguredCollapsed, setUnconfiguredCollapsed] = useState(true)
   const [completedCollapsed, setCompletedCollapsed] = useState(true)
+
+  // Determine empty state scenario for when filteredActions is empty
+  const emptyStateScenario = useMemo(() => {
+    // Only determine scenario if we have actions but filtered result is empty
+    if (actions.length === 0 || filteredActions.length > 0) return null
+
+    // Scenario 1: All actions are unconfigured
+    if (configuredActions.length === 0 && unconfiguredActions.length > 0) {
+      return 'unconfigured' as const
+    }
+
+    // Scenario 2: Active filters but no matches
+    if (activeFilters.size > 0) {
+      return 'noFilterMatch' as const
+    }
+
+    // Scenario 3: Only completed actions exist (period targets met)
+    if (completedActions.length > 0 && configuredActions.length === 0) {
+      return 'allCompleted' as const
+    }
+
+    // Scenario 4: Configured actions exist but none should show today
+    if (configuredActions.length > 0) {
+      return 'noneToday' as const
+    }
+
+    return null
+  }, [actions.length, filteredActions.length, configuredActions.length, unconfiguredActions.length, completedActions.length, activeFilters.size])
 
   // Group actions by mandalart and sort by sub_goal.position, then action.position
   const actionsByMandalart = useMemo(() => {
@@ -684,19 +736,12 @@ export default function TodayScreen() {
         )}
 
         {/* Filtered Empty State - 필터 결과가 없을 때 */}
-        {actions.length > 0 && filteredActions.length === 0 && (
-          <Animated.View
-            entering={FadeInUp.delay(100).duration(400)}
-            className="bg-white rounded-2xl p-8 items-center justify-center min-h-[200px]"
-          >
-            <Text className="text-4xl mb-4">🔍</Text>
-            <Text className="text-lg font-semibold text-gray-900 text-center mb-2">
-              {t('today.noFilterResult')}
-            </Text>
-            <Text className="text-gray-500 text-center">
-              {t('today.tryOtherFilter')}
-            </Text>
-          </Animated.View>
+        {emptyStateScenario && (
+          <FilteredEmptyState
+            scenario={emptyStateScenario}
+            onAction={handleEmptyStateAction}
+            hasCompletedActions={completedActions.length > 0}
+          />
         )}
 
         {/* iPad: 2-column layout (Left: Configured, Right: XP Boost + Unconfigured + Completed) */}
