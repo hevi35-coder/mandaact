@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react'
 import { View, Text } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { useTranslation } from 'react-i18next'
 import type { Mandalart, SubGoal, Action } from '@mandaact/shared'
 
 interface SubGoalWithActions extends SubGoal {
@@ -26,6 +27,7 @@ interface MandalartExportGridProps {
  */
 const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
   ({ mandalart, size = 1080 }, ref) => {
+    const { t } = useTranslation()
     const cellSize = size / 9
     const borderWidth = 2
     const sectionGap = 4
@@ -285,7 +287,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   fontSize: fontSize.branding,
                 }}
               >
-                목표를 실천으로, MandaAct
+                {t('mandalart.detail.exportWatermark')}
               </Text>
             }
           >
@@ -301,7 +303,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   opacity: 0,
                 }}
               >
-                목표를 실천으로, MandaAct
+                {t('mandalart.detail.exportWatermark')}
               </Text>
             </LinearGradient>
           </MaskedView>

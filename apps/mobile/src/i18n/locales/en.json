@@ -505,6 +505,7 @@
       "exportSuccess": "High-resolution mandalart image has been saved to gallery.",
       "exportError": "An error occurred while exporting.",
       "loadingError": "An error occurred while loading the mandalart.",
+      "exportWatermark": "Turn goals into action, MandaAct",
       "usage": {
         "title": "How to Use",
         "tapToView": "Tap each area to view details and edit.",
