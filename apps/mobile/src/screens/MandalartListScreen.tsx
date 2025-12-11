@@ -18,6 +18,7 @@ import {
   Modal,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import MaskedView from '@react-native-masked-view/masked-view'
 import { Crown, X } from 'lucide-react-native'
 import { useScrollToTop } from '../navigation/RootNavigator'
 import { useNavigation } from '@react-navigation/native'
@@ -289,8 +290,8 @@ export default function MandalartListScreen() {
             <View className="px-6 py-8">
               {/* Icon */}
               <View className="items-center mb-6">
-                <View className="w-20 h-20 rounded-full bg-amber-100 items-center justify-center mb-4">
-                  <Crown size={40} color="#d97706" fill="#d97706" />
+                <View className="w-20 h-20 rounded-full bg-yellow-100 items-center justify-center mb-4">
+                  <Crown size={40} color="#fbbf24" fill="#fbbf24" />
                 </View>
                 <Text
                   className="text-2xl text-gray-900 text-center mb-2"
@@ -307,11 +308,11 @@ export default function MandalartListScreen() {
               </View>
 
               {/* Premium Benefits */}
-              <View className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 mb-6">
+              <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
                 <View className="flex-row items-center mb-3">
-                  <Crown size={18} color="#d97706" fill="#d97706" />
+                  <Crown size={18} color="#fbbf24" fill="#fbbf24" />
                   <Text
-                    className="text-amber-900 ml-2"
+                    className="text-gray-900 ml-2"
                     style={{ fontFamily: 'Pretendard-Bold' }}
                   >
                     Premium {t('subscription.benefits.title', { defaultValue: '혜택' })}
@@ -319,30 +320,30 @@ export default function MandalartListScreen() {
                 </View>
                 <View className="space-y-2">
                   <View className="flex-row items-start">
-                    <Text className="text-amber-700 mr-2">•</Text>
+                    <Text className="text-gray-700 mr-2">•</Text>
                     <Text
-                      className="text-amber-800 flex-1"
+                      className="text-gray-800 flex-1"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
                       {t('subscription.benefits.unlimitedMandalarts', { defaultValue: '무제한 만다라트 생성' })}
                     </Text>
                   </View>
                   <View className="flex-row items-start">
-                    <Text className="text-amber-700 mr-2">•</Text>
+                    <Text className="text-gray-700 mr-2">•</Text>
                     <Text
-                      className="text-amber-800 flex-1"
+                      className="text-gray-800 flex-1"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
                       {t('subscription.benefits.noAds', { defaultValue: '모든 광고 제거' })}
                     </Text>
                   </View>
                   <View className="flex-row items-start">
-                    <Text className="text-amber-700 mr-2">•</Text>
+                    <Text className="text-gray-700 mr-2">•</Text>
                     <Text
-                      className="text-amber-800 flex-1"
+                      className="text-gray-800 flex-1"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      {t('subscription.benefits.premiumSupport', { defaultValue: '우선 지원' })}
+                      {t('rewarded.reportGenerate.subtitle', { defaultValue: 'AI 리포트 즉시 생성' })}
                     </Text>
                   </View>
                 </View>
@@ -351,27 +352,39 @@ export default function MandalartListScreen() {
               {/* Actions */}
               <Pressable
                 onPress={handleUpgradePremium}
-                className="rounded-xl mb-3 overflow-hidden"
-                style={{
-                  shadowColor: '#7c3aed',
-                  shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 12,
-                  elevation: 8,
-                }}
+                className="mb-3 rounded-xl overflow-hidden"
               >
                 <LinearGradient
                   colors={['#7c3aed', '#2563eb']}
                   start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  className="py-4 items-center"
+                  end={{ x: 1, y: 0 }}
+                  style={{ padding: 2, borderRadius: 12 }}
                 >
-                  <Text
-                    className="text-white text-lg"
-                    style={{ fontFamily: 'Pretendard-Bold' }}
-                  >
-                    {t('subscription.limitReached.upgrade')}
-                  </Text>
+                  <View className="bg-white rounded-[10px] py-4 items-center">
+                    <MaskedView
+                      maskElement={
+                        <Text
+                          className="text-lg text-center"
+                          style={{ fontFamily: 'Pretendard-Bold' }}
+                        >
+                          {t('subscription.limitReached.upgrade')}
+                        </Text>
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#7c3aed', '#2563eb']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <Text
+                          className="text-lg text-center opacity-0"
+                          style={{ fontFamily: 'Pretendard-Bold' }}
+                        >
+                          {t('subscription.limitReached.upgrade')}
+                        </Text>
+                      </LinearGradient>
+                    </MaskedView>
+                  </View>
                 </LinearGradient>
               </Pressable>
 
