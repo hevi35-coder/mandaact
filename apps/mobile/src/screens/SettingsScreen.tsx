@@ -510,13 +510,13 @@ export default function SettingsScreen() {
                       className="text-base text-white"
                       style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
-                      {t('subscription.premiumActive')}
+                      {t('subscription.growingWithPremium')}
                     </Text>
                     <Text
                       className="text-xs text-white/70"
                       style={{ fontFamily: 'Pretendard-Regular' }}
                     >
-                      {t('subscription.manageSubscription')}
+                      {t('subscription.enjoyAllFeatures')}
                     </Text>
                   </View>
                   <ChevronRight size={20} color="white" />
@@ -538,7 +538,7 @@ export default function SettingsScreen() {
                       className="text-xs text-gray-500"
                       style={{ fontFamily: 'Pretendard-Regular' }}
                     >
-                      {t('subscription.premiumBenefits')}
+                      {t('subscription.focusOnGoals')}
                     </Text>
                   </View>
                   {/* Gradient text CTA for emphasis */}
