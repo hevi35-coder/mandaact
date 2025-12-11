@@ -495,6 +495,7 @@
       "exportSuccess": "고해상도 만다라트 이미지가 갤러리에 저장되었습니다.",
       "exportError": "내보내기 중 오류가 발생했습니다.",
       "loadingError": "만다라트를 불러오는 중 오류가 발생했습니다.",
+      "exportWatermark": "목표를 실천으로, MandaAct",
       "usage": {
         "title": "사용 방법",
         "tapToView": "각 영역을 탭하여 상세보기 및 수정이 가능합니다.",
