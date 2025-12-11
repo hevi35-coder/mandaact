@@ -195,17 +195,22 @@ export default function SettingsScreen() {
           onPress: async () => {
             setIsDeletingAccount(true)
             try {
-              // Delete user data from Supabase
-              // The database has CASCADE delete set up, so deleting from auth will cascade
-              const { error } = await supabase.rpc('delete_user_account')
+              // Call RPC function to delete user account
+              // All related data will be cascade deleted automatically
+              const { data, error } = await supabase.rpc('delete_user_account')
 
               if (error) {
-                // If RPC doesn't exist, try direct auth deletion
-                const { error: authError } = await supabase.auth.admin.deleteUser(user?.id || '')
-                if (authError) {
-                  throw authError
-                }
+                console.error('[SettingsScreen] RPC error:', error)
+                throw new Error(error.message || 'Failed to delete account')
               }
+
+              // Check result from RPC function
+              if (data && !data.success) {
+                console.error('[SettingsScreen] Delete failed:', data.error)
+                throw new Error(data.error || 'Failed to delete account')
+              }
+
+              console.log('[SettingsScreen] Account deleted successfully')
 
               // Sign out after deletion
               await signOut()
@@ -213,7 +218,10 @@ export default function SettingsScreen() {
               Alert.alert(t('common.success'), t('settings.account.deleteSuccess'))
             } catch (error) {
               console.error('[SettingsScreen] Delete account error:', error)
-              Alert.alert(t('common.error'), t('settings.account.deleteError'))
+              Alert.alert(
+                t('common.error'),
+                error instanceof Error ? error.message : t('settings.account.deleteError')
+              )
             } finally {
               setIsDeletingAccount(false)
             }
@@ -221,7 +229,7 @@ export default function SettingsScreen() {
         },
       ]
     )
-  }, [signOut, user?.id, t])
+  }, [signOut, t])
 
   const handleOpenNicknameModal = useCallback(() => {
     setNicknameInput(nickname)
