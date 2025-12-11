@@ -119,7 +119,7 @@ describe('suggestActionType - User Scenario Tests', () => {
     })
 
     it('월 1회 재정 점검', () => {
-      const result = testSuggestion('월 1회 재정 점검', 'routine', 'medium')
+      const result = testSuggestion('월 1회 재정 점검', 'routine', 'high')
       expect(result.routineFrequency).toBe('monthly')
     })
 
@@ -165,7 +165,7 @@ describe('suggestActionType - User Scenario Tests', () => {
     })
 
     it('월 2회 문화생활', () => {
-      const result = testSuggestion('월 2회 문화생활', 'routine', 'medium')
+      const result = testSuggestion('월 2회 문화생활', 'routine', 'high')
       expect(result.routineFrequency).toBe('monthly')
     })
   })
@@ -345,7 +345,7 @@ describe('formatTypeDetails', () => {
       routine_frequency: 'weekly',
       routine_weekdays: [0, 6]
     })
-    expect(result).toBe('토일')
+    expect(result).toBe('주말')
   })
 
   it('should format weekly routine (specific days)', () => {
