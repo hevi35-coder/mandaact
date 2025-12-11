@@ -93,22 +93,30 @@ Actions are classified into 3 types with AI-powered suggestions:
 
 ### Gamification System
 
-**XP System:** `src/lib/xpMultipliers.ts`
-- **Hybrid Log Curve**: Exponential XP requirements with zone-based adjustment
-  - Level 1-2: Linear (100 XP/level)
-  - Level 3-10: Moderate curve
-  - Level 11+: Gentle slope (67% faster than v1.0)
-- **XP Multipliers** (4 types, stackable):
+**XP System:** `src/lib/stats.ts`
+- **Linear Progression**: XP requirements increase by +50 per level
+  - Level 1→2: 100 XP (base)
+  - Level 2→3: 150 XP (+50)
+  - Level 3→4: 200 XP (+50)
+  - ...continues with +50 increment
+  - Formula: Total XP for level n = 25n² + 25n - 50 (n ≥ 2)
+  - Level thresholds:
+    - Level 1: 0 XP
+    - Level 2: 100 XP
+    - Level 3: 250 XP
+    - Level 5: 700 XP
+    - Level 10: 2,700 XP
+- **XP Multipliers** (4 types, stackable): `src/lib/xpMultipliers.ts`
   - Weekend Bonus (1.5x): Saturday & Sunday
   - Comeback Bonus (1.5x): 3 days after 3+ day absence
   - Level Milestone (2x): 7 days after reaching level 5, 10, 15, 20, 25, 30
   - Perfect Week (2x): 7 days after 80%+ weekly completion
 - **Anti-Cheat**: Daily check limit (3x per action), 10-second cooldown, spam detection
 - **Functions**:
-  - `calculateXPForLevel(level)`: Get XP requirement for level
-  - `getLevelFromXP(xp)`: Get level from total XP
+  - `calculateLevelFromXP(totalXP)`: Get level from total XP
+  - `getXPForNextLevel(level)`: Get XP requirement to reach level
   - `getActiveMultipliers(userId)`: Get current active multipliers
-  - `calculateXPWithMultipliers(baseXP, multipliers)`: Apply all multipliers
+  - `calculateTotalMultiplier(multipliers)`: Apply all multipliers
 
 **Badge System:** `src/lib/badgeEvaluator.ts`
 - **21 Achievements** across 7 categories:
