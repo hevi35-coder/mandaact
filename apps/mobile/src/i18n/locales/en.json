@@ -1006,16 +1006,16 @@
     }
   },
   "subscription": {
-    "title": "Premium",
+    "title": "Grow Unlimited",
     "freePlan": "Free Plan",
     "freeLimit": "{{count}} mandalarts limit",
-    "premiumActive": "Premium Active",
+    "premiumActive": "Premium Member",
     "activeSubscription": "Premium subscription active",
     "lifetimeAccess": "Lifetime access",
     "expiresAt": "Valid until {{date}}",
     "autoRenew": "Auto-renews",
     "cancelledNoRenew": "Will not renew",
-    "premiumBenefits": "Premium Benefits",
+    "premiumBenefits": "Unlimited Mandalarts · AI Reports · Ad-Free",
     "benefits": {
       "unlimitedMandalarts": "Unlimited mandalarts",
       "unlimitedReports": "Unlimited AI reports",
@@ -1047,7 +1047,7 @@
     "purchaseSuccess": "Purchase Complete!",
     "welcomePremium": "Welcome to Premium",
     "purchaseError": "Purchase failed. Please try again.",
-    "manageSubscription": "Manage Subscription",
+    "manageSubscription": "All Features Active",
     "manageTitle": "Manage Subscription",
     "manageDescription": "You can manage your subscription in App Store settings.",
     "termsNotice": "Payment will be charged to your Apple ID account. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Manage subscriptions in Account Settings after purchase.",
