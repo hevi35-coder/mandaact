@@ -144,6 +144,32 @@
     "noFilterResult": "필터에 맞는 항목이 없습니다",
     "tryOtherFilter": "다른 타입 필터를 선택해보세요",
     "coreGoal": "핵심 목표",
+    "emptyStates": {
+      "unconfigured": {
+        "title": "실천 항목의 타입 설정이 필요해요",
+        "description": "타입을 설정하면 오늘 해야 할 항목을 자동으로 보여드려요",
+        "action": "타입 설정하기"
+      },
+      "noFilterMatch": {
+        "title": "선택한 타입에 맞는 항목이 없어요",
+        "description": "다른 타입 필터를 선택해보세요",
+        "action": "필터 초기화"
+      },
+      "noneToday": {
+        "title": "오늘 실천할 항목이 없어요",
+        "description": "설정한 반복 주기에 따라 내일 다시 표시될 거예요",
+        "info": {
+          "title": "실천 항목이 표시되지 않는 이유",
+          "routine": "루틴: 요일/주기 설정에 따라 오늘은 표시되지 않습니다",
+          "mission": "미션: 이번 기간 목표를 이미 달성했습니다"
+        }
+      },
+      "allCompleted": {
+        "title": "모든 목표를 달성했어요!",
+        "description": "이번 기간의 목표를 완료했습니다. 수고하셨어요!",
+        "viewCompleted": "완료 항목 보기"
+      }
+    },
     "empty": {
       "title": "아직 실천 항목이 없어요",
       "description": "만다라트를 만들면\n매일 실천할 목표를 관리할 수 있어요",

@@ -154,6 +154,32 @@
     "noFilterResult": "No items match the filter",
     "tryOtherFilter": "Try selecting a different type filter",
     "coreGoal": "Core Goal",
+    "emptyStates": {
+      "unconfigured": {
+        "title": "Action types need to be configured",
+        "description": "Set action types to see today's items automatically",
+        "action": "Configure Types"
+      },
+      "noFilterMatch": {
+        "title": "No items match the selected type",
+        "description": "Try selecting a different type filter",
+        "action": "Clear Filters"
+      },
+      "noneToday": {
+        "title": "No items to practice today",
+        "description": "Items will show again tomorrow based on your repeat settings",
+        "info": {
+          "title": "Why items aren't showing",
+          "routine": "Routine: Not scheduled for today based on frequency settings",
+          "mission": "Mission: Period target already completed"
+        }
+      },
+      "allCompleted": {
+        "title": "All goals completed!",
+        "description": "You've completed all your targets for this period. Great work!",
+        "viewCompleted": "View Completed"
+      }
+    },
     "empty": {
       "title": "No practice items yet",
       "description": "Create a mandalart to\nmanage your daily goals",
