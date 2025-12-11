@@ -1028,6 +1028,12 @@
     "termsOfUse": "Terms of Use",
     "privacyPolicy": "Privacy Policy",
     "and": "and",
+    "benefits": {
+      "title": "Benefits",
+      "unlimitedMandalarts": "Unlimited mandalarts",
+      "noAds": "Remove all ads",
+      "premiumSupport": "Priority support"
+    },
     "limitReached": {
       "title": "Mandalart Limit",
       "message": "Free plan allows up to {{count}} mandalarts.",
