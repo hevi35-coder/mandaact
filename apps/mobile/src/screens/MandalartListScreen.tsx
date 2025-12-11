@@ -268,77 +268,127 @@ export default function MandalartListScreen() {
         animationType="fade"
         onRequestClose={() => setShowLimitModal(false)}
       >
-        <View className="flex-1 justify-center items-center bg-black/50 px-4">
-          <View
+        <Pressable
+          className="flex-1 justify-center items-center bg-black/50 px-4"
+          onPress={() => setShowLimitModal(false)}
+        >
+          <Pressable
             className="bg-white rounded-2xl w-full overflow-hidden"
             style={{ maxWidth: 400 }}
+            onPress={(e) => e.stopPropagation()}
           >
-            {/* Gradient Header */}
-            <LinearGradient
-              colors={['#7c3aed', '#2563eb']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="px-6 py-8 items-center"
+            {/* Close Button */}
+            <Pressable
+              onPress={() => setShowLimitModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 items-center justify-center z-10"
             >
-              <View className="w-16 h-16 rounded-full bg-white/20 items-center justify-center mb-4">
-                <Crown size={32} color="#fbbf24" fill="#fbbf24" />
-              </View>
-              <Text
-                className="text-xl text-white text-center"
-                style={{ fontFamily: 'Pretendard-Bold' }}
-              >
-                {t('subscription.limitReached.title')}
-              </Text>
-              <Text
-                className="text-white/80 text-center mt-2"
-                style={{ fontFamily: 'Pretendard-Regular' }}
-              >
-                {t('subscription.limitReached.message', { count: FREE_MANDALART_LIMIT })}
-              </Text>
-            </LinearGradient>
+              <X size={18} color="#6b7280" />
+            </Pressable>
 
-            {/* Actions */}
-            <View className="p-6">
+            {/* Content */}
+            <View className="px-6 py-8">
+              {/* Icon */}
+              <View className="items-center mb-6">
+                <View className="w-20 h-20 rounded-full bg-amber-100 items-center justify-center mb-4">
+                  <Crown size={40} color="#d97706" fill="#d97706" />
+                </View>
+                <Text
+                  className="text-2xl text-gray-900 text-center mb-2"
+                  style={{ fontFamily: 'Pretendard-Bold' }}
+                >
+                  {t('subscription.limitReached.title')}
+                </Text>
+                <Text
+                  className="text-base text-gray-500 text-center"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {t('subscription.limitReached.message', { count: FREE_MANDALART_LIMIT })}
+                </Text>
+              </View>
+
+              {/* Premium Benefits */}
+              <View className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 mb-6">
+                <View className="flex-row items-center mb-3">
+                  <Crown size={18} color="#d97706" fill="#d97706" />
+                  <Text
+                    className="text-amber-900 ml-2"
+                    style={{ fontFamily: 'Pretendard-Bold' }}
+                  >
+                    Premium {t('subscription.benefits.title', { defaultValue: '혜택' })}
+                  </Text>
+                </View>
+                <View className="space-y-2">
+                  <View className="flex-row items-start">
+                    <Text className="text-amber-700 mr-2">•</Text>
+                    <Text
+                      className="text-amber-800 flex-1"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      {t('subscription.benefits.unlimitedMandalarts', { defaultValue: '무제한 만다라트 생성' })}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-start">
+                    <Text className="text-amber-700 mr-2">•</Text>
+                    <Text
+                      className="text-amber-800 flex-1"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      {t('subscription.benefits.noAds', { defaultValue: '모든 광고 제거' })}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-start">
+                    <Text className="text-amber-700 mr-2">•</Text>
+                    <Text
+                      className="text-amber-800 flex-1"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      {t('subscription.benefits.premiumSupport', { defaultValue: '우선 지원' })}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Actions */}
               <Pressable
                 onPress={handleUpgradePremium}
-                className="bg-violet-600 rounded-xl py-4 items-center mb-3"
+                className="rounded-xl mb-3 overflow-hidden"
                 style={{
                   shadowColor: '#7c3aed',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 4,
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 12,
+                  elevation: 8,
                 }}
               >
-                <Text
-                  className="text-white text-base"
-                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                <LinearGradient
+                  colors={['#7c3aed', '#2563eb']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="py-4 items-center"
                 >
-                  {t('subscription.limitReached.upgrade')}
-                </Text>
+                  <Text
+                    className="text-white text-lg"
+                    style={{ fontFamily: 'Pretendard-Bold' }}
+                  >
+                    {t('subscription.limitReached.upgrade')}
+                  </Text>
+                </LinearGradient>
               </Pressable>
+
               <Pressable
                 onPress={() => setShowLimitModal(false)}
                 className="py-3 items-center"
               >
                 <Text
-                  className="text-gray-500 text-base"
+                  className="text-gray-400 text-base"
                   style={{ fontFamily: 'Pretendard-Medium' }}
                 >
                   {t('subscription.limitReached.later')}
                 </Text>
               </Pressable>
             </View>
-
-            {/* Close Button */}
-            <Pressable
-              onPress={() => setShowLimitModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 items-center justify-center"
-            >
-              <X size={18} color="white" />
-            </Pressable>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   )
