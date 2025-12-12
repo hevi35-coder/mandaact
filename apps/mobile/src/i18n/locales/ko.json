@@ -1048,12 +1048,6 @@
     "termsOfUse": "이용약관",
     "privacyPolicy": "개인정보처리방침",
     "and": "및",
-    "benefits": {
-      "title": "혜택",
-      "unlimitedMandalarts": "무제한 만다라트 생성",
-      "noAds": "모든 광고 제거",
-      "premiumSupport": "우선 지원"
-    },
     "limitReached": {
       "title": "만다라트 제한",
       "message": "무료 플랜에서는 최대 {{count}}개의 만다라트만 생성할 수 있습니다.",
