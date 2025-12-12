@@ -20,7 +20,6 @@
       "requireFullScreen": false,
       "splash": {
         "image": "./assets/splash.png",
-        "tabletImage": "./assets/splash.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
