@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import {
   View,
   Text,
@@ -634,9 +634,8 @@ export default function ReportsScreen() {
   useEffect(() => {
     console.log('[ReportsScreen] 🔄 Premium status update:', {
       isPremium,
-      canGenerateReport: canGenerateReport(0),
     })
-  }, [isPremium, canGenerateReport])
+  }, [isPremium])
 
   // iPad detection
   const { width: screenWidth } = useWindowDimensions()

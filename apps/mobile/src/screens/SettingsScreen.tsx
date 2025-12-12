@@ -95,9 +95,9 @@ export default function SettingsScreen() {
       isPremium,
       status: subscriptionInfo?.status,
       plan: subscriptionInfo?.plan,
-      expiresAt: subscriptionInfo?.expiresAt?.toISOString(),
+      expiresAt: subscriptionInfo?.expiresAt,
     })
-  }, [isPremium, subscriptionInfo])
+  }, [isPremium])
   const {
     isEnabled: notificationsEnabled,
     isLoading: notificationLoading,
