@@ -1,6 +1,6 @@
-# MandaAct 개발 로드맵 v3.13
+# MandaAct 개발 로드맵 v3.14
 
-**최종 업데이트**: 2025-12-10 23:50 - Build 54 심사 재제출 준비
+**최종 업데이트**: 2025-12-11 06:05 - Build 54 심사 대응 완료
 **현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포 진행 중** 🔄
 
 ---
@@ -166,23 +166,59 @@
   - [ ] 내부 테스트 트랙
   - [ ] 프로덕션 출시
 
-#### Build 53 심사 반려 사유 및 대응 (2025-12-10)
+#### Build 53 심사 반려 사유 및 대응 (2025-12-10~11)
 
-**반려 사유 1: Guideline 4.0 - Design (권한 요청 언어 불일치)**
+**반려 사유 1: Guideline 4.0 - Design (권한 요청 언어 불일치)** ✅ **완료**
 - 문제: 앱 Primary Language가 English인데 권한 요청 문구가 한국어
-- 대응: ✅ 완료
+- 대응: ✅ 완료 (2025-12-10)
   - `app.json` infoPlist 권한 설명 영어로 변경
   - expo-image-picker, expo-media-library, expo-tracking-transparency 플러그인 권한 영어로 변경
   - Android 알림 채널 이름/설명 영어로 변경 (`notificationService.ts`)
+  - buildNumber: 53 → 54
 
-**반려 사유 2: Guideline 3.1.2 - Business (구독 정보 누락)**
+**반려 사유 2: Guideline 3.1.2 - Business (구독 정보 누락)** ✅ **완료**
 - 문제: 자동 갱신 구독 앱에서 필수 정보 누락
   - 앱 바이너리: Terms of Use (EULA) 링크 누락
   - 앱 메타데이터: EULA 링크 누락
+- 대응: ✅ 완료 (2025-12-10)
+  - ✅ SubscriptionScreen에 Terms of Use (Apple 표준 EULA) 링크 추가
+  - ✅ SubscriptionScreen에 Privacy Policy 링크 추가
+  - ✅ 구독 자동 갱신 안내 문구 보강 (i18n)
+  - [ ] App Store Connect 메타데이터에 EULA 링크 추가 (수동 작업 필요)
+
+**반려 사유 3: Guideline 2.1 - Performance (Plans not displayed)** 🔄 **외부 설정 대기**
+- 문제: iPad Air (5th generation) / iPadOS 26.1에서 인앱 구매 상품(플랜)이 표시되지 않음
+- 원인: RevenueCat Dashboard 또는 App Store Connect IAP 설정 미완료
 - 대응: 🔄 진행 중
-  - [ ] 이용약관(EULA) 페이지 생성 또는 Apple 표준 EULA 사용
-  - [ ] SubscriptionScreen에 이용약관 링크 추가
-  - [ ] App Store Connect 메타데이터에 EULA 링크 추가
+  - ✅ 코드는 이미 구현 완료 (RevenueCat 통합)
+  - [ ] App Store Connect에서 IAP 상품 메타데이터 완료 (월간/연간)
+    - [ ] 앱 스토어 현지화 (표시 이름, 설명)
+    - [ ] 가격 설정 완료
+    - [ ] 상품 상태: "Ready to Submit" 이상
+  - [ ] RevenueCat Dashboard 확인
+    - [ ] Products 추가 및 동기화
+    - [ ] Offerings "default" Current로 설정
+    - [ ] Packages (Monthly, Annual) 연결
+
+**반려 사유 4: Guideline 5.1.1(v) - Data Collection (계정 삭제 기능 누락)** ✅ **완료**
+- 문제: 계정 생성을 지원하지만 계정 삭제 기능이 없음
+- 대응: ✅ 완료 (2025-12-11)
+  - ✅ Supabase RPC 함수 `delete_user_account()` 생성 (마이그레이션)
+  - ✅ SettingsScreen에 "계정 삭제" 버튼 추가
+  - ✅ 계정 삭제 확인 다이얼로그 구현
+  - ✅ 계정 삭제 시 모든 연관 데이터 CASCADE 삭제
+  - ✅ i18n 번역 추가 (영어/한국어)
+
+**Build 54 변경사항 요약**:
+- ✅ 권한 요청 문구 영어로 통일
+- ✅ 구독 화면에 Terms of Use 및 Privacy Policy 링크 추가
+- ✅ 계정 삭제 기능 구현
+- 🔄 IAP 상품 설정 (외부 작업 - App Store Connect)
+
+**다음 단계**:
+1. App Store Connect에서 IAP 상품 메타데이터 완료
+2. RevenueCat Dashboard에서 Offerings/Packages 설정 확인
+3. Build 54 TestFlight 업로드 및 심사 재제출
 
 **예상 소요**: 심사 제출 후 1-3일 (Apple 심사 기간)
 
