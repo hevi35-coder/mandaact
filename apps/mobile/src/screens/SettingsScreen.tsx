@@ -548,7 +548,7 @@ export default function SettingsScreen() {
                         className="text-sm"
                         style={{ fontFamily: 'Pretendard-Bold' }}
                       >
-                        {t('subscription.limitReached.upgrade')}
+                        {t('subscription.upgrade')}
                       </Text>
                     }
                   >
@@ -561,7 +561,7 @@ export default function SettingsScreen() {
                         className="text-sm opacity-0"
                         style={{ fontFamily: 'Pretendard-Bold' }}
                       >
-                        {t('subscription.limitReached.upgrade')}
+                        {t('subscription.upgrade')}
                       </Text>
                     </LinearGradient>
                   </MaskedView>
