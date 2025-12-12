@@ -1063,6 +1063,8 @@
       "message": "Free plan allows up to {{count}} mandalarts.",
       "upgrade": "Upgrade to Premium",
       "later": "Later"
-    }
+    },
+    "activeBenefits": "Active Benefits",
+    "active": "Active"
   }
 }

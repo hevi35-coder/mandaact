@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useRef, useEffect } from 'react'
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Alert,
   Linking,
 } from 'react-native'
-import Animated, { FadeInUp } from 'react-native-reanimated'
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
@@ -50,6 +50,18 @@ export default function SubscriptionScreen() {
 
   const [purchasingPackageId, setPurchasingPackageId] = useState<string | null>(null)
   const [isRestoring, setIsRestoring] = useState(false)
+  const scrollViewRef = useRef<ScrollView>(null)
+  const [justPurchased, setJustPurchased] = useState(false)
+
+  // Scroll to top when becoming premium
+  useEffect(() => {
+    if (isPremium && justPurchased) {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true })
+      // Reset flag after animation
+      const timer = setTimeout(() => setJustPurchased(false), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [isPremium, justPurchased])
 
   // Handle purchase
   const handlePurchase = useCallback(async (pkg: PurchasesPackage) => {
@@ -57,6 +69,7 @@ export default function SubscriptionScreen() {
     try {
       const success = await purchase(pkg)
       if (success) {
+        setJustPurchased(true)
         toast.success(
           t('subscription.purchaseSuccess'),
           t('subscription.welcomePremium')
@@ -143,6 +156,7 @@ export default function SubscriptionScreen() {
     <View className="flex-1 bg-gray-50">
       <Header showBackButton title={t('subscription.title')} />
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         contentContainerStyle={{ padding: 20, alignItems: 'center' }}
       >
@@ -448,18 +462,18 @@ export default function SubscriptionScreen() {
             </>
           )}
 
-          {/* Manage Subscription (for Premium users) */}
+          {/* Active Benefits (for Premium users) */}
           {isPremium && (
-            <Animated.View entering={FadeInUp.delay(150).duration(400)}>
-              <Pressable
-                onPress={() => {
-                  Alert.alert(
-                    t('subscription.manageTitle'),
-                    t('subscription.manageDescription'),
-                    [{ text: t('common.ok') }]
-                  )
-                }}
-                className="bg-white rounded-2xl p-4 flex-row items-center border border-gray-100"
+            <>
+              <Text
+                className="text-sm text-gray-500 mb-3 ml-1"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                {t('subscription.activeBenefits')}
+              </Text>
+              <Animated.View
+                entering={FadeInUp.delay(150).duration(400)}
+                className="bg-white rounded-2xl p-4 mb-6 border border-gray-100"
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
@@ -468,18 +482,66 @@ export default function SubscriptionScreen() {
                   elevation: 3,
                 }}
               >
-                <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
-                  <RefreshCw size={20} color="#6b7280" />
-                </View>
-                <Text
-                  className="flex-1 ml-3 text-base text-gray-900"
-                  style={{ fontFamily: 'Pretendard-Medium' }}
+                {PREMIUM_BENEFITS.map((benefit, index) => (
+                  <View
+                    key={benefit.key}
+                    className={`flex-row items-center py-3 ${
+                      index < PREMIUM_BENEFITS.length - 1 ? 'border-b border-gray-100' : ''
+                    }`}
+                  >
+                    <View className="w-8 h-8 rounded-full bg-violet-100 items-center justify-center">
+                      <benefit.icon size={16} color="#7c3aed" />
+                    </View>
+                    <Text
+                      className="flex-1 ml-3 text-base text-gray-900"
+                      style={{ fontFamily: 'Pretendard-Medium' }}
+                    >
+                      {t(`subscription.benefits.${benefit.key}`)}
+                    </Text>
+                    <View className="bg-green-100 px-2 py-1 rounded-full">
+                      <Text
+                        className="text-xs text-green-700"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('subscription.active')}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </Animated.View>
+
+              {/* Manage Subscription */}
+              <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+                <Pressable
+                  onPress={() => {
+                    Alert.alert(
+                      t('subscription.manageTitle'),
+                      t('subscription.manageDescription'),
+                      [{ text: t('common.ok') }]
+                    )
+                  }}
+                  className="bg-white rounded-2xl p-4 flex-row items-center border border-gray-100"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
+                    elevation: 3,
+                  }}
                 >
-                  {t('subscription.manageSubscription')}
-                </Text>
-                <ChevronRight size={20} color="#9ca3af" />
-              </Pressable>
-            </Animated.View>
+                  <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center">
+                    <RefreshCw size={20} color="#6b7280" />
+                  </View>
+                  <Text
+                    className="flex-1 ml-3 text-base text-gray-900"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    {t('subscription.manageSubscription')}
+                  </Text>
+                  <ChevronRight size={20} color="#9ca3af" />
+                </Pressable>
+              </Animated.View>
+            </>
           )}
 
           {/* Footer - Subscription Terms */}
