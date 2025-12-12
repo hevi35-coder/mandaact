@@ -88,6 +88,16 @@ export default function SettingsScreen() {
   const { user, signOut, loading } = useAuthStore()
   const { isPremium, subscriptionInfo } = useSubscriptionContext()
   const { data: gamification } = useUserGamification(user?.id)
+
+  // Log premium status changes for debugging
+  useEffect(() => {
+    console.log('[SettingsScreen] 🔄 Premium status update:', {
+      isPremium,
+      status: subscriptionInfo?.status,
+      plan: subscriptionInfo?.plan,
+      expiresAt: subscriptionInfo?.expiresAt?.toISOString(),
+    })
+  }, [isPremium, subscriptionInfo])
   const {
     isEnabled: notificationsEnabled,
     isLoading: notificationLoading,

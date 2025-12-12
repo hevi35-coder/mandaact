@@ -68,6 +68,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     isFreeTier: !subscriptionInfo.isPremium,
   }
 
+  console.log('[SubscriptionContext] 📦 Context value updated:', {
+    isPremium: value.isPremium,
+    isFreeTier: value.isFreeTier,
+    status: subscriptionInfo.status,
+    isLoading,
+  })
+
   return (
     <SubscriptionContext.Provider value={value}>
       {children}

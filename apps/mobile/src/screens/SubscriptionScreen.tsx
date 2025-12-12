@@ -45,6 +45,7 @@ export default function SubscriptionScreen() {
     packages,
     purchase,
     restore,
+    refreshSubscription,
     isPremium,
   } = useSubscriptionContext()
 
@@ -70,6 +71,12 @@ export default function SubscriptionScreen() {
       const success = await purchase(pkg)
       if (success) {
         setJustPurchased(true)
+
+        // CRITICAL: Explicitly refresh subscription state to ensure UI updates immediately
+        // This forces a re-render of all components using subscription context
+        console.log('[SubscriptionScreen] 🔄 Forcing subscription refresh after purchase...')
+        await refreshSubscription()
+
         toast.success(
           t('subscription.purchaseSuccess'),
           t('subscription.welcomePremium')
@@ -81,7 +88,7 @@ export default function SubscriptionScreen() {
     } finally {
       setPurchasingPackageId(null)
     }
-  }, [purchase, toast, t])
+  }, [purchase, refreshSubscription, toast, t])
 
   // Handle restore
   const handleRestore = useCallback(async () => {
@@ -89,6 +96,10 @@ export default function SubscriptionScreen() {
     try {
       const success = await restore()
       if (success) {
+        // CRITICAL: Explicitly refresh subscription state after restore
+        console.log('[SubscriptionScreen] 🔄 Forcing subscription refresh after restore...')
+        await refreshSubscription()
+
         toast.success(
           t('subscription.restoreSuccess'),
           t('subscription.restoreSuccessDesc')
@@ -105,7 +116,7 @@ export default function SubscriptionScreen() {
     } finally {
       setIsRestoring(false)
     }
-  }, [restore, toast, t])
+  }, [restore, refreshSubscription, toast, t])
 
   // Get package display info (monthly or yearly only)
   const getPackageInfo = (pkg: PurchasesPackage) => {

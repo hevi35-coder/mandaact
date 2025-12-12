@@ -101,19 +101,58 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
   const [error, setError] = useState<string | null>(null)
   const [packages, setPackages] = useState<PurchasesPackage[]>([])
 
-  // Parse customer info to subscription info
-  const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): SubscriptionInfo => {
-    const entitlement = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]
+// Parse customer info to subscription info
+const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): SubscriptionInfo => {
+  console.log('[useSubscription] 🔍 parseCustomerInfo - Raw data:', {
+    activeEntitlements: Object.keys(customerInfo.entitlements.active),
+    allEntitlements: Object.keys(customerInfo.entitlements.all),
+    hasPremiumEntitlement: PREMIUM_ENTITLEMENT_ID in customerInfo.entitlements.active,
+    activeSubscriptions: customerInfo.activeSubscriptions,
+  })
 
-    if (!entitlement) {
+  const entitlement = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]
+
+  if (!entitlement) {
+    // Fallback: treat active subscriptions without entitlements as premium.
+    // This handles cases where the entitlement mapping is missing in RevenueCat dashboard,
+    // but the sandbox receipt is still active (common when testing new products).
+    const fallbackProductId = customerInfo.activeSubscriptions?.[0]
+    if (fallbackProductId) {
+      const normalizedId = fallbackProductId.toLowerCase()
+      const fallbackPlan: 'monthly' | 'yearly' | null =
+        normalizedId.includes('year') || normalizedId.includes('annual')
+          ? 'yearly'
+          : normalizedId.includes('month')
+            ? 'monthly'
+            : null
+
+      console.log('[useSubscription] ⚠️ No entitlement, but active subscription detected → PREMIUM (fallback)', {
+        fallbackProductId,
+        fallbackPlan,
+        latestExpirationDate: customerInfo.latestExpirationDate,
+      })
+
       return {
-        status: 'free',
-        isPremium: false,
-        expiresAt: null,
-        plan: null,
-        willRenew: false,
+        status: 'premium',
+        isPremium: true,
+        expiresAt: customerInfo.latestExpirationDate
+          ? new Date(customerInfo.latestExpirationDate)
+          : null,
+        plan: fallbackPlan,
+        // Assume renews while active; RevenueCat will correct on next refresh when entitlements are fixed
+        willRenew: true,
       }
     }
+
+    console.log('[useSubscription] ❌ No active premium entitlement found → FREE')
+    return {
+      status: 'free',
+      isPremium: false,
+      expiresAt: null,
+      plan: null,
+      willRenew: false,
+    }
+  }
 
     // Determine plan type based on product identifier
     let plan: 'monthly' | 'yearly' | null = null
@@ -125,13 +164,22 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       plan = 'monthly'
     }
 
-    return {
-      status: 'premium',
+    const result = {
+      status: 'premium' as const,
       isPremium: true,
       expiresAt: entitlement.expirationDate ? new Date(entitlement.expirationDate) : null,
       plan,
       willRenew: entitlement.willRenew,
     }
+
+    console.log('[useSubscription] ✅ Premium entitlement found → PREMIUM', {
+      productId: entitlement.productIdentifier,
+      plan,
+      expiresAt: result.expiresAt?.toISOString(),
+      willRenew: result.willRenew,
+    })
+
+    return result
   }, [])
 
   // Sync subscription to Supabase
@@ -247,23 +295,56 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       setIsLoading(true)
       setError(null)
 
+      console.log('[useSubscription] 💳 Starting purchase:', pkg.identifier)
       const { customerInfo } = await Purchases.purchasePackage(pkg)
-      const info = parseCustomerInfo(customerInfo)
+      console.log('[useSubscription] 💳 Purchase completed, parsing customer info...')
+
+      // Force-refresh to avoid cached customer info immediately after purchase
+      await Purchases.invalidateCustomerInfoCache()
+      const latestInfo = await Purchases.getCustomerInfo()
+
+      const info = parseCustomerInfo(latestInfo)
       setSubscriptionInfo(info)
+
+      console.log('[useSubscription] 💳 Updated subscription state:', {
+        isPremium: info.isPremium,
+        status: info.status,
+        plan: info.plan,
+      })
 
       // Sync to Supabase
       await syncToSupabase(info)
+      console.log('[useSubscription] 💳 Synced to Supabase')
 
-      return info.isPremium
+      // CRITICAL: Sandbox environment needs additional time for receipt validation
+      // Wait 1.5 seconds and re-check subscription status to ensure it's fully updated
+      console.log('[useSubscription] 💳 Waiting for sandbox receipt validation...')
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      // Re-fetch customer info after delay
+      await Purchases.invalidateCustomerInfoCache()
+      const finalInfo = await Purchases.getCustomerInfo()
+      const finalSubscriptionInfo = parseCustomerInfo(finalInfo)
+      setSubscriptionInfo(finalSubscriptionInfo)
+      await syncToSupabase(finalSubscriptionInfo)
+
+      console.log('[useSubscription] 💳 Final subscription state after re-check:', {
+        isPremium: finalSubscriptionInfo.isPremium,
+        status: finalSubscriptionInfo.status,
+        plan: finalSubscriptionInfo.plan,
+      })
+
+      return finalSubscriptionInfo.isPremium
     } catch (err: unknown) {
       const purchaseError = err as { userCancelled?: boolean; message?: string }
 
       if (purchaseError.userCancelled) {
+        console.log('[useSubscription] 💳 Purchase cancelled by user')
         // User cancelled, not an error
         return false
       }
 
-      console.error('Purchase failed:', err)
+      console.error('[useSubscription] 💳 Purchase failed:', err)
       setError('구매에 실패했습니다. 다시 시도해주세요.')
       return false
     } finally {
@@ -277,16 +358,43 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       setIsLoading(true)
       setError(null)
 
+      console.log('[useSubscription] 🔄 Starting restore purchases...')
       const customerInfo = await Purchases.restorePurchases()
-      const info = parseCustomerInfo(customerInfo)
+      // Force-refresh to make sure restored receipts are processed
+      await Purchases.invalidateCustomerInfoCache()
+      const latestInfo = await Purchases.getCustomerInfo()
+      const info = parseCustomerInfo(latestInfo)
       setSubscriptionInfo(info)
+
+      console.log('[useSubscription] 🔄 Restore initial result:', {
+        isPremium: info.isPremium,
+        status: info.status,
+        plan: info.plan,
+      })
 
       // Sync to Supabase
       await syncToSupabase(info)
 
-      return info.isPremium
+      // CRITICAL: Similar to purchase, wait for sandbox receipt validation
+      console.log('[useSubscription] 🔄 Waiting for sandbox receipt validation...')
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      // Re-fetch customer info after delay
+      await Purchases.invalidateCustomerInfoCache()
+      const finalInfo = await Purchases.getCustomerInfo()
+      const finalSubscriptionInfo = parseCustomerInfo(finalInfo)
+      setSubscriptionInfo(finalSubscriptionInfo)
+      await syncToSupabase(finalSubscriptionInfo)
+
+      console.log('[useSubscription] 🔄 Final restore result after re-check:', {
+        isPremium: finalSubscriptionInfo.isPremium,
+        status: finalSubscriptionInfo.status,
+        plan: finalSubscriptionInfo.plan,
+      })
+
+      return finalSubscriptionInfo.isPremium
     } catch (err) {
-      console.error('Restore failed:', err)
+      console.error('[useSubscription] 🔄 Restore failed:', err)
       setError('구매 복원에 실패했습니다.')
       return false
     } finally {
@@ -318,15 +426,22 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
   // Listen for customer info updates
   useEffect(() => {
     const listener = (info: CustomerInfo) => {
+      console.log('[useSubscription] 🔔 Customer info updated (listener triggered)')
       const subscriptionData = parseCustomerInfo(info)
       setSubscriptionInfo(subscriptionData)
       syncToSupabase(subscriptionData)
+      console.log('[useSubscription] 🔔 State updated from listener:', {
+        isPremium: subscriptionData.isPremium,
+        status: subscriptionData.status,
+      })
     }
 
     Purchases.addCustomerInfoUpdateListener(listener)
+    console.log('[useSubscription] 👂 Customer info update listener registered')
 
     return () => {
       Purchases.removeCustomerInfoUpdateListener(listener)
+      console.log('[useSubscription] 👂 Customer info update listener removed')
     }
   }, [parseCustomerInfo, syncToSupabase])
 

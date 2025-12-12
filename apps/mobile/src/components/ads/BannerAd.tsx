@@ -50,6 +50,24 @@ export function BannerAd({ location, style }: BannerAdProps) {
   const subscription = useSubscriptionContextSafe()
   const isPremium = subscription?.isPremium ?? false
 
+  console.log('[BannerAd] 🎯 Subscription state check:', {
+    location,
+    hasSubscription: !!subscription,
+    isPremium,
+    subscriptionStatus: subscription?.subscriptionInfo?.status,
+    subscriptionPlan: subscription?.subscriptionInfo?.plan,
+    willRender: !isPremium,
+  })
+
+  // Log when premium status changes
+  useEffect(() => {
+    console.log('[BannerAd] 🔄 Premium status changed:', {
+      location,
+      isPremium,
+      willHideAd: isPremium,
+    })
+  }, [isPremium, location])
+
   // iOS requires foreground refresh for ads - reload ad when app comes to foreground
   useForeground(() => {
     // On iOS, reload the banner when app returns to foreground
@@ -83,8 +101,15 @@ export function BannerAd({ location, style }: BannerAdProps) {
 
   // Hide banner if Premium, Ad-Free mode is active, or new user protection
   if (isPremium || adRestriction === 'no_ads' || isAdFree) {
+    console.log('[BannerAd] 🚫 Ad hidden - reason:', {
+      isPremium,
+      adRestriction,
+      isAdFree,
+    })
     return null
   }
+
+  console.log('[BannerAd] ✅ Showing ad for location:', location)
 
   // Use TestIds.ADAPTIVE_BANNER in development for guaranteed test ads
   const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : LOCATION_TO_AD_UNIT[location]

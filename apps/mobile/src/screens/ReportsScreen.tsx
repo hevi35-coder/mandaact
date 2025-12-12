@@ -36,6 +36,7 @@ import { useAuthStore } from '../store/authStore'
 import { trackWeeklyReportGenerated, trackGoalDiagnosisViewed } from '../lib'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useProfileStats } from '../hooks/useStats'
+import { useSubscriptionContext } from '../context'
 import {
   useWeeklyReport,
   useGenerateWeeklyReport,
@@ -627,6 +628,15 @@ export default function ReportsScreen() {
   const { user } = useAuthStore()
   const { t, i18n } = useTranslation()
   const isEnglish = i18n.language === 'en'
+  const { canGenerateReport, isPremium } = useSubscriptionContext()
+
+  // Log premium status changes for debugging
+  useEffect(() => {
+    console.log('[ReportsScreen] 🔄 Premium status update:', {
+      isPremium,
+      canGenerateReport: canGenerateReport(0),
+    })
+  }, [isPremium, canGenerateReport])
 
   // iPad detection
   const { width: screenWidth } = useWindowDimensions()
@@ -683,6 +693,26 @@ export default function ReportsScreen() {
   // 첫 리포트 생성 조건: 리포트 0개 + 실천 1회 이상
   const canGenerateFirstReport = !hasExistingReports && hasChecks && hasMandalarts
 
+  // 이번 주 리포트 생성 횟수 계산
+  const getThisWeekReportCount = useCallback(() => {
+    const now = new Date()
+    const startOfWeek = new Date(now)
+    startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1)) // Monday
+    startOfWeek.setHours(0, 0, 0, 0)
+
+    return reportHistory.filter(report => {
+      const reportDate = new Date(report.created_at)
+      return reportDate >= startOfWeek
+    }).length
+  }, [reportHistory])
+
+  const weeklyReportCount = getThisWeekReportCount()
+  const canGenerateThisWeek = canGenerateReport(weeklyReportCount)
+
+  // Premium users: Always can generate
+  // Free users: 주 1회 제한 (첫 리포트 또는 주간 제한 내)
+  const canDirectlyGenerate = isPremium || canGenerateFirstReport || canGenerateThisWeek
+
   // Translate metric labels using i18n
   const translateLabel = useCallback(
     (label: string): string => {
@@ -705,6 +735,15 @@ export default function ReportsScreen() {
   const handleGenerateAll = async () => {
     if (!user?.id) return
 
+    // Check if user can generate report
+    if (!canDirectlyGenerate) {
+      Alert.alert(
+        t('reports.limitReached.title'),
+        t('reports.limitReached.message')
+      )
+      return
+    }
+
     try {
       // Generate diagnosis first (shown first on screen)
       if (mandalarts.length > 0) {
@@ -720,8 +759,10 @@ export default function ReportsScreen() {
         generated: true,
       })
 
-      // Show interstitial ad after report generation
-      await showInterstitialAd()
+      // Show interstitial ad after report generation (only for non-premium users)
+      if (!isPremium) {
+        await showInterstitialAd()
+      }
     } catch {
       Alert.alert(t('common.error'), t('reports.error'))
     }
@@ -928,8 +969,8 @@ export default function ReportsScreen() {
             </View>
           )}
 
-          {/* ReportGenerateButton - Generate new report with rewarded ad */}
-          {hasExistingReports && hasMandalarts && (
+          {/* ReportGenerateButton - Generate new report with rewarded ad (Free users only) */}
+          {!isPremium && !canDirectlyGenerate && hasExistingReports && hasMandalarts && (
             <View className="mt-4">
               <ReportGenerateButton
                 onGenerateReport={() => {
