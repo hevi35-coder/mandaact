@@ -288,11 +288,18 @@ export default function MandalartListScreen() {
 
             {/* Content */}
             <View className="px-6 py-8">
-              {/* Icon */}
+              {/* Icon and Title */}
               <View className="items-center mb-6">
-                <View className="w-20 h-20 rounded-full bg-yellow-100 items-center justify-center mb-4">
-                  <Crown size={40} color="#fbbf24" fill="#fbbf24" />
-                </View>
+                <LinearGradient
+                  colors={['#2563eb', '#9333ea', '#db2777']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ padding: 3, borderRadius: 40, marginBottom: 16 }}
+                >
+                  <View className="w-20 h-20 rounded-full bg-white items-center justify-center">
+                    <Crown size={40} color="#fbbf24" fill="#fbbf24" />
+                  </View>
+                </LinearGradient>
                 <Text
                   className="text-2xl text-gray-900 text-center mb-2"
                   style={{ fontFamily: 'Pretendard-Bold' }}
@@ -308,7 +315,7 @@ export default function MandalartListScreen() {
               </View>
 
               {/* Premium Benefits */}
-              <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+              <View className="bg-white border-2 border-gray-100 rounded-xl p-4 mb-6">
                 <View className="flex-row items-center mb-3">
                   <Crown size={18} color="#fbbf24" fill="#fbbf24" />
                   <Text
@@ -319,8 +326,10 @@ export default function MandalartListScreen() {
                   </Text>
                 </View>
                 <View className="space-y-2">
-                  <View className="flex-row items-start">
-                    <Text className="text-gray-700 mr-2">•</Text>
+                  <View className="flex-row items-start py-2">
+                    <View className="w-5 h-5 rounded-full bg-violet-100 items-center justify-center mr-2 mt-0.5">
+                      <Text className="text-violet-600 text-xs">✓</Text>
+                    </View>
                     <Text
                       className="text-gray-800 flex-1"
                       style={{ fontFamily: 'Pretendard-Medium' }}
@@ -328,8 +337,10 @@ export default function MandalartListScreen() {
                       {t('subscription.benefits.unlimitedMandalarts', { defaultValue: '무제한 만다라트 생성' })}
                     </Text>
                   </View>
-                  <View className="flex-row items-start">
-                    <Text className="text-gray-700 mr-2">•</Text>
+                  <View className="flex-row items-start py-2">
+                    <View className="w-5 h-5 rounded-full bg-violet-100 items-center justify-center mr-2 mt-0.5">
+                      <Text className="text-violet-600 text-xs">✓</Text>
+                    </View>
                     <Text
                       className="text-gray-800 flex-1"
                       style={{ fontFamily: 'Pretendard-Medium' }}
@@ -337,13 +348,15 @@ export default function MandalartListScreen() {
                       {t('subscription.benefits.noAds', { defaultValue: '모든 광고 제거' })}
                     </Text>
                   </View>
-                  <View className="flex-row items-start">
-                    <Text className="text-gray-700 mr-2">•</Text>
+                  <View className="flex-row items-start py-2">
+                    <View className="w-5 h-5 rounded-full bg-violet-100 items-center justify-center mr-2 mt-0.5">
+                      <Text className="text-violet-600 text-xs">✓</Text>
+                    </View>
                     <Text
                       className="text-gray-800 flex-1"
                       style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                      {t('rewarded.reportGenerate.subtitle', { defaultValue: 'AI 리포트 즉시 생성' })}
+                      {t('subscription.benefits.unlimitedReports', { defaultValue: '무제한 AI 리포트' })}
                     </Text>
                   </View>
                 </View>
@@ -352,34 +365,36 @@ export default function MandalartListScreen() {
               {/* Actions */}
               <Pressable
                 onPress={handleUpgradePremium}
-                className="mb-3 rounded-xl overflow-hidden"
+                className="mb-3"
               >
                 <LinearGradient
-                  colors={['#7c3aed', '#2563eb']}
+                  colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={{ padding: 2, borderRadius: 12 }}
                 >
-                  <View className="bg-white rounded-[10px] py-4 items-center">
+                  <View
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: 10,
+                      paddingVertical: 14,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
                     <MaskedView
                       maskElement={
-                        <Text
-                          className="text-lg text-center"
-                          style={{ fontFamily: 'Pretendard-Bold' }}
-                        >
+                        <Text style={{ fontSize: 16, fontFamily: 'Pretendard-SemiBold' }}>
                           {t('subscription.limitReached.upgrade')}
                         </Text>
                       }
                     >
                       <LinearGradient
-                        colors={['#7c3aed', '#2563eb']}
+                        colors={['#2563eb', '#9333ea', '#db2777']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                       >
-                        <Text
-                          className="text-lg text-center opacity-0"
-                          style={{ fontFamily: 'Pretendard-Bold' }}
-                        >
+                        <Text style={{ fontSize: 16, fontFamily: 'Pretendard-SemiBold', opacity: 0 }}>
                           {t('subscription.limitReached.upgrade')}
                         </Text>
                       </LinearGradient>

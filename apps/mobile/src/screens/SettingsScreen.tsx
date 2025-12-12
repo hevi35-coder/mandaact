@@ -497,9 +497,9 @@ export default function SettingsScreen() {
               {isPremium ? (
                 // Premium Active Card - Strong gradient to show status
                 <LinearGradient
-                  colors={['#7c3aed', '#2563eb']}
+                  colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
+                  end={{ x: 1, y: 0 }}
                   className="px-5 py-4 flex-row items-center"
                 >
                   <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">

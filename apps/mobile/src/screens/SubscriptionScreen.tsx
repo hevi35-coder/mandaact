@@ -170,12 +170,12 @@ export default function SubscriptionScreen() {
             {isPremium ? (
               // Premium Status Card
               <LinearGradient
-                colors={['#7c3aed', '#2563eb']}
+                colors={['#2563eb', '#9333ea', '#db2777']}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                end={{ x: 1, y: 0 }}
                 className="rounded-2xl p-5"
                 style={{
-                  shadowColor: '#7c3aed',
+                  shadowColor: '#2563eb',
                   shadowOffset: { width: 0, height: 8 },
                   shadowOpacity: 0.3,
                   shadowRadius: 16,
@@ -334,7 +334,7 @@ export default function SubscriptionScreen() {
                       >
                         {highlight ? (
                           <LinearGradient
-                            colors={['#7c3aed', '#2563eb']}
+                            colors={['#2563eb', '#9333ea', '#db2777']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             className="p-0.5 rounded-2xl"
