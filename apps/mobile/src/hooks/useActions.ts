@@ -349,7 +349,24 @@ export function useToggleActionCheck() {
 
         return { actionId, isChecked: false }
       } else {
-        // Check: Insert into check_history with current UTC time (same as web app)
+        // Check: First verify if already checked on this date to prevent duplicate inserts
+        const checkDate = format(_selectedDate, 'yyyy-MM-dd')
+        const { data: existingCheck } = await supabase
+          .from('check_history')
+          .select('id')
+          .eq('action_id', actionId)
+          .eq('user_id', userId)
+          .gte('checked_at', `${checkDate}T00:00:00Z`)
+          .lt('checked_at', `${checkDate}T23:59:59Z`)
+          .maybeSingle()
+
+        if (existingCheck) {
+          // Already checked on this date, return existing check
+          console.log('[useActions] Action already checked on this date, returning existing check:', existingCheck.id)
+          return { actionId, isChecked: true, checkId: existingCheck.id }
+        }
+
+        // Not checked yet, insert into check_history with current UTC time (same as web app)
         const { data: checkData, error: insertError } = await supabase
           .from('check_history')
           .insert({
