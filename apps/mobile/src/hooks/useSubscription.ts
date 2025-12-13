@@ -418,16 +418,113 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
   // Initialize on mount
   useEffect(() => {
-    if (userId) {
+    if (!userId) return
+
+    let mounted = true
+
+    const initialize = async () => {
+      console.log('[useSubscription] 🚀 Initializing for user:', userId)
+
       // Reset initialization state when user changes
       setIsRevenueCatInitialized(false)
+      setIsLoading(true)
 
-      initializeRevenueCat(userId).then(() => {
+      try {
+        // Step 1: Load from Supabase first (faster, cached)
+        console.log('[useSubscription] 📦 Loading subscription from Supabase...')
+        const { data: supabaseData } = await supabase
+          .from('user_subscriptions')
+          .select('status, plan, expires_at')
+          .eq('user_id', userId)
+          .single()
+
+        if (supabaseData && mounted) {
+          const fallbackInfo: SubscriptionInfo = {
+            status: supabaseData.status === 'active' ? 'premium' : 'free',
+            isPremium: supabaseData.status === 'active',
+            expiresAt: supabaseData.expires_at ? new Date(supabaseData.expires_at) : null,
+            plan: supabaseData.plan,
+            willRenew: false,
+          }
+          console.log('[useSubscription] 📦 Loaded from Supabase:', fallbackInfo)
+          setSubscriptionInfo(fallbackInfo)
+        }
+
+        // Step 2: Initialize RevenueCat
+        console.log('[useSubscription] 🔧 Initializing RevenueCat...')
+        await initializeRevenueCat(userId)
+
+        if (!mounted) return
+
         setIsRevenueCatInitialized(true)
-        refreshSubscription()
-      })
+
+        // Step 3: Refresh from RevenueCat (source of truth)
+        console.log('[useSubscription] 🔄 Refreshing from RevenueCat...')
+        const customerInfo = await Purchases.getCustomerInfo()
+        const info = parseCustomerInfo(customerInfo)
+
+        if (mounted) {
+          setSubscriptionInfo(info)
+          await syncToSupabase(info)
+        }
+
+        // Step 4: Load available packages
+        console.log('[useSubscription] 📦 Loading packages...')
+        const offerings = await Purchases.getOfferings()
+        console.log('[useSubscription] 📦 Offerings loaded:', {
+          currentOffering: offerings.current?.identifier,
+          packageCount: offerings.current?.availablePackages?.length || 0,
+        })
+
+        if (mounted) {
+          let loadedPackagesCount = 0
+          const currentPackages = offerings.current?.availablePackages ?? null
+          if (currentPackages && currentPackages.length > 0) {
+            setPackages(currentPackages)
+            loadedPackagesCount = currentPackages.length
+            console.log('[useSubscription] ✅ Packages loaded:', loadedPackagesCount)
+          } else {
+            // Try to find any offering with packages
+            const offeringsWithPackages = Object.values(offerings.all || {}).find(
+              offering => offering.availablePackages && offering.availablePackages.length > 0
+            )
+            if (offeringsWithPackages) {
+              console.log('[useSubscription] 📦 Found packages in non-current offering:', offeringsWithPackages.identifier)
+              const fallbackPackages = offeringsWithPackages.availablePackages
+              setPackages(fallbackPackages)
+              loadedPackagesCount = fallbackPackages.length
+              console.log('[useSubscription] ✅ Packages loaded (fallback):', loadedPackagesCount)
+            } else {
+              console.warn('[useSubscription] ⚠️ No packages available in any offering')
+              setPackages([])
+            }
+          }
+
+          console.log('[useSubscription] ✅ Initialization complete:', {
+            isPremium: info.isPremium,
+            status: info.status,
+            packagesCount: loadedPackagesCount,
+          })
+        }
+      } catch (error) {
+        console.error('[useSubscription] ❌ Initialization error:', error)
+        if (mounted) {
+          setError(i18n.t('errors.generic'))
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
     }
-  }, [userId, refreshSubscription])
+
+    initialize()
+
+    return () => {
+      mounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]) // Only depend on userId, not refreshSubscription
 
   // Listen for customer info updates
   useEffect(() => {

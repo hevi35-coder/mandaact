@@ -936,6 +936,8 @@
       "weeklyReport": "Weekly Practice Report"
     },
     "nextReport": "Next Report: {{date}}",
+    "generateReport": "Generate Report",
+    "generating": "Generating...",
     "mandalartNeeded": "Mandalart Needed",
     "mandalartNeededDesc": "Create or activate a mandalart\nto receive goal diagnosis",
     "newDiagnosisNotice": "Create or activate a mandalart to receive new diagnosis",

@@ -12,6 +12,7 @@ import { View, Text, Pressable, ActivityIndicator } from 'react-native'
 import { Shield, Clock } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { useAdFree, useRewardedAd } from '../../hooks'
+import { useSubscriptionContext } from '../../context'
 import { useToast } from '../Toast'
 
 interface AdFreeButtonProps {
@@ -21,6 +22,7 @@ interface AdFreeButtonProps {
 export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { isPremium } = useSubscriptionContext()
   const { isAdFree, remainingTimeFormatted, isLoading: isAdFreeLoading, activate, refresh } = useAdFree()
 
   const { isLoading: isAdLoading, show: showAd } = useRewardedAd({
@@ -55,6 +57,11 @@ export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
     }
 
     await showAd()
+  }
+
+  // Don't render for premium users (always ad-free)
+  if (isPremium) {
+    return null
   }
 
   if (isAdFreeLoading) {

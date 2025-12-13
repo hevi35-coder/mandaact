@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useRewardedAd } from '../../hooks/useRewardedAd'
 import { useAuthStore } from '../../store/authStore'
+import { useSubscriptionContext } from '../../context'
 import { xpService } from '../../lib/xp'
 import { useToast } from '../Toast'
 import { logger } from '../../lib/logger'
@@ -26,6 +27,7 @@ export function XPBoostButton({ onBoostActivated, hasActiveMandalarts = true }: 
   const { t } = useTranslation()
   const toast = useToast()
   const user = useAuthStore((state) => state.user)
+  const { isPremium } = useSubscriptionContext()
   const [isActivating, setIsActivating] = useState(false)
 
   const handleRewardEarned = useCallback(async () => {
@@ -79,6 +81,11 @@ export function XPBoostButton({ onBoostActivated, hasActiveMandalarts = true }: 
       )
     }
   }, [isLoaded, isActivating, show, t])
+
+  // Don't render for premium users (ads-free benefit)
+  if (isPremium) {
+    return null
+  }
 
   // Don't render if no active mandalarts
   if (!hasActiveMandalarts) {

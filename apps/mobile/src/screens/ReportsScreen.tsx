@@ -915,8 +915,8 @@ export default function ReportsScreen() {
             </Pressable>
           )}
 
-          {/* 다음 리포트 안내 (기존 리포트가 있는 경우) - 그라디언트 테두리 + 텍스트 */}
-          {hasExistingReports && (
+          {/* 다음 리포트 안내 (Free 유저, 기존 리포트가 있는 경우) - 그라디언트 테두리 + 텍스트 */}
+          {!isPremium && hasExistingReports && (
             <View
               className="rounded-2xl overflow-hidden"
               style={{
@@ -966,6 +966,53 @@ export default function ReportsScreen() {
                 </View>
               </LinearGradient>
             </View>
+          )}
+
+          {/* Premium 유저: 리포트 즉시 생성 버튼 */}
+          {isPremium && hasExistingReports && hasMandalarts && (
+            <Pressable
+              onPress={handleGenerateAll}
+              disabled={generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending}
+              className="rounded-2xl overflow-hidden"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                elevation: 4,
+              }}
+            >
+              <LinearGradient
+                colors={['#2563eb', '#9333ea', '#db2777']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="py-4 px-5"
+              >
+                <View className="flex-row items-center justify-center">
+                  {generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending ? (
+                    <>
+                      <ActivityIndicator size="small" color="#ffffff" />
+                      <Text
+                        className="text-white text-base ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('reports.generating')}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={18} color="#ffffff" />
+                      <Text
+                        className="text-white text-base ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('reports.generateReport')}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              </LinearGradient>
+            </Pressable>
           )}
 
           {/* ReportGenerateButton - Generate new report with rewarded ad (Free users only) */}
