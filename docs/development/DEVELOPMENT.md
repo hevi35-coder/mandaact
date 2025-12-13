@@ -2,6 +2,8 @@
 
 Guidelines and best practices for MandaAct development.
 
+> 문서 인덱스: `docs/README.md`
+
 ## Project Structure
 
 ```

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../store/authStore'
 import { useUserProfile } from '../hooks/useUserProfile'
 import { logger } from '../lib/logger'
+import { navigationRef } from './navigationRef'
 
 // Context for scroll-to-top functionality
 type ScrollToTopContextType = {
@@ -188,7 +189,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>

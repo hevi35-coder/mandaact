@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 5.0.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -45,7 +45,10 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6756198473"
+        "ascAppId": "6756198473",
+        "ascApiKeyPath": "./credentials/appstoreconnect/AuthKey_5N4R3PDKK6.p8",
+        "ascApiKeyIssuerId": "fe7aa5b1-e067-49a6-9fcc-bc311a179460",
+        "ascApiKeyId": "5N4R3PDKK6"
       },
       "android": {
         "serviceAccountKeyPath": "./google-services.json",

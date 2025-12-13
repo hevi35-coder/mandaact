@@ -1,7 +1,9 @@
 # MandaAct 개발 로드맵 v3.14
 
+> 문서 인덱스: `docs/README.md`
+
 **최종 업데이트**: 2025-12-11 06:05 - Build 54 심사 대응 완료
-**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포 진행 중** 🔄
+**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 기본 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포 진행 중** 🔄
 
 ---
 
@@ -82,7 +84,7 @@
   - [x] 테스트 Ad Unit ID 자동 적용 (`__DEV__` 환경)
 - [x] `react-native-google-mobile-ads` v14.x 설치
 - [x] iOS 네이티브 설정 (`app.json` - GADApplicationIdentifier)
-- [x] **배너 광고 구현**: HomeScreen, TodayScreen, MandalartListScreen 하단
+- [x] **배너 광고 구현**: HomeScreen, MandalartListScreen, ReportsScreen 하단 (TodayScreen은 Clean Zone 정책으로 제거)
 - [x] **신규 사용자 보호 정책 적용**: 0-3일 광고 없음, 4-7일 배너만
 
 #### 10.2.2 보상형 광고 시스템 (Phase 2) ✅ **완료**
@@ -97,9 +99,9 @@
 - [x] `StreakFreezeButton` 컴포넌트 구현
 - [x] `YesterdayCheckButton` 컴포넌트 구현
 - [x] `ReportGenerateButton` 컴포넌트 구현
-- [x] **StreakFreezeButton 화면 연동**: StreakCard 내 배치
+- [x] **StreakFreezeButton 화면 연동**: StreakCard 내 배치 (현재 정책/UX 이유로 비활성화)
 - [x] **ReportGenerateButton 화면 연동**: ReportsScreen에 배치
-- [ ] **YesterdayCheckButton 화면 연동**: 백엔드 로직 필요 (어제 체크 삽입 API)
+- [ ] **YesterdayCheckButton 화면 연동**: 백엔드 로직 필요 (어제 체크 삽입 API) + 정책/UX 재검토 필요
 - [ ] 어제 체크 삽입 로직 구현 (check_history에 어제 날짜로 삽입) - Backlog
 - [ ] 스트릭 재계산 트리거 구현 - Backlog
 
@@ -157,7 +159,7 @@
   - [ ] Android Tablet (추후)
 - [ ] iOS App Store 제출 🔄 **심사 반려 대응 중**
   - [x] App Store Connect 앱 생성
-  - [x] TestFlight 베타 테스트 (Build 53)
+  - [x] TestFlight 베타 테스트 (Build 53, Build 54 준비/재제출 진행)
   - [x] App Store Connect 메타데이터 입력 (가격, 연령등급, 개인정보)
   - [x] Build 53 심사 제출 → **반려** (2025-12-10)
   - [ ] Build 54 심사 재제출 (진행 중)
@@ -257,9 +259,9 @@
   - [x] `SubscriptionContext` 전역 상태
   - [x] `SubscriptionScreen` UI 완성 (498줄)
 - [x] Premium 기능 분기 처리 ✅
-  - [x] MandalartListScreen: 만다라트 개수 제한 체크
-  - [x] SettingsScreen: 구독 상태 표시
-  - [x] BannerAd: isPremium 시 광고 숨김 (구현 필요)
+- [x] MandalartListScreen: 만다라트 개수 제한 체크
+- [x] SettingsScreen: 구독 상태 표시
+  - [ ] BannerAd: isPremium 시 광고 숨김 (TODO: 실제 광고 렌더링 분기 적용)
 
 #### 10.4.4 남은 작업 (외부 설정)
 1. **App Store Connect**
@@ -272,6 +274,12 @@
    - [ ] Entitlement "premium" 생성
 3. **Supabase**
    - [ ] `npx supabase db push` 실행 (user_subscriptions 테이블)
+
+#### 10.4.5 추후 개선 사항 (Backlog)
+- [ ] **자동 구매 복원**: 앱 시작 시 자동으로 `restorePurchases()` 호출
+  - 현재: 사용자가 수동으로 "구매 복원" 버튼 눌러야 함
+  - 개선: 로그인 시 자동 복원 시도 (새 기기 UX 개선)
+  - 예상 소요: 0.5일
 
 **예상 소요**: 0.5일 (외부 설정만 남음)
 
@@ -299,10 +307,10 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
     └→ Phase 7: 기능 분기 처리 (1일)
 ```
 
-**현재 상태** (Build 53):
+**현재 상태** (Build 54):
 - ✅ 배너 광고 3개 화면 적용 (Home, List, Reports) - TodayScreen Clean Zone
 - ✅ XP 부스트 버튼 2개 화면 적용 (Home, Today) - 활성 만다라트 없으면 숨김
-- ✅ 보상형 광고 화면 연동 완료 (StreakFreeze, ReportGenerate)
+- ✅ 보상형 광고 구현/연동 완료 (ReportGenerate) - StreakFreeze는 정책/UX 이유로 비활성화
 - ✅ 전면 광고 트리거 연동 완료 (만다라트 생성, 리포트 생성)
 - ✅ 레벨업 전면 광고 비활성화 (사용자 경험 우선)
 - ✅ ATT 권한 요청 팝업 타이밍 수정
@@ -537,8 +545,8 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 **상태**: ✅ 완료 - Web과 기능 동등성 달성 + 프로덕션 품질 확보
 
 ### 남은 작업 (Optional)
-- [ ] Sentry 프로젝트 생성 및 DSN 발급 (사용자 작업)
-- [ ] EAS Build 설정 (앱스토어 배포 시)
+- [x] Sentry 프로젝트 생성 및 DSN 발급
+- [x] EAS Build 기본 설정 (스토어 배포용)
 - [ ] 실제 기기 테스트 (49개 테스트 항목)
 
 ---
@@ -599,25 +607,17 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 - **무료 버전**: AdMob 광고 포함
 - **유료 버전**: 광고 제거 (월간 구독 또는 일회성 구매)
 
-**작업 목록**:
-- [ ] AdMob 연동 (Phase 9.3과 통합)
-  - 배너 광고 (하단 고정)
-  - 전면 광고 (적절한 타이밍)
-  - 보상형 광고 (XP 보너스 연계)
-- [ ] 인앱 구매(IAP) 설정
-  - `react-native-iap` 또는 `expo-in-app-purchases`
-  - iOS App Store Connect 상품 등록
-  - Android Google Play Console 상품 등록
-- [ ] 구독 모델 구현 (선호)
-  - 월간 구독 상품 생성
-  - 구독 상태 검증 로직
-  - 구독 복원 기능
-- [ ] 프리미엄 기능 잠금/해제 로직
-  - `isPremium` 상태 관리
-  - 광고 표시 조건부 렌더링
-- [ ] 정책 준수
-  - App Store/Google Play 결제 정책
-  - GDPR/개인정보 동의
+**현황**: Phase 10.2(AdMob) / Phase 10.3~10.4(IAP/구독)로 이관되어 대부분 구현/진행 중
+
+**남은 작업 (Backlog/Release 모두 포함)**:
+- [ ] App Store Connect IAP 상품 등록/현지화/가격/상태 완료 (월간/연간)
+- [ ] RevenueCat Products/Offerings/Packages/Entitlement 설정 완료
+- [ ] Supabase `user_subscriptions` 프로덕션 마이그레이션 실행 (`npx supabase db push`)
+- [ ] Premium 사용자 광고 숨김 분기 적용 (`BannerAd` 등)
+- [ ] 자동 구매 복원(restore) 자동화 (앱 시작/로그인 시)
+- [ ] Android 광고 라벨 (Google Play 정책)
+- [ ] GDPR 동의 배너 (EU 출시 시)
+- [ ] 광고 성과 추적/대시보드 운영(AdMob/Vercel/PostHog)
 
 **우선순위**: 🟡 Important
 
@@ -875,38 +875,13 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 
 ---
 
-### 9.3 AdMob 광고 연동 🟠 **3순위**
+### 9.3 AdMob 광고 연동 ✅ **완료 (Phase 10.2로 통합)**
 **목표**: 지속 가능한 수익 모델 구축
 
-**작업 목록**:
-- [ ] AdMob 계정 설정
-  - Google AdMob 계정 생성
-  - 앱 등록 및 광고 단위 ID 발급
-  - 테스트 기기 등록
-- [ ] react-native-google-mobile-ads 통합
-  - 라이브러리 설치 및 설정
-  - iOS/Android 네이티브 설정
-- [ ] 광고 유형 구현
-  - 배너 광고 (하단 고정)
-  - 전면 광고 (적절한 타이밍)
-  - 보상형 광고 (XP 보너스 등 연계)
-- [ ] 광고 정책 준수
-  - 앱스토어 광고 정책 검토
-  - GDPR/개인정보 동의 (EU 대응)
-  - 어린이 보호법 대응 (COPPA)
-- [ ] 광고 제거 옵션 (선택)
-  - 프리미엄 구독 또는 일회성 구매
-  - IAP 연동 검토
-- [ ] 광고 성과 추적
-  - AdMob 대시보드 모니터링
-  - 수익 최적화 A/B 테스트
+**완료 범위**: SDK/배너/전면/보상형/ATT/Clean Zone/Ad-Free Time
+**남은 작업**: GDPR 동의 배너(EU), Android 광고 라벨, 광고 성과 추적/최적화, 광고 제거(구독) 설정 마무리
 
-**선정 이유**:
-- 외부 SDK + 광고 계정 + 정책 검토 필요
-- i18n 완료 후 글로벌 광고 네트워크 활용 가능
-- 사용자 기반 확보 후 수익화가 효과적
-
-**우선순위**: 🟢 Recommended
+**참고**: 상세 체크리스트는 Phase 10.2 / Phase 10.4 섹션을 기준으로 유지
 
 ---
 
@@ -915,7 +890,7 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 **목표**: 프로덕션 환경 안정화 및 데이터 기반 의사결정
 **기간**: 1주
 
-### 8.1 모니터링 & 분석 ✅ **부분 완료** (2025-11-30)
+### 8.1 모니터링 & 분석 ✅ **완료** (2025-11-30)
 
 **완료 사항**:
 - ✅ **Web App**: Sentry + PostHog 연동 완료
@@ -936,25 +911,27 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 - ✅ `weekly_report_generated` - 주간 리포트
 - ✅ `goal_diagnosis_viewed` - 목표 진단
 
-**남은 작업**:
-- [ ] 실제 이벤트 추적 코드를 각 화면에 연결
+**추가 과제 (선택)**:
+- [x] Mobile 핵심 화면에 이벤트 연결 (Login/Today/Tutorial/Create/Reports)
+- [ ] Web 이벤트 추적 연결/정의 점검 (필요 시 화면별 보강)
 - [ ] Vercel Analytics 상세 분석
 - [ ] 사용자 행동 퍼널 분석 대시보드 구성
 
-**우선순위**: 🟡 Important - 진행 중
+**우선순위**: 🟡 Important - ✅ 완료
 
 ---
 
-### 8.2 CI/CD 파이프라인 개선
+### 8.2 CI/CD 파이프라인 개선 🔄 **기본 완료 (Phase 10.1로 통합)**
 **작업 목록**:
-- [ ] GitHub Actions 설정
-  - `npm run type-check` 자동 실행
-  - `npm run lint` 자동 실행
-  - `npm run build` 검증
+- [x] GitHub Actions 설정
+  - `pnpm type-check` 자동 실행
+  - `pnpm lint` 자동 실행
+  - `pnpm test` 자동 실행
+  - `pnpm build:web` 검증
 - [ ] PR 프리뷰 배포 활성화
-- [ ] 자동 테스트 통합 (추후)
+- [ ] E2E 자동 테스트(Playwright) 통합 (추후)
 
-**우선순위**: 🟡 Important
+**우선순위**: 🟡 Important - 🔄 진행 중
 
 ---
 
@@ -1028,10 +1005,13 @@ Week 7-8  | Phase 9.2: 글로벌 대응 (i18n)   [✅ 완료]
           ├─ 한국어/영어 번역 완료 ✅
           └─ 타임존/푸시알림 i18n ✅
 
-Week 9-10 | Phase 9.3: AdMob 광고          [🟢 Recommended]
-          ├─ AdMob 계정 및 SDK 연동
-          ├─ 광고 유형 구현
-          └─ 정책 준수 및 수익 최적화
+Week 9-10 | Phase 10.2: AdMob 광고         [✅ 완료]
+          ├─ 배너/전면/보상형 + 정책 UI
+          └─ Ad-Free Time + Clean Zone
+
+Week 11   | Phase 10.3: 스토어 배포        [🔴 Critical] 🔄
+          ├─ iOS 리젝 대응 (Build 54)
+          └─ IAP/RevenueCat 외부 설정
 ```
 
 ---
@@ -1051,10 +1031,6 @@ Week 9-10 | Phase 9.3: AdMob 광고          [🟢 Recommended]
 ### UI/UX 가이드라인
 - **[UI_GUIDELINES.md](../guidelines/UI_GUIDELINES.md)**: 웹/모바일 UI 패턴
 - **[ANIMATION_GUIDE.md](../guidelines/ANIMATION_GUIDE.md)**: 애니메이션 베스트 프랙티스
-```
-Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
-          └─ 사용자 피드백 기반 결정
-```
 
 ---
 
@@ -1062,23 +1038,11 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 **오늘/내일 할 수 있는 작업**:
 
-1. **TypeScript 정리** (2-3시간)
-   - `any` 타입 제거
-   - unused variables 정리
-   - React Hook 의존성 추가
-
-2. **이벤트 추적 설정** (1-2시간)
-   - 핵심 이벤트 정의
-   - 분석 도구 연동 (PostHog or GA4)
-
-3. **에러 바운더리 추가** (1시간)
-   - 전역 에러 바운더리 컴포넌트
-   - 사용자 친화적 에러 메시지
-
-4. **성능 측정** (30분)
-   - Lighthouse 분석
-   - 번들 크기 확인
-   - 개선 영역 파악
+1. **App Store Connect EULA 링크 추가** (10분, 수동)
+2. **App Store Connect IAP 메타데이터 완료** (월간/연간: 이름/설명/가격/상태) (30-60분)
+3. **RevenueCat Offerings/Packages/Entitlement 점검** (30분)
+4. **Android 키스토어 생성 + EAS 연동** (30분)
+5. **Premium 광고 숨김 분기 적용** (30-60분)
 
 ---
 
@@ -1091,9 +1055,9 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 - [ ] **테스트 커버리지**: 핵심만 vs 전체 커버리지
 
 ### 기술 결정
-- [ ] **에러 추적 도구**: Sentry vs LogRocket vs 없음
-- [ ] **분석 도구**: PostHog vs Google Analytics vs Mixpanel
-- [ ] **모니터링**: Vercel Analytics만 vs 추가 도구
+- [x] **에러 추적 도구**: Sentry (Web + Mobile)
+- [x] **분석 도구**: PostHog (Web + Mobile)
+- [ ] **모니터링**: Vercel Analytics 운영 강화 vs 추가 도구 도입
 
 ---
 
@@ -1156,21 +1120,22 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ## 🎉 주요 성과
 
-### 현재 진행 중 (2025-12-08)
+### 현재 진행 중 (2025-12-11)
 🔄 **Phase 10.3 스토어 배포 진행 중**
   - ✅ App Store 스크린샷 완료 (영어/한국어 각 5장, 1284x2778)
   - ✅ 앱 메타데이터 입력 완료 (이름, 설명, 키워드)
-  - ✅ Build 40 TestFlight 배포 완료
-  - ⏳ 심사 제출 대기 중 (다음 단계)
+  - ✅ Build 53 제출 → 반려, Build 54 대응 완료
+  - 🔄 App Store Connect: EULA 링크/IAP 메타데이터/RevenueCat 설정 진행
+  - 🔄 Build 54 심사 재제출 진행 중
 
 ### 이전 완료 (2025-12-07)
 ✅ **Phase 10.2 AdMob 광고 연동 완료**
-  - ✅ Build 35-40 TestFlight 제출 완료
   - ✅ AdMob SDK 통합 및 배너 광고 (Phase 1 완료)
   - ✅ XP 부스트 보상형 광고 (Phase 2 완료)
   - ✅ 추가 보상형 광고 화면 연동 완료 (Phase 3 완료)
     - ReportGenerateButton: ReportsScreen에 배치
-    - ❌ StreakFreezeButton, YesterdayCheckButton: AdMob 정책으로 비활성화
+    - ❌ StreakFreezeButton: 정책/UX 이유로 비활성화
+    - ⏸️ YesterdayCheckButton: 연동/백엔드 미완료 + 정책/UX 재검토 필요
   - ✅ 전면 광고 트리거 연동 완료 (Phase 4 완료)
     - 만다라트 생성 완료 시, 리포트 생성 완료 시
     - ❌ 레벨업 전면 광고 비활성화 (사용자 경험 저하)
@@ -1267,6 +1232,6 @@ Week 11+  | Phase 6/7: 고급 기능           [🟢 Optional]
 
 ---
 
-**문서 버전**: 3.11
-**최종 수정**: 2025-12-08
+**문서 버전**: 3.14
+**최종 수정**: 2025-12-11
 **작성자**: Development Team

@@ -1,6 +1,8 @@
 # Product Requirements Document (PRD)
 # MandaAct - AI-Powered Mandalart Action Tracker
 
+> 문서 인덱스: `docs/README.md`
+
 **Version**: 2.0
 **Date**: 2025-11-15
 **Status**: Production (MVP Deployed)

@@ -225,29 +225,6 @@ export default function TodayScreen() {
     setActiveFilters(new Set())
   }, [])
 
-  // Handler for empty state actions
-  const handleEmptyStateAction = useCallback(() => {
-    if (!emptyStateScenario) return
-
-    switch (emptyStateScenario) {
-      case 'unconfigured':
-        // Expand unconfigured section and scroll to it
-        setUnconfiguredCollapsed(false)
-        break
-      case 'noFilterMatch':
-        // Clear all filters
-        clearAllFilters()
-        break
-      case 'allCompleted':
-        // Expand completed section
-        setCompletedCollapsed(false)
-        break
-      case 'noneToday':
-        // No action needed - informational only
-        break
-    }
-  }, [emptyStateScenario, clearAllFilters])
-
   // Separate configured, unconfigured, and completed actions
   const { configuredActions, unconfiguredActions, completedActions } = useMemo(() => {
     const configured: typeof actions = []
@@ -315,6 +292,29 @@ export default function TodayScreen() {
 
     return null
   }, [actions.length, filteredActions.length, configuredActions.length, unconfiguredActions.length, completedActions.length, activeFilters.size])
+
+  // Handler for empty state actions
+  const handleEmptyStateAction = useCallback(() => {
+    if (!emptyStateScenario) return
+
+    switch (emptyStateScenario) {
+      case 'unconfigured':
+        // Expand unconfigured section and scroll to it
+        setUnconfiguredCollapsed(false)
+        break
+      case 'noFilterMatch':
+        // Clear all filters
+        clearAllFilters()
+        break
+      case 'allCompleted':
+        // Expand completed section
+        setCompletedCollapsed(false)
+        break
+      case 'noneToday':
+        // No action needed - informational only
+        break
+    }
+  }, [emptyStateScenario, clearAllFilters])
 
   // Group actions by mandalart and sort by sub_goal.position, then action.position
   const actionsByMandalart = useMemo(() => {
@@ -539,24 +539,21 @@ export default function TodayScreen() {
     [user, checkingActions, toggleCheck, awardXP, subtractXP, checkPerfectDay, checkPerfectWeek, selectedDate, toast, canCheck, queryClient, refetch, t]
   )
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <View className="flex-1 bg-gray-50">
-        <Header />
+  // Render: Use conditional rendering instead of early returns to comply with Rules of Hooks
+  return (
+    <View className="flex-1 bg-gray-50">
+      <Header />
+
+      {/* Loading State */}
+      {isLoading && (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#374151" />
           <Text className="text-gray-500 mt-4">{t('common.loading')}</Text>
         </View>
-      </View>
-    )
-  }
+      )}
 
-  // Error state
-  if (error) {
-    return (
-      <View className="flex-1 bg-gray-50">
-        <Header />
+      {/* Error State */}
+      {!isLoading && error && (
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-red-500 text-center">
             {t('errors.generic')}
@@ -568,14 +565,11 @@ export default function TodayScreen() {
             <Text className="text-white font-semibold">{t('common.retry')}</Text>
           </Pressable>
         </View>
-      </View>
-    )
-  }
+      )}
 
-  return (
-    <View className="flex-1 bg-gray-50">
-      <Header />
-      <ScrollView
+      {/* Main Content */}
+      {!isLoading && !error && (
+        <ScrollView
         ref={scrollRef}
         className="flex-1 px-5 pt-5"
         refreshControl={
@@ -1119,6 +1113,7 @@ export default function TodayScreen() {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
+      )}
 
       {/* Action Type Selector Modal */}
       {selectedActionForTypeEdit && (

@@ -9,7 +9,7 @@
  * @see https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { View, StyleSheet, Platform } from 'react-native'
 import {
   BannerAd as GoogleBannerAd,
@@ -43,73 +43,15 @@ export function BannerAd({ location, style }: BannerAdProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isAdFree, setIsAdFree] = useState(false)
   const [adHeight, setAdHeight] = useState(DEFAULT_BANNER_HEIGHT)
+  const [reloadSeq, setReloadSeq] = useState(0)
   const user = useAuthStore((state) => state.user)
-  const bannerRef = useRef<typeof GoogleBannerAd>(null)
 
   // Check premium status - hide ads for premium users
   const subscription = useSubscriptionContextSafe()
   const isPremium = subscription?.isPremium ?? false
 
-  console.log('[BannerAd] 🎯 Subscription state check:', {
-    location,
-    hasSubscription: !!subscription,
-    isPremium,
-    subscriptionStatus: subscription?.subscriptionInfo?.status,
-    subscriptionPlan: subscription?.subscriptionInfo?.plan,
-    willRender: !isPremium,
-  })
-
-  // Log when premium status changes
-  useEffect(() => {
-    console.log('[BannerAd] 🔄 Premium status changed:', {
-      location,
-      isPremium,
-      willHideAd: isPremium,
-    })
-  }, [isPremium, location])
-
-  // iOS requires foreground refresh for ads - reload ad when app comes to foreground
-  useForeground(() => {
-    // On iOS, reload the banner when app returns to foreground
-    // WKWebView can terminate in suspended state, causing empty banners
-    if (Platform.OS === 'ios' && bannerRef.current) {
-      // The ref's load method triggers a reload
-      try {
-        (bannerRef.current as any)?.load?.()
-      } catch {
-        // Silently ignore if load method doesn't exist
-      }
-    }
-    // Also check Ad-Free status on foreground
-    isAdFreeActive().then(setIsAdFree)
-  })
-
-  // Check Ad-Free status on mount and periodically
-  useEffect(() => {
-    isAdFreeActive().then(setIsAdFree)
-
-    // Check every minute for expiry
-    const interval = setInterval(() => {
-      isAdFreeActive().then(setIsAdFree)
-    }, 60000)
-
-    return () => clearInterval(interval)
-  }, [])
-
   // Check new user protection
   const adRestriction = getNewUserAdRestriction(user?.created_at ?? null)
-
-  // Hide banner if Premium, Ad-Free mode is active, or new user protection
-  if (isPremium || adRestriction === 'no_ads' || isAdFree) {
-    console.log('[BannerAd] 🚫 Ad hidden - reason:', {
-      isPremium,
-      adRestriction,
-      isAdFree,
-    })
-    return null
-  }
-
-  console.log('[BannerAd] ✅ Showing ad for location:', location)
 
   // Use TestIds.ADAPTIVE_BANNER in development for guaranteed test ads
   const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : LOCATION_TO_AD_UNIT[location]
@@ -146,6 +88,59 @@ export function BannerAd({ location, style }: BannerAdProps) {
     }
   }, [location])
 
+  console.log('[BannerAd] 🎯 Subscription state check:', {
+    location,
+    hasSubscription: !!subscription,
+    isPremium,
+    subscriptionStatus: subscription?.subscriptionInfo?.status,
+    subscriptionPlan: subscription?.subscriptionInfo?.plan,
+    willRender: !isPremium,
+  })
+
+  // Log when premium status changes
+  useEffect(() => {
+    console.log('[BannerAd] 🔄 Premium status changed:', {
+      location,
+      isPremium,
+      willHideAd: isPremium,
+    })
+  }, [isPremium, location])
+
+  // iOS requires foreground refresh for ads - reload ad when app comes to foreground
+  useForeground(() => {
+    // On iOS, force-remount the banner when app returns to foreground.
+    // WKWebView can terminate in suspended state, causing empty banners.
+    if (Platform.OS === 'ios') {
+      setReloadSeq((prev) => prev + 1)
+    }
+    // Also check Ad-Free status on foreground
+    isAdFreeActive().then(setIsAdFree)
+  })
+
+  // Check Ad-Free status on mount and periodically
+  useEffect(() => {
+    isAdFreeActive().then(setIsAdFree)
+
+    // Check every minute for expiry
+    const interval = setInterval(() => {
+      isAdFreeActive().then(setIsAdFree)
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Hide banner if Premium, Ad-Free mode is active, or new user protection
+  if (isPremium || adRestriction === 'no_ads' || isAdFree) {
+    console.log('[BannerAd] 🚫 Ad hidden - reason:', {
+      isPremium,
+      adRestriction,
+      isAdFree,
+    })
+    return null
+  }
+
+  console.log('[BannerAd] ✅ Showing ad for location:', location)
+
   // Don't render anything if there's an error
   if (hasError) {
     return null
@@ -154,7 +149,7 @@ export function BannerAd({ location, style }: BannerAdProps) {
   return (
     <View style={[styles.container, { minHeight: adHeight }, style]}>
       <GoogleBannerAd
-        ref={bannerRef as any}
+        key={`${location}-${reloadSeq}`}
         unitId={adUnitId}
         size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
         requestOptions={{

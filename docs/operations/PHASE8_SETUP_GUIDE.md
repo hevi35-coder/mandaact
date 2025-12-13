@@ -35,7 +35,7 @@
   4. Success Notification
 
 ### 4. 백업 & 복구 전략 문서화
-- ✅ `docs/operations/BACKUP_AND_RECOVERY.md` 작성
+- ✅ `docs/operations/BACKUP_RECOVERY_STRATEGY.md` 작성
 - ✅ 백업 전략 정의
 - ✅ 복구 절차 문서화
 - ✅ 재해 복구 계획 수립

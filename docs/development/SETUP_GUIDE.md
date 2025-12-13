@@ -2,6 +2,8 @@
 
 Complete guide to set up the MandaAct development environment.
 
+> 문서 인덱스: `docs/README.md`
+
 ## Prerequisites
 
 - Node.js 18+

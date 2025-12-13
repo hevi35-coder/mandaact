@@ -502,6 +502,7 @@ export default function SettingsScreen() {
                 shadowOpacity: 0.06,
                 shadowRadius: 12,
                 elevation: 3,
+                minHeight: 72,
               }}
             >
               {isPremium ? (
@@ -510,7 +511,12 @@ export default function SettingsScreen() {
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  className="px-5 py-4 flex-row items-center"
+                  style={{
+                    paddingHorizontal: 20,
+                    paddingVertical: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
                 >
                   <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
                     <Crown size={20} color="#fbbf24" fill="#fbbf24" />

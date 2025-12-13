@@ -8,6 +8,7 @@ import Purchases, {
 import { Platform } from 'react-native'
 import { supabase } from '../lib/supabase'
 import Constants from 'expo-constants'
+import i18n from '../i18n'
 
 // RevenueCat API Keys (from environment variables)
 const REVENUECAT_IOS_API_KEY = Constants.expoConfig?.extra?.revenuecatIosApiKey || ''
@@ -100,59 +101,60 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [packages, setPackages] = useState<PurchasesPackage[]>([])
+  const [isRevenueCatInitialized, setIsRevenueCatInitialized] = useState(false)
 
-// Parse customer info to subscription info
-const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): SubscriptionInfo => {
-  console.log('[useSubscription] 🔍 parseCustomerInfo - Raw data:', {
-    activeEntitlements: Object.keys(customerInfo.entitlements.active),
-    allEntitlements: Object.keys(customerInfo.entitlements.all),
-    hasPremiumEntitlement: PREMIUM_ENTITLEMENT_ID in customerInfo.entitlements.active,
-    activeSubscriptions: customerInfo.activeSubscriptions,
-  })
+  // Parse customer info to subscription info
+  const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): SubscriptionInfo => {
+    console.log('[useSubscription] 🔍 parseCustomerInfo - Raw data:', {
+      activeEntitlements: Object.keys(customerInfo.entitlements.active),
+      allEntitlements: Object.keys(customerInfo.entitlements.all),
+      hasPremiumEntitlement: PREMIUM_ENTITLEMENT_ID in customerInfo.entitlements.active,
+      activeSubscriptions: customerInfo.activeSubscriptions,
+    })
 
-  const entitlement = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]
+    const entitlement = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]
 
-  if (!entitlement) {
-    // Fallback: treat active subscriptions without entitlements as premium.
-    // This handles cases where the entitlement mapping is missing in RevenueCat dashboard,
-    // but the sandbox receipt is still active (common when testing new products).
-    const fallbackProductId = customerInfo.activeSubscriptions?.[0]
-    if (fallbackProductId) {
-      const normalizedId = fallbackProductId.toLowerCase()
-      const fallbackPlan: 'monthly' | 'yearly' | null =
-        normalizedId.includes('year') || normalizedId.includes('annual')
-          ? 'yearly'
-          : normalizedId.includes('month')
-            ? 'monthly'
-            : null
+    if (!entitlement) {
+      // Fallback: treat active subscriptions without entitlements as premium.
+      // This handles cases where the entitlement mapping is missing in RevenueCat dashboard,
+      // but the sandbox receipt is still active (common when testing new products).
+      const fallbackProductId = customerInfo.activeSubscriptions?.[0]
+      if (fallbackProductId) {
+        const normalizedId = fallbackProductId.toLowerCase()
+        const fallbackPlan: 'monthly' | 'yearly' | null =
+          normalizedId.includes('year') || normalizedId.includes('annual')
+            ? 'yearly'
+            : normalizedId.includes('month')
+              ? 'monthly'
+              : null
 
-      console.log('[useSubscription] ⚠️ No entitlement, but active subscription detected → PREMIUM (fallback)', {
-        fallbackProductId,
-        fallbackPlan,
-        latestExpirationDate: customerInfo.latestExpirationDate,
-      })
+        console.log('[useSubscription] ⚠️ No entitlement, but active subscription detected → PREMIUM (fallback)', {
+          fallbackProductId,
+          fallbackPlan,
+          latestExpirationDate: customerInfo.latestExpirationDate,
+        })
 
+        return {
+          status: 'premium',
+          isPremium: true,
+          expiresAt: customerInfo.latestExpirationDate
+            ? new Date(customerInfo.latestExpirationDate)
+            : null,
+          plan: fallbackPlan,
+          // Assume renews while active; RevenueCat will correct on next refresh when entitlements are fixed
+          willRenew: true,
+        }
+      }
+
+      console.log('[useSubscription] ❌ No active premium entitlement found → FREE')
       return {
-        status: 'premium',
-        isPremium: true,
-        expiresAt: customerInfo.latestExpirationDate
-          ? new Date(customerInfo.latestExpirationDate)
-          : null,
-        plan: fallbackPlan,
-        // Assume renews while active; RevenueCat will correct on next refresh when entitlements are fixed
-        willRenew: true,
+        status: 'free',
+        isPremium: false,
+        expiresAt: null,
+        plan: null,
+        willRenew: false,
       }
     }
-
-    console.log('[useSubscription] ❌ No active premium entitlement found → FREE')
-    return {
-      status: 'free',
-      isPremium: false,
-      expiresAt: null,
-      plan: null,
-      willRenew: false,
-    }
-  }
 
     // Determine plan type based on product identifier
     let plan: 'monthly' | 'yearly' | null = null
@@ -262,7 +264,7 @@ const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): Subscription
       }
     } catch (err) {
       console.error('Failed to refresh subscription:', err)
-      setError('구독 정보를 불러오는데 실패했습니다')
+      setError(i18n.t('errors.generic'))
 
       // Fallback: check Supabase directly
       try {
@@ -345,7 +347,7 @@ const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): Subscription
       }
 
       console.error('[useSubscription] 💳 Purchase failed:', err)
-      setError('구매에 실패했습니다. 다시 시도해주세요.')
+      setError(i18n.t('subscription.purchaseError'))
       return false
     } finally {
       setIsLoading(false)
@@ -395,7 +397,7 @@ const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): Subscription
       return finalSubscriptionInfo.isPremium
     } catch (err) {
       console.error('[useSubscription] 🔄 Restore failed:', err)
-      setError('구매 복원에 실패했습니다.')
+      setError(i18n.t('subscription.restoreError'))
       return false
     } finally {
       setIsLoading(false)
@@ -417,7 +419,11 @@ const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): Subscription
   // Initialize on mount
   useEffect(() => {
     if (userId) {
+      // Reset initialization state when user changes
+      setIsRevenueCatInitialized(false)
+
       initializeRevenueCat(userId).then(() => {
+        setIsRevenueCatInitialized(true)
         refreshSubscription()
       })
     }
@@ -425,6 +431,8 @@ const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): Subscription
 
   // Listen for customer info updates
   useEffect(() => {
+    if (!userId || !isRevenueCatInitialized) return
+
     const listener = (info: CustomerInfo) => {
       console.log('[useSubscription] 🔔 Customer info updated (listener triggered)')
       const subscriptionData = parseCustomerInfo(info)
@@ -443,7 +451,7 @@ const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): Subscription
       Purchases.removeCustomerInfoUpdateListener(listener)
       console.log('[useSubscription] 👂 Customer info update listener removed')
     }
-  }, [parseCustomerInfo, syncToSupabase])
+  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase])
 
   return {
     subscriptionInfo,

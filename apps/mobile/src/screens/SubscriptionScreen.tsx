@@ -7,10 +7,10 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
 } from 'react-native'
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
+import Animated, { FadeInUp } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
-import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
 import {
   Crown,
@@ -143,6 +143,12 @@ export default function SubscriptionScreen() {
     return { type, highlight, savings }
   }
 
+  const formatExpiryDate = useCallback((value: unknown) => {
+    if (!(value instanceof Date)) return null
+    if (Number.isNaN(value.getTime())) return null
+    return value.toLocaleDateString()
+  }, [])
+
   // Format plan label
   const getPlanLabel = (type: 'monthly' | 'yearly') => {
     switch (type) {
@@ -180,51 +186,73 @@ export default function SubscriptionScreen() {
           >
             {isPremium ? (
               // Premium Status Card
-              <LinearGradient
-                colors={['#2563eb', '#9333ea', '#db2777']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="rounded-2xl p-5"
+              <View
+                className="bg-white rounded-2xl overflow-hidden border border-gray-100"
                 style={{
-                  shadowColor: '#2563eb',
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 16,
-                  elevation: 8,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 3,
                 }}
               >
-                <View className="flex-row items-center mb-3">
-                  <Crown size={28} color="#fbbf24" fill="#fbbf24" />
-                  <Text
-                    className="text-xl text-white ml-2"
-                    style={{ fontFamily: 'Pretendard-Bold' }}
-                  >
-                    {t('subscription.premiumActive')}
-                  </Text>
-                </View>
-                <Text
-                  className="text-white/80 text-sm"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
+                <LinearGradient
+                  colors={['#2563eb', '#9333ea', '#db2777']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    paddingHorizontal: 20,
+                    paddingVertical: 14,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
                 >
-                  {subscriptionInfo.expiresAt
-                    ? t('subscription.expiresAt', {
-                        date: subscriptionInfo.expiresAt.toLocaleDateString(),
-                      })
-                    : t('subscription.activeSubscription')}
-                </Text>
-                {subscriptionInfo.plan && (
-                  <View className="mt-3 pt-3 border-t border-white/20">
+                  <View className="flex-row items-center">
+                    <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
+                      <Crown size={18} color="#fbbf24" fill="#fbbf24" />
+                    </View>
                     <Text
-                      className="text-white/60 text-xs"
+                      className="text-base text-white ml-3"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('subscription.premiumActive')}
+                    </Text>
+                  </View>
+                  <View className="bg-white/20 px-3 py-1 rounded-full">
+                    <Text
+                      className="text-xs text-white"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      {t('subscription.active')}
+                    </Text>
+                  </View>
+                </LinearGradient>
+
+                <View className="px-5 py-4">
+                  <Text
+                    className="text-sm text-gray-700"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {(() => {
+                      const date = formatExpiryDate(subscriptionInfo.expiresAt)
+                      if (!date) return t('subscription.activeSubscription')
+                      return t('subscription.expiresAt', { date })
+                    })()}
+                  </Text>
+
+                  {subscriptionInfo.plan && (
+                    <Text
+                      className="text-xs text-gray-500 mt-2"
                       style={{ fontFamily: 'Pretendard-Regular' }}
                     >
                       {subscriptionInfo.willRenew
                         ? t('subscription.autoRenew')
                         : t('subscription.cancelledNoRenew')}
                     </Text>
-                  </View>
-                )}
-              </LinearGradient>
+                  )}
+                </View>
+              </View>
             ) : (
               // Free Status Card
               <View
@@ -524,7 +552,22 @@ export default function SubscriptionScreen() {
               {/* Manage Subscription */}
               <Animated.View entering={FadeInUp.delay(200).duration(400)}>
                 <Pressable
-                  onPress={() => {
+                  onPress={async () => {
+                    // iOS: deep link to subscription management if possible
+                    const url = Platform.OS === 'ios'
+                      ? 'https://apps.apple.com/account/subscriptions'
+                      : 'https://play.google.com/store/account/subscriptions'
+
+                    try {
+                      const canOpen = await Linking.canOpenURL(url)
+                      if (canOpen) {
+                        await Linking.openURL(url)
+                        return
+                      }
+                    } catch {
+                      // fallback to alert below
+                    }
+
                     Alert.alert(
                       t('subscription.manageTitle'),
                       t('subscription.manageDescription'),

@@ -1,5 +1,7 @@
 # AI 코치 Unauthorized 에러 해결 가이드
 
+> 문서 인덱스: `docs/README.md`
+
 ## 증상
 - AI 코치 채팅에서 메시지 전송 시 "Unauthorized" 에러 발생
 

@@ -1,43 +1,9 @@
-# MandaAct Mobile Build Troubleshooting Log
+# Mobile Build Troubleshooting (통합됨)
 
-## 개요
+이 트러블슈팅 로그는 `docs/development/MOBILE_BUILD_GUIDE.md`로 통합되었습니다.
 
-2025-12-05 iOS 개발 빌드 시 Expo Dev Client 스플래시 화면에서 멈추는 문제 트러블슈팅 기록
-
-## 환경
-
-- **Expo SDK**: 52
-- **React Native**: 0.76.1
-- **NativeWind**: 4.1.23
-- **테스트 기기**: iPhone 17 Pro (iOS 26.1 Simulator)
-- **빌드 타입**: Development (expo-dev-client)
-
-## 문제 발생 경과
-
-### Phase 1: 초기 문제 - Bridgeless Mode TypeError
-
-**증상:**
-- 앱 스플래시 화면에서 멈춤
-- JavaScript 에러: `(NOBRIDGE) ERROR TypeError: property is not writable`
-
-**원인 분석:**
-- NativeWind v4 + `react-native-css-interop`이 React Native 0.76의 Bridgeless 모드와 호환되지 않음
-- Expo SDK 52의 기본 설정이 `newArchEnabled: true` (New Architecture / Bridgeless 모드 활성화)
-
-**시도한 해결책:**
-1. NativeWind 비활성화 (`babel.config.js`, `metro.config.js`)
-2. `newArchEnabled: false`로 변경 (`app.json`)
-
-### Phase 2: 빌드 성공 후 Dev Client 스플래시 멈춤
-
-**증상:**
-- iOS 네이티브 빌드 성공 (0 errors, 4-6 warnings)
-- Metro 번들러 정상 연결
-- JavaScript 번들 로드 성공 (`iOS Bundled 505ms apps/mobile/index.ts (1036 modules)`)
-- **BUT**: Expo Dev Client 스플래시 화면(파란 배경 + 동심원 그리드)에서 멈춤
-- React 컴포넌트 마운트 로그 (`[APP] Component mounted`) 출력 없음
-
-**원인 추정:**
+- 통합 문서: `docs/development/MOBILE_BUILD_GUIDE.md`
+- 인덱스: `docs/README.md`
 - iOS 네이티브 프로젝트가 이전 설정(`newArchEnabled: true`)으로 빌드되어 있음
 - 설정 변경 후 CocoaPods 재설치가 필요함
 

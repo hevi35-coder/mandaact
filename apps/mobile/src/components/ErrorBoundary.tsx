@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react-native'
 import { logger } from '../lib/logger'
 import i18n from '../i18n'
+import { resetToHome } from '../navigation/navigationRef'
 
 interface Props {
   children: ReactNode
@@ -36,6 +37,9 @@ export default class ErrorBoundary extends Component<Props, State> {
 
     // Log to error reporting service (Sentry via logger)
     logger.error('ErrorBoundary caught an error', error, { errorInfo })
+    // Ensure something shows up in device logs even in release builds
+    // eslint-disable-next-line no-console
+    console.error('[ErrorBoundary] Uncaught error:', error, errorInfo)
   }
 
   handleReset = () => {
@@ -74,12 +78,12 @@ export default class ErrorBoundary extends Component<Props, State> {
             </Text>
 
             {/* Error Details (Debug) */}
-            {__DEV__ && this.state.error && (
+            {this.state.error && (
               <View className="bg-gray-100 rounded-xl p-4 mb-6">
                 <Text className="text-xs font-mono text-red-600 mb-2">
                   {this.state.error.toString()}
                 </Text>
-                {this.state.errorInfo?.componentStack && (
+                {__DEV__ && this.state.errorInfo?.componentStack && (
                   <Text className="text-xs font-mono text-gray-500" numberOfLines={10}>
                     {this.state.errorInfo.componentStack}
                   </Text>
@@ -100,7 +104,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               <Pressable
                 className="bg-gray-200 rounded-xl py-4 flex-row items-center justify-center"
                 onPress={() => {
-                  // Navigate to home - this will require navigation ref
+                  resetToHome()
                   this.handleReset()
                 }}
               >
