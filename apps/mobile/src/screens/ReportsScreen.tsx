@@ -968,13 +968,13 @@ export default function ReportsScreen() {
             </View>
           )}
 
-          {/* Premium 유저: 리포트 즉시 생성 버튼 */}
+          {/* Premium 유저: 리포트 즉시 생성 버튼 (Login 버튼과 동일한 스타일) */}
           {isPremium && hasExistingReports && hasMandalarts && (
             <Pressable
               onPress={handleGenerateAll}
               disabled={generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending}
-              className="rounded-2xl overflow-hidden"
               style={{
+                opacity: generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending ? 0.6 : 1,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.08,
@@ -986,14 +986,24 @@ export default function ReportsScreen() {
                 colors={['#2563eb', '#9333ea', '#db2777']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                className="py-4 px-5"
+                style={{ padding: 2, borderRadius: 16 }}
               >
-                <View className="flex-row items-center justify-center">
+                <View
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 14,
+                    paddingVertical: 14,
+                    paddingHorizontal: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'row',
+                  }}
+                >
                   {generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending ? (
                     <>
-                      <ActivityIndicator size="small" color="#ffffff" />
+                      <ActivityIndicator size="small" color="#7c3aed" />
                       <Text
-                        className="text-white text-base ml-2"
+                        className="text-gray-700 text-base ml-2"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
                         {t('reports.generating')}
@@ -1001,13 +1011,30 @@ export default function ReportsScreen() {
                     </>
                   ) : (
                     <>
-                      <Sparkles size={18} color="#ffffff" />
-                      <Text
-                        className="text-white text-base ml-2"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      <Sparkles size={18} color="#7c3aed" />
+                      <MaskedView
+                        maskElement={
+                          <Text
+                            className="text-base ml-2"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            {t('reports.generateReport')}
+                          </Text>
+                        }
                       >
-                        {t('reports.generateReport')}
-                      </Text>
+                        <LinearGradient
+                          colors={['#2563eb', '#9333ea', '#db2777']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                        >
+                          <Text
+                            className="text-base ml-2 opacity-0"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            {t('reports.generateReport')}
+                          </Text>
+                        </LinearGradient>
+                      </MaskedView>
                     </>
                   )}
                 </View>
