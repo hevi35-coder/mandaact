@@ -6,6 +6,7 @@ import Purchases, {
   PurchasesEntitlementInfo,
 } from 'react-native-purchases'
 import { Platform } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import Constants from 'expo-constants'
 import i18n from '../i18n'
@@ -16,6 +17,8 @@ const REVENUECAT_ANDROID_API_KEY = Constants.expoConfig?.extra?.revenuecatAndroi
 
 // Entitlement ID (configured in RevenueCat dashboard)
 const PREMIUM_ENTITLEMENT_ID = 'premium'
+const AUTO_RESTORE_COOLDOWN_MS = 6 * 60 * 60 * 1000 // 6 hours
+const getAutoRestoreKey = (userId: string) => `@rc_auto_restore_ts:${userId}`
 
 // Free tier limits
 export const FREE_MANDALART_LIMIT = 3
@@ -264,7 +267,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       }
     } catch (err) {
       console.error('Failed to refresh subscription:', err)
-      setError(i18n.t('errors.generic'))
+      setError(i18n.t('errors.unknown'))
 
       // Fallback: check Supabase directly
       try {
@@ -430,6 +433,8 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       setIsLoading(true)
 
       try {
+        let supabaseFallbackStatus: 'active' | 'free' | null = null
+
         // Step 1: Load from Supabase first (faster, cached)
         console.log('[useSubscription] 📦 Loading subscription from Supabase...')
         const { data: supabaseData } = await supabase
@@ -439,6 +444,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
           .single()
 
         if (supabaseData && mounted) {
+          supabaseFallbackStatus = supabaseData.status === 'active' ? 'active' : 'free'
           const fallbackInfo: SubscriptionInfo = {
             status: supabaseData.status === 'active' ? 'premium' : 'free',
             isPremium: supabaseData.status === 'active',
@@ -460,8 +466,61 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
         // Step 3: Refresh from RevenueCat (source of truth)
         console.log('[useSubscription] 🔄 Refreshing from RevenueCat...')
-        const customerInfo = await Purchases.getCustomerInfo()
-        const info = parseCustomerInfo(customerInfo)
+        await Purchases.invalidateCustomerInfoCache()
+        let customerInfo = await Purchases.getCustomerInfo()
+        let info = parseCustomerInfo(customerInfo)
+
+        // Auto-restore strategy (Sandbox & cross-device):
+        // If RevenueCat doesn't show premium yet, do a rate-limited syncPurchases → (optional) restorePurchases
+        // This helps when the receipt hasn't been synced on this device.
+        if (!info.isPremium) {
+          const now = Date.now()
+          const autoRestoreKey = getAutoRestoreKey(userId)
+          const lastAutoRestoreRaw = await AsyncStorage.getItem(autoRestoreKey)
+          const lastAutoRestore = lastAutoRestoreRaw ? Number(lastAutoRestoreRaw) : 0
+          const shouldAttemptAutoRestore = !lastAutoRestore || now - lastAutoRestore > AUTO_RESTORE_COOLDOWN_MS
+
+          const shouldForceAttempt =
+            supabaseFallbackStatus === 'active' || // server says premium but RC says free
+            false
+
+          if (shouldAttemptAutoRestore || shouldForceAttempt) {
+            console.log('[useSubscription] 🔄 Auto-sync purchases (rate-limited)', {
+              supabaseFallbackStatus,
+              shouldAttemptAutoRestore,
+              lastAutoRestore,
+            })
+
+            await AsyncStorage.setItem(autoRestoreKey, String(now))
+
+            try {
+              await Purchases.syncPurchases()
+              await Purchases.invalidateCustomerInfoCache()
+              customerInfo = await Purchases.getCustomerInfo()
+              info = parseCustomerInfo(customerInfo)
+            } catch (syncErr) {
+              console.warn('[useSubscription] ⚠️ syncPurchases failed:', syncErr)
+            }
+
+            // If still not premium and we expected premium, try restorePurchases once (still rate-limited by the same key)
+            if (!info.isPremium && supabaseFallbackStatus === 'active') {
+              try {
+                console.log('[useSubscription] 🔄 Auto-restore purchases (fallback)')
+                await Purchases.restorePurchases()
+                await Purchases.invalidateCustomerInfoCache()
+                customerInfo = await Purchases.getCustomerInfo()
+                info = parseCustomerInfo(customerInfo)
+              } catch (restoreErr) {
+                console.warn('[useSubscription] ⚠️ auto restorePurchases failed:', restoreErr)
+              }
+            }
+          } else {
+            console.log('[useSubscription] ⏭️ Skipping auto-sync (cooldown)', {
+              lastAutoRestore,
+              cooldownMs: AUTO_RESTORE_COOLDOWN_MS,
+            })
+          }
+        }
 
         if (mounted) {
           setSubscriptionInfo(info)
@@ -509,7 +568,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       } catch (error) {
         console.error('[useSubscription] ❌ Initialization error:', error)
         if (mounted) {
-          setError(i18n.t('errors.generic'))
+          setError(i18n.t('errors.unknown'))
         }
       } finally {
         if (mounted) {
