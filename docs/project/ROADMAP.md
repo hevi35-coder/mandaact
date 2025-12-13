@@ -279,7 +279,7 @@
    - [ ] `npx supabase db push` 실행 (user_subscriptions 테이블)
 
 #### 10.4.5 추후 개선 사항 (Backlog)
-- [ ] **자동 구매 복원**: 앱 시작 시 자동으로 `restorePurchases()` 호출
+- [ ] **자동 구매 복원**: 앱 시작/로그인 시 자동으로 `syncPurchases()` → 필요 시 `restorePurchases()` (세션/시간 쿨다운 적용)
   - 현재: 사용자가 수동으로 "구매 복원" 버튼 눌러야 함
   - 개선: 로그인 시 자동 복원 시도 (새 기기 UX 개선)
   - 예상 소요: 0.5일
