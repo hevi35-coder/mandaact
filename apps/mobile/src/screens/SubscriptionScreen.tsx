@@ -188,6 +188,7 @@ export default function SubscriptionScreen() {
             {isPremium ? (
               // Premium Status Card
               <View
+                className="bg-white rounded-2xl overflow-hidden border border-gray-100"
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
@@ -196,86 +197,66 @@ export default function SubscriptionScreen() {
                   elevation: 3,
                 }}
               >
-                <LinearGradient
-                  colors={['#2563eb', '#9333ea', '#db2777']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{ padding: 2, borderRadius: 16 }}
-                >
-                  <View className="bg-white rounded-2xl overflow-hidden border border-gray-100">
-                    <View className="px-5 py-4 flex-row items-center justify-between">
-                      <View className="flex-row items-center">
-                        <LinearGradient
-                          colors={['#2563eb', '#9333ea', '#db2777']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={{ width: 36, height: 36, borderRadius: 999, padding: 2 }}
-                        >
-                          <View className="flex-1 rounded-full bg-white items-center justify-center">
-                            <Crown size={16} color="#7c3aed" />
-                          </View>
-                        </LinearGradient>
-
-                        <MaskedView
-                          maskElement={
-                            <Text
-                              className="text-base ml-3"
-                              style={{ fontFamily: 'Pretendard-Bold' }}
-                            >
-                              {t('subscription.premiumActive')}
-                            </Text>
-                          }
-                        >
-                          <LinearGradient
-                            colors={['#2563eb', '#9333ea', '#db2777']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                          >
-                            <Text
-                              className="text-base ml-3 opacity-0"
-                              style={{ fontFamily: 'Pretendard-Bold' }}
-                            >
-                              {t('subscription.premiumActive')}
-                            </Text>
-                          </LinearGradient>
-                        </MaskedView>
-                      </View>
-
-                      <View className="bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                        <Text
-                          className="text-xs text-green-700"
-                          style={{ fontFamily: 'Pretendard-SemiBold' }}
-                        >
-                          {t('subscription.active')}
-                        </Text>
-                      </View>
+                <View className="px-5 py-4 flex-row items-center">
+                  <LinearGradient
+                    colors={['#2563eb', '#9333ea', '#db2777']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ width: 36, height: 36, borderRadius: 999, padding: 2 }}
+                  >
+                    <View className="flex-1 rounded-full bg-white items-center justify-center">
+                      <Crown size={16} color="#7c3aed" />
                     </View>
+                  </LinearGradient>
 
-                    <View className="px-5 pb-4">
+                  <MaskedView
+                    maskElement={
                       <Text
-                        className="text-sm text-gray-700"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
+                        className="text-base ml-3"
+                        style={{ fontFamily: 'Pretendard-Bold' }}
                       >
-                        {(() => {
-                          const date = formatExpiryDate(subscriptionInfo.expiresAt)
-                          if (!date) return t('subscription.activeSubscription')
-                          return t('subscription.expiresAt', { date })
-                        })()}
+                        {t('subscription.premiumActive')}
                       </Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#2563eb', '#9333ea', '#db2777']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Text
+                        className="text-base ml-3 opacity-0"
+                        style={{ fontFamily: 'Pretendard-Bold' }}
+                      >
+                        {t('subscription.premiumActive')}
+                      </Text>
+                    </LinearGradient>
+                  </MaskedView>
+                </View>
 
-                      {subscriptionInfo.plan && (
-                        <Text
-                          className="text-xs text-gray-500 mt-2"
-                          style={{ fontFamily: 'Pretendard-Regular' }}
-                        >
-                          {subscriptionInfo.willRenew
-                            ? t('subscription.autoRenew')
-                            : t('subscription.cancelledNoRenew')}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                </LinearGradient>
+                <View className="px-5 pb-4">
+                  <Text
+                    className="text-sm text-gray-700"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {(() => {
+                      const date = formatExpiryDate(subscriptionInfo.expiresAt)
+                      if (!date) return t('subscription.activeSubscription')
+                      return t('subscription.expiresAt', { date })
+                    })()}
+                  </Text>
+
+                  {subscriptionInfo.plan && (
+                    <Text
+                      className="text-xs text-gray-500 mt-2"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {subscriptionInfo.willRenew
+                        ? t('subscription.autoRenew')
+                        : t('subscription.cancelledNoRenew')}
+                    </Text>
+                  )}
+                </View>
               </View>
             ) : (
               // Free Status Card
