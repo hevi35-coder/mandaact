@@ -109,7 +109,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'high',
-      reason: '마음가짐이나 원칙 관련 항목으로 보여요'
+      reason: 'actionType.selector.reasonReference'
     }
   }
 
@@ -118,7 +118,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'high',
-      reason: '생활 습관 개선 목표로 보여요 (체크 없이 참고용)'
+      reason: 'actionType.selector.reasonReference'
     }
   }
 
@@ -127,7 +127,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'high',
-      reason: '마음가짐이나 생활 원칙으로 보여요'
+      reason: 'actionType.selector.reasonReference'
     }
   }
 
@@ -136,7 +136,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'medium',
-      reason: '실천 방식이나 접근법으로 보여요 (구체적인 실천 방법 추가 권장)'
+      reason: 'actionType.selector.reasonReference'
     }
   }
 
@@ -145,7 +145,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'mission',
       confidence: 'high',
-      reason: '1회 완료 목표로 보여요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'once'
     }
   }
@@ -156,7 +156,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'medium',
-      reason: '시간 관리 목표로 보여요 (구체적인 실천 방법 추가 권장)'
+      reason: 'actionType.selector.reasonReference'
     }
   }
 
@@ -167,7 +167,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'mission',
       confidence: 'high',
-      reason: '분기별 반복 목표로 보여요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'periodic',
       missionPeriodCycle: 'quarterly'
     }
@@ -177,7 +177,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'mission',
       confidence: 'high',
-      reason: '연간 반복 목표로 보여요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'periodic',
       missionPeriodCycle: 'yearly'
     }
@@ -191,7 +191,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '특정 요일 루틴으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly',
       routineWeekdays: selectedWeekdays
     }
@@ -205,7 +205,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: `${matchedDay}요일 루틴으로 보여요`,
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly',
       routineWeekdays: [selectedWeekday]
     }
@@ -215,7 +215,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'mission',
       confidence: 'high',
-      reason: '매월 반복되는 목표로 보여요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'periodic',
       missionPeriodCycle: 'monthly'
     }
@@ -227,7 +227,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'mission',
       confidence: 'high',
-      reason: '매주 반복되는 목표로 보여요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'periodic',
       missionPeriodCycle: 'weekly'
     }
@@ -241,7 +241,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '매주 반복하는 실천으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly',
       routineCountPerPeriod: countPerPeriod
     }
@@ -252,7 +252,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'mission',
       confidence: 'high',
-      reason: '완료해야 할 수치 목표가 있어요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'once'
     }
   }
@@ -261,7 +261,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'mission',
       confidence: 'medium',
-      reason: '완료 목표가 있는 것 같아요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'once'
     }
   }
@@ -274,7 +274,7 @@ export function suggestActionType(title: string): AISuggestion {
       return {
         type: 'routine',
         confidence: 'high',
-        reason: '매일 반복하는 실천으로 보여요',
+        reason: 'actionType.selector.reasonRoutine',
         routineFrequency: 'daily'
       }
     }
@@ -283,14 +283,14 @@ export function suggestActionType(title: string): AISuggestion {
       return {
         type: 'routine',
         confidence: 'medium',
-        reason: '시간 기반 반복 실천으로 보여요',
+        reason: 'actionType.selector.reasonRoutine',
         routineFrequency: 'daily'
       }
     }
     return {
       type: 'mission',
       confidence: 'medium',
-      reason: '수치 목표가 있는 것 같아요',
+      reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'once'
     }
   }
@@ -300,7 +300,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '꾸준한 실천으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'daily'
     }
   }
@@ -310,7 +310,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '주말 루틴으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly',
       routineWeekdays: [0, 6] // Sunday and Saturday
     }
@@ -320,7 +320,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '평일 루틴으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly',
       routineWeekdays: [1, 2, 3, 4, 5] // Monday to Friday
     }
@@ -331,7 +331,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '매일 반복하는 실천으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'daily'
     }
   }
@@ -340,7 +340,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '매주 반복하는 실천으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly'
     }
   }
@@ -349,7 +349,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'high',
-      reason: '매월 반복하는 실천으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'monthly',
       routineCountPerPeriod: 1
     }
@@ -362,7 +362,7 @@ export function suggestActionType(title: string): AISuggestion {
       return {
         type: 'mission',
         confidence: 'high',
-        reason: '특정 책을 읽는 완료 목표로 보여요',
+        reason: 'actionType.selector.reasonMission',
         missionCompletionType: 'once'
       }
     }
@@ -382,7 +382,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'routine',
       confidence: 'medium',
-      reason: '반복적으로 하는 실천으로 보여요',
+      reason: 'actionType.selector.reasonRoutine',
       routineFrequency: inferredFrequency
     }
   }
@@ -391,7 +391,7 @@ export function suggestActionType(title: string): AISuggestion {
   return {
     type: 'routine',
     confidence: 'low',
-    reason: '루틴으로 추정됩니다 (주기나 완료 조건을 추가하면 더 정확해져요)',
+    reason: 'actionType.selector.reasonRoutineLow',
     routineFrequency: 'daily'
   }
 }

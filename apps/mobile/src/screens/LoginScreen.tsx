@@ -79,8 +79,11 @@ export default function LoginScreen() {
         identifyUser(result.user.id, result.user.email ? { email: result.user.email } : undefined)
       }
     } catch (error) {
-      const errorMessage = parseError(error)
-      Alert.alert(t('common.error'), errorMessage)
+      const errorKeyOrMessage = parseError(error)
+      const message = errorKeyOrMessage.startsWith('errors.')
+        ? t(errorKeyOrMessage)
+        : errorKeyOrMessage
+      Alert.alert(t('common.error'), message)
     }
   }
 
@@ -120,8 +123,11 @@ export default function LoginScreen() {
         [{ text: t('common.confirm') }]
       )
     } catch (error) {
-      const errorMessage = parseError(error)
-      Alert.alert(t('common.error'), errorMessage)
+      const errorKeyOrMessage = parseError(error)
+      const message = errorKeyOrMessage.startsWith('errors.')
+        ? t(errorKeyOrMessage)
+        : errorKeyOrMessage
+      Alert.alert(t('common.error'), message)
     } finally {
       setSignUpLoading(false)
     }
@@ -144,8 +150,11 @@ export default function LoginScreen() {
         [{ text: t('common.confirm') }]
       )
     } catch (error) {
-      const errorMessage = parseError(error)
-      Alert.alert(t('common.error'), errorMessage)
+      const errorKeyOrMessage = parseError(error)
+      const message = errorKeyOrMessage.startsWith('errors.')
+        ? t(errorKeyOrMessage)
+        : errorKeyOrMessage
+      Alert.alert(t('common.error'), message)
     } finally {
       setIsResetting(false)
     }

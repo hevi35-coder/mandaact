@@ -18,6 +18,7 @@ import {
   Lightbulb,
 } from 'lucide-react-native'
 import type { Action, ActionType } from '@mandaact/shared'
+import { useTranslation } from 'react-i18next'
 import { useUpdateAction } from '../hooks/useActions'
 import { logger } from '../lib/logger'
 
@@ -28,39 +29,13 @@ interface ActionEditModalProps {
   onSuccess?: () => void
 }
 
-const ACTION_TYPES: { type: ActionType; label: string; description: string; icon: React.ReactNode }[] = [
-  {
-    type: 'routine',
-    label: '루틴',
-    description: '매일/매주 반복하는 습관',
-    icon: <RotateCw size={20} color="#2563eb" />,
-  },
-  {
-    type: 'mission',
-    label: '미션',
-    description: '한 번 완료해야 하는 목표',
-    icon: <Target size={20} color="#f59e0b" />,
-  },
-  {
-    type: 'reference',
-    label: '참고',
-    description: '마음가짐이나 참고사항',
-    icon: <Lightbulb size={20} color="#6b7280" />,
-  },
-]
-
-const FREQUENCIES = [
-  { value: 'daily', label: '매일' },
-  { value: 'weekly', label: '매주' },
-  { value: 'monthly', label: '매월' },
-]
-
 export default function ActionEditModal({
   visible,
   action,
   onClose,
   onSuccess,
 }: ActionEditModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [actionType, setActionType] = useState<ActionType>('routine')
   const [frequency, setFrequency] = useState<string>('daily')
@@ -126,7 +101,7 @@ export default function ActionEditModal({
                 <X size={24} color="#6b7280" />
               </Pressable>
               <Text className="text-lg font-semibold text-gray-900">
-                실천 항목 수정
+                {t('actionEdit.title')}
               </Text>
               <Pressable
                 onPress={handleSave}
@@ -148,12 +123,12 @@ export default function ActionEditModal({
               {/* Title Input */}
               <View className="mb-6">
                 <Text className="text-sm font-semibold text-gray-700 mb-2">
-                  제목
+                  {t('actionEdit.fields.title')}
                 </Text>
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
-                  placeholder="실천 항목을 입력하세요"
+                  placeholder={t('actionEdit.placeholders.title')}
                   placeholderTextColor="#9ca3af"
                   className="bg-gray-50 rounded-lg px-4 py-3 text-base text-gray-900 border border-gray-200"
                   multiline
@@ -167,10 +142,29 @@ export default function ActionEditModal({
               {/* Action Type Selection */}
               <View className="mb-6">
                 <Text className="text-sm font-semibold text-gray-700 mb-2">
-                  유형
+                  {t('actionEdit.fields.type')}
                 </Text>
                 <View className="gap-2">
-                  {ACTION_TYPES.map((type) => (
+                  {([
+                    {
+                      type: 'routine' as const,
+                      label: t('actionType.routine'),
+                      description: t('actionType.selector.routineDesc'),
+                      icon: <RotateCw size={20} color="#2563eb" />,
+                    },
+                    {
+                      type: 'mission' as const,
+                      label: t('actionType.mission'),
+                      description: t('actionType.selector.missionDesc'),
+                      icon: <Target size={20} color="#f59e0b" />,
+                    },
+                    {
+                      type: 'reference' as const,
+                      label: t('actionType.reference'),
+                      description: t('actionType.selector.referenceDesc'),
+                      icon: <Lightbulb size={20} color="#6b7280" />,
+                    },
+                  ] as const).map((type) => (
                     <Pressable
                       key={type.type}
                       onPress={() => setActionType(type.type)}
@@ -207,10 +201,14 @@ export default function ActionEditModal({
               {actionType === 'routine' && (
                 <View className="mb-6">
                   <Text className="text-sm font-semibold text-gray-700 mb-2">
-                    반복 주기
+                    {t('actionEdit.fields.frequency')}
                   </Text>
                   <View className="flex-row gap-2">
-                    {FREQUENCIES.map((freq) => (
+                    {([
+                      { value: 'daily', label: t('actionType.daily') },
+                      { value: 'weekly', label: t('actionType.weekly') },
+                      { value: 'monthly', label: t('actionType.monthly') },
+                    ] as const).map((freq) => (
                       <Pressable
                         key={freq.value}
                         onPress={() => setFrequency(freq.value)}
@@ -238,10 +236,10 @@ export default function ActionEditModal({
               {/* Info notice */}
               <View className="bg-blue-50 rounded-lg p-4 mb-8">
                 <Text className="text-sm text-blue-700">
-                  💡 유형에 따라 실천 표시 방식이 달라집니다.{'\n'}
-                  • 루틴: 설정한 주기마다 체크 가능{'\n'}
-                  • 미션: 완료할 때까지 표시{'\n'}
-                  • 참고: 체크 없이 항상 표시
+                  {t('actionEdit.notice.title')}{'\n'}
+                  • {t('actionEdit.notice.routine')}{'\n'}
+                  • {t('actionEdit.notice.mission')}{'\n'}
+                  • {t('actionEdit.notice.reference')}
                 </Text>
               </View>
             </ScrollView>

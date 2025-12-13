@@ -10,6 +10,7 @@ import {
   RefreshCw,
   type LucideIcon,
 } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
 interface EmptyStateProps {
   icon?: LucideIcon
@@ -69,43 +70,47 @@ export function EmptyState({
 
 // Preset empty states
 export function EmptyMandalarts({ onAction }: { onAction?: () => void }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={Target}
-      title="만다라트가 없습니다"
-      description="첫 번째 만다라트를 만들어보세요"
-      actionLabel="만다라트 만들기"
+      title={t('emptyState.mandalart.title')}
+      description={t('emptyState.mandalart.description')}
+      actionLabel={t('emptyState.mandalart.action')}
       onAction={onAction}
     />
   )
 }
 
 export function EmptyTodayActions() {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={Calendar}
-      title="오늘의 실천이 없습니다"
-      description="활성화된 만다라트의 실천 항목이 표시됩니다"
+      title={t('emptyState.todayActions.title')}
+      description={t('emptyState.todayActions.description')}
     />
   )
 }
 
 export function EmptyReports() {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={FileText}
-      title="리포트가 없습니다"
-      description="첫 번째 주간 리포트를 생성해보세요"
+      title={t('emptyState.reports.title')}
+      description={t('emptyState.reports.description')}
     />
   )
 }
 
 export function EmptyBadges() {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={Award}
-      title="획득한 뱃지가 없습니다"
-      description="실천을 시작하면 뱃지를 획득할 수 있습니다"
+      title={t('emptyState.badges.title')}
+      description={t('emptyState.badges.description')}
     />
   )
 }
@@ -113,27 +118,30 @@ export function EmptyBadges() {
 // Network error state
 export function NetworkErrorState({
   onRetry,
-  message = '네트워크 연결을 확인해주세요',
+  message,
 }: {
   onRetry?: () => void
   message?: string
 }) {
+  const { t } = useTranslation()
   return (
     <View className="items-center py-12">
       <View className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-4">
         <WifiOff size={32} color="#ef4444" />
       </View>
       <Text className="text-lg font-semibold text-gray-900 text-center">
-        연결 오류
+        {t('emptyState.network.title')}
       </Text>
-      <Text className="text-sm text-gray-500 text-center mt-1">{message}</Text>
+      <Text className="text-sm text-gray-500 text-center mt-1">
+        {message || t('emptyState.network.description')}
+      </Text>
       {onRetry && (
         <Pressable
           className="bg-gray-100 rounded-lg px-6 py-3 mt-4 flex-row items-center"
           onPress={onRetry}
         >
           <RefreshCw size={18} color="#374151" />
-          <Text className="text-gray-700 font-medium ml-2">다시 시도</Text>
+          <Text className="text-gray-700 font-medium ml-2">{t('common.retry')}</Text>
         </Pressable>
       )}
     </View>
@@ -142,7 +150,7 @@ export function NetworkErrorState({
 
 // Generic error state
 export function ErrorState({
-  title = '오류가 발생했습니다',
+  title,
   message,
   onRetry,
 }: {
@@ -150,12 +158,15 @@ export function ErrorState({
   message?: string
   onRetry?: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <View className="items-center py-12">
       <View className="w-16 h-16 bg-amber-100 rounded-full items-center justify-center mb-4">
         <Target size={32} color="#f59e0b" />
       </View>
-      <Text className="text-lg font-semibold text-gray-900 text-center">{title}</Text>
+      <Text className="text-lg font-semibold text-gray-900 text-center">
+        {title || t('emptyState.error.title')}
+      </Text>
       {message && (
         <Text className="text-sm text-gray-500 text-center mt-1">{message}</Text>
       )}
@@ -165,7 +176,7 @@ export function ErrorState({
           onPress={onRetry}
         >
           <RefreshCw size={18} color="white" />
-          <Text className="text-white font-medium ml-2">다시 시도</Text>
+          <Text className="text-white font-medium ml-2">{t('common.retry')}</Text>
         </Pressable>
       )}
     </View>

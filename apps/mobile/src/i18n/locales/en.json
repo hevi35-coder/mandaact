@@ -141,7 +141,15 @@
       "save": "Save",
       "saving": "Saving...",
       "cancel": "Cancel",
-      "changed": "Nickname has been changed."
+      "changed": "Nickname has been changed.",
+      "errors": {
+        "tooShort": "Nickname must be at least 2 characters.",
+        "tooLong": "Nickname can be up to 12 characters.",
+        "invalidChars": "Use only Korean/English letters and numbers.",
+        "alreadyTaken": "That nickname is already taken.",
+        "saveError": "Failed to save nickname.",
+        "updateError": "Failed to update nickname."
+      }
     }
   },
   "today": {
@@ -256,6 +264,7 @@
       "periodCycle": "Period Cycle",
       "referenceInfo": "Reference type is not included in achievement rate",
       "reasonRoutine": "Looks like a recurring practice",
+      "reasonRoutineLow": "Likely a routine. Add a cycle or completion condition to improve accuracy.",
       "reasonMission": "Looks like a goal to complete",
       "reasonReference": "Looks like a mindset or principle"
     },
@@ -437,7 +446,7 @@
       },
       "manualInput": {
         "title": "Manual Input",
-        "description": "Create from scratch in empty grid",
+        "description": "Start with an empty grid",
         "tapToEdit": "Tap cells to enter goals and actions",
         "guideTitle": "How to Create Mandalart",
         "guideItems": [
@@ -534,6 +543,73 @@
       "deactivateError": "Error occurred while deactivating",
       "deleteError": "Error occurred while deleting"
     }
+  },
+  "emptyState": {
+    "mandalart": {
+      "title": "No mandalarts yet",
+      "description": "Create your first mandalart to get started",
+      "action": "Create Mandalart"
+    },
+    "todayActions": {
+      "title": "No actions for today",
+      "description": "Actions from your active mandalarts will appear here"
+    },
+    "reports": {
+      "title": "No reports yet",
+      "description": "Generate your first weekly report"
+    },
+    "badges": {
+      "title": "No badges yet",
+      "description": "Start practicing to earn badges"
+    },
+    "network": {
+      "title": "Connection error",
+      "description": "Check your network connection and try again"
+    },
+    "error": {
+      "title": "Something went wrong"
+    }
+  },
+  "actionEdit": {
+    "title": "Edit action",
+    "fields": {
+      "title": "Title",
+      "type": "Type",
+      "frequency": "Repeat cycle"
+    },
+    "placeholders": {
+      "title": "Enter an action"
+    },
+    "notice": {
+      "title": "Display depends on type.",
+      "routine": "Routine: checkable by the cycle you set",
+      "mission": "Mission: stays visible until completed",
+      "reference": "Reference: always visible (no check)"
+    }
+  },
+  "errors": {
+    "network": "Check your network connection and try again.",
+    "timeout": "Request timed out. Please try again.",
+    "authRequired": "Please log in to continue.",
+    "authExpired": "Your session has expired. Please log in again.",
+    "invalidCredentials": "Incorrect email or password.",
+    "userExists": "This email is already registered.",
+    "emailNotConfirmed": "Please verify your email address.",
+    "weakPassword": "Password must be at least 6 characters.",
+    "invalidEmail": "Please enter a valid email address.",
+    "userNotFound": "No account found for this email.",
+    "tooManyRequests": "Too many attempts. Please try again later.",
+    "signupDisabled": "Sign-ups are currently disabled.",
+    "serverError": "Server error. Please try again later.",
+    "notFound": "Requested data was not found.",
+    "permissionDenied": "You don't have permission to access this.",
+    "rateLimit": "Too many requests. Please try again later.",
+    "validation": "Please check your input and try again.",
+    "requiredField": "Please fill out the required fields.",
+    "unknown": "Something went wrong. Please try again.",
+    "loadFailed": "Failed to load data.",
+    "saveFailed": "Failed to save changes.",
+    "deleteFailed": "Failed to delete."
   },
   "stats": {
     "title": "Stats",

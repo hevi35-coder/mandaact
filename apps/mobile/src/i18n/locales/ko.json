@@ -139,7 +139,15 @@
       "save": "저장",
       "saving": "저장 중...",
       "cancel": "취소",
-      "changed": "닉네임이 변경되었습니다."
+      "changed": "닉네임이 변경되었습니다.",
+      "errors": {
+        "tooShort": "닉네임은 최소 2자 이상이어야 합니다",
+        "tooLong": "닉네임은 최대 12자까지 가능합니다",
+        "invalidChars": "닉네임은 한글, 영문, 숫자만 사용 가능합니다",
+        "alreadyTaken": "이미 사용 중인 닉네임입니다",
+        "saveError": "닉네임 저장 중 오류가 발생했습니다",
+        "updateError": "닉네임 변경 중 오류가 발생했습니다"
+      }
     }
   },
   "today": {
@@ -254,6 +262,7 @@
       "periodCycle": "반복 주기",
       "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다",
       "reasonRoutine": "반복 실천으로 보여요",
+      "reasonRoutineLow": "루틴으로 추정됩니다 (주기나 완료 조건을 추가하면 더 정확해져요)",
       "reasonMission": "완료 목표로 보여요",
       "reasonReference": "마음가짐이나 원칙으로 보여요"
     },
@@ -532,6 +541,73 @@
       "deactivateError": "비활성화 중 오류가 발생했습니다",
       "deleteError": "삭제 중 오류가 발생했습니다"
     }
+  },
+  "emptyState": {
+    "mandalart": {
+      "title": "만다라트가 없습니다",
+      "description": "첫 번째 만다라트를 만들어보세요",
+      "action": "만다라트 만들기"
+    },
+    "todayActions": {
+      "title": "오늘의 실천이 없습니다",
+      "description": "활성화된 만다라트의 실천 항목이 표시됩니다"
+    },
+    "reports": {
+      "title": "리포트가 없습니다",
+      "description": "첫 번째 주간 리포트를 생성해보세요"
+    },
+    "badges": {
+      "title": "획득한 뱃지가 없습니다",
+      "description": "실천을 시작하면 뱃지를 획득할 수 있습니다"
+    },
+    "network": {
+      "title": "연결 오류",
+      "description": "네트워크 연결을 확인해주세요"
+    },
+    "error": {
+      "title": "오류가 발생했습니다"
+    }
+  },
+  "actionEdit": {
+    "title": "실천 항목 수정",
+    "fields": {
+      "title": "제목",
+      "type": "유형",
+      "frequency": "반복 주기"
+    },
+    "placeholders": {
+      "title": "실천 항목을 입력하세요"
+    },
+    "notice": {
+      "title": "유형에 따라 실천 표시 방식이 달라집니다.",
+      "routine": "루틴: 설정한 주기마다 체크 가능",
+      "mission": "미션: 완료할 때까지 표시",
+      "reference": "참고: 체크 없이 항상 표시"
+    }
+  },
+  "errors": {
+    "network": "네트워크 연결을 확인해주세요",
+    "timeout": "요청 시간이 초과되었습니다. 다시 시도해주세요",
+    "authRequired": "로그인이 필요합니다",
+    "authExpired": "세션이 만료되었습니다. 다시 로그인해주세요",
+    "invalidCredentials": "이메일 또는 비밀번호가 올바르지 않습니다",
+    "userExists": "이미 가입된 이메일입니다",
+    "emailNotConfirmed": "이메일 인증이 필요합니다. 메일함을 확인해주세요",
+    "weakPassword": "비밀번호는 최소 6자 이상이어야 합니다",
+    "invalidEmail": "올바른 이메일 형식이 아닙니다",
+    "userNotFound": "등록되지 않은 이메일입니다",
+    "tooManyRequests": "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요",
+    "signupDisabled": "현재 회원가입이 제한되어 있습니다",
+    "serverError": "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요",
+    "notFound": "요청한 데이터를 찾을 수 없습니다",
+    "permissionDenied": "접근 권한이 없습니다",
+    "rateLimit": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요",
+    "validation": "입력 정보를 확인해주세요",
+    "requiredField": "필수 항목을 입력해주세요",
+    "unknown": "오류가 발생했습니다. 다시 시도해주세요",
+    "loadFailed": "데이터를 불러오는 중 오류가 발생했습니다",
+    "saveFailed": "저장 중 오류가 발생했습니다",
+    "deleteFailed": "삭제 중 오류가 발생했습니다"
   },
   "stats": {
     "title": "통계",

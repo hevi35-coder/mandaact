@@ -151,6 +151,24 @@ export default function SubGoalEditModal({
     }
   }
 
+  const getTranslatedSuggestionReason = (suggestion: { type: string; reason?: string }) => {
+    const maybeKey = suggestion.reason
+    if (typeof maybeKey === 'string' && maybeKey.startsWith('actionType.')) {
+      return t(maybeKey)
+    }
+
+    switch (suggestion.type) {
+      case 'routine':
+        return t('actionType.selector.reasonRoutine')
+      case 'mission':
+        return t('actionType.selector.reasonMission')
+      case 'reference':
+        return t('actionType.selector.reasonReference')
+      default:
+        return t('actionType.selector.reasonRoutine')
+    }
+  }
+
   // Get translated action type label
   const getTranslatedTypeLabel = (type: ActionType) => {
     return t(`actionType.${type}`)
@@ -933,7 +951,7 @@ export default function SubGoalEditModal({
                         className="text-xs text-blue-700 ml-1 flex-1"
                         style={{ fontFamily: 'Pretendard-Regular' }}
                       >
-                        {aiSuggestion.reason} ({t('mandalart.subGoalEdit.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
+                        {getTranslatedSuggestionReason(aiSuggestion)} ({t('mandalart.subGoalEdit.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
                       </Text>
                     </View>
                   </View>

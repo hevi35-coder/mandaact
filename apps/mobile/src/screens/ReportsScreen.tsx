@@ -383,6 +383,37 @@ function EmptyReportState({
   // Case 2: no reports + has practice → can generate first report
   const canGenerateFirst = hasMandalarts && hasChecks
 
+  const StepRow = ({
+    step,
+    completed,
+    label,
+  }: {
+    step: number
+    completed: boolean
+    label: string
+  }) => (
+    <View className="flex-row items-center">
+      <View
+        className={`w-5 h-5 rounded-full items-center justify-center mr-2 ${
+          completed ? 'bg-primary' : 'border border-gray-300'
+        }`}
+      >
+        <Text
+          className={`text-xs ${completed ? 'text-white' : 'text-gray-500'}`}
+          style={{ fontFamily: 'Pretendard-Medium' }}
+        >
+          {completed ? '✓' : String(step)}
+        </Text>
+      </View>
+      <Text
+        className={`text-sm ${completed ? 'text-gray-400 line-through' : 'text-gray-600'}`}
+        style={{ fontFamily: 'Pretendard-Regular' }}
+      >
+        {label}
+      </Text>
+    </View>
+  )
+
   return (
     <View className="bg-white rounded-2xl p-6">
       {/* Icon */}
@@ -434,24 +465,10 @@ function EmptyReportState({
           >
             {t('reports.empty.stepsTitle')}
           </Text>
-          <View className="flex-row items-center mb-2">
-            <View className={`w-5 h-5 rounded-full items-center justify-center mr-2 ${hasMandalarts ? 'bg-primary' : 'border border-gray-300'}`}>
-              <Text className={`text-xs ${hasMandalarts ? 'text-white' : 'text-gray-500'}`} style={{ fontFamily: 'Pretendard-Medium' }}>
-                {hasMandalarts ? '✓' : '1'}
-              </Text>
-            </View>
-            <Text className={`text-sm ${hasMandalarts ? 'text-gray-400 line-through' : 'text-gray-600'}`} style={{ fontFamily: 'Pretendard-Regular' }}>
-              {hasMandalarts ? '' : '① '}{t('reports.empty.step1')}
-            </Text>
+          <View className="mb-2">
+            <StepRow step={1} completed={hasMandalarts} label={t('reports.empty.step1')} />
           </View>
-          <View className="flex-row items-center">
-            <View className="w-5 h-5 rounded-full border border-gray-300 items-center justify-center mr-2">
-              <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>2</Text>
-            </View>
-            <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-              {t('reports.empty.step2')}
-            </Text>
-          </View>
+          <StepRow step={2} completed={hasChecks} label={t('reports.empty.step2')} />
         </View>
       )}
 

@@ -4,14 +4,14 @@
 
 // Error types
 export class NetworkError extends Error {
-  constructor(message: string = '네트워크 연결을 확인해주세요') {
+  constructor(message: string = 'errors.network') {
     super(message)
     this.name = 'NetworkError'
   }
 }
 
 export class AuthError extends Error {
-  constructor(message: string = '로그인이 필요합니다') {
+  constructor(message: string = 'errors.authRequired') {
     super(message)
     this.name = 'AuthError'
   }
@@ -24,41 +24,41 @@ export class ValidationError extends Error {
   }
 }
 
-// Error messages in Korean
+// Error message keys (i18n)
 export const ERROR_MESSAGES = {
   // Network errors
-  NETWORK: '네트워크 연결을 확인해주세요',
-  TIMEOUT: '요청 시간이 초과되었습니다. 다시 시도해주세요',
+  NETWORK: 'errors.network',
+  TIMEOUT: 'errors.timeout',
 
   // Auth errors
-  AUTH_REQUIRED: '로그인이 필요합니다',
-  AUTH_EXPIRED: '세션이 만료되었습니다. 다시 로그인해주세요',
-  INVALID_CREDENTIALS: '이메일 또는 비밀번호가 올바르지 않습니다',
-  USER_EXISTS: '이미 가입된 이메일입니다',
-  EMAIL_NOT_CONFIRMED: '이메일 인증이 필요합니다. 메일함을 확인해주세요',
-  WEAK_PASSWORD: '비밀번호는 최소 6자 이상이어야 합니다',
-  INVALID_EMAIL: '올바른 이메일 형식이 아닙니다',
-  USER_NOT_FOUND: '등록되지 않은 이메일입니다',
-  TOO_MANY_REQUESTS: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요',
-  SIGNUP_DISABLED: '현재 회원가입이 제한되어 있습니다',
+  AUTH_REQUIRED: 'errors.authRequired',
+  AUTH_EXPIRED: 'errors.authExpired',
+  INVALID_CREDENTIALS: 'errors.invalidCredentials',
+  USER_EXISTS: 'errors.userExists',
+  EMAIL_NOT_CONFIRMED: 'errors.emailNotConfirmed',
+  WEAK_PASSWORD: 'errors.weakPassword',
+  INVALID_EMAIL: 'errors.invalidEmail',
+  USER_NOT_FOUND: 'errors.userNotFound',
+  TOO_MANY_REQUESTS: 'errors.tooManyRequests',
+  SIGNUP_DISABLED: 'errors.signupDisabled',
 
   // Server errors
-  SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요',
-  NOT_FOUND: '요청한 데이터를 찾을 수 없습니다',
-  PERMISSION_DENIED: '접근 권한이 없습니다',
-  RATE_LIMIT: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요',
+  SERVER_ERROR: 'errors.serverError',
+  NOT_FOUND: 'errors.notFound',
+  PERMISSION_DENIED: 'errors.permissionDenied',
+  RATE_LIMIT: 'errors.rateLimit',
 
   // Validation errors
-  VALIDATION: '입력 정보를 확인해주세요',
-  REQUIRED_FIELD: '필수 항목을 입력해주세요',
+  VALIDATION: 'errors.validation',
+  REQUIRED_FIELD: 'errors.requiredField',
 
   // Generic
-  UNKNOWN: '오류가 발생했습니다. 다시 시도해주세요',
+  UNKNOWN: 'errors.unknown',
 
   // Data errors
-  LOAD_FAILED: '데이터를 불러오는 중 오류가 발생했습니다',
-  SAVE_FAILED: '저장 중 오류가 발생했습니다',
-  DELETE_FAILED: '삭제 중 오류가 발생했습니다',
+  LOAD_FAILED: 'errors.loadFailed',
+  SAVE_FAILED: 'errors.saveFailed',
+  DELETE_FAILED: 'errors.deleteFailed',
 } as const
 
 // Parse error and return user-friendly message
