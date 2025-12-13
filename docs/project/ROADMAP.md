@@ -251,7 +251,7 @@
 #### 10.4.3 구현 작업 목록
 - [x] DB 마이그레이션 준비 ✅
   - [x] `user_subscriptions` 테이블 스키마 (`20251207000001_add_user_subscriptions.sql`)
-  - [ ] 프로덕션 DB에 마이그레이션 실행 (`npx supabase db push`)
+  - [x] 프로덕션 DB에 마이그레이션 실행 (`npx supabase db push`) ✅ (2025-12-13)
 - [x] IAP SDK 통합 ✅
   - [x] `react-native-purchases` v9.6.9 설치
   - [x] RevenueCat 초기화 코드 (`initializeRevenueCat`)
@@ -615,7 +615,7 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 **남은 작업 (Backlog/Release 모두 포함)**:
 - [ ] App Store Connect IAP 상품 등록/현지화/가격/상태 완료 (월간/연간)
 - [ ] RevenueCat Products/Offerings/Packages/Entitlement 설정 완료
-- [ ] Supabase `user_subscriptions` 프로덕션 마이그레이션 실행 (`npx supabase db push`)
+- [x] Supabase `user_subscriptions` 프로덕션 마이그레이션 실행 (`npx supabase db push`) ✅ (2025-12-13)
 - [ ] Premium 사용자 광고 숨김 분기 적용 (`BannerAd` 등)
 - [ ] 자동 구매 복원(restore) 자동화 (앱 시작/로그인 시)
 - [ ] Android 광고 라벨 (Google Play 정책)

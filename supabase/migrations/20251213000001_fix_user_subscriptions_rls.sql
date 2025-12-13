@@ -1,8 +1,11 @@
 -- Fix RLS policy for user_subscriptions to allow client-side upsert
 -- Previously only service_role could insert/update, but the mobile app needs to sync subscription status
 
--- Drop the restrictive service_role only policy
+-- Ensure idempotency: drop existing policies (regardless of how they were created)
 DROP POLICY IF EXISTS "Service role can manage subscriptions" ON user_subscriptions;
+DROP POLICY IF EXISTS "Users can insert own subscription" ON user_subscriptions;
+DROP POLICY IF EXISTS "Users can update own subscription" ON user_subscriptions;
+DROP POLICY IF EXISTS "Service role full access" ON user_subscriptions;
 
 -- Allow users to insert their own subscription record
 CREATE POLICY "Users can insert own subscription"
