@@ -986,12 +986,12 @@ export default function ReportsScreen() {
                 colors={['#2563eb', '#9333ea', '#db2777']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={{ padding: 2, borderRadius: 16 }}
+                style={{ padding: 1, borderRadius: 16 }}
               >
                 <View
                   style={{
                     backgroundColor: 'white',
-                    borderRadius: 14,
+                    borderRadius: 15,
                     paddingVertical: 14,
                     paddingHorizontal: 18,
                     alignItems: 'center',

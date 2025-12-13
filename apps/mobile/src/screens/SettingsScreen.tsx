@@ -507,70 +507,53 @@ export default function SettingsScreen() {
             >
               {isPremium ? (
                 // Premium Active Card - Minimal, gradient accents only
-                <LinearGradient
-                  colors={['#2563eb', '#9333ea', '#db2777']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{ padding: 2, borderRadius: 16 }}
-                >
-                  <View className="bg-white rounded-2xl px-5 py-4 flex-row items-center">
-                    <LinearGradient
-                      colors={['#2563eb', '#9333ea', '#db2777']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={{ width: 40, height: 40, borderRadius: 999, padding: 2 }}
-                    >
-                      <View className="flex-1 rounded-full bg-white items-center justify-center">
-                        <Crown size={18} color="#7c3aed" />
-                      </View>
-                    </LinearGradient>
-
-                    <View className="flex-1 ml-3">
-                      <MaskedView
-                        maskElement={
-                          <Text
-                            className="text-base"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
-                          >
-                            {t('subscription.growingWithPremium')}
-                          </Text>
-                        }
-                      >
-                        <LinearGradient
-                          colors={['#2563eb', '#9333ea', '#db2777']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                        >
-                          <Text
-                            className="text-base opacity-0"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
-                          >
-                            {t('subscription.growingWithPremium')}
-                          </Text>
-                        </LinearGradient>
-                      </MaskedView>
-
-                      <Text
-                        className="text-xs text-gray-500 mt-0.5"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                      >
-                        {t('subscription.enjoyAllFeatures')}
-                      </Text>
+                <View className="bg-white rounded-2xl px-5 py-4 flex-row items-center">
+                  <LinearGradient
+                    colors={['#2563eb', '#9333ea', '#db2777']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ width: 40, height: 40, borderRadius: 999, padding: 2 }}
+                  >
+                    <View className="flex-1 rounded-full bg-white items-center justify-center">
+                      <Crown size={18} color="#7c3aed" />
                     </View>
+                  </LinearGradient>
 
-                    <View className="ml-2 flex-row items-center">
-                      <View className="bg-green-50 px-2 py-1 rounded-full border border-green-100 mr-2">
+                  <View className="flex-1 ml-3">
+                    <MaskedView
+                      maskElement={
                         <Text
-                          className="text-[11px] text-green-700"
+                          className="text-base"
                           style={{ fontFamily: 'Pretendard-SemiBold' }}
                         >
-                          {t('subscription.active')}
+                          {t('subscription.growingWithPremium')}
                         </Text>
-                      </View>
-                      <ChevronRight size={18} color="#9ca3af" />
-                    </View>
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#2563eb', '#9333ea', '#db2777']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <Text
+                          className="text-base opacity-0"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('subscription.growingWithPremium')}
+                        </Text>
+                      </LinearGradient>
+                    </MaskedView>
+
+                    <Text
+                      className="text-xs text-gray-500 mt-0.5"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('subscription.enjoyAllFeatures')}
+                    </Text>
                   </View>
-                </LinearGradient>
+
+                  <ChevronRight size={18} color="#9ca3af" />
+                </View>
               ) : (
                 // Free Tier - Upgrade CTA. Consistent container, emphasized content.
                 <View className="px-5 py-4 flex-row items-center">
