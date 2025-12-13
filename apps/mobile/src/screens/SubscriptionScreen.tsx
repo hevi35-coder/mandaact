@@ -23,6 +23,7 @@ import {
   ChevronRight,
 } from 'lucide-react-native'
 import { PurchasesPackage } from 'react-native-purchases'
+import MaskedView from '@react-native-masked-view/masked-view'
 
 import { Header } from '../components'
 import { useSubscriptionContext, FREE_MANDALART_LIMIT } from '../context'
@@ -187,7 +188,6 @@ export default function SubscriptionScreen() {
             {isPremium ? (
               // Premium Status Card
               <View
-                className="bg-white rounded-2xl overflow-hidden border border-gray-100"
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
@@ -200,58 +200,82 @@ export default function SubscriptionScreen() {
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={{
-                    paddingHorizontal: 20,
-                    paddingVertical: 14,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
+                  style={{ padding: 2, borderRadius: 16 }}
                 >
-                  <View className="flex-row items-center">
-                    <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
-                      <Crown size={18} color="#fbbf24" fill="#fbbf24" />
+                  <View className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+                    <View className="px-5 py-4 flex-row items-center justify-between">
+                      <View className="flex-row items-center">
+                        <LinearGradient
+                          colors={['#2563eb', '#9333ea', '#db2777']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={{ width: 36, height: 36, borderRadius: 999, padding: 2 }}
+                        >
+                          <View className="flex-1 rounded-full bg-white items-center justify-center">
+                            <Crown size={16} color="#7c3aed" />
+                          </View>
+                        </LinearGradient>
+
+                        <MaskedView
+                          maskElement={
+                            <Text
+                              className="text-base ml-3"
+                              style={{ fontFamily: 'Pretendard-Bold' }}
+                            >
+                              {t('subscription.premiumActive')}
+                            </Text>
+                          }
+                        >
+                          <LinearGradient
+                            colors={['#2563eb', '#9333ea', '#db2777']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                          >
+                            <Text
+                              className="text-base ml-3 opacity-0"
+                              style={{ fontFamily: 'Pretendard-Bold' }}
+                            >
+                              {t('subscription.premiumActive')}
+                            </Text>
+                          </LinearGradient>
+                        </MaskedView>
+                      </View>
+
+                      <View className="bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                        <Text
+                          className="text-xs text-green-700"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('subscription.active')}
+                        </Text>
+                      </View>
                     </View>
-                    <Text
-                      className="text-base text-white ml-3"
-                      style={{ fontFamily: 'Pretendard-Bold' }}
-                    >
-                      {t('subscription.premiumActive')}
-                    </Text>
-                  </View>
-                  <View className="bg-white/20 px-3 py-1 rounded-full">
-                    <Text
-                      className="text-xs text-white"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('subscription.active')}
-                    </Text>
+
+                    <View className="px-5 pb-4">
+                      <Text
+                        className="text-sm text-gray-700"
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
+                        {(() => {
+                          const date = formatExpiryDate(subscriptionInfo.expiresAt)
+                          if (!date) return t('subscription.activeSubscription')
+                          return t('subscription.expiresAt', { date })
+                        })()}
+                      </Text>
+
+                      {subscriptionInfo.plan && (
+                        <Text
+                          className="text-xs text-gray-500 mt-2"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {subscriptionInfo.willRenew
+                            ? t('subscription.autoRenew')
+                            : t('subscription.cancelledNoRenew')}
+                        </Text>
+                      )}
+                    </View>
                   </View>
                 </LinearGradient>
-
-                <View className="px-5 py-4">
-                  <Text
-                    className="text-sm text-gray-700"
-                    style={{ fontFamily: 'Pretendard-Regular' }}
-                  >
-                    {(() => {
-                      const date = formatExpiryDate(subscriptionInfo.expiresAt)
-                      if (!date) return t('subscription.activeSubscription')
-                      return t('subscription.expiresAt', { date })
-                    })()}
-                  </Text>
-
-                  {subscriptionInfo.plan && (
-                    <Text
-                      className="text-xs text-gray-500 mt-2"
-                      style={{ fontFamily: 'Pretendard-Regular' }}
-                    >
-                      {subscriptionInfo.willRenew
-                        ? t('subscription.autoRenew')
-                        : t('subscription.cancelledNoRenew')}
-                    </Text>
-                  )}
-                </View>
               </View>
             ) : (
               // Free Status Card
