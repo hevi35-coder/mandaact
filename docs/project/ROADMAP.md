@@ -1,9 +1,9 @@
-# MandaAct 개발 로드맵 v3.14
+# MandaAct 개발 로드맵 v3.15
 
 > 문서 인덱스: `docs/README.md`
 
-**최종 업데이트**: 2025-12-11 06:05 - Build 54 심사 대응 완료
-**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 기본 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n 완료 ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포 진행 중** 🔄
+**최종 업데이트**: 2025-12-13 - Build 79(TestFlight 업로드) 기준 최신화 + 심사 결과 대기 반영
+**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 기본 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n(추가 누수 정리 진행) ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포(심사 대기)** 🔄
 
 ---
 
@@ -137,7 +137,7 @@
 
 ---
 
-### 10.3 스토어 배포 🔄 **진행 중** (2025-12-10)
+### 10.3 스토어 배포 🔄 **진행 중** (2025-12-10~)
 
 **목표**: iOS App Store + Android Google Play 동시 배포
 
@@ -157,12 +157,13 @@
   - [ ] iPad Pro 12.9" (추후)
   - [ ] Android Phone (추후)
   - [ ] Android Tablet (추후)
-- [ ] iOS App Store 제출 🔄 **심사 반려 대응 중**
+- [ ] iOS App Store 제출 🔄 **심사 진행/대기**
   - [x] App Store Connect 앱 생성
-  - [x] TestFlight 베타 테스트 (Build 53, Build 54 준비/재제출 진행)
+  - [x] TestFlight 베타 테스트 (Build 53 반려 → Build 79 업로드)
   - [x] App Store Connect 메타데이터 입력 (가격, 연령등급, 개인정보)
   - [x] Build 53 심사 제출 → **반려** (2025-12-10)
-  - [ ] Build 54 심사 재제출 (진행 중)
+  - [x] Build 79 TestFlight 업로드 ✅ (2025-12-13)
+  - [ ] App Review 결과 대기 🔄 (App Store Connect에서 확인)
 - [ ] Android Google Play 제출 (추후 진행)
   - [ ] Google Play Console 앱 생성
   - [ ] 내부 테스트 트랙
@@ -211,16 +212,18 @@
   - ✅ 계정 삭제 시 모든 연관 데이터 CASCADE 삭제
   - ✅ i18n 번역 추가 (영어/한국어)
 
-**Build 54 변경사항 요약**:
+**Build 79 변경사항 요약**:
 - ✅ 권한 요청 문구 영어로 통일
 - ✅ 구독 화면에 Terms of Use 및 Privacy Policy 링크 추가
 - ✅ 계정 삭제 기능 구현
+- ✅ 인앱 구매 후 크래시(Rendered fewer hooks) 수정 + 문서화: `docs/troubleshooting/IAP_PURCHASE_CRASH_RENDERED_FEWER_HOOKS.md`
+- ✅ 세부목표 타입 설정 UI/번역 누수 추가 정리 + 리포트 Empty State 개선
 - 🔄 IAP 상품 설정 (외부 작업 - App Store Connect)
 
 **다음 단계**:
 1. App Store Connect에서 IAP 상품 메타데이터 완료
 2. RevenueCat Dashboard에서 Offerings/Packages 설정 확인
-3. Build 54 TestFlight 업로드 및 심사 재제출
+3. (필요 시) Build 80+ 재빌드/재제출 (심사 피드백 반영)
 
 **예상 소요**: 심사 제출 후 1-3일 (Apple 심사 기간)
 
@@ -307,7 +310,7 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
     └→ Phase 7: 기능 분기 처리 (1일)
 ```
 
-**현재 상태** (Build 54):
+**현재 상태** (Build 79):
 - ✅ 배너 광고 3개 화면 적용 (Home, List, Reports) - TodayScreen Clean Zone
 - ✅ XP 부스트 버튼 2개 화면 적용 (Home, Today) - 활성 만다라트 없으면 숨김
 - ✅ 보상형 광고 구현/연동 완료 (ReportGenerate) - StreakFreeze는 정책/UX 이유로 비활성화
@@ -1010,7 +1013,7 @@ Week 9-10 | Phase 10.2: AdMob 광고         [✅ 완료]
           └─ Ad-Free Time + Clean Zone
 
 Week 11   | Phase 10.3: 스토어 배포        [🔴 Critical] 🔄
-          ├─ iOS 리젝 대응 (Build 54)
+          ├─ iOS 리젝 대응 및 재제출 (Build 79)
           └─ IAP/RevenueCat 외부 설정
 ```
 
@@ -1120,13 +1123,13 @@ Week 11   | Phase 10.3: 스토어 배포        [🔴 Critical] 🔄
 
 ## 🎉 주요 성과
 
-### 현재 진행 중 (2025-12-11)
+### 현재 진행 중 (2025-12-13)
 🔄 **Phase 10.3 스토어 배포 진행 중**
   - ✅ App Store 스크린샷 완료 (영어/한국어 각 5장, 1284x2778)
   - ✅ 앱 메타데이터 입력 완료 (이름, 설명, 키워드)
-  - ✅ Build 53 제출 → 반려, Build 54 대응 완료
+  - ✅ Build 53 제출 → 반려, Build 79 업로드/제출 완료
   - 🔄 App Store Connect: EULA 링크/IAP 메타데이터/RevenueCat 설정 진행
-  - 🔄 Build 54 심사 재제출 진행 중
+  - 🔄 App Review 결과 대기
 
 ### 이전 완료 (2025-12-07)
 ✅ **Phase 10.2 AdMob 광고 연동 완료**
