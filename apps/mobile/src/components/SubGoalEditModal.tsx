@@ -110,8 +110,16 @@ export default function SubGoalEditModal({
   ], [t])
 
   const MISSION_COMPLETION_OPTIONS = useMemo(() => [
-    { value: 'once' as MissionCompletionType, label: t('actionType.selector.onceDesc') },
-    { value: 'periodic' as MissionCompletionType, label: t('actionType.selector.periodicDesc') },
+    {
+      value: 'once' as MissionCompletionType,
+      title: t('actionType.once'),
+      description: t('actionType.selector.onceDesc'),
+    },
+    {
+      value: 'periodic' as MissionCompletionType,
+      title: t('actionType.periodic'),
+      description: t('actionType.selector.periodicDesc'),
+    },
   ], [t])
 
   const PERIOD_CYCLE_OPTIONS = useMemo(() => [
@@ -210,7 +218,7 @@ export default function SubGoalEditModal({
     }
     if (action.type === 'mission') {
       if (action.mission_completion_type === 'once') {
-        return t('actionType.selector.onceDesc')
+        return t('actionType.once')
       }
       if (action.mission_completion_type === 'periodic') {
         return t(`actionType.${action.mission_period_cycle || 'monthly'}`)
@@ -937,7 +945,7 @@ export default function SubGoalEditModal({
                     className="text-sm text-gray-700 mb-2"
                     style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    {t('mandalart.subGoalEdit.actionType')}
+                    {t('mandalart.modal.subGoal.actionTypeLabel')}
                   </Text>
                   <View style={{ gap: 8 }}>
                     {TYPE_OPTIONS.map((option) => (
@@ -1064,7 +1072,7 @@ export default function SubGoalEditModal({
                         <View className="flex-row items-center mt-2">
                           <Info size={12} color="#9ca3af" />
                           <Text className="text-xs text-gray-400 ml-1">
-                            {t('mandalart.subGoalEdit.weekdayNote')}
+                            {t('actionType.selector.weekdayHint')}
                           </Text>
                         </View>
 
@@ -1200,7 +1208,6 @@ export default function SubGoalEditModal({
                           <Pressable
                             key={option.value}
                             onPress={() => {
-                              console.log('[Completion Type] Selecting:', option.value)
                               setMissionCompletionType(option.value)
                             }}
                             className={`flex-row items-center p-4 rounded-lg border ${
@@ -1220,12 +1227,20 @@ export default function SubGoalEditModal({
                                 <View className="w-2 h-2 rounded-full bg-gray-900" />
                               )}
                             </View>
-                            <Text
-                              className="text-sm text-gray-700 flex-1"
-                              style={{ fontFamily: 'Pretendard-Regular' }}
-                            >
-                              {option.label}
-                            </Text>
+                            <View className="flex-1">
+                              <Text
+                                className="text-sm text-gray-900"
+                                style={{ fontFamily: 'Pretendard-Medium' }}
+                              >
+                                {option.title}
+                              </Text>
+                              <Text
+                                className="text-xs text-gray-500 mt-0.5"
+                                style={{ fontFamily: 'Pretendard-Regular' }}
+                              >
+                                {option.description}
+                              </Text>
+                            </View>
                           </Pressable>
                         ))}
                       </View>
@@ -1245,12 +1260,7 @@ export default function SubGoalEditModal({
                             <Pressable
                               key={option.value}
                               onPress={() => {
-                                console.log('[Period Cycle] Button pressed. Value:', option.value, 'Type:', typeof option.value)
                                 setMissionPeriodCycle(option.value)
-                                // Log after state update (will show in next render)
-                                setTimeout(() => {
-                                  console.log('[Period Cycle] State after update should have changed')
-                                }, 100)
                               }}
                               className={`px-4 py-2.5 rounded-lg border ${
                                 missionPeriodCycle === option.value

@@ -599,9 +599,14 @@ export default function ActionTypeSelector({
                               <View className="w-2 h-2 rounded-full bg-gray-900" />
                             )}
                           </View>
-                          <Text className="text-sm text-gray-700 flex-1">
-                            {t(`actionType.selector.${option.value}Desc`)}
-                          </Text>
+                          <View className="flex-1">
+                            <Text className="text-sm font-medium text-gray-900">
+                              {t(`actionType.${option.value}`)}
+                            </Text>
+                            <Text className="text-xs text-gray-500 mt-0.5">
+                              {t(`actionType.selector.${option.value}Desc`)}
+                            </Text>
+                          </View>
                         </Pressable>
                       ))}
                     </View>

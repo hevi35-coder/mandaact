@@ -26,13 +26,12 @@ import { useTranslation } from 'react-i18next'
 import SortableList from './SortableList'
 import {
   suggestActionType,
-  formatTypeDetails,
-  getWeekdayNames,
   type ActionType,
   type RoutineFrequency,
   type MissionCompletionType,
   type MissionPeriodCycle,
 } from '@mandaact/shared'
+import type { TFunction } from 'i18next'
 
 interface ActionData {
   position: number
@@ -77,37 +76,71 @@ function ActionTypeIcon({ type, size = 12 }: { type: ActionType; size?: number }
   }
 }
 
-// Get type label with frequency/cycle info - uses formatTypeDetails from shared package
-// Shows "미설정" when type is set but frequency/completion_type is not configured
-function getTypeLabel(action: ActionData, t: (key: string) => string): string {
-  if (!action.type) return t('actionType.routine')
+function getTranslatedTypeDetails(action: ActionData, t: TFunction): string {
+  if (!action.type) return t('mandalart.modal.subGoal.notSet')
 
-  // Check if frequency/completion_type is properly set
-  if (action.type === 'routine' && !action.routine_frequency) {
+  if (action.type === 'routine') {
+    if (!action.routine_frequency) return t('mandalart.modal.subGoal.notSet')
+    if (action.routine_frequency === 'daily') return t('actionType.daily')
+
+    if (action.routine_frequency === 'weekly') {
+      if (action.routine_weekdays && action.routine_weekdays.length > 0) {
+        const sortedWeekdays = [...action.routine_weekdays].sort((a, b) => {
+          const aVal = a === 0 ? 7 : a
+          const bVal = b === 0 ? 7 : b
+          return aVal - bVal
+        })
+
+        const isWeekdays =
+          sortedWeekdays.length === 5 && sortedWeekdays.every((day, idx) => day === idx + 1)
+        const isWeekend = sortedWeekdays.length === 2 && sortedWeekdays[0] === 6 && sortedWeekdays[1] === 0
+
+        if (isWeekdays) return t('actionType.format.weekday')
+        if (isWeekend) return t('actionType.format.weekend')
+
+        const dayMap: Record<number, string> = {
+          0: t('actionType.weekdayShort.sun'),
+          1: t('actionType.weekdayShort.mon'),
+          2: t('actionType.weekdayShort.tue'),
+          3: t('actionType.weekdayShort.wed'),
+          4: t('actionType.weekdayShort.thu'),
+          5: t('actionType.weekdayShort.fri'),
+          6: t('actionType.weekdayShort.sat'),
+        }
+        return sortedWeekdays.map((d) => dayMap[d] ?? '').filter(Boolean).join(', ')
+      }
+
+      if (action.routine_count_per_period) {
+        return t('actionType.format.timesPerWeek', { count: action.routine_count_per_period })
+      }
+      return t('actionType.weekly')
+    }
+
+    if (action.routine_frequency === 'monthly') {
+      if (action.routine_count_per_period) {
+        return t('actionType.format.timesPerMonth', { count: action.routine_count_per_period })
+      }
+      return t('actionType.monthly')
+    }
+
     return t('mandalart.modal.subGoal.notSet')
   }
-  if (action.type === 'mission' && !action.mission_completion_type) {
+
+  if (action.type === 'mission') {
+    if (!action.mission_completion_type) return t('mandalart.modal.subGoal.notSet')
+    if (action.mission_completion_type === 'once') return t('actionType.once')
+    if (action.mission_completion_type === 'periodic') return t(`actionType.${action.mission_period_cycle || 'monthly'}`)
     return t('mandalart.modal.subGoal.notSet')
   }
 
-  // Use formatTypeDetails for detailed display (e.g., "주1회", "매일", "1회 완료")
-  const details = formatTypeDetails({
-    type: action.type,
-    routine_frequency: action.routine_frequency,
-    routine_weekdays: action.routine_weekdays,
-    routine_count_per_period: action.routine_count_per_period,
-    mission_completion_type: action.mission_completion_type,
-    mission_period_cycle: action.mission_period_cycle,
-  })
-  if (details) return details
+  if (action.type === 'reference') return t('actionType.reference')
 
-  // Fallback to translated type label
-  const typeLabels: Record<ActionType, string> = {
-    routine: t('actionType.routine'),
-    mission: t('actionType.mission'),
-    reference: t('actionType.reference'),
-  }
-  return typeLabels[action.type] || t('actionType.routine')
+  return t('mandalart.modal.subGoal.notSet')
+}
+
+function getTypeLabel(action: ActionData, t: TFunction): string {
+  if (!action.type) return t('mandalart.modal.subGoal.notSet')
+  return getTranslatedTypeDetails(action, t)
 }
 
 export default function SubGoalModal({
@@ -139,7 +172,15 @@ export default function SubGoalModal({
   const [showCustomMonthlyInput, setShowCustomMonthlyInput] = useState(false)
   const [customMonthlyValue, setCustomMonthlyValue] = useState('')
 
-  const weekdays = getWeekdayNames()
+  const weekdays = useMemo(() => ([
+    { value: 1, short: t('actionType.weekdayShort.mon') },
+    { value: 2, short: t('actionType.weekdayShort.tue') },
+    { value: 3, short: t('actionType.weekdayShort.wed') },
+    { value: 4, short: t('actionType.weekdayShort.thu') },
+    { value: 5, short: t('actionType.weekdayShort.fri') },
+    { value: 6, short: t('actionType.weekdayShort.sat') },
+    { value: 0, short: t('actionType.weekdayShort.sun') },
+  ]), [t])
 
   // Translated options
   const typeOptions = useMemo(() => [
@@ -169,10 +210,10 @@ export default function SubGoalModal({
     { value: 'monthly' as RoutineFrequency, label: t('actionType.monthly') },
   ], [t])
 
-  const missionCompletionOptions = useMemo(() => [
-    { value: 'once' as MissionCompletionType, label: t('actionType.once') },
-    { value: 'periodic' as MissionCompletionType, label: t('actionType.periodic') },
-  ], [t])
+  const missionCompletionOptions = useMemo(() => ([
+    { value: 'once' as MissionCompletionType, title: t('actionType.once'), description: t('actionType.selector.onceDesc') },
+    { value: 'periodic' as MissionCompletionType, title: t('actionType.periodic'), description: t('actionType.selector.periodicDesc') },
+  ]), [t])
 
   const periodCycleOptions = useMemo(() => [
     { value: 'daily' as MissionPeriodCycle, label: t('actionType.daily') },
@@ -543,7 +584,7 @@ export default function SubGoalModal({
                       <Pressable
                         key={option.type}
                         onPress={() => setSelectedType(option.type)}
-                        className={`flex-row items-center p-3 rounded-lg border ${
+                        className={`flex-row items-center p-4 rounded-xl border ${
                           selectedType === option.type
                             ? 'border-gray-900 bg-gray-50'
                             : 'border-gray-200 bg-white'
@@ -578,7 +619,7 @@ export default function SubGoalModal({
 
                 {/* Routine Settings */}
                 {selectedType === 'routine' && (
-                  <View className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <Text className="text-base font-semibold text-gray-900 mb-3">
                       {t('mandalart.modal.routine.title')}
                     </Text>
@@ -646,6 +687,9 @@ export default function SubGoalModal({
                             </Pressable>
                           ))}
                         </View>
+                        <Text className="text-xs text-gray-400 mt-2">
+                          {t('actionType.selector.weekdayHint')}
+                        </Text>
 
                         {routineWeekdays.length === 0 && (
                           <View className="mt-3">
@@ -757,7 +801,7 @@ export default function SubGoalModal({
 
                 {/* Mission Settings */}
                 {selectedType === 'mission' && (
-                  <View className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <Text className="text-base font-semibold text-gray-900 mb-3">
                       {t('mandalart.modal.mission.title')}
                     </Text>
@@ -769,7 +813,7 @@ export default function SubGoalModal({
                           <Pressable
                             key={option.value}
                             onPress={() => setMissionCompletionType(option.value)}
-                            className={`flex-row items-center p-3 rounded-lg border ${
+                            className={`flex-row items-center p-4 rounded-lg border ${
                               missionCompletionType === option.value
                                 ? 'border-gray-900 bg-white'
                                 : 'border-gray-200 bg-white'
@@ -786,9 +830,14 @@ export default function SubGoalModal({
                                 <View className="w-2 h-2 rounded-full bg-gray-900" />
                               )}
                             </View>
-                            <Text className="text-sm text-gray-700">
-                              {option.label}
-                            </Text>
+                            <View className="flex-1">
+                              <Text className="text-sm font-medium text-gray-900">
+                                {option.title}
+                              </Text>
+                              <Text className="text-xs text-gray-500 mt-0.5">
+                                {option.description}
+                              </Text>
+                            </View>
                           </Pressable>
                         ))}
                       </View>
@@ -827,7 +876,7 @@ export default function SubGoalModal({
 
                 {/* Reference Info */}
                 {selectedType === 'reference' && (
-                  <View className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
                     <View className="flex-row items-center">
                       <Info size={16} color="#6b7280" />
                       <Text className="text-sm text-gray-500 ml-2">
