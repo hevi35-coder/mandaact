@@ -28,6 +28,7 @@ import MaskedView from '@react-native-masked-view/masked-view'
 import { Header } from '../components'
 import { useSubscriptionContext, FREE_MANDALART_LIMIT } from '../context'
 import { useToast } from '../components/Toast'
+import { trackPaywallViewed } from '../lib'
 
 // Premium benefits list
 const PREMIUM_BENEFITS = [
@@ -54,6 +55,10 @@ export default function SubscriptionScreen() {
   const [isRestoring, setIsRestoring] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const [justPurchased, setJustPurchased] = useState(false)
+
+  useEffect(() => {
+    trackPaywallViewed({ source_screen: 'subscription_screen' })
+  }, [])
 
   // Scroll to top when becoming premium
   useEffect(() => {

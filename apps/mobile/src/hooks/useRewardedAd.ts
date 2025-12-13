@@ -13,6 +13,13 @@ import {
 import { AD_UNITS, getNewUserAdRestriction } from '../lib/ads'
 import { useAuthStore } from '../store/authStore'
 import { logger } from '../lib/logger'
+import {
+  trackAdClicked,
+  trackAdFailed,
+  trackAdImpression,
+  trackAdRevenue,
+  trackRewardEarned,
+} from '../lib'
 
 type RewardedAdType =
   | 'REWARDED_REPORT_GENERATE'
@@ -56,6 +63,7 @@ export function useRewardedAd({
   const canShowAds = adRestriction === 'full'
 
   const adUnitId = AD_UNITS[adType]
+  const placement = adType.toLowerCase()
 
   const cleanup = useCallback(() => {
     unsubscribersRef.current.forEach((unsub) => unsub())
@@ -94,10 +102,46 @@ export function useRewardedAd({
       }
     )
 
+    const unsubOpened = rewardedAd.addAdEventListener(
+      AdEventType.OPENED,
+      () => {
+        trackAdImpression({ ad_format: 'rewarded', placement, ad_unit_id: adUnitId })
+      }
+    )
+
+    const unsubClicked = rewardedAd.addAdEventListener(
+      AdEventType.CLICKED,
+      () => {
+        trackAdClicked({ ad_format: 'rewarded', placement, ad_unit_id: adUnitId })
+      }
+    )
+
+    const unsubPaid = rewardedAd.addAdEventListener(
+      AdEventType.PAID,
+      (event) => {
+        const paid = event as unknown as { value: number; currency: string; precision: string }
+        trackAdRevenue({
+          ad_format: 'rewarded',
+          placement,
+          ad_unit_id: adUnitId,
+          revenue_micros: paid.value,
+          currency: paid.currency,
+          precision: String(paid.precision),
+        })
+      }
+    )
+
     const unsubEarned = rewardedAd.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
         logger.info(`Reward earned: ${reward.type} - ${reward.amount}`)
+        trackRewardEarned({
+          ad_format: 'rewarded',
+          placement,
+          ad_unit_id: adUnitId,
+          reward_type: reward.type,
+          reward_amount: reward.amount,
+        })
         onRewardEarned?.(reward)
       }
     )
@@ -118,6 +162,12 @@ export function useRewardedAd({
       (err) => {
         logger.error(`Rewarded ad error: ${adType}`, err)
         const error = new Error(err.message || 'Failed to load rewarded ad')
+        trackAdFailed({
+          ad_format: 'rewarded',
+          placement,
+          ad_unit_id: adUnitId,
+          error_code: err.message || 'rewarded_ad_error',
+        })
         setError(error)
         setIsLoading(false)
         setIsLoaded(false)
@@ -125,11 +175,19 @@ export function useRewardedAd({
       }
     )
 
-    unsubscribersRef.current = [unsubLoaded, unsubEarned, unsubClosed, unsubError]
+    unsubscribersRef.current = [
+      unsubLoaded,
+      unsubOpened,
+      unsubClicked,
+      unsubPaid,
+      unsubEarned,
+      unsubClosed,
+      unsubError,
+    ]
 
     // Load the ad
     rewardedAd.load()
-  }, [adType, adUnitId, canShowAds, isLoading, isLoaded, cleanup, onRewardEarned, onAdClosed, onError])
+  }, [adType, adUnitId, canShowAds, isLoading, isLoaded, cleanup, onRewardEarned, onAdClosed, onError, placement])
 
   const show = useCallback(async (): Promise<boolean> => {
     if (!canShowAds) {

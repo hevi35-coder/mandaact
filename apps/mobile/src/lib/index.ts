@@ -53,6 +53,19 @@ export {
   trackAppOpened,
   trackLogin,
   trackSignup,
+  trackPaywallViewed,
+  trackPurchaseStarted,
+  trackPurchaseSuccess,
+  trackPurchaseFailed,
+  trackRestoreStarted,
+  trackRestoreSuccess,
+  trackRestoreFailed,
+  trackPremiumStateChanged,
+  trackAdImpression,
+  trackAdClicked,
+  trackAdRevenue,
+  trackAdFailed,
+  trackRewardEarned,
 } from './posthog'
 
 // Environment validation

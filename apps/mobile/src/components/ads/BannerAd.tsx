@@ -16,10 +16,12 @@ import {
   BannerAdSize,
   useForeground,
   TestIds,
+  type PaidEvent,
 } from 'react-native-google-mobile-ads'
 import { AD_UNITS, getNewUserAdRestriction, isAdFreeActive } from '../../lib/ads'
 import { useAuthStore } from '../../store/authStore'
 import { useSubscriptionContextSafe } from '../../context'
+import { trackAdClicked, trackAdFailed, trackAdImpression, trackAdRevenue } from '../../lib'
 
 type BannerLocation = 'home' | 'today' | 'list' | 'reports'
 
@@ -55,6 +57,7 @@ export function BannerAd({ location, style }: BannerAdProps) {
 
   // Use TestIds.ADAPTIVE_BANNER in development for guaranteed test ads
   const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : LOCATION_TO_AD_UNIT[location]
+  const placement = `banner_${location}`
 
   const handleAdLoaded = useCallback((dimensions: { width: number; height: number }) => {
     if (__DEV__) {
@@ -72,11 +75,44 @@ export function BannerAd({ location, style }: BannerAdProps) {
     if (__DEV__) {
       console.warn(`[BannerAd] Failed (${location}):`, error.message)
     }
+    trackAdFailed({
+      ad_format: 'banner',
+      placement,
+      ad_unit_id: adUnitId,
+      error_code: error.message,
+    })
     setHasError(true)
     setIsLoaded(false)
     // Reset height to 0 when ad fails (hide container)
     setAdHeight(0)
-  }, [location])
+  }, [location, placement, adUnitId])
+
+  const handleAdImpression = useCallback(() => {
+    trackAdImpression({
+      ad_format: 'banner',
+      placement,
+      ad_unit_id: adUnitId,
+    })
+  }, [placement, adUnitId])
+
+  const handleAdClicked = useCallback(() => {
+    trackAdClicked({
+      ad_format: 'banner',
+      placement,
+      ad_unit_id: adUnitId,
+    })
+  }, [placement, adUnitId])
+
+  const handleAdPaid = useCallback((event: PaidEvent) => {
+    trackAdRevenue({
+      ad_format: 'banner',
+      placement,
+      ad_unit_id: adUnitId,
+      revenue_micros: event.value,
+      currency: event.currency,
+      precision: String(event.precision),
+    })
+  }, [placement, adUnitId])
 
   // Handle size change for adaptive banners
   const handleSizeChange = useCallback((size: { width: number; height: number }) => {
@@ -158,6 +194,9 @@ export function BannerAd({ location, style }: BannerAdProps) {
         onAdLoaded={handleAdLoaded}
         onAdFailedToLoad={handleAdFailed}
         onSizeChange={handleSizeChange}
+        onAdImpression={handleAdImpression}
+        onAdClicked={handleAdClicked}
+        onPaid={handleAdPaid}
       />
       {!isLoaded && (
         <View style={[styles.placeholder, { height: DEFAULT_BANNER_HEIGHT }]}>

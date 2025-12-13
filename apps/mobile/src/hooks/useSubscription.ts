@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Purchases, {
   PurchasesPackage,
   CustomerInfo,
@@ -10,6 +10,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import Constants from 'expo-constants'
 import i18n from '../i18n'
+import {
+  trackPurchaseStarted,
+  trackPurchaseSuccess,
+  trackPurchaseFailed,
+  trackRestoreStarted,
+  trackRestoreSuccess,
+  trackRestoreFailed,
+  trackPremiumStateChanged,
+} from '../lib'
 
 // RevenueCat API Keys (from environment variables)
 const REVENUECAT_IOS_API_KEY = Constants.expoConfig?.extra?.revenuecatIosApiKey || ''
@@ -101,13 +110,40 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     plan: null,
     willRenew: false,
   })
+  const lastTrackedSubscriptionRef = useRef<SubscriptionInfo>({
+    status: 'loading',
+    isPremium: false,
+    expiresAt: null,
+    plan: null,
+    willRenew: false,
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [packages, setPackages] = useState<PurchasesPackage[]>([])
   const [isRevenueCatInitialized, setIsRevenueCatInitialized] = useState(false)
 
-  // Parse customer info to subscription info
-  const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): SubscriptionInfo => {
+  const applySubscriptionInfo = useCallback((
+    nextInfo: SubscriptionInfo,
+    reason?: Parameters<typeof trackPremiumStateChanged>[0]['reason']
+  ) => {
+    const prevInfo = lastTrackedSubscriptionRef.current
+    if (reason && prevInfo.status !== nextInfo.status) {
+      trackPremiumStateChanged({
+        from: prevInfo.status,
+        to: nextInfo.isPremium ? 'premium' : 'free',
+        reason,
+        plan: nextInfo.plan,
+      })
+    }
+    lastTrackedSubscriptionRef.current = nextInfo
+    setSubscriptionInfo(nextInfo)
+  }, [])
+
+  // Parse customer info to subscription info (+ reason)
+  const parseCustomerInfo = useCallback((customerInfo: CustomerInfo): {
+    info: SubscriptionInfo
+    reason: 'rc_entitlement' | 'rc_active_subscription_fallback'
+  } => {
     console.log('[useSubscription] 🔍 parseCustomerInfo - Raw data:', {
       activeEntitlements: Object.keys(customerInfo.entitlements.active),
       allEntitlements: Object.keys(customerInfo.entitlements.all),
@@ -138,24 +174,30 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         })
 
         return {
-          status: 'premium',
-          isPremium: true,
-          expiresAt: customerInfo.latestExpirationDate
-            ? new Date(customerInfo.latestExpirationDate)
-            : null,
-          plan: fallbackPlan,
-          // Assume renews while active; RevenueCat will correct on next refresh when entitlements are fixed
-          willRenew: true,
+          reason: 'rc_active_subscription_fallback',
+          info: {
+            status: 'premium',
+            isPremium: true,
+            expiresAt: customerInfo.latestExpirationDate
+              ? new Date(customerInfo.latestExpirationDate)
+              : null,
+            plan: fallbackPlan,
+            // Assume renews while active; RevenueCat will correct on next refresh when entitlements are fixed
+            willRenew: true,
+          },
         }
       }
 
       console.log('[useSubscription] ❌ No active premium entitlement found → FREE')
       return {
-        status: 'free',
-        isPremium: false,
-        expiresAt: null,
-        plan: null,
-        willRenew: false,
+        reason: 'rc_entitlement',
+        info: {
+          status: 'free',
+          isPremium: false,
+          expiresAt: null,
+          plan: null,
+          willRenew: false,
+        },
       }
     }
 
@@ -184,7 +226,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       willRenew: result.willRenew,
     })
 
-    return result
+    return { reason: 'rc_entitlement', info: result }
   }, [])
 
   // Sync subscription to Supabase
@@ -222,11 +264,11 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     try {
       // Get customer info
       const customerInfo = await Purchases.getCustomerInfo()
-      const info = parseCustomerInfo(customerInfo)
-      setSubscriptionInfo(info)
+      const parsed = parseCustomerInfo(customerInfo)
+      applySubscriptionInfo(parsed.info, parsed.reason)
 
       // Sync to Supabase
-      await syncToSupabase(info)
+      await syncToSupabase(parsed.info)
 
       // Get available packages
       const offerings = await Purchases.getOfferings()
@@ -278,13 +320,13 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
           .single()
 
         if (data) {
-          setSubscriptionInfo({
+          applySubscriptionInfo({
             status: data.status === 'active' ? 'premium' : 'free',
             isPremium: data.status === 'active',
             expiresAt: data.expires_at ? new Date(data.expires_at) : null,
             plan: data.plan,
             willRenew: false,
-          })
+          }, 'supabase_fallback')
         }
       } catch {
         // Ignore fallback errors
@@ -292,7 +334,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     } finally {
       setIsLoading(false)
     }
-  }, [userId, parseCustomerInfo, syncToSupabase])
+  }, [userId, parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
 
   // Purchase a package
   const purchase = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
@@ -301,24 +343,31 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       setError(null)
 
       console.log('[useSubscription] 💳 Starting purchase:', pkg.identifier)
-      const { customerInfo } = await Purchases.purchasePackage(pkg)
+      trackPurchaseStarted({
+        product_id: pkg.product.identifier,
+        package_id: pkg.identifier,
+        price: pkg.product.price,
+        currency: pkg.product.currencyCode,
+      })
+
+      await Purchases.purchasePackage(pkg)
       console.log('[useSubscription] 💳 Purchase completed, parsing customer info...')
 
       // Force-refresh to avoid cached customer info immediately after purchase
       await Purchases.invalidateCustomerInfoCache()
       const latestInfo = await Purchases.getCustomerInfo()
 
-      const info = parseCustomerInfo(latestInfo)
-      setSubscriptionInfo(info)
+      const parsed = parseCustomerInfo(latestInfo)
+      applySubscriptionInfo(parsed.info, parsed.reason)
 
       console.log('[useSubscription] 💳 Updated subscription state:', {
-        isPremium: info.isPremium,
-        status: info.status,
-        plan: info.plan,
+        isPremium: parsed.info.isPremium,
+        status: parsed.info.status,
+        plan: parsed.info.plan,
       })
 
       // Sync to Supabase
-      await syncToSupabase(info)
+      await syncToSupabase(parsed.info)
       console.log('[useSubscription] 💳 Synced to Supabase')
 
       // CRITICAL: Sandbox environment needs additional time for receipt validation
@@ -329,17 +378,34 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       // Re-fetch customer info after delay
       await Purchases.invalidateCustomerInfoCache()
       const finalInfo = await Purchases.getCustomerInfo()
-      const finalSubscriptionInfo = parseCustomerInfo(finalInfo)
-      setSubscriptionInfo(finalSubscriptionInfo)
-      await syncToSupabase(finalSubscriptionInfo)
+      const finalParsed = parseCustomerInfo(finalInfo)
+      applySubscriptionInfo(finalParsed.info, finalParsed.reason)
+      await syncToSupabase(finalParsed.info)
 
       console.log('[useSubscription] 💳 Final subscription state after re-check:', {
-        isPremium: finalSubscriptionInfo.isPremium,
-        status: finalSubscriptionInfo.status,
-        plan: finalSubscriptionInfo.plan,
+        isPremium: finalParsed.info.isPremium,
+        status: finalParsed.info.status,
+        plan: finalParsed.info.plan,
       })
 
-      return finalSubscriptionInfo.isPremium
+      if (finalParsed.info.isPremium) {
+        trackPurchaseSuccess({
+          product_id: pkg.product.identifier,
+          plan: finalParsed.info.plan,
+          price: pkg.product.price,
+          currency: pkg.product.currencyCode,
+        })
+      } else {
+        trackPurchaseFailed({
+          product_id: pkg.product.identifier,
+          plan: finalParsed.info.plan,
+          price: pkg.product.price,
+          currency: pkg.product.currencyCode,
+          error_code: 'no_premium_after_purchase',
+        })
+      }
+
+      return finalParsed.info.isPremium
     } catch (err: unknown) {
       const purchaseError = err as { userCancelled?: boolean; message?: string }
 
@@ -351,11 +417,17 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
       console.error('[useSubscription] 💳 Purchase failed:', err)
       setError(i18n.t('subscription.purchaseError'))
+      trackPurchaseFailed({
+        product_id: pkg.product.identifier,
+        price: pkg.product.price,
+        currency: pkg.product.currencyCode,
+        error_code: purchaseError.message || 'purchase_failed',
+      })
       return false
     } finally {
       setIsLoading(false)
     }
-  }, [parseCustomerInfo, syncToSupabase])
+  }, [parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
 
   // Restore purchases
   const restore = useCallback(async (): Promise<boolean> => {
@@ -364,21 +436,22 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       setError(null)
 
       console.log('[useSubscription] 🔄 Starting restore purchases...')
-      const customerInfo = await Purchases.restorePurchases()
+      trackRestoreStarted({ trigger: 'manual' })
+      await Purchases.restorePurchases()
       // Force-refresh to make sure restored receipts are processed
       await Purchases.invalidateCustomerInfoCache()
       const latestInfo = await Purchases.getCustomerInfo()
-      const info = parseCustomerInfo(latestInfo)
-      setSubscriptionInfo(info)
+      const parsed = parseCustomerInfo(latestInfo)
+      applySubscriptionInfo(parsed.info, 'restore_manual')
 
       console.log('[useSubscription] 🔄 Restore initial result:', {
-        isPremium: info.isPremium,
-        status: info.status,
-        plan: info.plan,
+        isPremium: parsed.info.isPremium,
+        status: parsed.info.status,
+        plan: parsed.info.plan,
       })
 
       // Sync to Supabase
-      await syncToSupabase(info)
+      await syncToSupabase(parsed.info)
 
       // CRITICAL: Similar to purchase, wait for sandbox receipt validation
       console.log('[useSubscription] 🔄 Waiting for sandbox receipt validation...')
@@ -387,25 +460,30 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       // Re-fetch customer info after delay
       await Purchases.invalidateCustomerInfoCache()
       const finalInfo = await Purchases.getCustomerInfo()
-      const finalSubscriptionInfo = parseCustomerInfo(finalInfo)
-      setSubscriptionInfo(finalSubscriptionInfo)
-      await syncToSupabase(finalSubscriptionInfo)
+      const finalParsed = parseCustomerInfo(finalInfo)
+      applySubscriptionInfo(finalParsed.info, 'restore_manual')
+      await syncToSupabase(finalParsed.info)
 
       console.log('[useSubscription] 🔄 Final restore result after re-check:', {
-        isPremium: finalSubscriptionInfo.isPremium,
-        status: finalSubscriptionInfo.status,
-        plan: finalSubscriptionInfo.plan,
+        isPremium: finalParsed.info.isPremium,
+        status: finalParsed.info.status,
+        plan: finalParsed.info.plan,
       })
 
-      return finalSubscriptionInfo.isPremium
+      trackRestoreSuccess({ trigger: 'manual', restored: finalParsed.info.isPremium })
+      return finalParsed.info.isPremium
     } catch (err) {
       console.error('[useSubscription] 🔄 Restore failed:', err)
       setError(i18n.t('subscription.restoreError'))
+      trackRestoreFailed({
+        trigger: 'manual',
+        error_code: (err as { message?: string })?.message || 'restore_failed',
+      })
       return false
     } finally {
       setIsLoading(false)
     }
-  }, [parseCustomerInfo, syncToSupabase])
+  }, [parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
 
   // Check if user can create more mandalarts
   const canCreateMandalart = useCallback((currentCount: number): boolean => {
@@ -453,7 +531,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
             willRenew: false,
           }
           console.log('[useSubscription] 📦 Loaded from Supabase:', fallbackInfo)
-          setSubscriptionInfo(fallbackInfo)
+          applySubscriptionInfo(fallbackInfo, 'supabase_fallback')
         }
 
         // Step 2: Initialize RevenueCat
@@ -468,7 +546,8 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         console.log('[useSubscription] 🔄 Refreshing from RevenueCat...')
         await Purchases.invalidateCustomerInfoCache()
         let customerInfo = await Purchases.getCustomerInfo()
-        let info = parseCustomerInfo(customerInfo)
+        let parsed = parseCustomerInfo(customerInfo)
+        let info = parsed.info
 
         // Auto-restore strategy (Sandbox & cross-device):
         // If RevenueCat doesn't show premium yet, do a rate-limited syncPurchases → (optional) restorePurchases
@@ -492,12 +571,14 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
             })
 
             await AsyncStorage.setItem(autoRestoreKey, String(now))
+            trackRestoreStarted({ trigger: 'auto' })
 
             try {
               await Purchases.syncPurchases()
               await Purchases.invalidateCustomerInfoCache()
               customerInfo = await Purchases.getCustomerInfo()
-              info = parseCustomerInfo(customerInfo)
+              parsed = parseCustomerInfo(customerInfo)
+              info = parsed.info
             } catch (syncErr) {
               console.warn('[useSubscription] ⚠️ syncPurchases failed:', syncErr)
             }
@@ -509,10 +590,17 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
                 await Purchases.restorePurchases()
                 await Purchases.invalidateCustomerInfoCache()
                 customerInfo = await Purchases.getCustomerInfo()
-                info = parseCustomerInfo(customerInfo)
+                parsed = parseCustomerInfo(customerInfo)
+                info = parsed.info
               } catch (restoreErr) {
                 console.warn('[useSubscription] ⚠️ auto restorePurchases failed:', restoreErr)
               }
+            }
+
+            if (info.isPremium) {
+              trackRestoreSuccess({ trigger: 'auto', restored: true })
+            } else {
+              trackRestoreFailed({ trigger: 'auto', restored: false, error_code: 'no_premium_after_auto_restore' })
             }
           } else {
             console.log('[useSubscription] ⏭️ Skipping auto-sync (cooldown)', {
@@ -523,7 +611,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         }
 
         if (mounted) {
-          setSubscriptionInfo(info)
+          applySubscriptionInfo(info, parsed.reason)
           await syncToSupabase(info)
         }
 
@@ -591,12 +679,12 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
     const listener = (info: CustomerInfo) => {
       console.log('[useSubscription] 🔔 Customer info updated (listener triggered)')
-      const subscriptionData = parseCustomerInfo(info)
-      setSubscriptionInfo(subscriptionData)
-      syncToSupabase(subscriptionData)
+      const parsed = parseCustomerInfo(info)
+      applySubscriptionInfo(parsed.info, parsed.reason)
+      syncToSupabase(parsed.info)
       console.log('[useSubscription] 🔔 State updated from listener:', {
-        isPremium: subscriptionData.isPremium,
-        status: subscriptionData.status,
+        isPremium: parsed.info.isPremium,
+        status: parsed.info.status,
       })
     }
 
@@ -607,7 +695,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       Purchases.removeCustomerInfoUpdateListener(listener)
       console.log('[useSubscription] 👂 Customer info update listener removed')
     }
-  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase])
+  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
 
   return {
     subscriptionInfo,
