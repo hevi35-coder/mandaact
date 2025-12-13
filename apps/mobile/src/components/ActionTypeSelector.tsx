@@ -269,9 +269,13 @@ export default function ActionTypeSelector({
     }
   }
 
-  // Get translated reason based on suggestion type
-  const getTranslatedReason = (type: string) => {
-    switch (type) {
+  const getTranslatedReason = (suggestion: { type: string; reason?: string }) => {
+    const maybeKey = suggestion.reason
+    if (typeof maybeKey === 'string' && maybeKey.startsWith('actionType.')) {
+      return t(maybeKey)
+    }
+
+    switch (suggestion.type) {
       case 'routine':
         return t('actionType.selector.reasonRoutine')
       case 'mission':
@@ -333,7 +337,7 @@ export default function ActionTypeSelector({
                   <View className="flex-row items-center mt-1">
                     <Info size={12} color="#1e40af" />
                     <Text className="text-xs text-blue-700 ml-1 flex-1">
-                      {getTranslatedReason(aiSuggestion.type)} ({t('actionType.selector.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
+                      {getTranslatedReason(aiSuggestion)} ({t('actionType.selector.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
                     </Text>
                   </View>
                 </View>

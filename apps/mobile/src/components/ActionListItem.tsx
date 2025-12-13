@@ -11,8 +11,10 @@ import {
   Target,
   Lightbulb,
 } from 'lucide-react-native'
-import { getActionTypeLabel, formatTypeDetails, type ActionType } from '@mandaact/shared'
+import { useTranslation } from 'react-i18next'
+import { type ActionType } from '@mandaact/shared'
 import type { ActionWithContext } from '../hooks/useActions'
+import { formatTypeDetailsLocalized } from './Today/utils'
 
 // Action type icon component
 const ActionTypeIcon = memo(function ActionTypeIcon({
@@ -45,6 +47,7 @@ function ActionListItemComponent({
   isChecking,
   onToggle,
 }: ActionListItemProps) {
+  const { t } = useTranslation()
   const isReference = action.type === 'reference'
   const isDisabled = isReference || isChecking
 
@@ -96,7 +99,7 @@ function ActionListItemComponent({
       <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg">
         <ActionTypeIcon type={action.type} size={14} />
         <Text className="text-xs text-gray-600 ml-1">
-          {formatTypeDetails(action) || getActionTypeLabel(action.type)}
+          {formatTypeDetailsLocalized(action, t) || t(`actionType.${action.type}`)}
         </Text>
       </View>
     </Pressable>

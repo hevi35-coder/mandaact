@@ -14,7 +14,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { statsKeys } from '../../hooks/useStats'
 import {
     validateNickname,
-    NICKNAME_DIALOG,
     NICKNAME_ERRORS,
 } from '@mandaact/shared'
 import type { NicknameModalProps } from './types'
@@ -46,7 +45,8 @@ export function NicknameModal({
         // Validate
         const validation = validateNickname(newNickname)
         if (!validation.isValid) {
-            setNicknameError(validation.error || '')
+            const errorKey = validation.errorCode ? NICKNAME_ERRORS[validation.errorCode] : null
+            setNicknameError(errorKey ? t(errorKey) : '')
             return
         }
 
@@ -69,7 +69,7 @@ export function NicknameModal({
                 .maybeSingle()
 
             if (existing) {
-                setNicknameError(NICKNAME_ERRORS.ALREADY_TAKEN)
+                setNicknameError(t(NICKNAME_ERRORS.ALREADY_TAKEN))
                 setNicknameSaving(false)
                 return
             }
@@ -90,7 +90,7 @@ export function NicknameModal({
             Alert.alert(t('common.confirm'), t('home.nickname.changed'))
         } catch (err) {
             console.error('Nickname update error:', err)
-            setNicknameError(NICKNAME_ERRORS.UPDATE_ERROR)
+            setNicknameError(t(NICKNAME_ERRORS.UPDATE_ERROR))
         } finally {
             setNicknameSaving(false)
         }
@@ -108,7 +108,7 @@ export function NicknameModal({
                     {/* Header */}
                     <View className="flex-row items-center justify-between mb-4">
                         <Text className="text-lg font-bold text-gray-900">
-                            {NICKNAME_DIALOG.TITLE}
+                            {t('home.nickname.title')}
                         </Text>
                         <Pressable
                             onPress={onClose}
@@ -120,18 +120,18 @@ export function NicknameModal({
 
                     {/* Description */}
                     <Text className="text-sm text-gray-500 mb-4">
-                        {NICKNAME_DIALOG.DESCRIPTION}
+                        {t('home.nickname.description')}
                     </Text>
 
                     {/* Input */}
                     <View className="mb-4">
                         <Text className="text-sm font-medium text-gray-700 mb-2">
-                            {NICKNAME_DIALOG.LABEL}
+                            {t('home.nickname.label')}
                         </Text>
                         <TextInput
                             value={newNickname}
                             onChangeText={setNewNickname}
-                            placeholder={NICKNAME_DIALOG.PLACEHOLDER}
+                            placeholder={t('home.nickname.placeholder')}
                             maxLength={12}
                             editable={!nicknameSaving}
                             className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
@@ -151,7 +151,7 @@ export function NicknameModal({
                                 }`}
                         >
                             <Text className="text-white font-semibold">
-                                {nicknameSaving ? NICKNAME_DIALOG.SAVING : NICKNAME_DIALOG.SAVE}
+                                {nicknameSaving ? t('home.nickname.saving') : t('home.nickname.save')}
                             </Text>
                         </Pressable>
                         <Pressable
@@ -160,7 +160,7 @@ export function NicknameModal({
                             className="py-3 rounded-lg items-center border border-gray-300"
                         >
                             <Text className="text-gray-700 font-semibold">
-                                {NICKNAME_DIALOG.CANCEL}
+                                {t('home.nickname.cancel')}
                             </Text>
                         </Pressable>
                     </View>
