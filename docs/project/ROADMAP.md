@@ -2,7 +2,7 @@
 
 > 문서 인덱스: `docs/README.md`
 
-**최종 업데이트**: 2025-12-13 - Build 79(TestFlight 업로드) 기준 최신화 + 심사 결과 대기 반영
+**최종 업데이트**: 2025-12-13 - Build 80(TestFlight 업로드/심사 제출) 기준 최신화 + 심사 결과 대기 반영
 **현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 기본 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n(추가 누수 정리 진행) ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포(심사 대기)** 🔄
 
 ---
@@ -159,10 +159,11 @@
   - [ ] Android Tablet (추후)
 - [ ] iOS App Store 제출 🔄 **심사 진행/대기**
   - [x] App Store Connect 앱 생성
-  - [x] TestFlight 베타 테스트 (Build 53 반려 → Build 79 업로드)
+  - [x] TestFlight 베타 테스트 (Build 53 반려 → Build 80 업로드)
   - [x] App Store Connect 메타데이터 입력 (가격, 연령등급, 개인정보)
   - [x] Build 53 심사 제출 → **반려** (2025-12-10)
-  - [x] Build 79 TestFlight 업로드 ✅ (2025-12-13)
+  - [x] Build 80 TestFlight 업로드 ✅ (2025-12-13)
+  - [x] Build 80 심사 제출 ✅ (2025-12-13)
   - [ ] App Review 결과 대기 🔄 (App Store Connect에서 확인)
 - [ ] Android Google Play 제출 (추후 진행)
   - [ ] Google Play Console 앱 생성
@@ -189,19 +190,13 @@
   - ✅ 구독 자동 갱신 안내 문구 보강 (i18n)
   - [ ] App Store Connect 메타데이터에 EULA 링크 추가 (수동 작업 필요)
 
-**반려 사유 3: Guideline 2.1 - Performance (Plans not displayed)** 🔄 **외부 설정 대기**
+**반려 사유 3: Guideline 2.1 - Performance (Plans not displayed)** ✅ **완료**
 - 문제: iPad Air (5th generation) / iPadOS 26.1에서 인앱 구매 상품(플랜)이 표시되지 않음
 - 원인: RevenueCat Dashboard 또는 App Store Connect IAP 설정 미완료
-- 대응: 🔄 진행 중
-  - ✅ 코드는 이미 구현 완료 (RevenueCat 통합)
-  - [ ] App Store Connect에서 IAP 상품 메타데이터 완료 (월간/연간)
-    - [ ] 앱 스토어 현지화 (표시 이름, 설명)
-    - [ ] 가격 설정 완료
-    - [ ] 상품 상태: "Ready to Submit" 이상
-  - [ ] RevenueCat Dashboard 확인
-    - [ ] Products 추가 및 동기화
-    - [ ] Offerings "default" Current로 설정
-    - [ ] Packages (Monthly, Annual) 연결
+- 대응: ✅ 완료 (2025-12-13)
+  - ✅ App Store Connect IAP 상품 메타데이터/현지화/가격/상태 정리 (월간/연간 "Ready to Submit")
+  - ✅ RevenueCat Products/Offerings/Packages/Entitlement 설정 완료 (default offering current)
+  - ✅ 구매 복원 자동화 추가 (`syncPurchases()` → 필요 시 `restorePurchases()`) + iPad 동작 검증 완료
 
 **반려 사유 4: Guideline 5.1.1(v) - Data Collection (계정 삭제 기능 누락)** ✅ **완료**
 - 문제: 계정 생성을 지원하지만 계정 삭제 기능이 없음
@@ -212,18 +207,18 @@
   - ✅ 계정 삭제 시 모든 연관 데이터 CASCADE 삭제
   - ✅ i18n 번역 추가 (영어/한국어)
 
-**Build 79 변경사항 요약**:
+**Build 80 변경사항 요약**:
 - ✅ 권한 요청 문구 영어로 통일
 - ✅ 구독 화면에 Terms of Use 및 Privacy Policy 링크 추가
 - ✅ 계정 삭제 기능 구현
 - ✅ 인앱 구매 후 크래시(Rendered fewer hooks) 수정 + 문서화: `docs/troubleshooting/IAP_PURCHASE_CRASH_RENDERED_FEWER_HOOKS.md`
 - ✅ 세부목표 타입 설정 UI/번역 누수 추가 정리 + 리포트 Empty State 개선
-- 🔄 IAP 상품 설정 (외부 작업 - App Store Connect)
+- ✅ IAP 상품/RevenueCat 설정 완료 + iPad 플랜 노출 문제 해소
+- ✅ 자동 구매 복원(restore) 자동화 + iPad 동작 검증 완료 (로그 관측은 필요 시)
 
 **다음 단계**:
-1. App Store Connect에서 IAP 상품 메타데이터 완료
-2. RevenueCat Dashboard에서 Offerings/Packages 설정 확인
-3. (필요 시) Build 80+ 재빌드/재제출 (심사 피드백 반영)
+1. App Review 결과 확인 및 필요 시 즉시 대응
+2. (필요 시) Build 81+ 재빌드/재제출 (심사 피드백 반영)
 
 **예상 소요**: 심사 제출 후 1-3일 (Apple 심사 기간)
 
@@ -255,8 +250,8 @@
 - [x] IAP SDK 통합 ✅
   - [x] `react-native-purchases` v9.6.9 설치
   - [x] RevenueCat 초기화 코드 (`initializeRevenueCat`)
-  - [ ] **App Store Connect IAP 상품 등록** (월간/연간)
-  - [ ] **RevenueCat 대시보드 설정** (Products, Offerings)
+  - [x] **App Store Connect IAP 상품 등록/현지화/가격/상태 완료** (월간/연간 "Ready to Submit") ✅ (2025-12-13)
+  - [x] **RevenueCat 대시보드 설정 완료** (Products, Offerings, Packages, Entitlement) ✅ (2025-12-13)
 - [x] 구독 상태 관리 ✅
   - [x] `useSubscription` 훅 구현 (350줄)
   - [x] `SubscriptionContext` 전역 상태
@@ -264,25 +259,24 @@
 - [x] Premium 기능 분기 처리 ✅
 - [x] MandalartListScreen: 만다라트 개수 제한 체크
 - [x] SettingsScreen: 구독 상태 표시
-  - [ ] BannerAd: isPremium 시 광고 숨김 (TODO: 실제 광고 렌더링 분기 적용)
+  - [x] BannerAd: isPremium 시 광고 숨김 ✅ (실제 적용 확인 완료)
 
 #### 10.4.4 남은 작업 (외부 설정)
 1. **App Store Connect**
-   - [ ] IAP 상품 생성 (Auto-Renewable Subscription)
-   - [ ] Product ID: `com.mandaact.sub.premium.monthly`, `com.mandaact.sub.premium.yearly`
-   - [ ] 가격 설정 (KRW ₩4,400 / $3.99)
+   - [x] IAP 상품 생성 (Auto-Renewable Subscription)
+   - [x] Product ID: `com.mandaact.sub.premium.monthly`, `com.mandaact.sub.premium.yearly`
+   - [x] 가격 설정 (KRW ₩4,400 / $3.99)
 2. **RevenueCat Dashboard**
-   - [ ] Products 추가 (App Store Connect 연동)
-   - [ ] Offering 생성 및 Current로 설정
-   - [ ] Entitlement "premium" 생성
+   - [x] Products 추가 (App Store Connect 연동)
+   - [x] Offering 생성 및 Current로 설정
+   - [x] Entitlement "premium" 생성
 3. **Supabase**
-   - [ ] `npx supabase db push` 실행 (user_subscriptions 테이블)
+   - [x] `npx supabase db push` 실행 (user_subscriptions 테이블) ✅ (2025-12-13)
 
 #### 10.4.5 추후 개선 사항 (Backlog)
-- [ ] **자동 구매 복원**: 앱 시작/로그인 시 자동으로 `syncPurchases()` → 필요 시 `restorePurchases()` (세션/시간 쿨다운 적용)
-  - 현재: 사용자가 수동으로 "구매 복원" 버튼 눌러야 함
-  - 개선: 로그인 시 자동 복원 시도 (새 기기 UX 개선)
-  - 예상 소요: 0.5일
+- [x] **자동 구매 복원**: 앱 시작/로그인 시 자동으로 `syncPurchases()` → 필요 시 `restorePurchases()` (세션/시간 쿨다운 적용) ✅ (2025-12-13)
+  - 동작 검증: iPad에서 동일 계정 로그인 시 자동으로 Premium 전환 확인
+  - 로그 관측(콘솔) 보강은 필요 시만 진행
 
 **예상 소요**: 0.5일 (외부 설정만 남음)
 
@@ -310,7 +304,7 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
     └→ Phase 7: 기능 분기 처리 (1일)
 ```
 
-**현재 상태** (Build 79):
+**현재 상태** (Build 80):
 - ✅ 배너 광고 3개 화면 적용 (Home, List, Reports) - TodayScreen Clean Zone
 - ✅ XP 부스트 버튼 2개 화면 적용 (Home, Today) - 활성 만다라트 없으면 숨김
 - ✅ 보상형 광고 구현/연동 완료 (ReportGenerate) - StreakFreeze는 정책/UX 이유로 비활성화
@@ -322,6 +316,8 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 - ✅ iPad XP Boost 버튼 위치 수정 (ProfileCard 아래로 이동)
 - ✅ Supabase RLS 정책 수정 (user_subscriptions INSERT/UPDATE 허용)
 - ✅ 구독 시스템 코드 구현 완료 (useSubscription, SubscriptionScreen)
+- ✅ Premium 광고 숨김 분기 “실제 적용” 확인
+- ✅ 자동 구매 복원(restore) 자동화 + iPad 동작 검증 완료
 
 **이점**:
 - ✅ 첫 심사에 완전한 버전 제출 (재심사 불필요)
@@ -613,11 +609,11 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 **현황**: Phase 10.2(AdMob) / Phase 10.3~10.4(IAP/구독)로 이관되어 대부분 구현/진행 중
 
 **남은 작업 (Backlog/Release 모두 포함)**:
-- [ ] App Store Connect IAP 상품 등록/현지화/가격/상태 완료 (월간/연간)
-- [ ] RevenueCat Products/Offerings/Packages/Entitlement 설정 완료
+- [x] App Store Connect IAP 상품 등록/현지화/가격/상태 완료 (월간/연간) ✅ (2025-12-13)
+- [x] RevenueCat Products/Offerings/Packages/Entitlement 설정 완료 ✅ (2025-12-13)
 - [x] Supabase `user_subscriptions` 프로덕션 마이그레이션 실행 (`npx supabase db push`) ✅ (2025-12-13)
-- [ ] Premium 사용자 광고 숨김 분기 적용 (`BannerAd` 등)
-- [ ] 자동 구매 복원(restore) 자동화 (앱 시작/로그인 시)
+- [x] Premium 사용자 광고 숨김 분기 적용 (`BannerAd` 등) ✅ (실제 적용 확인 완료)
+- [x] 자동 구매 복원(restore) 자동화 (앱 시작/로그인 시) ✅ (iPad 동작 검증 완료)
 - [ ] Android 광고 라벨 (Google Play 정책)
 - [ ] GDPR 동의 배너 (EU 출시 시)
 - [ ] 광고 성과 추적/대시보드 운영(AdMob/Vercel/PostHog)
