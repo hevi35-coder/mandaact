@@ -101,8 +101,8 @@
 - [x] `ReportGenerateButton` 컴포넌트 구현
 - [x] **StreakFreezeButton 화면 연동**: StreakCard 내 배치 (현재 정책/UX 이유로 비활성화)
 - [x] **ReportGenerateButton 화면 연동**: ReportsScreen에 배치
-- [ ] **YesterdayCheckButton 화면 연동**: 백엔드 로직 필요 (어제 체크 삽입 API) + 정책/UX 재검토 필요
-- [ ] 어제 체크 삽입 로직 구현 (check_history에 어제 날짜로 삽입) - Backlog
+- [x] ~~YesterdayCheckButton 화면 연동~~ → ❌ 미추진 (유저 경험 저하 + “어제 체크” 유도는 목표 관리 UX에 역효과 가능)
+- [x] ~~어제 체크 삽입 로직 구현 (check_history에 어제 날짜로 삽입)~~ → ❌ 미추진 (위 결정에 따라 불필요)
 - [ ] 스트릭 재계산 트리거 구현 - Backlog
 
 #### 10.2.4 전면 광고 (Phase 4) ✅ **완료** (2025-12-07)
@@ -114,13 +114,13 @@
 #### 10.2.5 정책 준수 UI ✅ **완료** (2025-12-07)
 - [x] **Apple ATT**: iOS 14.5+ 추적 동의 요청 (`expo-tracking-transparency`)
 - [x] BannerAd: ReportsScreen 하단에 추가
-- [ ] **GDPR**: EU 유저 동의 배너 - 추후 EU 출시 시 구현
+- [ ] **GDPR**: EU 유저 동의 배너 - EU 출시 계획 시 진행(현재 보류)
 - [ ] **광고 라벨**: Google Play 정책 준수 - Android 출시 시 추가
 
 #### 10.2.6 수익화 고도화 (Optimization) ✅ **완료** (2025-12-07)
 - [x] **TodayScreen 배너 제거**: Clean Zone 정책 적용 (집중력 보호)
 - [x] **Ad-Free Time (집중 모드)**: useAdFree 훅 + AdFreeButton 구현 (24시간 배너 제거)
-- [ ] **AdFreeButton 화면 배치**: SettingsScreen에 배치 필요
+- [x] **AdFreeButton 화면 배치**: SettingsScreen에 배치 ✅
 - [ ] **Feedback Loop**: 배너 닫기 버튼(`x`) → Premium 유도 모달 (추후)
 
 #### 기존 시스템 영향도 (필수 확인)
