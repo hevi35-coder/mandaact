@@ -431,7 +431,9 @@ Sentry.captureMessage('Test error')
   - [x] TodayChecklistPage - 액션 체크 추적
   - [x] badgeEvaluator.ts - 배지 획득 추적
   - [x] TutorialPage - 튜토리얼 완료 추적
-- [ ] PostHog 대시보드 인사이트 생성
+- [x] PostHog 대시보드 인사이트 생성 ✅ (Launch Monitoring + Monetization)
+  - 결제/복원/프리미엄 전환: PostHog 이벤트 수집 및 샌드박스 결제 검증 완료 (TestFlight Build 82)
+  - 광고/푸시 관련 대시보드는 앱 배포 후 데이터 유입 시 추가
 - [ ] Sentry 알림 규칙 설정
 
 ---

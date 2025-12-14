@@ -2,6 +2,11 @@
 
 목표: 출시 직후 운영에서 “전환/수익/오류”를 빠르게 파악하기 위해 **이벤트 이름/프로퍼티/네이밍**을 표준화한다.
 
+## 0) 진행 현황
+
+- ✅ Paywall/Purchase/Restore/Premium 전환 이벤트: PostHog 수집 및 샌드박스 결제 검증 완료 (TestFlight Build 82)
+- ⏳ Ads/Push 관련 대시보드: 앱 배포 후 실제 데이터 유입 시 세팅/검증
+
 ## 1) 원천(Source of Truth)
 
 - **구독/매출**: RevenueCat 대시보드가 권위(실제 결제 상태/환불/복원/활성 구독).
@@ -96,4 +101,3 @@ Rewarded:
 - PostHog 퍼널: `paywall_viewed` → `purchase_started` → `purchase_success`
 - 복원 품질: `purchase_restore_success`(trigger별) + `premium_state_changed`
 - 광고 품질: `ad_failed` 비율(placement별), `ad_revenue` / `ad_impression` 추이
-
