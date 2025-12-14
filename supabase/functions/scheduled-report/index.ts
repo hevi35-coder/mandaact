@@ -153,6 +153,55 @@ function buildCacheKey(
   return `diagnosis:${language}:${params.mandalartId}:${params.mandalartHash}`
 }
 
+async function computeMandalartTitleHash(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string
+): Promise<string | null> {
+  const { data, error } = await supabaseAdmin
+    .from('mandalarts')
+    .select(`
+      id,
+      title,
+      center_goal,
+      sub_goals (
+        id,
+        title,
+        actions (
+          id,
+          title
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('is_active', true)
+
+  if (error) {
+    console.warn('Failed to compute mandalartTitleHash (continuing):', error)
+    return null
+  }
+
+  const mandalarts = Array.isArray(data) ? data : []
+  const normalized = mandalarts
+    .map((m: any) => ({
+      id: m.id ?? null,
+      title: m.title ?? '',
+      center_goal: m.center_goal ?? '',
+      sub_goals: (Array.isArray(m.sub_goals) ? m.sub_goals : [])
+        .map((sg: any) => ({
+          id: sg.id ?? null,
+          title: sg.title ?? '',
+          actions: (Array.isArray(sg.actions) ? sg.actions : []).map((a: any) => ({
+            id: a.id ?? null,
+            title: a.title ?? '',
+          })),
+        }))
+        .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
+    }))
+    .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)))
+
+  return sha256Hex(stableStringify(normalized))
+}
+
 async function getRollingWeeklyBounds(
   supabaseAdmin: ReturnType<typeof createClient>,
   userId: string
@@ -464,6 +513,7 @@ async function collectUserReportData(
   periodEnd: string
 ) {
   const locale = LOCALES[language]
+  const mandalartTitleHash = await computeMandalartTitleHash(supabaseAdmin, userId)
 
   // Get check history for the period
   const { data: checks } = await supabaseAdmin
@@ -544,6 +594,8 @@ async function collectUserReportData(
     period: locale.periodLabel,
     periodStart,
     periodEnd,
+    mandalartTitleHash,
+    mandalart_title_hash: mandalartTitleHash,
     mandalarts: [],
     totalChecks: checks?.length || 0,
     uniqueDays: checks ? new Set(checks.map((c: CheckRecord) => new Date(c.checked_at).toDateString())).size : 0,
@@ -571,6 +623,8 @@ interface ReportData {
   period: string
   periodStart: string
   periodEnd: string
+  mandalartTitleHash?: string | null
+  mandalart_title_hash?: string | null
   mandalarts: unknown[]
   totalChecks: number
   uniqueDays: number

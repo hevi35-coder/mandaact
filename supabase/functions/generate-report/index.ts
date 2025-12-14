@@ -254,12 +254,61 @@ function buildCacheKey(
   }
 
   if (reportType === 'diagnosis') {
-    const mandalartHash = data.mandalartHash || null
+    const mandalartHash = data.mandalartHash || (data as any).mandalart_hash || null
     if (!mandalartId || !mandalartHash) return null
     return `diagnosis:${language}:${mandalartId}:${mandalartHash}`
   }
 
   return null
+}
+
+async function computeMandalartTitleHash(
+  supabaseClient: SupabaseClient,
+  userId: string
+): Promise<string | null> {
+  const { data, error } = await supabaseClient
+    .from('mandalarts')
+    .select(`
+      id,
+      title,
+      center_goal,
+      sub_goals (
+        id,
+        title,
+        actions (
+          id,
+          title
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('is_active', true)
+
+  if (error) {
+    console.warn('Failed to compute mandalartTitleHash (continuing):', error)
+    return null
+  }
+
+  const mandalarts = Array.isArray(data) ? data : []
+  const normalized = mandalarts
+    .map((m: any) => ({
+      id: m.id ?? null,
+      title: m.title ?? '',
+      center_goal: m.center_goal ?? '',
+      sub_goals: (Array.isArray(m.sub_goals) ? m.sub_goals : [])
+        .map((sg: any) => ({
+          id: sg.id ?? null,
+          title: sg.title ?? '',
+          actions: (Array.isArray(sg.actions) ? sg.actions : []).map((a: any) => ({
+            id: a.id ?? null,
+            title: a.title ?? '',
+          })),
+        }))
+        .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
+    }))
+    .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)))
+
+  return sha256Hex(stableStringify(normalized))
 }
 
 function getModelConfig(reportType: string) {
@@ -306,6 +355,7 @@ async function collectReportData(
 
   // Weekly: rolling 7 days excluding today, timezone-aware
   if (reportType === 'weekly') {
+    const mandalartTitleHash = await computeMandalartTitleHash(supabaseClient, userId)
     const { data: bounds, error: boundsError } = await (supabaseClient as any)
       .rpc('get_rolling_report_period_bounds', { p_user_id: userId, p_days: 7 })
       .single()
@@ -352,6 +402,8 @@ async function collectReportData(
         periodStart,
         periodEnd,
         userTimezone,
+        mandalartTitleHash,
+        mandalart_title_hash: mandalartTitleHash,
         mandalarts: [],
         structureAnalysis: analyzeMandalartStructure([]),
         totalChecks: 0,
@@ -438,6 +490,8 @@ async function collectReportData(
       periodStart,
       periodEnd,
       userTimezone,
+      mandalartTitleHash,
+      mandalart_title_hash: mandalartTitleHash,
       mandalarts: [],
       structureAnalysis: analyzeMandalartStructure([]),
       totalChecks: checks.length,
@@ -505,6 +559,9 @@ async function collectReportData(
       totalChecks: 0,
       centerGoal: mandalart?.center_goal || '',
       mandalartHash,
+      // Aliases for easier SQL checks (snake_case)
+      mandalart_id: mandalart?.id || mandalartId || '',
+      mandalart_hash: mandalartHash,
     }
   }
 
@@ -702,6 +759,8 @@ interface ReportData {
   periodStart?: string
   periodEnd?: string
   userTimezone?: string
+  mandalartTitleHash?: string | null
+  mandalart_title_hash?: string | null
   totalChecks: number
   uniqueDays?: number
   currentStreak?: number
@@ -719,6 +778,8 @@ interface ReportData {
   message?: string
   centerGoal?: string
   mandalartHash?: string
+  mandalart_id?: string
+  mandalart_hash?: string
 }
 
 // Get localized prompts based on language

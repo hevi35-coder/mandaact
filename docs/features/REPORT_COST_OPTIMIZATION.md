@@ -29,6 +29,7 @@
 ### Weekly input_signature (타이틀 변경 포함)
 Weekly `input_summary`에 포함(변경 시 새로 생성되어야 하는 값):
 - 기간: `period_start`, `period_end`, `user_timezone`
+- 만다라트 타이틀 서명: `mandalart_title_hash` (만다라트/세부목표/액션의 “title”이 바뀌면 무조건 weekly 재생성)
 - 집계/패턴: `totalChecks`, `uniqueDays`, `weekdayPattern`, `timePattern`, `actionTypePattern`, `bestDay/worstDay/bestTime`
 - 목표별: `bestSubGoal`, `worstSubGoal`에 **(sub_goal_id + title + count)** 포함(타이틀 변경 반영)
 - 배지: 최근 배지 `title` 리스트(타이틀 변경 반영)
@@ -48,6 +49,8 @@ Diagnosis `input_summary`는 만다라트 구조/설정의 정규화된 스냅�
 - `mandalart_id`, `center_goal`
 - sub_goals: `id/title/position`
 - actions: `id/title/position/type` + 측정가능성/구체성에 영향을 주는 설정값
+
+> 운영/SQL 확인 편의를 위해 `mandalartHash`(camelCase)와 `mandalart_hash`(snake_case)를 모두 포함할 수 있다.
 
 ### Diagnosis cache_key
 - `diagnosis:{language}:{mandalart_id}:{mandalart_hash}`
