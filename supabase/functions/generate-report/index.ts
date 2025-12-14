@@ -1167,24 +1167,80 @@ async function generateAIReport(
     }
 
     try {
-      const jsonResponse = JSON.parse(aiResponse)
-      if (!validateAIResponse(jsonResponse, reportType)) {
+      const jsonResponse = JSON.parse(aiResponse) as Record<string, unknown>
+      const normalized = normalizeAIResponse(jsonResponse, reportType)
+      if (!validateAIResponse(normalized, reportType)) {
         return { content: aiResponse, isValidJson: false }
       }
-      return { content: JSON.stringify(jsonResponse), isValidJson: true }
+      return { content: JSON.stringify(normalized), isValidJson: true }
     } catch {
       return { content: aiResponse, isValidJson: false }
     }
   }
 
   const primaryResult = await tryGenerateOnce(modelConfig.primary)
-  if (primaryResult.isValidJson || !modelConfig.fallback || modelConfig.fallback === modelConfig.primary) {
-    return primaryResult.content
+  if (primaryResult.isValidJson) return primaryResult.content
+  if (!modelConfig.fallback || modelConfig.fallback === modelConfig.primary) {
+    return JSON.stringify(buildInvalidAIResponseFallback(reportType, language))
   }
 
   console.warn(`Invalid AI JSON for ${reportType} (primary=${modelConfig.primary}), retrying fallback=${modelConfig.fallback}`)
   const fallbackResult = await tryGenerateOnce(modelConfig.fallback)
-  return fallbackResult.content
+  if (fallbackResult.isValidJson) return fallbackResult.content
+  return JSON.stringify(buildInvalidAIResponseFallback(reportType, language))
+}
+
+function normalizeAIResponse(response: Record<string, unknown>, reportType: string): Record<string, unknown> {
+  const normalized: Record<string, unknown> = { ...response }
+
+  if (reportType === 'weekly') {
+    if (!normalized.key_metrics && (normalized as any).keyMetrics) normalized.key_metrics = (normalized as any).keyMetrics
+    if (!normalized.action_plan && (normalized as any).actionPlan) normalized.action_plan = (normalized as any).actionPlan
+  }
+
+  if (reportType === 'diagnosis') {
+    if (!normalized.structure_metrics && (normalized as any).structureMetrics) normalized.structure_metrics = (normalized as any).structureMetrics
+    if (!normalized.priority_tasks && (normalized as any).priorityTasks) normalized.priority_tasks = (normalized as any).priorityTasks
+  }
+
+  return normalized
+}
+
+function buildInvalidAIResponseFallback(reportType: string, language: Language): Record<string, unknown> {
+  const isEnglish = language === 'en'
+
+  if (reportType === 'diagnosis') {
+    return {
+      headline: isEnglish ? 'Goal diagnosis is temporarily unavailable.' : '목표 진단을 불러오지 못했습니다.',
+      structure_metrics: [
+        { label: isEnglish ? 'Completion' : '완성도', value: '-' },
+        { label: isEnglish ? 'Clarity' : '표현 명확도', value: '-' },
+        { label: isEnglish ? 'Measurability' : '측정 가능성', value: '-' },
+      ],
+      strengths: [],
+      improvements: [],
+      priority_tasks: [isEnglish ? 'Please try again in a moment.' : '잠시 후 다시 시도해주세요.'],
+    }
+  }
+
+  if (reportType === 'weekly') {
+    return {
+      headline: isEnglish ? 'Weekly report is temporarily unavailable.' : '주간 리포트를 불러오지 못했습니다.',
+      key_metrics: [
+        { label: isEnglish ? 'Practice Days' : '실천일수', value: '-' },
+        { label: isEnglish ? 'Total Practices' : '총 실천횟수', value: '-' },
+        { label: isEnglish ? 'Week-over-Week Change' : '전주대비 실천횟수', value: '-' },
+      ],
+      strengths: [],
+      improvements: { problem: '', insight: '' },
+      action_plan: {
+        goal: '',
+        steps: [isEnglish ? 'Please try again in a moment.' : '잠시 후 다시 시도해주세요.'],
+      },
+    }
+  }
+
+  return { headline: isEnglish ? 'Report is temporarily unavailable.' : '리포트를 불러오지 못했습니다.' }
 }
 
 // Validate AI response structure

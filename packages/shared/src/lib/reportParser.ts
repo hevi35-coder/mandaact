@@ -242,9 +242,13 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
 export function parseDiagnosisReport(content: string): ReportSummary {
   // Try JSON parsing first (new format)
   try {
-    const data = JSON.parse(content) as DiagnosisReportData
+    const data = JSON.parse(content) as any
 
-    if (data.headline && data.structure_metrics) {
+    const structureMetrics = data?.structure_metrics ?? data?.structureMetrics
+    const improvements = data?.improvements ?? []
+    const priorityTasks = data?.priority_tasks ?? data?.priorityTasks
+
+    if (data.headline && structureMetrics) {
       // Build detail content from strengths and improvements
       let detailContent = ''
 
@@ -255,23 +259,23 @@ export function parseDiagnosisReport(content: string): ReportSummary {
         })
       }
 
-      if (data.improvements && Array.isArray(data.improvements) && data.improvements.length > 0) {
+      if (improvements && Array.isArray(improvements) && improvements.length > 0) {
         detailContent += '## ⚡ 개선 포인트\n\n'
-        data.improvements.forEach((improvement) => {
+        improvements.forEach((improvement: any) => {
           detailContent += `• **${improvement.area}**: ${improvement.issue} → ${improvement.solution}\n\n`
         })
       }
 
-      if (data.priority_tasks && Array.isArray(data.priority_tasks) && data.priority_tasks.length > 0) {
+      if (priorityTasks && Array.isArray(priorityTasks) && priorityTasks.length > 0) {
         detailContent += '## 🎯 MandaAct의 제안\n\n'
-        data.priority_tasks.forEach((task: string) => {
+        priorityTasks.forEach((task: string) => {
           detailContent += `• ${task}\n\n`
         })
       }
 
       return {
         headline: data.headline,
-        metrics: data.structure_metrics.map((m) => ({
+        metrics: structureMetrics.map((m: any) => ({
           label: m.label,
           value: m.value,
           variant: 'default' as const
@@ -283,7 +287,11 @@ export function parseDiagnosisReport(content: string): ReportSummary {
     // Fallback to markdown parsing (for old reports)
   }
 
-  return parseDiagnosisReportMarkdown(content)
+  const parsed = parseDiagnosisReportMarkdown(content)
+  if (!parsed.headline) {
+    parsed.errorReason = 'parseError'
+  }
+  return parsed
 }
 
 /**
@@ -354,6 +362,10 @@ function parseDiagnosisReportMarkdown(markdown: string): ReportSummary {
   // Extract detail content
   if (detailStartIndex >= 0) {
     summary.detailContent = lines.slice(detailStartIndex).join('\n')
+  }
+
+  if (!summary.headline) {
+    summary.errorReason = 'parseError'
   }
 
   return summary
