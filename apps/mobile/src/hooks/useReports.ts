@@ -203,7 +203,8 @@ export function useGoalDiagnosis(mandalartId: string | undefined) {
     queryFn: async () => {
       if (!userId) throw new Error('No user')
 
-      const { data, error } = await supabase
+      // 1) Strict: match mandalart_id + language (new standard)
+      const strict = await supabase
         .from('ai_reports')
         .select('*')
         .eq('user_id', userId)
@@ -214,10 +215,37 @@ export function useGoalDiagnosis(mandalartId: string | undefined) {
         .limit(1)
         .maybeSingle()
 
-      if (error) throw error
-      if (!data) return null
+      if (strict.error) throw strict.error
+      if (strict.data) return transformToGoalDiagnosis(strict.data as AIReport)
 
-      return transformToGoalDiagnosis(data as AIReport)
+      // 2) Fallback: match language only (covers legacy reports where metadata.mandalart_id was missing)
+      const languageOnly = await supabase
+        .from('ai_reports')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('report_type', 'diagnosis')
+        .eq('language', language)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (languageOnly.error) throw languageOnly.error
+      if (languageOnly.data) return transformToGoalDiagnosis(languageOnly.data as AIReport)
+
+      // 3) Final fallback: ignore language (very old rows may have language null)
+      const legacy = await supabase
+        .from('ai_reports')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('report_type', 'diagnosis')
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (legacy.error) throw legacy.error
+      if (!legacy.data) return null
+
+      return transformToGoalDiagnosis(legacy.data as AIReport)
     },
     enabled: !!userId && !!mandalartId,
     staleTime: 1000 * 60 * 60, // 1 hour
