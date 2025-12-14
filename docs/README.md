@@ -39,6 +39,7 @@
 - `docs/features/PUSH_NOTIFICATION_POLICY.md`
 - `docs/features/REPORT_GENERATION_POLICY.md`
 - `docs/features/ADMOB_INTEGRATION.md`
+- `docs/features/MONETIZATION_ANALYTICS_TAXONOMY.md`
 - `docs/features/BADGE_SYSTEM_V5_RENEWAL.md`
 - `docs/features/XP_SYSTEM_PHASE2_COMPLETE.md`
 
@@ -74,4 +75,3 @@
 ## Archive (참고/기록)
 
 `docs/archive/`는 세션 로그/완료 문서/폐기 문서를 보관합니다. 현재 운영/개발의 기준 문서는 아닙니다.
-

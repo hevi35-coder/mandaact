@@ -17,6 +17,15 @@ import {
   buildWeeklyReportGeneratedProps,
   buildGoalDiagnosisViewedProps,
   buildLoginProps,
+  buildPaywallViewedProps,
+  buildPurchaseStartedProps,
+  buildPurchaseResultProps,
+  buildRestoreResultProps,
+  buildPremiumStateChangedProps,
+  buildAdEventBaseProps,
+  buildAdRevenueProps,
+  buildAdFailedProps,
+  buildRewardEarnedProps,
   type MandalartCreatedData,
   type ActionCheckedData,
   type BadgeUnlockedData,
@@ -26,6 +35,15 @@ import {
   type WeeklyReportGeneratedData,
   type GoalDiagnosisViewedData,
   type LoginData,
+  type PaywallViewedData,
+  type PurchaseStartedData,
+  type PurchaseResultData,
+  type RestoreResultData,
+  type PremiumStateChangedData,
+  type AdEventBaseData,
+  type AdRevenueData,
+  type AdFailedData,
+  type RewardEarnedData,
 } from '@mandaact/shared'
 
 // PostHog 클라이언트 인스턴스
@@ -239,6 +257,101 @@ export const trackSignup = (method: 'email' | 'google' | 'apple'): void => {
   )
 }
 
+// ========================================
+// Monetization events
+// ========================================
+
+export const trackPaywallViewed = (data: PaywallViewedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PAYWALL_VIEWED,
+    buildPaywallViewedProps(data, 'mobile')
+  )
+}
+
+export const trackPurchaseStarted = (data: PurchaseStartedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PURCHASE_STARTED,
+    buildPurchaseStartedProps(data, 'mobile')
+  )
+}
+
+export const trackPurchaseSuccess = (data: PurchaseResultData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PURCHASE_SUCCESS,
+    buildPurchaseResultProps(data, 'mobile')
+  )
+}
+
+export const trackPurchaseFailed = (data: PurchaseResultData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PURCHASE_FAILED,
+    buildPurchaseResultProps(data, 'mobile')
+  )
+}
+
+export const trackRestoreStarted = (data: RestoreResultData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PURCHASE_RESTORE_STARTED,
+    buildRestoreResultProps(data, 'mobile')
+  )
+}
+
+export const trackRestoreSuccess = (data: RestoreResultData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PURCHASE_RESTORE_SUCCESS,
+    buildRestoreResultProps(data, 'mobile')
+  )
+}
+
+export const trackRestoreFailed = (data: RestoreResultData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PURCHASE_RESTORE_FAILED,
+    buildRestoreResultProps(data, 'mobile')
+  )
+}
+
+export const trackPremiumStateChanged = (data: PremiumStateChangedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.PREMIUM_STATE_CHANGED,
+    buildPremiumStateChangedProps(data, 'mobile')
+  )
+}
+
+export const trackAdImpression = (data: AdEventBaseData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.AD_IMPRESSION,
+    buildAdEventBaseProps(data, 'mobile')
+  )
+}
+
+export const trackAdClicked = (data: AdEventBaseData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.AD_CLICKED,
+    buildAdEventBaseProps(data, 'mobile')
+  )
+}
+
+export const trackAdRevenue = (data: AdRevenueData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.AD_REVENUE,
+    buildAdRevenueProps(data, 'mobile')
+  )
+}
+
+export const trackAdFailed = (data: AdFailedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.AD_FAILED,
+    buildAdFailedProps(data, 'mobile')
+  )
+}
+
+export const trackRewardEarned = (data: RewardEarnedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.REWARD_EARNED,
+    buildRewardEarnedProps(data, 'mobile')
+  )
+}
+
 export default {
   initPostHog,
   getPostHog,
@@ -257,5 +370,17 @@ export default {
   trackAppOpened,
   trackLogin,
   trackSignup,
+  trackPaywallViewed,
+  trackPurchaseStarted,
+  trackPurchaseSuccess,
+  trackPurchaseFailed,
+  trackRestoreStarted,
+  trackRestoreSuccess,
+  trackRestoreFailed,
+  trackPremiumStateChanged,
+  trackAdImpression,
+  trackAdClicked,
+  trackAdRevenue,
+  trackAdFailed,
+  trackRewardEarned,
 }
-

@@ -67,6 +67,73 @@ export interface LoginData {
 }
 
 // ========================================
+// Monetization event data types
+// ========================================
+
+export interface PaywallViewedData {
+    source_screen: string
+}
+
+export interface PurchaseStartedData {
+    product_id: string
+    package_id?: string
+    price?: number
+    currency?: string
+}
+
+export interface PurchaseResultData {
+    product_id: string
+    plan?: 'monthly' | 'yearly' | null
+    is_sandbox?: boolean
+    price?: number
+    currency?: string
+    error_code?: string
+}
+
+export interface RestoreResultData {
+    trigger: 'manual' | 'auto'
+    is_sandbox?: boolean
+    restored?: boolean
+    error_code?: string
+}
+
+export interface PremiumStateChangedData {
+    from: 'free' | 'premium' | 'loading'
+    to: 'free' | 'premium'
+    reason:
+        | 'rc_entitlement'
+        | 'rc_active_subscription_fallback'
+        | 'supabase_fallback'
+        | 'restore_manual'
+        | 'restore_auto'
+    plan?: 'monthly' | 'yearly' | null
+    is_sandbox?: boolean
+}
+
+export type AdFormat = 'banner' | 'interstitial' | 'rewarded'
+
+export interface AdEventBaseData {
+    ad_format: AdFormat
+    placement: string
+    ad_unit_id?: string
+}
+
+export interface AdRevenueData extends AdEventBaseData {
+    revenue_micros?: number
+    currency?: string
+    precision?: string
+}
+
+export interface AdFailedData extends AdEventBaseData {
+    error_code?: string
+}
+
+export interface RewardEarnedData extends AdEventBaseData {
+    reward_type: string
+    reward_amount: number
+}
+
+// ========================================
 // 이벤트 이름 상수
 // ========================================
 
@@ -82,6 +149,19 @@ export const POSTHOG_EVENTS = {
     APP_OPENED: 'app_opened',
     USER_LOGGED_IN: 'user_logged_in',
     USER_SIGNED_UP: 'user_signed_up',
+    PAYWALL_VIEWED: 'paywall_viewed',
+    PURCHASE_STARTED: 'purchase_started',
+    PURCHASE_SUCCESS: 'purchase_success',
+    PURCHASE_FAILED: 'purchase_failed',
+    PURCHASE_RESTORE_STARTED: 'purchase_restore_started',
+    PURCHASE_RESTORE_SUCCESS: 'purchase_restore_success',
+    PURCHASE_RESTORE_FAILED: 'purchase_restore_failed',
+    PREMIUM_STATE_CHANGED: 'premium_state_changed',
+    AD_IMPRESSION: 'ad_impression',
+    AD_CLICKED: 'ad_clicked',
+    AD_REVENUE: 'ad_revenue',
+    AD_FAILED: 'ad_failed',
+    REWARD_EARNED: 'reward_earned',
     PAGEVIEW: '$pageview',
 } as const
 
@@ -196,6 +276,135 @@ export function buildLevelUpProps(
         platform,
         timestamp: new Date().toISOString(),
     }
+}
+
+export function buildPaywallViewedProps(
+    data: PaywallViewedData,
+    platform: 'web' | 'mobile'
+) {
+    return {
+        source_screen: data.source_screen,
+        platform,
+        timestamp: new Date().toISOString(),
+    }
+}
+
+export function buildPurchaseStartedProps(
+    data: PurchaseStartedData,
+    platform: 'web' | 'mobile'
+) {
+    const props: Record<string, string | number | boolean | null> = {
+        product_id: data.product_id,
+        platform,
+        timestamp: new Date().toISOString(),
+    }
+
+    if (data.package_id !== undefined) props.package_id = data.package_id
+    if (data.price !== undefined) props.price = data.price
+    if (data.currency !== undefined) props.currency = data.currency
+
+    return props
+}
+
+export function buildPurchaseResultProps(
+    data: PurchaseResultData,
+    platform: 'web' | 'mobile'
+) {
+    const props: Record<string, string | number | boolean | null> = {
+        product_id: data.product_id,
+        plan: data.plan ?? null,
+        platform,
+        timestamp: new Date().toISOString(),
+    }
+
+    if (data.is_sandbox !== undefined) props.is_sandbox = data.is_sandbox
+    if (data.price !== undefined) props.price = data.price
+    if (data.currency !== undefined) props.currency = data.currency
+    if (data.error_code !== undefined) props.error_code = data.error_code
+
+    return props
+}
+
+export function buildRestoreResultProps(
+    data: RestoreResultData,
+    platform: 'web' | 'mobile'
+) {
+    const props: Record<string, string | number | boolean | null> = {
+        trigger: data.trigger,
+        platform,
+        timestamp: new Date().toISOString(),
+    }
+
+    if (data.restored !== undefined) props.restored = data.restored
+    if (data.is_sandbox !== undefined) props.is_sandbox = data.is_sandbox
+    if (data.error_code !== undefined) props.error_code = data.error_code
+
+    return props
+}
+
+export function buildPremiumStateChangedProps(
+    data: PremiumStateChangedData,
+    platform: 'web' | 'mobile'
+) {
+    const props: Record<string, string | number | boolean | null> = {
+        from: data.from,
+        to: data.to,
+        reason: data.reason,
+        plan: data.plan ?? null,
+        platform,
+        timestamp: new Date().toISOString(),
+    }
+
+    if (data.is_sandbox !== undefined) props.is_sandbox = data.is_sandbox
+
+    return props
+}
+
+export function buildAdEventBaseProps(
+    data: AdEventBaseData,
+    platform: 'web' | 'mobile'
+) {
+    const props: Record<string, string | number | boolean | null> = {
+        ad_format: data.ad_format,
+        placement: data.placement,
+        platform,
+        timestamp: new Date().toISOString(),
+    }
+
+    if (data.ad_unit_id !== undefined) props.ad_unit_id = data.ad_unit_id
+
+    return props
+}
+
+export function buildAdRevenueProps(
+    data: AdRevenueData,
+    platform: 'web' | 'mobile'
+) {
+    const props = buildAdEventBaseProps(data, platform) as Record<string, string | number | boolean | null>
+    if (data.revenue_micros !== undefined) props.revenue_micros = data.revenue_micros
+    if (data.currency !== undefined) props.currency = data.currency
+    if (data.precision !== undefined) props.precision = data.precision
+    return props
+}
+
+export function buildAdFailedProps(
+    data: AdFailedData,
+    platform: 'web' | 'mobile'
+) {
+    const props = buildAdEventBaseProps(data, platform) as Record<string, string | number | boolean | null>
+    if (data.error_code !== undefined) props.error_code = data.error_code
+    return props
+}
+
+export function buildRewardEarnedProps(
+    data: RewardEarnedData,
+    platform: 'web' | 'mobile'
+) {
+    return {
+        ...buildAdEventBaseProps(data, platform),
+        reward_type: data.reward_type,
+        reward_amount: data.reward_amount,
+    } as Record<string, string | number | boolean | null>
 }
 
 /**

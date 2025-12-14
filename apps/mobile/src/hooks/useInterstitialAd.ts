@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from '../store/authStore'
 import { useSubscriptionContextSafe } from '../context'
 import { logger } from '../lib/logger'
+import { trackAdClicked, trackAdFailed, trackAdImpression, trackAdRevenue } from '../lib'
 
 type InterstitialAdType =
   | 'INTERSTITIAL_AFTER_CREATE'
@@ -59,6 +60,7 @@ export function useInterstitialAd({
   const canShowAds = !isPremium && adRestriction === 'full'
 
   const adUnitId = AD_UNITS[adType]
+  const placement = adType.toLowerCase()
 
   const cleanup = useCallback(() => {
     unsubscribersRef.current.forEach((unsub) => unsub())
@@ -97,6 +99,35 @@ export function useInterstitialAd({
       }
     )
 
+    const unsubOpened = interstitialAd.addAdEventListener(
+      AdEventType.OPENED,
+      () => {
+        trackAdImpression({ ad_format: 'interstitial', placement, ad_unit_id: adUnitId })
+      }
+    )
+
+    const unsubClicked = interstitialAd.addAdEventListener(
+      AdEventType.CLICKED,
+      () => {
+        trackAdClicked({ ad_format: 'interstitial', placement, ad_unit_id: adUnitId })
+      }
+    )
+
+    const unsubPaid = interstitialAd.addAdEventListener(
+      AdEventType.PAID,
+      (event) => {
+        const paid = event as unknown as { value: number; currency: string; precision: string }
+        trackAdRevenue({
+          ad_format: 'interstitial',
+          placement,
+          ad_unit_id: adUnitId,
+          revenue_micros: paid.value,
+          currency: paid.currency,
+          precision: String(paid.precision),
+        })
+      }
+    )
+
     const unsubClosed = interstitialAd.addAdEventListener(
       AdEventType.CLOSED,
       () => {
@@ -113,6 +144,12 @@ export function useInterstitialAd({
       (err) => {
         logger.error(`Interstitial ad error: ${adType}`, err)
         const error = new Error(err.message || 'Failed to load interstitial ad')
+        trackAdFailed({
+          ad_format: 'interstitial',
+          placement,
+          ad_unit_id: adUnitId,
+          error_code: err.message || 'interstitial_ad_error',
+        })
         setError(error)
         setIsLoading(false)
         setIsLoaded(false)
@@ -120,11 +157,18 @@ export function useInterstitialAd({
       }
     )
 
-    unsubscribersRef.current = [unsubLoaded, unsubClosed, unsubError]
+    unsubscribersRef.current = [
+      unsubLoaded,
+      unsubOpened,
+      unsubClicked,
+      unsubPaid,
+      unsubClosed,
+      unsubError,
+    ]
 
     // Load the ad
     interstitialAd.load()
-  }, [adType, adUnitId, canShowAds, isLoading, isLoaded, cleanup, onAdClosed, onError])
+  }, [adType, adUnitId, canShowAds, isLoading, isLoaded, cleanup, onAdClosed, onError, placement])
 
   const show = useCallback(async (): Promise<boolean> => {
     // Check new user protection
