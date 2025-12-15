@@ -57,31 +57,75 @@ export function getActionTypeLabel(type: ActionType, showDescription: boolean = 
  * Uses rule-based pattern matching with priority-based logic
  */
 export function suggestActionType(title: string): AISuggestion {
-  const lower = title.toLowerCase()
+  const lower = title.trim().toLowerCase()
+  const hasLatin = /[a-z]/.test(lower)
+
+  const dayMapKo: Record<string, number> = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 0 }
+  const dayMapEn: Record<string, number> = {
+    mon: 1,
+    monday: 1,
+    tue: 2,
+    tues: 2,
+    tuesday: 2,
+    wed: 3,
+    wednesday: 3,
+    thu: 4,
+    thur: 4,
+    thurs: 4,
+    thursday: 4,
+    fri: 5,
+    friday: 5,
+    sat: 6,
+    saturday: 6,
+    sun: 0,
+    sunday: 0,
+  }
 
   // Detect patterns first (for complex logic)
   // Detect patterns first (for complex logic)
-  const hasCompletionKeyword = /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진|완독|완성|클리어|정복|마스터|도달|이루기|확보|유치/.test(lower)
-  const hasGoalKeyword = /목표|도전|성공/.test(lower)
-  const hasNumberGoal = /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일|급|억)/.test(lower)
+  const hasCompletionKeyword =
+    /달성|취득|완료|마치기|끝내기|획득|통과|성공|성취|감량|증가|향상|개선|증진|완독|완성|클리어|정복|마스터|도달|이루기|확보|유치/.test(lower) ||
+    /achiev(e|ing)|reach|complete|finish|pass|earn|get|win|lose|gain|improv(e|ing)|increase|decrease|reduce|build|grow|master/.test(lower)
+  const hasGoalKeyword =
+    /목표|도전|성공/.test(lower) ||
+    /\b(goal|target|challenge)\b/.test(lower)
+  const hasNumberGoal =
+    /\d+\s*(점|개|명|만원|원|%|권|시간|분|km|kg|번|회|페이지|챕터|강|일|급|억)/.test(lower) ||
+    /\d+\s*(kg|km|lb|lbs|%|points?|hrs?|hours?|mins?|minutes?|pages?|chapters?|books?|lessons?|sessions?|posts?|times?|reps?|steps?|people|clients?)/.test(lower)
 
   // One-time mission keywords (자격증, 시험, 승인, 여행, 시도 등)
   // Note: 여행/출장 are excluded if combined with periodic keywords (분기별, 매월, 매년 등)
-  const hasPeriodicKeyword = /분기|매월|월\s*\d+회|매년|연\s*\d+회|매주|주\s*\d+회/.test(lower)
-  const hasOnceKeyword = !hasPeriodicKeyword && /검진|승인|자격증|시험|급|여행|출장|모임.*시도|도전.*시도/.test(lower)
+  const hasPeriodicKeyword =
+    /분기|매월|월\s*\d+회|매년|연\s*\d+회|매주|주\s*\d+회/.test(lower) ||
+    /(quarterly|annually|yearly|monthly|weekly|daily|every\s+(day|week|month|year)|per\s+(day|week|month|year)|each\s+(day|week|month|year))/.test(lower)
+  const hasOnceKeyword =
+    !hasPeriodicKeyword &&
+    (/검진|승인|자격증|시험|급|여행|출장|모임.*시도|도전.*시도/.test(lower) ||
+      /(certification|certificate|exam|test|license|approval|trip|travel|visa|interview)/.test(lower))
 
   // Daily routine pattern: "1일 X" (e.g., "1일 1포스팅")
   const isDailyPattern = /1\s*일\s+\d*\s*[가-힣]+/.test(lower)
-  const hasReferenceKeyword = /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심|사고방식|관점|시각|인식|깨달음|교훈|지향|지혜|습관/.test(lower)
-  const isNegativeReference = /하지\s*않기|두려워하지|망설이지|포기하지|극복/.test(lower)
+  const hasReferenceKeyword =
+    /마음|태도|정신|자세|생각|마인드|가치|철학|원칙|명언|다짐|신념|기준|명심|사고방식|관점|시각|인식|깨달음|교훈|지향|지혜|습관/.test(lower) ||
+    /\b(mindset|attitude|discipline|consistency|values?|beliefs?|principles?|mentality|perspective|philosophy)\b/.test(lower)
+  const isNegativeReference =
+    /하지\s*않기|두려워하지|망설이지|포기하지|극복/.test(lower) ||
+    /\b(don't|do not|avoid|stop|quit)\b/.test(lower)
   const hasAbstractGoal = /유지|확보|갖기/.test(lower)
   const hasAbstractAdverb = /효율적으로|생산적으로|체계적으로|전략적으로/.test(lower)
   const hasAbstractTimeGoal = /시간.*확보|시간.*갖기|여유.*만들기/.test(lower)
-  const hasRoutineVerb = /읽기|독서|공부|운동|명상|기도|쓰기|보기|듣기|걷기|달리기|먹기|마시기|일어나기|자기|수면|정리|청소|체크|확인|검토|복습|예습|회고|미팅|정산|보고|점검|평가|결산|식사|챙기기|대화|문화생활|네트워킹|작성|오르기/.test(lower)
+  const hasRoutineVerbKo =
+    /읽기|독서|공부|운동|명상|기도|쓰기|보기|듣기|걷기|달리기|먹기|마시기|일어나기|자기|수면|정리|청소|체크|확인|검토|복습|예습|회고|미팅|정산|보고|점검|평가|결산|식사|챙기기|대화|문화생활|네트워킹|작성|오르기/.test(lower)
+  const hasRoutineVerbEn =
+    hasLatin &&
+    /\b(read|study|learn|exercise|work\s*out|workout|run|walk|sleep|meditate|journal|write|practice|check|track|log|post|plan|review|clean|stretch|yoga|drink|eat)\b/.test(lower)
+  const hasRoutineVerb = hasRoutineVerbKo || hasRoutineVerbEn
   const hasRoutineAdverb = /꾸준히|계속|지속적으로|항상|매번|규칙적으로|반복적으로|습관적으로/.test(lower)
 
   // Check if it's a time-based routine (e.g., "30분 운동", "1시간 공부", "7시간 수면")
-  const isTimePlusVerb = /\d+\s*(시간|분)\s*(운동|공부|읽기|쓰기|명상|걷기|달리기|대화|수면)/.test(lower)
+  const isTimePlusVerb =
+    /\d+\s*(시간|분)\s*(운동|공부|읽기|쓰기|명상|걷기|달리기|대화|수면)/.test(lower) ||
+    (hasLatin && /\d+\s*(hours?|hrs?|minutes?|mins?)\s*(exercise|work\s*out|workout|study|read|write|meditate|walk|run|sleep)/.test(lower))
 
   const hasDailyKeyword = /매일|하루|daily|날마다|일일/.test(lower)
   const hasWeeklyKeyword = /매주|주\s*\d+회|주간|weekly/.test(lower)
@@ -90,19 +134,22 @@ export function suggestActionType(title: string): AISuggestion {
   const hasYearlyKeyword = /매년|연간|년\s*\d+회|yearly/.test(lower)
 
   // Weekend/weekday patterns
-  const hasWeekendPattern = /주말마다|주말에|토요일|일요일|주말|토일/.test(lower)
-  const hasWeekdayPattern = /평일마다|평일에|평일|월화수목금/.test(lower)
+  const hasWeekendPattern = /주말마다|주말에|토요일|일요일|주말|토일/.test(lower) || /\b(weekend|weekends)\b/.test(lower)
+  const hasWeekdayPattern = /평일마다|평일에|평일|월화수목금/.test(lower) || /\b(weekday|weekdays)\b/.test(lower)
 
   // Specific weekday combination patterns (월수금, 화목 등)
   const weekdayCombinationMatch = lower.match(/^(월|화|수|목|금|토|일){2,}/)
   const hasSpecificWeekdayPattern = weekdayCombinationMatch !== null
+  const englishWeekdayTokens = hasLatin ? lower.match(/\b(mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)(day)?\b/g) : null
+  const hasEnglishSpecificWeekdays = Array.isArray(englishWeekdayTokens) && englishWeekdayTokens.length >= 2
 
   // Single weekday pattern (금요일 요가, 토요일 등산 등)
   const singleWeekdayMatch = lower.match(/(월|화|수|목|금|토|일)요일/)
   const hasSingleWeekdayPattern = singleWeekdayMatch !== null
+  const singleWeekdayEnMatch = hasLatin ? lower.match(/\b(mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)(day)?\b/) : null
 
   // "줄이기" pattern → reference (mindset/lifestyle goal, not checkable)
-  const hasReducePattern = /줄이기|줄이$/.test(lower)
+  const hasReducePattern = /줄이기|줄이$/.test(lower) || /\b(reduce|cut\s+down|quit|stop)\b/.test(lower)
 
   // Priority 1: Reference/mindset (highest specificity)
   if (hasReferenceKeyword || isNegativeReference) {
@@ -185,9 +232,8 @@ export function suggestActionType(title: string): AISuggestion {
 
   // Priority 2.5: Specific weekday patterns (월수금, 화목 등) → weekly routine with specific days
   if (hasSpecificWeekdayPattern && weekdayCombinationMatch) {
-    const dayMap: Record<string, number> = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 0 }
     const matchedDays = weekdayCombinationMatch[0]
-    const selectedWeekdays = [...matchedDays].map(d => dayMap[d]).filter(d => d !== undefined)
+    const selectedWeekdays = [...matchedDays].map(d => dayMapKo[d]).filter(d => d !== undefined)
     return {
       type: 'routine',
       confidence: 'high',
@@ -197,17 +243,51 @@ export function suggestActionType(title: string): AISuggestion {
     }
   }
 
+  // Priority 2.55: English weekday tokens (Mon Wed Fri, Mon/Wed/Fri) → weekly routine with specific days
+  if (hasEnglishSpecificWeekdays && englishWeekdayTokens) {
+    const normalized = englishWeekdayTokens
+      .map((t) => t.toLowerCase())
+      .map((t) => t.endsWith('day') ? t : t)
+    const uniqueDays = Array.from(new Set(normalized))
+      .map((token) => dayMapEn[token] ?? dayMapEn[`${token}day`])
+      .filter((v) => typeof v === 'number')
+
+    if (uniqueDays.length > 0) {
+      return {
+        type: 'routine',
+        confidence: 'high',
+        reason: 'actionType.selector.reasonRoutine',
+        routineFrequency: 'weekly',
+        routineWeekdays: uniqueDays,
+      }
+    }
+  }
+
   // Priority 2.6: Single weekday pattern (금요일 요가, 토요일 등산 등) → weekly routine with specific day
   if (hasSingleWeekdayPattern && singleWeekdayMatch) {
-    const dayMap: Record<string, number> = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 0 }
     const matchedDay = singleWeekdayMatch[1]
-    const selectedWeekday = dayMap[matchedDay]
+    const selectedWeekday = dayMapKo[matchedDay]
     return {
       type: 'routine',
       confidence: 'high',
       reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly',
       routineWeekdays: [selectedWeekday]
+    }
+  }
+
+  // Priority 2.65: English single weekday token → weekly routine with specific day
+  if (singleWeekdayEnMatch) {
+    const token = singleWeekdayEnMatch[1].toLowerCase()
+    const selectedWeekday = dayMapEn[token] ?? dayMapEn[`${token}day`]
+    if (typeof selectedWeekday === 'number') {
+      return {
+        type: 'routine',
+        confidence: 'high',
+        reason: 'actionType.selector.reasonRoutine',
+        routineFrequency: 'weekly',
+        routineWeekdays: [selectedWeekday],
+      }
     }
   }
 
@@ -221,7 +301,7 @@ export function suggestActionType(title: string): AISuggestion {
     }
   }
 
-  // "주 X회" pattern: distinguish between routine (habit) and mission (goal)
+  // "주 X회" / "x times per week" pattern: distinguish between routine (habit) and mission (goal)
   if (hasWeeklyKeyword && (hasCompletionKeyword || hasGoalKeyword)) {
     // "주 2회 달성", "주 3회 완료" → mission (goal-oriented)
     return {
@@ -230,6 +310,18 @@ export function suggestActionType(title: string): AISuggestion {
       reason: 'actionType.selector.reasonMission',
       missionCompletionType: 'periodic',
       missionPeriodCycle: 'weekly'
+    }
+  }
+
+  const timesPerWeekMatch =
+    hasLatin ? lower.match(/(\d+)\s*(x|times?)\s*(per|a)?\s*week/) || lower.match(/(\d+)\s*\/\s*week/) : null
+  if (timesPerWeekMatch && (hasCompletionKeyword || hasGoalKeyword)) {
+    return {
+      type: 'mission',
+      confidence: 'high',
+      reason: 'actionType.selector.reasonMission',
+      missionCompletionType: 'periodic',
+      missionPeriodCycle: 'weekly',
     }
   }
 
@@ -244,6 +336,17 @@ export function suggestActionType(title: string): AISuggestion {
       reason: 'actionType.selector.reasonRoutine',
       routineFrequency: 'weekly',
       routineCountPerPeriod: countPerPeriod
+    }
+  }
+
+  if (timesPerWeekMatch && hasNumberGoal) {
+    const countPerPeriod = parseInt(timesPerWeekMatch[1], 10)
+    return {
+      type: 'routine',
+      confidence: 'high',
+      reason: 'actionType.selector.reasonRoutine',
+      routineFrequency: 'weekly',
+      routineCountPerPeriod: Number.isFinite(countPerPeriod) ? countPerPeriod : 1,
     }
   }
 
@@ -371,11 +474,11 @@ export function suggestActionType(title: string): AISuggestion {
     let inferredFrequency: RoutineFrequency = 'daily'
 
     // Weekly activities (specific patterns take priority)
-    if (/회고|미팅|정산|보고|나들이/.test(lower)) {
+    if (/회고|미팅|정산|보고|나들이/.test(lower) || (hasLatin && /\b(review|meeting|report)\b/.test(lower))) {
       inferredFrequency = 'weekly'
     }
     // Monthly activities
-    else if (/재정|결산|평가|점검/.test(lower)) {
+    else if (/재정|결산|평가|점검/.test(lower) || (hasLatin && /\b(budget|finance|audit)\b/.test(lower))) {
       inferredFrequency = 'monthly'
     }
 
