@@ -9,11 +9,13 @@ import {
   parseRequestBody,
   corsHeaders,
 } from '../_shared/errorResponse.ts'
+import { sha256Hex, stableStringify, toDateKey } from '../_shared/reportCache.ts'
 
 interface ReportRequest {
   report_type: 'weekly' | 'monthly' | 'diagnosis' | 'insight' | 'prediction' | 'struggling'
   mandalart_id?: string
   language?: 'ko' | 'en' // Default: 'ko'
+  force_regenerate?: boolean
 }
 
 // Localization constants
@@ -56,11 +58,12 @@ type Language = 'ko' | 'en'
 
 // Supabase query builder types
 interface QueryBuilder {
-  select: (columns?: string) => QueryBuilder
+  select: (columns?: string, options?: unknown) => QueryBuilder
   eq: (column: string, value: unknown) => QueryBuilder
   neq: (column: string, value: unknown) => QueryBuilder
   gte: (column: string, value: unknown) => QueryBuilder
   lte: (column: string, value: unknown) => QueryBuilder
+  lt: (column: string, value: unknown) => QueryBuilder
   order: (column: string, options?: { ascending?: boolean }) => QueryBuilder
   limit: (count: number) => QueryBuilder
   single: () => Promise<{ data: unknown; error: Error | null }>
@@ -125,7 +128,8 @@ serve(withErrorHandler('generate-report', async (req) => {
     }
 
     // Parse and validate request body
-    const { report_type, mandalart_id, language = 'ko' } = await parseRequestBody<ReportRequest>(req)
+    const { report_type, mandalart_id, language = 'ko', force_regenerate = false } =
+      await parseRequestBody<ReportRequest>(req)
 
     if (!report_type) {
       return createErrorResponse(
@@ -139,12 +143,39 @@ serve(withErrorHandler('generate-report', async (req) => {
 
     console.log(`Generating ${report_type} report for user ${user.id} in ${lang}`)
 
-    // Collect user data for the report
+    const cacheEnabled = (Deno.env.get('AI_REPORT_CACHE_ENABLED') ?? 'true') !== 'false'
+
+    // Collect user data for the report (summary-first for cost control)
     const reportData = await collectReportData(supabaseClient, user.id, report_type, mandalart_id, lang)
 
+    const promptVersion = getPromptVersion(report_type)
+    const cacheKey = buildCacheKey(report_type, lang, reportData, mandalart_id)
+    const inputHash = await sha256Hex(stableStringify({ promptVersion, report_type, language: lang, data: reportData }))
+
+    if (cacheEnabled && !force_regenerate && cacheKey) {
+      const { data: cached, error: cacheError } = await supabaseClient
+        .from('ai_reports')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('report_type', report_type)
+        .eq('cache_key', cacheKey)
+        .eq('input_hash', inputHash)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (cacheError) {
+        console.warn('Cache lookup error (continuing without cache):', cacheError)
+      } else if (cached?.content && !String(cached.content).includes('"status": "pending"')) {
+        console.log(`Cache hit for ${report_type} user=${user.id} key=${cacheKey}`)
+        return createSuccessResponse({ report: cached, cached: true })
+      }
+    }
+
     // Generate report with Perplexity AI
-    console.log(`Generating ${report_type} report with data:`, JSON.stringify(reportData).substring(0, 300))
-    const reportContent = await generateAIReport(report_type, reportData, lang)
+    console.log(`Generating ${report_type} report with summary:`, JSON.stringify(reportData).substring(0, 300))
+    const modelConfig = getModelConfig(report_type)
+    const reportContent = await generateAIReport(report_type, reportData, lang, modelConfig)
     console.log(`Generated ${report_type} report content:`, reportContent?.substring(0, 200))
 
     // Save report to database
@@ -154,9 +185,15 @@ serve(withErrorHandler('generate-report', async (req) => {
         user_id: user.id,
         report_type,
         content: reportContent,
+        language: lang,
+        cache_key: cacheKey,
+        input_hash: inputHash,
+        prompt_version: promptVersion,
+        model: modelConfig.primary,
         metadata: {
           mandalart_id,
-          data_snapshot: reportData,
+          input_summary: reportData,
+          input_summary_version: promptVersion,
         },
       })
       .select()
@@ -190,6 +227,117 @@ serve(withErrorHandler('generate-report', async (req) => {
   }
 }))
 
+function getPromptVersion(reportType: string): string {
+  switch (reportType) {
+    case 'weekly':
+      return 'weekly_v3'
+    case 'diagnosis':
+      return 'diagnosis_v3'
+    default:
+      return 'default_v1'
+  }
+}
+
+function buildCacheKey(
+  reportType: string,
+  language: Language,
+  data: ReportData,
+  mandalartId?: string
+): string | null {
+  if (reportType === 'weekly') {
+    const periodStart = data.periodStart || null
+    const periodEnd = data.periodEnd || null
+    const userTimezone = data.userTimezone || null
+
+    if (!periodStart || !periodEnd || !userTimezone) return null
+    return `weekly:${language}:${userTimezone}:${periodStart}:${periodEnd}`
+  }
+
+  if (reportType === 'diagnosis') {
+    const mandalartHash = data.mandalartHash || (data as any).mandalart_hash || null
+    if (!mandalartId || !mandalartHash) return null
+    return `diagnosis:${language}:${mandalartId}:${mandalartHash}`
+  }
+
+  return null
+}
+
+async function computeMandalartTitleHash(
+  supabaseClient: SupabaseClient,
+  userId: string
+): Promise<string | null> {
+  const { data, error } = await supabaseClient
+    .from('mandalarts')
+    .select(`
+      id,
+      title,
+      center_goal,
+      sub_goals (
+        id,
+        title,
+        actions (
+          id,
+          title
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('is_active', true)
+
+  if (error) {
+    console.warn('Failed to compute mandalartTitleHash (continuing):', error)
+    return null
+  }
+
+  const mandalarts = Array.isArray(data) ? data : []
+  const normalized = mandalarts
+    .map((m: any) => ({
+      id: m.id ?? null,
+      title: m.title ?? '',
+      center_goal: m.center_goal ?? '',
+      sub_goals: (Array.isArray(m.sub_goals) ? m.sub_goals : [])
+        .map((sg: any) => ({
+          id: sg.id ?? null,
+          title: sg.title ?? '',
+          actions: (Array.isArray(sg.actions) ? sg.actions : []).map((a: any) => ({
+            id: a.id ?? null,
+            title: a.title ?? '',
+          })),
+        }))
+        .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
+    }))
+    .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)))
+
+  return sha256Hex(stableStringify(normalized))
+}
+
+function getModelConfig(reportType: string) {
+  const primary =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_MODEL_PRIMARY`) ??
+    Deno.env.get('AI_REPORT_MODEL_PRIMARY') ??
+    'sonar'
+
+  const fallback =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_MODEL_FALLBACK`) ??
+    Deno.env.get('AI_REPORT_MODEL_FALLBACK') ??
+    null
+
+  const maxTokensRaw =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_MAX_TOKENS`) ??
+    Deno.env.get('AI_REPORT_MAX_TOKENS') ??
+    '900'
+
+  const temperatureRaw =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_TEMPERATURE`) ??
+    Deno.env.get('AI_REPORT_TEMPERATURE') ??
+    '0.6'
+
+  const maxTokens = Math.max(200, Math.min(2000, Number(maxTokensRaw) || 900))
+  const temperature = Math.max(0, Math.min(1, Number(temperatureRaw) || 0.6))
+
+  return { primary, fallback, maxTokens, temperature }
+}
+
 async function collectReportData(
   supabaseClient: SupabaseClient,
   userId: string,
@@ -199,209 +347,274 @@ async function collectReportData(
 ): Promise<ReportData> {
   const locale = LOCALES[language]
 
-  // Determine date range based on report type
-  const now = new Date()
-  let startDate: Date
-  let periodLabel: string
-
-  switch (reportType) {
-    case 'weekly':
-      startDate = new Date(now)
-      startDate.setDate(now.getDate() - 7)
-      periodLabel = locale.periodLabels.weekly
-      break
-    case 'monthly':
-      startDate = new Date(now)
-      startDate.setMonth(now.getMonth() - 1)
-      periodLabel = locale.periodLabels.monthly
-      break
-    default:
-      startDate = new Date(now)
-      startDate.setDate(now.getDate() - 7)
-      periodLabel = locale.periodLabels.default
-  }
-
-  // Get mandalart info with full structure
-  let mandalartQuery = supabaseClient
-    .from('mandalarts')
-    .select(`
-      id,
-      title,
-      center_goal,
-      sub_goals (
-        id,
-        title,
-        position,
-        actions (
-          id,
-          title,
-          position,
-          type,
-          routine_frequency,
-          routine_weekdays,
-          routine_count_per_period,
-          mission_completion_type,
-          mission_status,
-          ai_suggestion
-        )
-      )
-    `)
-    .eq('user_id', userId)
-    .eq('is_active', true)
-
-  if (mandalartId) {
-    mandalartQuery = mandalartQuery.eq('id', mandalartId)
-  }
-
-  const { data: mandalarts } = await mandalartQuery
-
-  // Analyze Mandalart structure
-  const structureAnalysis = analyzeMandalartStructure(mandalarts || [])
-
-  // Get check history for the period
-  const { data: checks } = await supabaseClient
-    .from('check_history')
-    .select(`
-      *,
-      action:actions(
-        *,
-        sub_goal:sub_goals(
-          *,
-          mandalart:mandalarts(*)
-        )
-      )
-    `)
-    .eq('user_id', userId)
-    .gte('checked_at', startDate.toISOString())
-
-  // Get streak data
   const { data: streakData } = await supabaseClient
     .from('user_stats')
     .select('current_streak, longest_streak, last_check_date')
     .eq('user_id', userId)
     .single()
 
-  // Get badges earned in the period
-  const { data: recentBadges } = await supabaseClient
-    .from('user_achievements')
-    .select(`
-      *,
-      achievement:achievements(*)
-    `)
-    .eq('user_id', userId)
-    .gte('earned_at', startDate.toISOString())
-    .order('earned_at', { ascending: false })
+  // Weekly: rolling 7 days excluding today, timezone-aware
+  if (reportType === 'weekly') {
+    const mandalartTitleHash = await computeMandalartTitleHash(supabaseClient, userId)
+    const { data: bounds, error: boundsError } = await (supabaseClient as any)
+      .rpc('get_rolling_report_period_bounds', { p_user_id: userId, p_days: 7 })
+      .single()
 
-  // For diagnosis, we don't need check history (structure analysis is enough)
-  if (!checks || checks.length === 0) {
-    if (reportType === 'diagnosis') {
-      // Return structure data even without activity
+    if (boundsError || !bounds) {
+      throw new Error(`Failed to get weekly period bounds: ${boundsError?.message || 'unknown error'}`)
+    }
+
+    const userTimezone = String(bounds.user_timezone || 'Asia/Seoul')
+    const periodStart = String(bounds.period_start_date)
+    const periodEnd = String(bounds.period_end_date)
+    const startTs = String(bounds.period_start_ts)
+    const endTsExclusive = String(bounds.period_end_ts_exclusive)
+
+    const { data: recentBadges } = await supabaseClient
+      .from('user_achievements')
+      .select(`achievement:achievements(title)`)
+      .eq('user_id', userId)
+      .gte('earned_at', startTs)
+      .lt('earned_at', endTsExclusive)
+      .order('earned_at', { ascending: false })
+
+    const { data: checks } = await supabaseClient
+      .from('check_history')
+      .select(`
+        checked_at,
+        action:actions(
+          type,
+          sub_goal:sub_goals(
+            id,
+            title
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .gte('checked_at', startTs)
+      .lt('checked_at', endTsExclusive)
+
+    const periodLabel = locale.periodLabels.weekly
+
+    if (!checks || checks.length === 0) {
       return {
         period: periodLabel,
-        mandalarts: mandalarts || [],
-        structureAnalysis,
+        periodStart,
+        periodEnd,
+        userTimezone,
+        mandalartTitleHash,
+        mandalart_title_hash: mandalartTitleHash,
+        mandalarts: [],
+        structureAnalysis: analyzeMandalartStructure([]),
         totalChecks: 0,
+        uniqueDays: 0,
         currentStreak: streakData?.current_streak || 0,
         longestStreak: streakData?.longest_streak || 0,
         recentBadges: recentBadges || [],
+        message: locale.noActivity,
+      }
+    }
+
+    // Analyze patterns
+    const weekdayPattern: Record<number, number> = {}
+    const timePattern: Record<string, number> = { morning: 0, afternoon: 0, evening: 0, night: 0 }
+    const subGoalPattern: Record<string, { title: string; count: number }> = {}
+    const actionTypePattern: Record<string, number> = { routine: 0, mission: 0, reference: 0 }
+
+    checks.forEach((check: CheckRecord) => {
+      const date = new Date(check.checked_at)
+      const day = date.getDay()
+      const hour = date.getHours()
+
+      weekdayPattern[day] = (weekdayPattern[day] || 0) + 1
+
+      if (hour >= 5 && hour < 12) timePattern.morning++
+      else if (hour >= 12 && hour < 18) timePattern.afternoon++
+      else if (hour >= 18 && hour < 22) timePattern.evening++
+      else timePattern.night++
+
+      const subGoalId = check.action?.sub_goal?.id
+      const subGoalTitle = check.action?.sub_goal?.title
+      if (subGoalId && subGoalTitle) {
+        if (!subGoalPattern[subGoalId]) {
+          subGoalPattern[subGoalId] = { title: subGoalTitle, count: 0 }
+        }
+        subGoalPattern[subGoalId].count++
+      }
+
+      const actionType = check.action?.type || 'routine'
+      actionTypePattern[actionType] = (actionTypePattern[actionType] || 0) + 1
+    })
+
+    const dayNames = locale.dayNames
+    const bestDay = Object.entries(weekdayPattern).sort((a, b) => b[1] - a[1])[0]
+    const worstDay = Object.entries(weekdayPattern).sort((a, b) => a[1] - b[1])[0]
+
+    const bestTime = Object.entries(timePattern).sort((a, b) => b[1] - a[1])[0]
+    const timeNames = locale.timeNames
+    const bestSubGoal = Object.entries(subGoalPattern)
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => b.count - a.count)[0]
+    const worstSubGoal = Object.entries(subGoalPattern)
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => a.count - b.count)[0]
+
+    // Previous period: the 7 days immediately before current period
+    const previousStartTs = String(bounds.period_start_ts) // current start
+    const { data: prevBounds } = await (supabaseClient as any)
+      .rpc('get_rolling_report_period_bounds', { p_user_id: userId, p_days: 14 })
+      .single()
+
+    // For week-over-week, count checks in the 7 days before current period
+    // prevPeriod = [startTs - 7days, startTs)
+    const prevStartTs = prevBounds ? String(prevBounds.period_start_ts) : null
+    let weekOverWeekChange: number | null = null
+
+    if (prevStartTs) {
+      const { count: previousChecksCount } = await (supabaseClient as any)
+        .from('check_history')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('checked_at', prevStartTs)
+        .lt('checked_at', previousStartTs)
+
+      if (previousChecksCount && previousChecksCount > 0) {
+        weekOverWeekChange = Math.round(((checks.length - previousChecksCount) / previousChecksCount) * 100)
+      } else {
+        weekOverWeekChange = null
       }
     }
 
     return {
       period: periodLabel,
-      mandalarts: mandalarts || [],
-      structureAnalysis,
-      totalChecks: 0,
+      periodStart,
+      periodEnd,
+      userTimezone,
+      mandalartTitleHash,
+      mandalart_title_hash: mandalartTitleHash,
+      mandalarts: [],
+      structureAnalysis: analyzeMandalartStructure([]),
+      totalChecks: checks.length,
+      uniqueDays: new Set(checks.map((c: CheckRecord) => new Date(c.checked_at).toDateString())).size,
       currentStreak: streakData?.current_streak || 0,
       longestStreak: streakData?.longest_streak || 0,
+      weekOverWeekChange,
+      bestDay: bestDay ? { day: dayNames[parseInt(bestDay[0])], count: bestDay[1] } : null,
+      worstDay: worstDay ? { day: dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
+      bestTime: bestTime
+        ? {
+          period: timeNames[bestTime[0] as keyof typeof timeNames] || bestTime[0],
+          count: bestTime[1],
+        }
+        : null,
+      bestSubGoal,
+      worstSubGoal,
+      weekdayPattern,
+      timePattern,
+      actionTypePattern,
       recentBadges: recentBadges || [],
-      message: locale.noActivity,
     }
   }
 
-  // Analyze patterns
-  const weekdayPattern: Record<number, number> = {}
-  const timePattern: Record<string, number> = { morning: 0, afternoon: 0, evening: 0, night: 0 }
-  const subGoalPattern: Record<string, { title: string; count: number }> = {}
-  const actionTypePattern: Record<string, number> = { routine: 0, mission: 0, reference: 0 }
+  if (reportType === 'diagnosis') {
+    let mandalartQuery = supabaseClient
+      .from('mandalarts')
+      .select(`
+        id,
+        center_goal,
+        sub_goals (
+          id,
+          title,
+          position,
+          actions (
+            id,
+            title,
+            position,
+            type,
+            routine_frequency,
+            routine_weekdays,
+            routine_count_per_period,
+            mission_completion_type
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('is_active', true)
 
-  checks.forEach((check: CheckRecord) => {
-    const date = new Date(check.checked_at)
-    const day = date.getDay()
-    const hour = date.getHours()
-
-    weekdayPattern[day] = (weekdayPattern[day] || 0) + 1
-
-    if (hour >= 5 && hour < 12) timePattern.morning++
-    else if (hour >= 12 && hour < 18) timePattern.afternoon++
-    else if (hour >= 18 && hour < 22) timePattern.evening++
-    else timePattern.night++
-
-    const subGoalId = check.action?.sub_goal?.id
-    const subGoalTitle = check.action?.sub_goal?.title
-    if (subGoalId && subGoalTitle) {
-      if (!subGoalPattern[subGoalId]) {
-        subGoalPattern[subGoalId] = { title: subGoalTitle, count: 0 }
-      }
-      subGoalPattern[subGoalId].count++
+    if (mandalartId) {
+      mandalartQuery = mandalartQuery.eq('id', mandalartId)
     }
 
-    // Track action type patterns
-    const actionType = check.action?.type || 'routine'
-    actionTypePattern[actionType] = (actionTypePattern[actionType] || 0) + 1
-  })
+    const { data: mandalarts } = await mandalartQuery
+    const mandalart = (mandalarts as any[] | undefined)?.[0]
 
-  const dayNames = locale.dayNames
-  const bestDay = Object.entries(weekdayPattern).sort((a, b) => b[1] - a[1])[0]
-  const worstDay = Object.entries(weekdayPattern).sort((a, b) => a[1] - b[1])[0]
+    const normalized = normalizeMandalartForDiagnosisHash(mandalart)
+    const mandalartHash = await sha256Hex(stableStringify(normalized))
+    const structureAnalysis = analyzeMandalartStructure((mandalarts || []) as Mandalart[])
 
-  const bestTime = Object.entries(timePattern).sort((a, b) => b[1] - a[1])[0]
-  const timeNames = locale.timeNames
-  const bestSubGoal = Object.entries(subGoalPattern)
-    .map(([id, data]) => ({ id, ...data }))
-    .sort((a, b) => b.count - a.count)[0]
-  const worstSubGoal = Object.entries(subGoalPattern)
-    .map(([id, data]) => ({ id, ...data }))
-    .sort((a, b) => a.count - b.count)[0]
+    return {
+      period: locale.periodLabels.default,
+      mandalarts: [],
+      structureAnalysis,
+      totalChecks: 0,
+      centerGoal: mandalart?.center_goal || '',
+      mandalartHash,
+      // Aliases for easier SQL checks (snake_case)
+      mandalart_id: mandalart?.id || mandalartId || '',
+      mandalart_hash: mandalartHash,
+    }
+  }
 
-  // Calculate week-over-week change if possible
-  const previousStartDate = new Date(startDate)
-  previousStartDate.setDate(previousStartDate.getDate() - 7)
+  // Fallback: default behavior for other report types (keep existing semantics)
+  const now = new Date()
+  const startDate = new Date(now)
+  startDate.setDate(now.getDate() - 7)
+  const endDate = new Date(now)
 
-  const { data: previousChecks } = await supabaseClient
-    .from('check_history')
-    .select('id')
-    .eq('user_id', userId)
-    .gte('checked_at', previousStartDate.toISOString())
-    .lt('checked_at', startDate.toISOString())
-
-  const weekOverWeekChange = previousChecks && previousChecks.length > 0
-    ? Math.round(((checks.length - previousChecks.length) / previousChecks.length) * 100)
-    : null
+  const periodStart = toDateKey(startDate)
+  const periodEnd = toDateKey(endDate)
 
   return {
-    period: periodLabel,
-    mandalarts: mandalarts || [],
-    structureAnalysis,
-    totalChecks: checks.length,
-    uniqueDays: new Set(checks.map((c: CheckRecord) => new Date(c.checked_at).toDateString())).size,
+    period: locale.periodLabels.default,
+    periodStart,
+    periodEnd,
+    mandalarts: [],
+    structureAnalysis: analyzeMandalartStructure([]),
+    totalChecks: 0,
     currentStreak: streakData?.current_streak || 0,
     longestStreak: streakData?.longest_streak || 0,
-    weekOverWeekChange,
-    bestDay: bestDay ? { day: dayNames[parseInt(bestDay[0])], count: bestDay[1] } : null,
-    worstDay: worstDay ? { day: dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
-    bestTime: bestTime
-      ? {
-        period: timeNames[bestTime[0] as keyof typeof timeNames] || bestTime[0],
-        count: bestTime[1],
-      }
-      : null,
-    bestSubGoal,
-    worstSubGoal,
-    weekdayPattern,
-    timePattern,
-    actionTypePattern,
-    recentBadges: recentBadges || [],
+    message: locale.noActivity,
+  }
+}
+
+function normalizeMandalartForDiagnosisHash(mandalart: any): Record<string, unknown> {
+  if (!mandalart) return { mandalart: null }
+
+  const subGoals = Array.isArray(mandalart.sub_goals) ? mandalart.sub_goals : []
+
+  return {
+    id: mandalart.id ?? null,
+    center_goal: mandalart.center_goal ?? '',
+    sub_goals: subGoals
+      .map((sg: any) => {
+        const actions = Array.isArray(sg.actions) ? sg.actions : []
+        return {
+          id: sg.id ?? null,
+          title: sg.title ?? '',
+          position: sg.position ?? null,
+          actions: actions.map((a: any) => ({
+            id: a.id ?? null,
+            title: a.title ?? '',
+            position: a.position ?? null,
+            type: a.type ?? 'routine',
+            routine_frequency: a.routine_frequency ?? null,
+            routine_weekdays: a.routine_weekdays ?? null,
+            routine_count_per_period: a.routine_count_per_period ?? null,
+            mission_completion_type: a.mission_completion_type ?? null,
+          })),
+        }
+      })
+      .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
   }
 }
 
@@ -543,6 +756,11 @@ interface ReportData {
   period: string
   mandalarts: Mandalart[]
   structureAnalysis: ReturnType<typeof analyzeMandalartStructure>
+  periodStart?: string
+  periodEnd?: string
+  userTimezone?: string
+  mandalartTitleHash?: string | null
+  mandalart_title_hash?: string | null
   totalChecks: number
   uniqueDays?: number
   currentStreak?: number
@@ -558,6 +776,10 @@ interface ReportData {
   actionTypePattern?: Record<string, number>
   recentBadges?: Array<{ achievement?: { title?: string } }>
   message?: string
+  centerGoal?: string
+  mandalartHash?: string
+  mandalart_id?: string
+  mandalart_hash?: string
 }
 
 // Get localized prompts based on language
@@ -790,14 +1012,13 @@ Rules:
 
       userPromptTemplate: (data: ReportData) => {
         const structure = data.structureAnalysis || {}
-        const mandalart = data.mandalarts?.[0]
         const trackableCount = (structure.typeDistribution?.routine || 0) + (structure.typeDistribution?.mission || 0)
 
         return isEnglish
           ? `Analyze the Mandalart structure and suggest improvements:
 
 [Basic Info]
-- Core Goal: "${mandalart?.center_goal || 'Not set'}"
+- Core Goal: "${data.centerGoal || 'Not set'}"
 - Total Mandalarts: ${structure.totalMandalarts || 0}
 
 [Structure Analysis]
@@ -808,7 +1029,6 @@ Rules:
 
 [Practice Status]
 - Last Week Practice: ${data.totalChecks || 0} times
-- Current Streak: ${data.currentStreak || 0} days
 
 Analysis Perspectives:
 1. Completion rate (fill rate)
@@ -820,7 +1040,7 @@ IMPORTANT: Respond in JSON format with actual numbers in structure_metrics. Writ
           : `만다라트 구조를 분석하여 개선점을 제시하세요:
 
 [기본 정보]
-- 중심 목표: "${mandalart?.center_goal || '미설정'}"
+- 중심 목표: "${data.centerGoal || '미설정'}"
 - 전체 만다라트 수: ${structure.totalMandalarts || 0}개
 
 [구조 분석]
@@ -830,9 +1050,6 @@ IMPORTANT: Respond in JSON format with actual numbers in structure_metrics. Writ
 - 타입 분포: 루틴 ${structure.typeDistribution?.routine || 0}개, 미션 ${structure.typeDistribution?.mission || 0}개, 참고 ${structure.typeDistribution?.reference || 0}개
 
 [실천 현황]
-- 지난 주 실천: ${data.totalChecks || 0}회
-- 현재 스트릭: ${data.currentStreak || 0}일
-
 분석 관점:
 1. 완성도 평가 (항목 채움률)
 2. 표현 명확도 평가 (구체적 표현 또는 반복주기 설정 여부)
@@ -856,7 +1073,12 @@ IMPORTANT: You MUST respond in English only, regardless of input data language.`
   }
 }
 
-async function generateAIReport(reportType: string, data: ReportData, language: Language = 'ko'): Promise<string> {
+async function generateAIReport(
+  reportType: string,
+  data: ReportData,
+  language: Language = 'ko',
+  modelConfig: { primary: string; fallback: string | null; maxTokens: number; temperature: number }
+): Promise<string> {
   const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
   if (!perplexityApiKey) {
     throw new Error('PERPLEXITY_API_KEY not configured')
@@ -908,59 +1130,117 @@ async function generateAIReport(reportType: string, data: ReportData, language: 
         : `사용자의 활동 데이터를 바탕으로 인사이트를 제공해주세요:\n${JSON.stringify(data, null, 2)}`
   }
 
-  // Call Perplexity API
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${perplexityApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'sonar',
-      messages: [
-        {
-          role: 'user',
-          content: `${systemPrompt}\n\n${userPrompt}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000, // Increased from 1000 to prevent JSON truncation
-    }),
-  })
+  const tryGenerateOnce = async (model: string): Promise<{ content: string; isValidJson: boolean }> => {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${perplexityApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: `${systemPrompt}\n\n${userPrompt}`,
+          },
+        ],
+        temperature: modelConfig.temperature,
+        max_tokens: modelConfig.maxTokens,
+      }),
+    })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error('Perplexity API error:', response.status, errorText)
-    throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
-  }
-
-  const result = await response.json()
-  let aiResponse = result.choices[0].message.content
-
-  // Clean up response if it's wrapped in code blocks
-  aiResponse = aiResponse.trim()
-  if (aiResponse.startsWith('```json')) {
-    aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-  } else if (aiResponse.startsWith('```')) {
-    aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
-  }
-
-  // Store JSON directly for better data integrity and smaller storage size
-  try {
-    const jsonResponse = JSON.parse(aiResponse)
-
-    // Validate response structure based on report type
-    if (!validateAIResponse(jsonResponse, reportType)) {
-      console.warn('AI response validation failed, using raw response')
-      return aiResponse
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Perplexity API error:', response.status, errorText)
+      throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
     }
 
-    // Return JSON string directly (no markdown conversion)
-    return JSON.stringify(jsonResponse)
-  } catch (e) {
-    console.warn('Response is not valid JSON, returning as-is')
-    return aiResponse
+    const result = await response.json()
+    let aiResponse = result.choices[0].message.content
+
+    aiResponse = aiResponse.trim()
+    if (aiResponse.startsWith('```json')) {
+      aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (aiResponse.startsWith('```')) {
+      aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+
+    try {
+      const jsonResponse = JSON.parse(aiResponse) as Record<string, unknown>
+      const normalized = normalizeAIResponse(jsonResponse, reportType)
+      if (!validateAIResponse(normalized, reportType)) {
+        return { content: aiResponse, isValidJson: false }
+      }
+      return { content: JSON.stringify(normalized), isValidJson: true }
+    } catch {
+      return { content: aiResponse, isValidJson: false }
+    }
   }
+
+  const primaryResult = await tryGenerateOnce(modelConfig.primary)
+  if (primaryResult.isValidJson) return primaryResult.content
+  if (!modelConfig.fallback || modelConfig.fallback === modelConfig.primary) {
+    return JSON.stringify(buildInvalidAIResponseFallback(reportType, language))
+  }
+
+  console.warn(`Invalid AI JSON for ${reportType} (primary=${modelConfig.primary}), retrying fallback=${modelConfig.fallback}`)
+  const fallbackResult = await tryGenerateOnce(modelConfig.fallback)
+  if (fallbackResult.isValidJson) return fallbackResult.content
+  return JSON.stringify(buildInvalidAIResponseFallback(reportType, language))
+}
+
+function normalizeAIResponse(response: Record<string, unknown>, reportType: string): Record<string, unknown> {
+  const normalized: Record<string, unknown> = { ...response }
+
+  if (reportType === 'weekly') {
+    if (!normalized.key_metrics && (normalized as any).keyMetrics) normalized.key_metrics = (normalized as any).keyMetrics
+    if (!normalized.action_plan && (normalized as any).actionPlan) normalized.action_plan = (normalized as any).actionPlan
+  }
+
+  if (reportType === 'diagnosis') {
+    if (!normalized.structure_metrics && (normalized as any).structureMetrics) normalized.structure_metrics = (normalized as any).structureMetrics
+    if (!normalized.priority_tasks && (normalized as any).priorityTasks) normalized.priority_tasks = (normalized as any).priorityTasks
+  }
+
+  return normalized
+}
+
+function buildInvalidAIResponseFallback(reportType: string, language: Language): Record<string, unknown> {
+  const isEnglish = language === 'en'
+
+  if (reportType === 'diagnosis') {
+    return {
+      headline: isEnglish ? 'Goal diagnosis is temporarily unavailable.' : '목표 진단을 불러오지 못했습니다.',
+      structure_metrics: [
+        { label: isEnglish ? 'Completion' : '완성도', value: '-' },
+        { label: isEnglish ? 'Clarity' : '표현 명확도', value: '-' },
+        { label: isEnglish ? 'Measurability' : '측정 가능성', value: '-' },
+      ],
+      strengths: [],
+      improvements: [],
+      priority_tasks: [isEnglish ? 'Please try again in a moment.' : '잠시 후 다시 시도해주세요.'],
+    }
+  }
+
+  if (reportType === 'weekly') {
+    return {
+      headline: isEnglish ? 'Weekly report is temporarily unavailable.' : '주간 리포트를 불러오지 못했습니다.',
+      key_metrics: [
+        { label: isEnglish ? 'Practice Days' : '실천일수', value: '-' },
+        { label: isEnglish ? 'Total Practices' : '총 실천횟수', value: '-' },
+        { label: isEnglish ? 'Week-over-Week Change' : '전주대비 실천횟수', value: '-' },
+      ],
+      strengths: [],
+      improvements: { problem: '', insight: '' },
+      action_plan: {
+        goal: '',
+        steps: [isEnglish ? 'Please try again in a moment.' : '잠시 후 다시 시도해주세요.'],
+      },
+    }
+  }
+
+  return { headline: isEnglish ? 'Report is temporarily unavailable.' : '리포트를 불러오지 못했습니다.' }
 }
 
 // Validate AI response structure

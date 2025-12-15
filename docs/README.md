@@ -38,6 +38,7 @@
 추천 진입점:
 - `docs/features/PUSH_NOTIFICATION_POLICY.md`
 - `docs/features/REPORT_GENERATION_POLICY.md`
+- `docs/features/REPORT_COST_OPTIMIZATION.md`
 - `docs/features/ADMOB_INTEGRATION.md`
 - `docs/features/MONETIZATION_ANALYTICS_TAXONOMY.md`
 - `docs/features/BADGE_SYSTEM_V5_RENEWAL.md`

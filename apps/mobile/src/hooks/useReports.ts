@@ -2,14 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Constants from 'expo-constants'
 import { getCurrentLanguage } from '../i18n'
+import { useAuthStore } from '../store/authStore'
 
 // Query keys
 export const reportKeys = {
   all: ['reports'] as const,
-  weekly: (userId: string | undefined) =>
-    [...reportKeys.all, 'weekly', userId] as const,
-  diagnosis: (userId: string | undefined) =>
-    [...reportKeys.all, 'diagnosis', userId] as const,
+  weekly: (userId: string | undefined, language: string | undefined) =>
+    [...reportKeys.all, 'weekly', userId, language] as const,
+  diagnosis: (
+    userId: string | undefined,
+    mandalartId: string | undefined,
+    language: string | undefined
+  ) => [...reportKeys.all, 'diagnosis', userId, mandalartId, language] as const,
   history: (userId: string | undefined) =>
     [...reportKeys.all, 'history', userId] as const,
 }
@@ -57,21 +61,26 @@ function getSupabaseUrl(): string {
 
 // Transform AIReport to WeeklyReport for backwards compatibility
 function transformToWeeklyReport(report: AIReport): WeeklyReport {
-  // Extract week dates: last 7 days from generated_at (including generated date)
+  const metadata = report.metadata || {}
+  const inputSummary = (metadata.input_summary as Record<string, unknown>) || null
+  const periodStart = typeof inputSummary?.periodStart === 'string' ? inputSummary.periodStart : null
+  const periodEnd = typeof inputSummary?.periodEnd === 'string' ? inputSummary.periodEnd : null
+
+  // Fallback (legacy): last 7 days including generated date (UTC-based)
   const generatedDate = new Date(report.generated_at)
-  const weekEnd = new Date(generatedDate) // End date is the generated date
-  const weekStart = new Date(generatedDate)
-  weekStart.setDate(weekStart.getDate() - 6) // 7 days including end date
+  const fallbackWeekEnd = new Date(generatedDate)
+  const fallbackWeekStart = new Date(generatedDate)
+  fallbackWeekStart.setDate(fallbackWeekStart.getDate() - 6)
 
   // Extract summary from content (first line or first paragraph)
-  const lines = report.content.split('\n').filter(l => l.trim())
-  const summary = lines[0]?.replace(/^#+\s*/, '') || '주간 실천 리포트'
+  const isJsonLike = report.content.trim().startsWith('{')
+  const summary = isJsonLike ? '주간 실천 리포트' : (report.content.split('\n').find(l => l.trim())?.replace(/^#+\s*/, '') || '주간 실천 리포트')
 
   return {
     id: report.id,
     user_id: report.user_id,
-    week_start: weekStart.toISOString().split('T')[0],
-    week_end: weekEnd.toISOString().split('T')[0],
+    week_start: periodStart || fallbackWeekStart.toISOString().split('T')[0],
+    week_end: periodEnd || fallbackWeekEnd.toISOString().split('T')[0],
     report_content: report.content,
     summary,
     created_at: report.generated_at,
@@ -92,7 +101,9 @@ function transformToGoalDiagnosis(report: AIReport): GoalDiagnosis {
 
   return {
     id: report.id,
-    mandalart_id: metadata.mandalart_id as string | undefined,
+    mandalart_id:
+      (metadata.mandalart_id as string | undefined) ||
+      ((metadata.input_summary as any)?.mandalart_id as string | undefined),
     diagnosis_content: report.content,
     smart_scores: smartScores,
     created_at: report.generated_at,
@@ -101,14 +112,16 @@ function transformToGoalDiagnosis(report: AIReport): GoalDiagnosis {
 
 // Fetch weekly report (latest)
 export function useWeeklyReport(userId: string | undefined) {
+  const language = getCurrentLanguage()
   return useQuery({
-    queryKey: reportKeys.weekly(userId),
+    queryKey: reportKeys.weekly(userId, language),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ai_reports')
         .select('*')
         .eq('user_id', userId!)
         .eq('report_type', 'weekly')
+        .eq('language', language)
         .order('generated_at', { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -170,8 +183,9 @@ export function useGenerateWeeklyReport() {
       return transformToWeeklyReport(report as AIReport)
     },
     onSuccess: (_data, variables) => {
+      const language = getCurrentLanguage()
       queryClient.invalidateQueries({
-        queryKey: reportKeys.weekly(variables.userId),
+        queryKey: reportKeys.weekly(variables.userId, language),
       })
       queryClient.invalidateQueries({
         queryKey: reportKeys.history(variables.userId),
@@ -182,28 +196,58 @@ export function useGenerateWeeklyReport() {
 
 // Fetch goal diagnosis (latest)
 export function useGoalDiagnosis(mandalartId: string | undefined) {
+  const language = getCurrentLanguage()
+  const userId = useAuthStore((s) => s.user?.id)
   return useQuery({
-    queryKey: reportKeys.diagnosis(mandalartId),
+    queryKey: reportKeys.diagnosis(userId, mandalartId, language),
     queryFn: async () => {
-      // Get user ID first
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No user')
+      if (!userId) throw new Error('No user')
 
-      const { data, error } = await supabase
+      // 1) Strict: match mandalart_id + language (new standard)
+      const strict = await supabase
         .from('ai_reports')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
+        .eq('report_type', 'diagnosis')
+        .eq('language', language)
+        .eq('metadata->>mandalart_id', mandalartId!)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (strict.error) throw strict.error
+      if (strict.data) return transformToGoalDiagnosis(strict.data as AIReport)
+
+      // 2) Fallback: match language only (covers legacy reports where metadata.mandalart_id was missing)
+      const languageOnly = await supabase
+        .from('ai_reports')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('report_type', 'diagnosis')
+        .eq('language', language)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (languageOnly.error) throw languageOnly.error
+      if (languageOnly.data) return transformToGoalDiagnosis(languageOnly.data as AIReport)
+
+      // 3) Final fallback: ignore language (very old rows may have language null)
+      const legacy = await supabase
+        .from('ai_reports')
+        .select('*')
+        .eq('user_id', userId)
         .eq('report_type', 'diagnosis')
         .order('generated_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
-      if (error) throw error
-      if (!data) return null
+      if (legacy.error) throw legacy.error
+      if (!legacy.data) return null
 
-      return transformToGoalDiagnosis(data as AIReport)
+      return transformToGoalDiagnosis(legacy.data as AIReport)
     },
-    enabled: !!mandalartId,
+    enabled: !!userId && !!mandalartId,
     staleTime: 1000 * 60 * 60, // 1 hour
   })
 }
@@ -230,6 +274,7 @@ export function useGenerateGoalDiagnosis() {
           },
           body: JSON.stringify({
             report_type: 'diagnosis',
+            mandalart_id: _mandalartId,
             language: getCurrentLanguage(),
           }),
         }
@@ -246,10 +291,8 @@ export function useGenerateGoalDiagnosis() {
       const report = result.data?.report || result.report
       return transformToGoalDiagnosis(report as AIReport)
     },
-    onSuccess: (_data, mandalartId) => {
-      queryClient.invalidateQueries({
-        queryKey: reportKeys.diagnosis(mandalartId),
-      })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...reportKeys.all, 'diagnosis'] })
     },
   })
 }

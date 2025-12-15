@@ -6,6 +6,7 @@ import {
   ErrorCodes,
   corsHeaders,
 } from '../_shared/errorResponse.ts'
+import { sha256Hex, stableStringify } from '../_shared/reportCache.ts'
 
 /**
  * Scheduled Report Generator (v3 - Weekly + Diagnosis Support)
@@ -98,6 +99,136 @@ const LOCALES = {
   },
 }
 
+function getPromptVersion(reportType: ReportType): string {
+  switch (reportType) {
+    case 'weekly':
+      return 'weekly_v3'
+    case 'diagnosis':
+      return 'diagnosis_v3'
+  }
+}
+
+function getModelConfig(reportType: ReportType) {
+  const primary =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_MODEL_PRIMARY`) ??
+    Deno.env.get('AI_REPORT_MODEL_PRIMARY') ??
+    'sonar'
+
+  const fallback =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_MODEL_FALLBACK`) ??
+    Deno.env.get('AI_REPORT_MODEL_FALLBACK') ??
+    null
+
+  const maxTokensRaw =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_MAX_TOKENS`) ??
+    Deno.env.get('AI_REPORT_MAX_TOKENS') ??
+    '900'
+
+  const temperatureRaw =
+    Deno.env.get(`AI_REPORT_${reportType.toUpperCase()}_TEMPERATURE`) ??
+    Deno.env.get('AI_REPORT_TEMPERATURE') ??
+    '0.6'
+
+  const maxTokens = Math.max(200, Math.min(2000, Number(maxTokensRaw) || 900))
+  const temperature = Math.max(0, Math.min(1, Number(temperatureRaw) || 0.6))
+
+  return { primary, fallback, maxTokens, temperature }
+}
+
+function buildCacheKey(
+  reportType: ReportType,
+  language: Language,
+  params: {
+    userTimezone?: string
+    periodStart?: string
+    periodEnd?: string
+    mandalartId?: string
+    mandalartHash?: string
+  }
+): string {
+  if (reportType === 'weekly') {
+    return `weekly:${language}:${params.userTimezone}:${params.periodStart}:${params.periodEnd}`
+  }
+
+  return `diagnosis:${language}:${params.mandalartId}:${params.mandalartHash}`
+}
+
+async function computeMandalartTitleHash(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string
+): Promise<string | null> {
+  const { data, error } = await supabaseAdmin
+    .from('mandalarts')
+    .select(`
+      id,
+      title,
+      center_goal,
+      sub_goals (
+        id,
+        title,
+        actions (
+          id,
+          title
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('is_active', true)
+
+  if (error) {
+    console.warn('Failed to compute mandalartTitleHash (continuing):', error)
+    return null
+  }
+
+  const mandalarts = Array.isArray(data) ? data : []
+  const normalized = mandalarts
+    .map((m: any) => ({
+      id: m.id ?? null,
+      title: m.title ?? '',
+      center_goal: m.center_goal ?? '',
+      sub_goals: (Array.isArray(m.sub_goals) ? m.sub_goals : [])
+        .map((sg: any) => ({
+          id: sg.id ?? null,
+          title: sg.title ?? '',
+          actions: (Array.isArray(sg.actions) ? sg.actions : []).map((a: any) => ({
+            id: a.id ?? null,
+            title: a.title ?? '',
+          })),
+        }))
+        .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
+    }))
+    .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)))
+
+  return sha256Hex(stableStringify(normalized))
+}
+
+async function getRollingWeeklyBounds(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string
+): Promise<{
+  userTimezone: string
+  periodStart: string
+  periodEnd: string
+  startTs: string
+  endTsExclusive: string
+}> {
+  const { data, error } = await (supabaseAdmin as any)
+    .rpc('get_rolling_report_period_bounds', { p_user_id: userId, p_days: 7 })
+    .single()
+
+  if (error || !data) {
+    throw new Error(`Failed to get rolling period bounds: ${error?.message || 'unknown error'}`)
+  }
+
+  return {
+    userTimezone: String(data.user_timezone || 'Asia/Seoul'),
+    periodStart: String(data.period_start_date),
+    periodEnd: String(data.period_end_date),
+    startTs: String(data.period_start_ts),
+    endTsExclusive: String(data.period_end_ts_exclusive),
+  }
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -171,42 +302,140 @@ serve(async (req: Request) => {
         console.log(`Processing ${report.report_type} report: ${report.report_id} for user: ${report.user_id}`)
 
         const language: Language = report.user_language === 'en' ? 'en' : 'ko'
-        let reportContent: string
+        const cacheEnabled = (Deno.env.get('AI_REPORT_CACHE_ENABLED') ?? 'true') !== 'false'
+        const promptVersion = getPromptVersion(report.report_type)
+        const modelConfig = getModelConfig(report.report_type)
 
-        if (report.report_type === 'weekly') {
-          // Collect user data for weekly report
-          const reportData = await collectUserReportData(
-            supabaseAdmin,
-            report.user_id,
-            report.user_timezone,
-            language
-          )
-          reportContent = await generateWeeklyReport(reportData, language)
-          weeklyReportsGenerated++
+    let reportContent: string
+    let usedModel = modelConfig.primary
+    let cachedFrom: string | null = null
+    let inputSummary: unknown
+    let inputHash: string
+    let cacheKey: string | null = null
+
+    if (report.report_type === 'weekly') {
+      const bounds = await getRollingWeeklyBounds(supabaseAdmin, report.user_id)
+      cacheKey = buildCacheKey('weekly', language, {
+        userTimezone: bounds.userTimezone,
+        periodStart: bounds.periodStart,
+        periodEnd: bounds.periodEnd,
+      })
+
+      const reportData = await collectUserReportData(
+        supabaseAdmin,
+        report.user_id,
+        bounds.userTimezone,
+        language,
+        new Date(bounds.startTs),
+        new Date(bounds.endTsExclusive),
+        bounds.periodStart,
+        bounds.periodEnd
+      )
+      inputSummary = reportData
+
+      inputHash = await sha256Hex(stableStringify({ promptVersion, report_type: 'weekly', language, data: reportData }))
+      if (cacheEnabled) {
+        const { data: cached } = await supabaseAdmin
+          .from('ai_reports')
+          .select('id, content, model')
+          .eq('user_id', report.user_id)
+          .eq('report_type', 'weekly')
+          .eq('cache_key', cacheKey)
+          .eq('input_hash', inputHash)
+          .neq('id', report.report_id)
+          .order('generated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+            if (cached?.content && !String(cached.content).includes('"status": "pending"')) {
+              reportContent = String(cached.content)
+              usedModel = String(cached.model || usedModel)
+              cachedFrom = String(cached.id)
+            } else {
+              const generated = await generateWeeklyReport(reportData, language, modelConfig)
+              reportContent = generated.content
+              usedModel = generated.usedModel
+              weeklyReportsGenerated++
+            }
+          } else {
+            const generated = await generateWeeklyReport(reportData, language, modelConfig)
+            reportContent = generated.content
+            usedModel = generated.usedModel
+            weeklyReportsGenerated++
+          }
         } else if (report.report_type === 'diagnosis') {
-          // Collect data for diagnosis report
-          const diagnosisData = await collectDiagnosisData(
-            supabaseAdmin,
-            report.user_id,
-            report.metadata.mandalart_id,
-            language
-          )
-          reportContent = await generateDiagnosisReport(diagnosisData, language)
-          diagnosisReportsGenerated++
+      // Diagnosis is structure-only; do not include practice/streak in input
+      const diagnosisData = await collectDiagnosisData(
+        supabaseAdmin,
+        report.user_id,
+        report.metadata.mandalart_id,
+        language
+      )
+      inputSummary = diagnosisData
+
+      inputHash = await sha256Hex(stableStringify({ promptVersion, report_type: 'diagnosis', language, data: diagnosisData }))
+      cacheKey = buildCacheKey('diagnosis', language, {
+        mandalartId: diagnosisData.mandalart_id || undefined,
+        mandalartHash: diagnosisData.mandalart_hash,
+      })
+      if (cacheEnabled) {
+        const { data: cached } = await supabaseAdmin
+          .from('ai_reports')
+          .select('id, content, model')
+              .eq('user_id', report.user_id)
+              .eq('report_type', 'diagnosis')
+              .eq('cache_key', cacheKey)
+              .eq('input_hash', inputHash)
+              .neq('id', report.report_id)
+              .order('generated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (cached?.content && !String(cached.content).includes('"status": "pending"')) {
+              reportContent = String(cached.content)
+              usedModel = String(cached.model || usedModel)
+              cachedFrom = String(cached.id)
+            } else {
+              const generated = await generateDiagnosisReport(diagnosisData, language, modelConfig)
+              reportContent = generated.content
+              usedModel = generated.usedModel
+              diagnosisReportsGenerated++
+            }
+          } else {
+            const generated = await generateDiagnosisReport(diagnosisData, language, modelConfig)
+            reportContent = generated.content
+            usedModel = generated.usedModel
+            diagnosisReportsGenerated++
+          }
         } else {
           console.warn(`Unknown report type: ${report.report_type}`)
           continue
         }
 
-        // Update the report with generated content (not insert new)
-        const { error: updateError } = await supabaseAdmin
-          .from('ai_reports')
-          .update({
-            content: reportContent,
-            metadata: {
-              ...report.metadata,
+    // Update the report with generated content (not insert new)
+    if (!inputHash) {
+      throw new Error('Missing input_hash for scheduled report')
+    }
+    if (!cacheKey) {
+      throw new Error('Missing cache_key for scheduled report')
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from('ai_reports')
+      .update({
+        content: reportContent,
+        language,
+        cache_key: cacheKey,
+        input_hash: inputHash,
+        prompt_version: promptVersion,
+        model: usedModel,
+        metadata: {
+          ...report.metadata,
               generated_at: new Date().toISOString(),
-              language: language,
+              language,
+              input_summary: inputSummary,
+              input_summary_version: promptVersion,
+              cached_from: cachedFrom,
             },
           })
           .eq('id', report.report_id)
@@ -277,70 +506,46 @@ async function collectUserReportData(
   supabaseAdmin: ReturnType<typeof createClient>,
   userId: string,
   userTimezone: string,
-  language: Language
+  language: Language,
+  startDate: Date,
+  endDateExclusive: Date,
+  periodStart: string,
+  periodEnd: string
 ) {
   const locale = LOCALES[language]
-
-  // Calculate date range in user's timezone (last 7 days)
-  // Note: Server-side calculation, so we use the timezone offset
-  const now = new Date()
-  const startDate = new Date(now)
-  startDate.setDate(now.getDate() - 7)
-
-  // Get mandalart info
-  const { data: mandalarts } = await supabaseAdmin
-    .from('mandalarts')
-    .select(`
-      id,
-      title,
-      center_goal,
-      sub_goals (
-        id,
-        title,
-        position,
-        actions (
-          id,
-          title,
-          position,
-          type
-        )
-      )
-    `)
-    .eq('user_id', userId)
-    .eq('is_active', true)
+  const mandalartTitleHash = await computeMandalartTitleHash(supabaseAdmin, userId)
 
   // Get check history for the period
   const { data: checks } = await supabaseAdmin
     .from('check_history')
     .select(`
-      *,
+      checked_at,
       action:actions(
-        *,
+        type,
         sub_goal:sub_goals(
-          *,
-          mandalart:mandalarts(*)
+          id,
+          title
         )
       )
     `)
     .eq('user_id', userId)
     .gte('checked_at', startDate.toISOString())
+    .lt('checked_at', endDateExclusive.toISOString())
 
   // Get streak data
   const { data: streakData } = await supabaseAdmin
-    .from('user_levels')
-    .select('current_streak')
+    .from('user_stats')
+    .select('current_streak, longest_streak')
     .eq('user_id', userId)
     .single()
 
   // Get badges earned in the period
   const { data: recentBadges } = await supabaseAdmin
     .from('user_achievements')
-    .select(`
-      *,
-      achievement:achievements(*)
-    `)
+    .select(`achievement:achievements(title)`)
     .eq('user_id', userId)
     .gte('earned_at', startDate.toISOString())
+    .lt('earned_at', endDateExclusive.toISOString())
 
   // Analyze patterns
   const weekdayPattern: Record<number, number> = {}
@@ -387,11 +592,15 @@ async function collectUserReportData(
 
   return {
     period: locale.periodLabel,
-    mandalarts: mandalarts || [],
+    periodStart,
+    periodEnd,
+    mandalartTitleHash,
+    mandalart_title_hash: mandalartTitleHash,
+    mandalarts: [],
     totalChecks: checks?.length || 0,
     uniqueDays: checks ? new Set(checks.map((c: CheckRecord) => new Date(c.checked_at).toDateString())).size : 0,
     currentStreak: streakData?.current_streak || 0,
-    longestStreak: 0, // Not available in user_levels
+    longestStreak: streakData?.longest_streak || 0,
     bestDay: bestDay ? { day: locale.dayNames[parseInt(bestDay[0])], count: bestDay[1] } : null,
     worstDay: worstDay ? { day: locale.dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
     bestTime: bestTime
@@ -412,6 +621,10 @@ async function collectUserReportData(
 
 interface ReportData {
   period: string
+  periodStart: string
+  periodEnd: string
+  mandalartTitleHash?: string | null
+  mandalart_title_hash?: string | null
   mandalarts: unknown[]
   totalChecks: number
   uniqueDays: number
@@ -578,7 +791,11 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 /**
  * Generate weekly report using Perplexity AI with i18n support
  */
-async function generateWeeklyReport(data: ReportData, language: Language): Promise<string> {
+async function generateWeeklyReport(
+  data: ReportData,
+  language: Language,
+  modelConfig: { primary: string; fallback: string | null; maxTokens: number; temperature: number }
+): Promise<{ content: string; usedModel: string }> {
   const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
   if (!perplexityApiKey) {
     throw new Error('PERPLEXITY_API_KEY not configured')
@@ -588,50 +805,59 @@ async function generateWeeklyReport(data: ReportData, language: Language): Promi
   const prompts = getLocalizedPrompts(language)
   const badges = data.recentBadges?.map((b) => b.achievement?.title).join(', ') || locale.noBadges
 
-  // Call Perplexity API
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${perplexityApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'sonar',
-      messages: [
-        {
-          role: 'user',
-          content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data, badges)}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    }),
-  })
+  const tryGenerateOnce = async (model: string): Promise<{ content: string; isValidJson: boolean; usedModel: string }> => {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${perplexityApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data, badges)}`,
+          },
+        ],
+        temperature: modelConfig.temperature,
+        max_tokens: modelConfig.maxTokens,
+      }),
+    })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
+    }
+
+    const result = await response.json()
+    let aiResponse = result.choices[0].message.content
+
+    aiResponse = aiResponse.trim()
+    if (aiResponse.startsWith('```json')) {
+      aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (aiResponse.startsWith('```')) {
+      aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+
+    try {
+      JSON.parse(aiResponse)
+      return { content: aiResponse, isValidJson: true, usedModel: model }
+    } catch {
+      return { content: aiResponse, isValidJson: false, usedModel: model }
+    }
   }
 
-  const result = await response.json()
-  let aiResponse = result.choices[0].message.content
-
-  // Clean up response if it's wrapped in code blocks
-  aiResponse = aiResponse.trim()
-  if (aiResponse.startsWith('```json')) {
-    aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-  } else if (aiResponse.startsWith('```')) {
-    aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+  const primary = await tryGenerateOnce(modelConfig.primary)
+  if (primary.isValidJson || !modelConfig.fallback || modelConfig.fallback === modelConfig.primary) {
+    if (!primary.isValidJson) console.warn('Weekly AI response is not valid JSON, returning as-is')
+    return { content: primary.content, usedModel: primary.usedModel }
   }
 
-  // Validate JSON
-  try {
-    JSON.parse(aiResponse)
-    return aiResponse
-  } catch {
-    console.warn('AI response is not valid JSON, returning as-is')
-    return aiResponse
-  }
+  console.warn(`Weekly report invalid JSON (primary=${modelConfig.primary}), retrying fallback=${modelConfig.fallback}`)
+  const fallback = await tryGenerateOnce(modelConfig.fallback)
+  if (!fallback.isValidJson) console.warn('Weekly AI response is not valid JSON even after fallback, returning as-is')
+  return { content: fallback.content, usedModel: fallback.usedModel }
 }
 
 /**
@@ -687,33 +913,21 @@ async function sendPushNotification(
 // =====================================================
 
 interface DiagnosisData {
+  mandalart_id: string | null
+  mandalart_hash: string
   mandalart: {
     id: string
     title: string
     center_goal: string
-    sub_goals: Array<{
-      id: string
-      title: string
-      position: number
-      actions: Array<{
-        id: string
-        title: string
-        type: string
-        frequency?: string
-      }>
-    }>
   } | null
   structure: {
     totalItems: number
     filledItems: number
     fillRate: number
     actionsByType: Record<string, number>
-    subGoalsWithFrequency: number
+    trackableActions: number
+    measurableActions: number
     specificActions: number
-  }
-  recentActivity: {
-    totalChecks: number
-    currentStreak: number
   }
 }
 
@@ -724,7 +938,7 @@ async function collectDiagnosisData(
   supabaseAdmin: ReturnType<typeof createClient>,
   userId: string,
   mandalartId: string | undefined,
-  language: Language
+  _language: Language
 ): Promise<DiagnosisData> {
   // Get mandalart with sub_goals and actions
   let mandalartQuery = supabaseAdmin
@@ -740,6 +954,7 @@ async function collectDiagnosisData(
         actions (
           id,
           title,
+          position,
           type,
           frequency
         )
@@ -755,26 +970,54 @@ async function collectDiagnosisData(
 
   const { data: mandalarts } = await mandalartQuery.limit(1).single()
 
-  // Calculate structure metrics
-  let totalItems = 0
+  // Build mandalart hash from normalized snapshot (title changes included)
+  const normalizedForHash = (() => {
+    if (!mandalarts) return { mandalart: null }
+    const subGoals = Array.isArray(mandalarts.sub_goals) ? mandalarts.sub_goals : []
+    return {
+      id: mandalarts.id ?? null,
+      title: mandalarts.title ?? '',
+      center_goal: mandalarts.center_goal ?? '',
+      sub_goals: subGoals
+        .map((sg: any) => {
+          const actions = Array.isArray(sg.actions) ? sg.actions : []
+          return {
+            id: sg.id ?? null,
+            title: sg.title ?? '',
+            position: sg.position ?? null,
+            actions: actions.map((a: any) => ({
+              id: a.id ?? null,
+              title: a.title ?? '',
+              position: a.position ?? null,
+              type: a.type ?? 'routine',
+              frequency: a.frequency ?? null,
+            })),
+          }
+        })
+        .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
+    }
+  })()
+
+  const mandalart_hash = await sha256Hex(stableStringify(normalizedForHash))
+
+  // Calculate structure metrics (token-efficient: counts only)
+  const totalItems = 73 // 1 center + 8 sub-goals + 64 actions
   let filledItems = 0
   const actionsByType: Record<string, number> = { routine: 0, mission: 0, reference: 0 }
-  let subGoalsWithFrequency = 0
+  let trackableActions = 0
+  let measurableActions = 0
   let specificActions = 0
 
   if (mandalarts) {
     // Count center goal
-    totalItems++
     if (mandalarts.center_goal) filledItems++
 
     // Count sub-goals and actions
     const subGoals = mandalarts.sub_goals || []
-    totalItems += 8 // 8 sub-goals
     filledItems += subGoals.filter((sg: { title?: string }) => sg.title).length
 
     subGoals.forEach((sg: { title?: string; actions?: Array<{ title?: string; type?: string; frequency?: string }> }) => {
       const actions = sg.actions || []
-      totalItems += 8 // 8 actions per sub-goal
 
       actions.forEach((action: { title?: string; type?: string; frequency?: string }) => {
         if (action.title) {
@@ -782,45 +1025,36 @@ async function collectDiagnosisData(
           const type = action.type || 'routine'
           actionsByType[type] = (actionsByType[type] || 0) + 1
 
-          // Count specific actions (have frequency or type set)
-          if (action.frequency || action.type) {
-            specificActions++
+          if (type !== 'reference') {
+            trackableActions++
+            if (action.frequency) measurableActions++
+
+            const hasNumber = /\d/.test(action.title)
+            if (action.frequency || hasNumber) specificActions++
           }
         }
       })
     })
   }
 
-  // Get recent activity
-  const now = new Date()
-  const startDate = new Date(now)
-  startDate.setDate(now.getDate() - 7)
-
-  const { data: recentChecks } = await supabaseAdmin
-    .from('check_history')
-    .select('id')
-    .eq('user_id', userId)
-    .gte('checked_at', startDate.toISOString())
-
-  const { data: streakData } = await supabaseAdmin
-    .from('user_levels')
-    .select('current_streak')
-    .eq('user_id', userId)
-    .single()
-
   return {
-    mandalart: mandalarts,
+    mandalart_id: mandalarts?.id ?? null,
+    mandalart_hash,
+    mandalart: mandalarts
+      ? {
+          id: mandalarts.id,
+          title: mandalarts.title,
+          center_goal: mandalarts.center_goal,
+        }
+      : null,
     structure: {
       totalItems,
       filledItems,
       fillRate: totalItems > 0 ? Math.round((filledItems / totalItems) * 100) : 0,
       actionsByType,
-      subGoalsWithFrequency,
+      trackableActions,
+      measurableActions,
       specificActions,
-    },
-    recentActivity: {
-      totalChecks: recentChecks?.length || 0,
-      currentStreak: streakData?.current_streak || 0,
     },
   }
 }
@@ -871,11 +1105,8 @@ Writing rules:
       userPromptTemplate: (data: DiagnosisData) => {
         const m = data.mandalart
         const s = data.structure
-
-        const subGoalsList = m?.sub_goals?.map((sg, i) => {
-          const actions = sg.actions?.map(a => `    - ${a.title || '(empty)'} [${a.type || 'routine'}]`).join('\n') || '    (no actions)'
-          return `  ${i + 1}. ${sg.title || '(empty)'}\n${actions}`
-        }).join('\n') || '  (no sub-goals)'
+        const clarityRate = s.trackableActions > 0 ? Math.round((s.specificActions / s.trackableActions) * 100) : 0
+        const measurabilityRate = s.trackableActions > 0 ? Math.round((s.measurableActions / s.trackableActions) * 100) : 0
 
         return `Analyze this Mandalart structure and provide improvement suggestions:
 
@@ -886,14 +1117,8 @@ Writing rules:
 [Structure Analysis]
 - Total Items: ${s.totalItems} items, ${s.filledItems} filled (${s.fillRate}%)
 - By Type: Routine ${s.actionsByType.routine || 0}, Mission ${s.actionsByType.mission || 0}, Reference ${s.actionsByType.reference || 0}
-- Specific Actions: ${s.specificActions} items
-
-[Sub-goals and Actions]
-${subGoalsList}
-
-[Recent Activity]
-- Last Week Practice: ${data.recentActivity.totalChecks} times
-- Current Streak: ${data.recentActivity.currentStreak} days
+- Clarity: ${clarityRate}% (${s.specificActions} of ${s.trackableActions} trackable actions are specific)
+- Measurability: ${measurabilityRate}% (${s.measurableActions} of ${s.trackableActions} trackable actions have frequency settings)
 
 Analysis Perspectives:
 1. Completion rate (fill rate)
@@ -939,11 +1164,8 @@ IMPORTANT: Respond in JSON format with actual numbers in structure_metrics. Writ
     userPromptTemplate: (data: DiagnosisData) => {
       const m = data.mandalart
       const s = data.structure
-
-      const subGoalsList = m?.sub_goals?.map((sg, i) => {
-        const actions = sg.actions?.map(a => `    - ${a.title || '(비어있음)'} [${a.type || '루틴'}]`).join('\n') || '    (실천항목 없음)'
-        return `  ${i + 1}. ${sg.title || '(비어있음)'}\n${actions}`
-      }).join('\n') || '  (세부목표 없음)'
+      const clarityRate = s.trackableActions > 0 ? Math.round((s.specificActions / s.trackableActions) * 100) : 0
+      const measurabilityRate = s.trackableActions > 0 ? Math.round((s.measurableActions / s.trackableActions) * 100) : 0
 
       return `만다라트 구조를 분석하여 개선점을 제시하세요:
 
@@ -954,14 +1176,8 @@ IMPORTANT: Respond in JSON format with actual numbers in structure_metrics. Writ
 [구조 분석]
 - 전체 항목: ${s.totalItems}개 중 ${s.filledItems}개 작성 (${s.fillRate}%)
 - 타입별: 루틴 ${s.actionsByType.routine || 0}개, 미션 ${s.actionsByType.mission || 0}개, 참고 ${s.actionsByType.reference || 0}개
-- 구체적 항목: ${s.specificActions}개
-
-[세부목표 및 실천항목]
-${subGoalsList}
-
-[최근 활동]
-- 지난주 실천: ${data.recentActivity.totalChecks}회
-- 현재 스트릭: ${data.recentActivity.currentStreak}일
+- 표현 명확도: ${clarityRate}% (실천 항목 ${s.trackableActions}개 중 ${s.specificActions}개가 구체적)
+- 측정 가능성: ${measurabilityRate}% (실천 항목 ${s.trackableActions}개 중 ${s.measurableActions}개가 반복주기 설정됨)
 
 분석 관점:
 1. 완성도 (작성률)
@@ -977,7 +1193,11 @@ JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함�
 /**
  * Generate diagnosis report using Perplexity AI
  */
-async function generateDiagnosisReport(data: DiagnosisData, language: Language): Promise<string> {
+async function generateDiagnosisReport(
+  data: DiagnosisData,
+  language: Language,
+  modelConfig: { primary: string; fallback: string | null; maxTokens: number; temperature: number }
+): Promise<{ content: string; usedModel: string }> {
   const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
   if (!perplexityApiKey) {
     throw new Error('PERPLEXITY_API_KEY not configured')
@@ -985,48 +1205,57 @@ async function generateDiagnosisReport(data: DiagnosisData, language: Language):
 
   const prompts = getDiagnosisPrompts(language)
 
-  // Call Perplexity API
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${perplexityApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'sonar',
-      messages: [
-        {
-          role: 'user',
-          content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data)}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    }),
-  })
+  const tryGenerateOnce = async (model: string): Promise<{ content: string; isValidJson: boolean; usedModel: string }> => {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${perplexityApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data)}`,
+          },
+        ],
+        temperature: modelConfig.temperature,
+        max_tokens: modelConfig.maxTokens,
+      }),
+    })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
+    }
+
+    const result = await response.json()
+    let aiResponse = result.choices[0].message.content
+
+    aiResponse = aiResponse.trim()
+    if (aiResponse.startsWith('```json')) {
+      aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (aiResponse.startsWith('```')) {
+      aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+
+    try {
+      JSON.parse(aiResponse)
+      return { content: aiResponse, isValidJson: true, usedModel: model }
+    } catch {
+      return { content: aiResponse, isValidJson: false, usedModel: model }
+    }
   }
 
-  const result = await response.json()
-  let aiResponse = result.choices[0].message.content
-
-  // Clean up response
-  aiResponse = aiResponse.trim()
-  if (aiResponse.startsWith('```json')) {
-    aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-  } else if (aiResponse.startsWith('```')) {
-    aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+  const primary = await tryGenerateOnce(modelConfig.primary)
+  if (primary.isValidJson || !modelConfig.fallback || modelConfig.fallback === modelConfig.primary) {
+    if (!primary.isValidJson) console.warn('Diagnosis AI response is not valid JSON, returning as-is')
+    return { content: primary.content, usedModel: primary.usedModel }
   }
 
-  // Validate JSON
-  try {
-    JSON.parse(aiResponse)
-    return aiResponse
-  } catch {
-    console.warn('Diagnosis AI response is not valid JSON, returning as-is')
-    return aiResponse
-  }
+  console.warn(`Diagnosis report invalid JSON (primary=${modelConfig.primary}), retrying fallback=${modelConfig.fallback}`)
+  const fallback = await tryGenerateOnce(modelConfig.fallback)
+  if (!fallback.isValidJson) console.warn('Diagnosis AI response is not valid JSON even after fallback, returning as-is')
+  return { content: fallback.content, usedModel: fallback.usedModel }
 }

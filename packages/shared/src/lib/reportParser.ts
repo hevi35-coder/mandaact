@@ -88,6 +88,49 @@ interface DiagnosisReportData {
   priority_tasks?: string[]
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function readStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null
+  const strings = value.filter((v): v is string => typeof v === 'string')
+  return strings.length === value.length ? strings : null
+}
+
+function readMetricsArray(value: unknown): Array<{ label: string; value: string }> | null {
+  if (!Array.isArray(value)) return null
+  const metrics: Array<{ label: string; value: string }> = []
+  for (const item of value) {
+    if (!isPlainObject(item)) return null
+    const label = readString(item.label)
+    const metricValue = readString(item.value)
+    if (!label || !metricValue) return null
+    metrics.push({ label, value: metricValue })
+  }
+  return metrics
+}
+
+function readImprovementsArray(
+  value: unknown
+): Array<{ area: string; issue: string; solution: string }> | null {
+  if (!Array.isArray(value)) return null
+  const improvements: Array<{ area: string; issue: string; solution: string }> = []
+  for (const item of value) {
+    if (!isPlainObject(item)) return null
+    const area = readString(item.area)
+    const issue = readString(item.issue)
+    const solution = readString(item.solution)
+    if (!area || !issue || !solution) return null
+    improvements.push({ area, issue, solution })
+  }
+  return improvements
+}
+
 /**
  * Parse weekly practice report (JSON or markdown)
  * New reports are stored as JSON, old reports may be markdown
@@ -242,29 +285,50 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
 export function parseDiagnosisReport(content: string): ReportSummary {
   // Try JSON parsing first (new format)
   try {
-    const data = JSON.parse(content) as DiagnosisReportData
+    const parsed = JSON.parse(content) as unknown
+    if (!isPlainObject(parsed)) throw new Error('Not an object')
 
-    if (data.headline && data.structure_metrics) {
+    const headline = readString(parsed.headline)
+    const structureMetricsRaw =
+      parsed.structure_metrics ?? parsed.structureMetrics
+    const structureMetrics = readMetricsArray(structureMetricsRaw)
+
+    const strengths = readStringArray(parsed.strengths)
+    const improvements = readImprovementsArray(parsed.improvements)
+    const priorityTasks = readStringArray(parsed.priority_tasks ?? parsed.priorityTasks)
+
+    const data: DiagnosisReportData | null =
+      headline && structureMetrics
+        ? {
+            headline,
+            structure_metrics: structureMetrics,
+            strengths: strengths ?? undefined,
+            improvements: improvements ?? undefined,
+            priority_tasks: priorityTasks ?? undefined,
+          }
+        : null
+
+    if (data) {
       // Build detail content from strengths and improvements
       let detailContent = ''
 
-      if (data.strengths && Array.isArray(data.strengths) && data.strengths.length > 0) {
+      if (data.strengths && data.strengths.length > 0) {
         detailContent += '## 💪 강점\n\n'
-        data.strengths.forEach((strength: string) => {
+        data.strengths.forEach((strength) => {
           detailContent += `• ${strength}\n\n`
         })
       }
 
-      if (data.improvements && Array.isArray(data.improvements) && data.improvements.length > 0) {
+      if (data.improvements && data.improvements.length > 0) {
         detailContent += '## ⚡ 개선 포인트\n\n'
         data.improvements.forEach((improvement) => {
           detailContent += `• **${improvement.area}**: ${improvement.issue} → ${improvement.solution}\n\n`
         })
       }
 
-      if (data.priority_tasks && Array.isArray(data.priority_tasks) && data.priority_tasks.length > 0) {
+      if (data.priority_tasks && data.priority_tasks.length > 0) {
         detailContent += '## 🎯 MandaAct의 제안\n\n'
-        data.priority_tasks.forEach((task: string) => {
+        data.priority_tasks.forEach((task) => {
           detailContent += `• ${task}\n\n`
         })
       }
@@ -274,16 +338,20 @@ export function parseDiagnosisReport(content: string): ReportSummary {
         metrics: data.structure_metrics.map((m) => ({
           label: m.label,
           value: m.value,
-          variant: 'default' as const
+          variant: 'default' as const,
         })),
-        detailContent: detailContent.trim()
+        detailContent: detailContent.trim(),
       }
     }
   } catch (e) {
     // Fallback to markdown parsing (for old reports)
   }
 
-  return parseDiagnosisReportMarkdown(content)
+  const parsed = parseDiagnosisReportMarkdown(content)
+  if (!parsed.headline) {
+    parsed.errorReason = 'parseError'
+  }
+  return parsed
 }
 
 /**
@@ -354,6 +422,10 @@ function parseDiagnosisReportMarkdown(markdown: string): ReportSummary {
   // Extract detail content
   if (detailStartIndex >= 0) {
     summary.detailContent = lines.slice(detailStartIndex).join('\n')
+  }
+
+  if (!summary.headline) {
+    summary.errorReason = 'parseError'
   }
 
   return summary
