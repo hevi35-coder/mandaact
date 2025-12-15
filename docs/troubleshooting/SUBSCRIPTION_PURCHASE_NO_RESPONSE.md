@@ -38,13 +38,21 @@
    - 탭 로그(`Package pressed`)가 안 찍힘(Pressable 이벤트/overlay 문제)
    - 로딩만 지속(구매 호출 hang 가능성 → 타임아웃/재시도 UX 필요)
 
+### 에러 코드 확인(권장)
+- 빌드 801부터는 구매/복원 실패 시 `code: <...>` 형태로 표시되며, Sentry/로그에도 에러가 남습니다.
+- **같은 에러가 반복될 때** `code` 값을 기반으로 원인을 특정합니다(예: `STORE_PROBLEM`, `PRODUCT_NOT_AVAILABLE_FOR_PURCHASE`, `PAYMENT_PENDING` 등).
+
 ## 진행 로그
 - 2025-12-15: “플랜 탭 무반응” 이슈 문서화 시작
 - 2025-12-15: PR #37 머지(에러 가시화/탭 로그)
 - 2025-12-15: TestFlight 빌드/제출 완료(build=601)
+- 2025-12-15: PR #39 머지(구매/복원 실패 시 에러 코드 노출 + logger capture)
+- 2025-12-15: TestFlight 빌드/제출 완료(build=801)
 
 ## TestFlight 빌드/제출 기록
 - App Store Connect(TestFlight): https://appstoreconnect.apple.com/apps/6756198473/testflight/ios
 - 빌드: `CFBundleVersion=601`
 - 제출(Expo): https://expo.dev/accounts/hevi35/projects/mandaact/submissions/5187b3cb-6b89-472d-89e6-d4777127a114
 - 처리: Apple processing 완료 후 TestFlight에서 확인
+- 빌드: `CFBundleVersion=801`
+- 제출(Expo): https://expo.dev/accounts/hevi35/projects/mandaact/submissions/21b07754-1397-43bd-bc4b-87aa44ceb4c1
