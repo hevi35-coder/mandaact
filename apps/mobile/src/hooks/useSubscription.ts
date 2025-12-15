@@ -407,7 +407,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
       return finalParsed.info.isPremium
     } catch (err: unknown) {
-      const purchaseError = err as { userCancelled?: boolean; message?: string }
+      const purchaseError = err as { userCancelled?: boolean; message?: string; code?: string | number }
 
       if (purchaseError.userCancelled) {
         console.log('[useSubscription] 💳 Purchase cancelled by user')
@@ -421,9 +421,9 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         product_id: pkg.product.identifier,
         price: pkg.product.price,
         currency: pkg.product.currencyCode,
-        error_code: purchaseError.message || 'purchase_failed',
+        error_code: String(purchaseError.code ?? purchaseError.message ?? 'purchase_failed'),
       })
-      return false
+      throw err
     } finally {
       setIsLoading(false)
     }
@@ -479,7 +479,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         trigger: 'manual',
         error_code: (err as { message?: string })?.message || 'restore_failed',
       })
-      return false
+      throw err
     } finally {
       setIsLoading(false)
     }
