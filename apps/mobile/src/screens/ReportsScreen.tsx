@@ -33,10 +33,11 @@ import { useInterstitialAd } from '../hooks/useInterstitialAd'
 import { logger } from '../lib/logger'
 
 import { useAuthStore } from '../store/authStore'
-import { trackWeeklyReportGenerated, trackGoalDiagnosisViewed } from '../lib'
+import { formatDateRange, formatMonthDay, formatShortDate, formatZonedWeekday, trackWeeklyReportGenerated, trackGoalDiagnosisViewed } from '../lib'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useProfileStats } from '../hooks/useStats'
 import { useSubscriptionContext } from '../context'
+import { useUserProfile } from '../hooks/useUserProfile'
 import {
   useWeeklyReport,
   useGenerateWeeklyReport,
@@ -45,30 +46,25 @@ import {
   useReportHistory,
 } from '../hooks/useReports'
 import { parseWeeklyReport, parseDiagnosisReport, getMetricLabelKey, type ReportSummary, type ReportErrorReason } from '../lib/reportParser'
+import { toZonedTime } from 'date-fns-tz'
 
 // Get week dates for display
-function formatWeekDates(weekStart: string, weekEnd: string, isEnglish: boolean): string {
-  const start = new Date(weekStart)
-  const end = new Date(weekEnd)
-  if (isEnglish) {
-    const formatDate = (d: Date) => `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-    return `${formatDate(start)} ~ ${formatDate(end)}`
-  }
-  const formatDate = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`
-  return `${formatDate(start)} ~ ${formatDate(end)}`
+function formatWeekDates(weekStart: string, weekEnd: string, language: string, timeZone: string): string {
+  return formatDateRange(weekStart, weekEnd, { language, timeZone })
 }
 
 // Get next Monday date for "다음 리포트" display
-function getNextMonday(isEnglish: boolean): string {
+function getNextMonday(language: string, timeZone: string): string {
   const now = new Date()
-  const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const zonedNow = toZonedTime(now, timeZone)
+  const dayOfWeek = zonedNow.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7
-  const nextMonday = new Date(now)
-  nextMonday.setDate(now.getDate() + daysUntilMonday)
-  if (isEnglish) {
-    return `${nextMonday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (Mon)`
-  }
-  return `${nextMonday.getMonth() + 1}월 ${nextMonday.getDate()}일 (월)`
+  const nextMonday = new Date(zonedNow)
+  nextMonday.setDate(zonedNow.getDate() + daysUntilMonday)
+
+  const datePart = formatShortDate(nextMonday, { language, timeZone })
+  const weekday = formatZonedWeekday(nextMonday, { language, timeZone })
+  return `${datePart} (${weekday})`
 }
 
 // Helper function to get error reason message
@@ -645,6 +641,7 @@ export default function ReportsScreen() {
   const { user } = useAuthStore()
   const { t, i18n } = useTranslation()
   const isEnglish = i18n.language === 'en'
+  const { timezone } = useUserProfile(user?.id)
   const { canGenerateReport, isPremium } = useSubscriptionContext()
 
   // Log premium status changes for debugging
@@ -959,7 +956,7 @@ export default function ReportsScreen() {
                           className="text-base ml-2"
                           style={{ fontFamily: 'Pretendard-Medium' }}
                         >
-                          {t('reports.nextReport', { date: getNextMonday(isEnglish) })}
+                          {t('reports.nextReport', { date: getNextMonday(i18n.language, timezone) })}
                         </Text>
                       </View>
                     }
@@ -975,7 +972,7 @@ export default function ReportsScreen() {
                           className="text-base ml-2"
                           style={{ fontFamily: 'Pretendard-Medium' }}
                         >
-                          {t('reports.nextReport', { date: getNextMonday(isEnglish) })}
+                          {t('reports.nextReport', { date: getNextMonday(i18n.language, timezone) })}
                         </Text>
                       </View>
                     </LinearGradient>
@@ -1080,16 +1077,16 @@ export default function ReportsScreen() {
               <Animated.View entering={FadeInUp.duration(400)}>
                 {/* Case 1: Has mandalarts - show normal ReportCard */}
                 {hasMandalarts && (
-                  <ReportCard
-                    title={t('reports.goalDiagnosis')}
-                    subtitle={t('reports.goalDiagnosisSubtitle')}
-                    icon={Target}
-                    date={diagnosis ? new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' }) : undefined}
-                    summary={diagnosisSummary}
-                    isExpanded={isDiagnosisExpanded}
-                    onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
-                    isLoading={diagnosisLoading}
-                    isGenerating={generateDiagnosisMutation.isPending}
+                    <ReportCard
+                      title={t('reports.goalDiagnosis')}
+                      subtitle={t('reports.goalDiagnosisSubtitle')}
+                      icon={Target}
+                      date={diagnosis ? formatMonthDay(diagnosis.created_at, { language: i18n.language, timeZone: timezone }) : undefined}
+                      summary={diagnosisSummary}
+                      isExpanded={isDiagnosisExpanded}
+                      onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
+                      isLoading={diagnosisLoading}
+                      isGenerating={generateDiagnosisMutation.isPending}
                     generatingText={t('reports.card.newDiagnosisGenerating')}
                     viewDetailsText={t('reports.card.viewDetails')}
                     strengthsText={t('reports.card.strengths')}
@@ -1106,7 +1103,7 @@ export default function ReportsScreen() {
                     title={t('reports.goalDiagnosis')}
                     subtitle={t('reports.goalDiagnosisSubtitle')}
                     icon={Target}
-                    date={new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' })}
+                    date={formatMonthDay(diagnosis.created_at, { language: i18n.language, timeZone: timezone })}
                     summary={diagnosisSummary}
                     isExpanded={isDiagnosisExpanded}
                     onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
@@ -1160,7 +1157,7 @@ export default function ReportsScreen() {
                   title={t('reports.practiceReport')}
                   subtitle={t('reports.practiceReportSubtitle')}
                   icon={TrendingUp}
-                  date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, isEnglish) : undefined}
+                  date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, i18n.language, timezone) : undefined}
                   summary={weeklySummary}
                   isExpanded={isPracticeExpanded}
                   onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
@@ -1217,7 +1214,7 @@ export default function ReportsScreen() {
                                 className="text-sm text-gray-900"
                                 style={{ fontFamily: 'Pretendard-Medium' }}
                               >
-                                {formatWeekDates(report.week_start, report.week_end, isEnglish)}
+                                {formatWeekDates(report.week_start, report.week_end, i18n.language, timezone)}
                               </Text>
                               <Text
                                 className="text-xs text-gray-500"
@@ -1328,16 +1325,16 @@ export default function ReportsScreen() {
           <Animated.View entering={FadeInUp.duration(400)}>
             {/* Case 1: Has mandalarts - show normal ReportCard */}
             {hasMandalarts && (
-              <ReportCard
-                title={t('reports.goalDiagnosis')}
-                subtitle={t('reports.goalDiagnosisSubtitle')}
-                icon={Target}
-                date={diagnosis ? new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' }) : undefined}
-                summary={diagnosisSummary}
-                isExpanded={isDiagnosisExpanded}
-                onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
-                isLoading={diagnosisLoading}
-                isGenerating={generateDiagnosisMutation.isPending}
+                <ReportCard
+                  title={t('reports.goalDiagnosis')}
+                  subtitle={t('reports.goalDiagnosisSubtitle')}
+                  icon={Target}
+                  date={diagnosis ? formatMonthDay(diagnosis.created_at, { language: i18n.language, timeZone: timezone }) : undefined}
+                  summary={diagnosisSummary}
+                  isExpanded={isDiagnosisExpanded}
+                  onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
+                  isLoading={diagnosisLoading}
+                  isGenerating={generateDiagnosisMutation.isPending}
                 generatingText={t('reports.card.newDiagnosisGenerating')}
                 viewDetailsText={t('reports.card.viewDetails')}
                 strengthsText={t('reports.card.strengths')}
@@ -1351,17 +1348,17 @@ export default function ReportsScreen() {
             {/* Case 2: No mandalarts but has existing diagnosis - show existing diagnosis */}
             {!hasMandalarts && diagnosis && (
               <>
-                <ReportCard
-                  title={t('reports.goalDiagnosis')}
-                  subtitle={t('reports.goalDiagnosisSubtitle')}
-                  icon={Target}
-                  date={new Date(diagnosis.created_at).toLocaleDateString(isEnglish ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' })}
-                  summary={diagnosisSummary}
-                  isExpanded={isDiagnosisExpanded}
-                  onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
-                  isLoading={diagnosisLoading}
-                  isGenerating={false}
-                  viewDetailsText={t('reports.card.viewDetails')}
+                  <ReportCard
+                    title={t('reports.goalDiagnosis')}
+                    subtitle={t('reports.goalDiagnosisSubtitle')}
+                    icon={Target}
+                    date={formatMonthDay(diagnosis.created_at, { language: i18n.language, timeZone: timezone })}
+                    summary={diagnosisSummary}
+                    isExpanded={isDiagnosisExpanded}
+                    onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
+                    isLoading={diagnosisLoading}
+                    isGenerating={false}
+                    viewDetailsText={t('reports.card.viewDetails')}
                   strengthsText={t('reports.card.strengths')}
                   improvementsText={t('reports.card.improvements')}
                   suggestionsText={t('reports.card.suggestions')}
@@ -1492,7 +1489,7 @@ export default function ReportsScreen() {
               title={t('reports.practiceReport')}
               subtitle={t('reports.practiceReportSubtitle')}
               icon={TrendingUp}
-              date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, isEnglish) : undefined}
+              date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, i18n.language, timezone) : undefined}
               summary={weeklySummary}
               isExpanded={isPracticeExpanded}
               onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
@@ -1549,7 +1546,7 @@ export default function ReportsScreen() {
                             className="text-sm text-gray-900"
                             style={{ fontFamily: 'Pretendard-Medium' }}
                           >
-                            {formatWeekDates(report.week_start, report.week_end, isEnglish)}
+                            {formatWeekDates(report.week_start, report.week_end, i18n.language, timezone)}
                           </Text>
                           <Text
                             className="text-xs text-gray-500"
