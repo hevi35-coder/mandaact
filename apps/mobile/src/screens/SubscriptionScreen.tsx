@@ -44,6 +44,7 @@ export default function SubscriptionScreen() {
   const {
     subscriptionInfo,
     isLoading,
+    error,
     packages,
     purchase,
     restore,
@@ -72,6 +73,7 @@ export default function SubscriptionScreen() {
 
   // Handle purchase
   const handlePurchase = useCallback(async (pkg: PurchasesPackage) => {
+    console.log('[SubscriptionScreen] 🟣 Package pressed:', pkg.identifier)
     setPurchasingPackageId(pkg.identifier)
     try {
       const success = await purchase(pkg)
@@ -301,6 +303,17 @@ export default function SubscriptionScreen() {
           {/* Premium Benefits Section */}
           {!isPremium && (
             <>
+              {!!error && (
+                <View className="mb-4 rounded-2xl bg-red-50 border border-red-100 px-4 py-3">
+                  <Text
+                    className="text-sm text-red-700"
+                    style={{ fontFamily: 'Pretendard-Medium' }}
+                  >
+                    {error}
+                  </Text>
+                </View>
+              )}
+
               <Text
                 className="text-sm text-gray-500 mb-3 ml-1"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
