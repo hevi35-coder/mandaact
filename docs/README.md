@@ -65,6 +65,8 @@
 
 - `docs/mobile/TESTING_GUIDE.md`  
   모바일 핵심 플로우 테스트 시나리오.
+- `docs/development/DATE_TIME_FORMATTING.md`  
+  (모바일) 날짜/시간 표기 규칙: locale + 유저 timezone 기준 통일.
 - `docs/mobile/SETTINGS_IMPROVEMENTS.md`  
   설정 화면 개선 과제.
 

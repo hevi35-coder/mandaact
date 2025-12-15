@@ -80,3 +80,16 @@ export {
   markInterstitialShown,
   getNewUserAdRestriction,
 } from './ads'
+
+// Date formatting (timezone + locale)
+export {
+  formatShortDate,
+  formatMonthDay,
+  formatFullDate,
+  formatDateRange,
+  formatDayLabel,
+  formatMonthLabel,
+  formatNumericDate,
+  formatTime,
+  formatZonedWeekday,
+} from './dateFormat'

@@ -28,7 +28,9 @@ import MaskedView from '@react-native-masked-view/masked-view'
 import { Header } from '../components'
 import { useSubscriptionContext, FREE_MANDALART_LIMIT } from '../context'
 import { useToast } from '../components/Toast'
-import { trackPaywallViewed } from '../lib'
+import { formatNumericDate, trackPaywallViewed } from '../lib'
+import { useAuthStore } from '../store/authStore'
+import { useUserProfile } from '../hooks/useUserProfile'
 
 // Premium benefits list
 const PREMIUM_BENEFITS = [
@@ -39,8 +41,10 @@ const PREMIUM_BENEFITS = [
 ]
 
 export default function SubscriptionScreen() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const toast = useToast()
+  const { user } = useAuthStore()
+  const { timezone } = useUserProfile(user?.id)
   const {
     subscriptionInfo,
     isLoading,
@@ -161,8 +165,8 @@ export default function SubscriptionScreen() {
   const formatExpiryDate = useCallback((value: unknown) => {
     if (!(value instanceof Date)) return null
     if (Number.isNaN(value.getTime())) return null
-    return value.toLocaleDateString()
-  }, [])
+    return formatNumericDate(value, { language: i18n.language, timeZone: timezone })
+  }, [i18n.language, timezone])
 
   // Format plan label
   const getPlanLabel = (type: 'monthly' | 'yearly') => {

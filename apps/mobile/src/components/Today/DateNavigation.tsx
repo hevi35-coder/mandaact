@@ -10,24 +10,15 @@ import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
-import { format } from 'date-fns'
-import { ko } from 'date-fns/locale/ko'
-import { enUS } from 'date-fns/locale/en-US'
 import i18n from '../../i18n'
+import { formatDayLabel } from '../../lib/dateFormat'
 import DatePickerModal from '../DatePickerModal'
 import type { DateNavigationProps } from './types'
-
-// Helper function to format date based on current language
-function formatLocalizedDate(date: Date, language: string): string {
-    if (language === 'ko') {
-        return format(date, 'M월 d일 (EEE)', { locale: ko })
-    }
-    return format(date, 'MMM d (EEE)', { locale: enUS })
-}
 
 export function DateNavigation({
     selectedDate,
     isToday,
+    timezone,
     onPreviousDay,
     onNextDay,
     onToday,
@@ -95,7 +86,7 @@ export function DateNavigation({
                                 <View className="flex-row items-center">
                                     <Calendar size={16} color="#000" />
                                     <Text className="text-sm ml-2">
-                                        {formatLocalizedDate(selectedDate, i18n.language)}
+                                        {formatDayLabel(selectedDate, { language: i18n.language, timeZone: timezone })}
                                     </Text>
                                 </View>
                             }
@@ -108,7 +99,7 @@ export function DateNavigation({
                                 <View className="flex-row items-center opacity-0">
                                     <Calendar size={16} color="#000" />
                                     <Text className="text-sm ml-2">
-                                        {formatLocalizedDate(selectedDate, i18n.language)}
+                                        {formatDayLabel(selectedDate, { language: i18n.language, timeZone: timezone })}
                                     </Text>
                                 </View>
                             </LinearGradient>
@@ -117,7 +108,7 @@ export function DateNavigation({
                         <>
                             <Calendar size={16} color="#6b7280" />
                             <Text className="text-sm text-gray-700 ml-2">
-                                {formatLocalizedDate(selectedDate, i18n.language)}
+                                {formatDayLabel(selectedDate, { language: i18n.language, timeZone: timezone })}
                             </Text>
                         </>
                     )}

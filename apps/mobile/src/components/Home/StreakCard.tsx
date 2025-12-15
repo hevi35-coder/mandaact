@@ -9,6 +9,9 @@ import { View, Text } from 'react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { Flame, Trophy } from 'lucide-react-native'
+import { formatNumericDate, formatTime } from '../../lib'
+import { useAuthStore } from '../../store/authStore'
+import { useUserProfile } from '../../hooks/useUserProfile'
 import { FourWeekHeatmap } from './FourWeekHeatmap'
 import type { StreakCardProps } from './types'
 
@@ -22,7 +25,8 @@ export function StreakCard({
     fourWeekLoading,
 }: StreakCardProps) {
     const { t, i18n } = useTranslation()
-    const locale = i18n.language === 'ko' ? 'ko-KR' : 'en-US'
+    const { user } = useAuthStore()
+    const { timezone } = useUserProfile(user?.id)
 
     return (
         <Animated.View
@@ -63,16 +67,8 @@ export function StreakCard({
                         const dateObj = lastCheckDate instanceof Date
                             ? lastCheckDate
                             : new Date(lastCheckDate)
-                        const dateStr = dateObj.toLocaleDateString(locale, {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                        }).replace(/\. /g, '.').replace(/\.$/, '')
-                        const timeStr = dateObj.toLocaleTimeString(locale, {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        })
+                        const dateStr = formatNumericDate(dateObj, { language: i18n.language, timeZone: timezone })
+                        const timeStr = formatTime(dateObj, { language: i18n.language, timeZone: timezone })
                         return (
                             <View className="mt-2 items-center">
                                 <Text className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard-Regular' }}>{dateStr}</Text>
@@ -105,16 +101,8 @@ export function StreakCard({
                         const dateObj = longestStreakDate instanceof Date
                             ? longestStreakDate
                             : new Date(longestStreakDate)
-                        const dateStr = dateObj.toLocaleDateString(locale, {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                        }).replace(/\. /g, '.').replace(/\.$/, '')
-                        const timeStr = dateObj.toLocaleTimeString(locale, {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        })
+                        const dateStr = formatNumericDate(dateObj, { language: i18n.language, timeZone: timezone })
+                        const timeStr = formatTime(dateObj, { language: i18n.language, timeZone: timezone })
                         return (
                             <View className="mt-2 items-center">
                                 <Text className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard-Regular' }}>{dateStr}</Text>
