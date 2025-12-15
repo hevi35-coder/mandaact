@@ -1,5 +1,7 @@
 // Action type utility functions and AI suggestion logic
 
+import { suggestActionType as sharedSuggestActionType } from '@mandaact/shared'
+
 export type ActionType = 'routine' | 'mission' | 'reference'
 export type RoutineFrequency = 'daily' | 'weekly' | 'monthly'
 export type MissionCompletionType = 'once' | 'periodic'
@@ -56,7 +58,7 @@ export function getActionTypeLabel(type: ActionType, showDescription: boolean = 
  * AI-powered action type suggestion based on title
  * Uses rule-based pattern matching with priority-based logic
  */
-export function suggestActionType(title: string): AISuggestion {
+function suggestActionTypeLegacy(title: string): AISuggestion {
   const lower = title.toLowerCase()
 
   // Detect patterns first (for complex logic)
@@ -393,6 +395,30 @@ export function suggestActionType(title: string): AISuggestion {
     confidence: 'low',
     reason: '루틴으로 추정됩니다 (주기나 완료 조건을 추가하면 더 정확해져요)',
     routineFrequency: 'daily'
+  }
+}
+
+/**
+ * Action type suggestion is single-sourced in `@mandaact/shared`.
+ */
+export function suggestActionType(title: string): AISuggestion {
+  return sharedSuggestActionType(title) as unknown as AISuggestion
+}
+
+/**
+ * Web UI is Korean-only today; map shared reason_code(i18n key) to readable text.
+ */
+export function getSuggestionReasonText(reasonCode: string): string {
+  switch (reasonCode) {
+    case 'actionType.selector.reasonReference':
+      return '마음가짐/태도/가치관 항목으로 보여요'
+    case 'actionType.selector.reasonMission':
+      return '완료 목표(미션)로 보여요'
+    case 'actionType.selector.reasonRoutineLow':
+      return '루틴으로 추정됩니다 (주기나 완료 조건을 추가하면 더 정확해져요)'
+    case 'actionType.selector.reasonRoutine':
+    default:
+      return '반복적으로 하는 실천(루틴)으로 보여요'
   }
 }
 

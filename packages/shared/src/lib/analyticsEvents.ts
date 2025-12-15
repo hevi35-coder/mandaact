@@ -134,6 +134,18 @@ export interface RewardEarnedData extends AdEventBaseData {
 }
 
 // ========================================
+// Type suggestion event data types
+// ========================================
+
+export interface ActionTypeSuggestedData {
+    source_screen: string
+    input_language: 'en' | 'ko'
+    suggested_type: 'routine' | 'mission' | 'reference'
+    confidence: 'high' | 'medium' | 'low'
+    reason_code: string
+}
+
+// ========================================
 // 이벤트 이름 상수
 // ========================================
 
@@ -146,6 +158,7 @@ export const POSTHOG_EVENTS = {
     LEVEL_UP: 'level_up',
     WEEKLY_REPORT_GENERATED: 'weekly_report_generated',
     GOAL_DIAGNOSIS_VIEWED: 'goal_diagnosis_viewed',
+    ACTION_TYPE_SUGGESTED: 'action_type_suggested',
     APP_OPENED: 'app_opened',
     USER_LOGGED_IN: 'user_logged_in',
     USER_SIGNED_UP: 'user_signed_up',
@@ -202,6 +215,24 @@ export function buildActionCheckedProps(
         day_of_week: data.checked_at.getDay(),
         platform,
         timestamp: data.checked_at.toISOString(),
+    }
+}
+
+/**
+ * 액션 타입 추천 이벤트 속성
+ */
+export function buildActionTypeSuggestedProps(
+    data: ActionTypeSuggestedData,
+    platform: 'web' | 'mobile'
+) {
+    return {
+        source_screen: data.source_screen,
+        input_language: data.input_language,
+        suggested_type: data.suggested_type,
+        confidence: data.confidence,
+        reason_code: data.reason_code,
+        platform,
+        timestamp: new Date().toISOString(),
     }
 }
 
