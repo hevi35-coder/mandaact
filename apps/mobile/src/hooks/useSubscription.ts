@@ -18,6 +18,7 @@ import {
   trackRestoreSuccess,
   trackRestoreFailed,
   trackPremiumStateChanged,
+  logger,
 } from '../lib'
 
 // RevenueCat API Keys (from environment variables)
@@ -41,6 +42,35 @@ export const PRODUCT_IDS = {
   MONTHLY: 'com.mandaact.sub.premium.monthly',  // ₩4,400/month
   YEARLY: 'com.mandaact.sub.premium.yearly',     // ₩33,000/year (~38% savings)
 } as const
+
+function getPurchaseErrorDetails(err: unknown): { code?: string; message?: string } {
+  if (err && typeof err === 'object') {
+    const record = err as Record<string, unknown>
+    const code = record.code
+    const readableErrorCode = record.readableErrorCode
+    const message = record.message
+    const underlyingErrorMessage = record.underlyingErrorMessage
+
+    const codeString =
+      typeof readableErrorCode === 'string'
+        ? readableErrorCode
+        : typeof code === 'string' || typeof code === 'number'
+          ? String(code)
+          : undefined
+
+    const messageString =
+      typeof underlyingErrorMessage === 'string'
+        ? underlyingErrorMessage
+        : typeof message === 'string'
+          ? message
+          : undefined
+
+    return { code: codeString, message: messageString }
+  }
+
+  if (err instanceof Error) return { message: err.message }
+  return { message: String(err) }
+}
 
 export interface SubscriptionInfo {
   status: SubscriptionStatus
@@ -415,13 +445,26 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         return false
       }
 
+      const details = getPurchaseErrorDetails(err)
+      const userMessage = details.code
+        ? `${i18n.t('subscription.purchaseError')} (code: ${details.code})`
+        : i18n.t('subscription.purchaseError')
+
       console.error('[useSubscription] 💳 Purchase failed:', err)
-      setError(i18n.t('subscription.purchaseError'))
+      setError(userMessage)
+      logger.captureException(err, {
+        scope: 'subscription',
+        action: 'purchase',
+        product_id: pkg.product.identifier,
+        package_id: pkg.identifier,
+        error_code: details.code,
+        error_message: details.message,
+      })
       trackPurchaseFailed({
         product_id: pkg.product.identifier,
         price: pkg.product.price,
         currency: pkg.product.currencyCode,
-        error_code: String(purchaseError.code ?? purchaseError.message ?? 'purchase_failed'),
+        error_code: details.code ?? String(purchaseError.code ?? purchaseError.message ?? 'purchase_failed'),
       })
       throw err
     } finally {
@@ -473,11 +516,21 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       trackRestoreSuccess({ trigger: 'manual', restored: finalParsed.info.isPremium })
       return finalParsed.info.isPremium
     } catch (err) {
+      const details = getPurchaseErrorDetails(err)
+      const userMessage = details.code
+        ? `${i18n.t('subscription.restoreError')} (code: ${details.code})`
+        : i18n.t('subscription.restoreError')
       console.error('[useSubscription] 🔄 Restore failed:', err)
-      setError(i18n.t('subscription.restoreError'))
+      setError(userMessage)
+      logger.captureException(err, {
+        scope: 'subscription',
+        action: 'restore',
+        error_code: details.code,
+        error_message: details.message,
+      })
       trackRestoreFailed({
         trigger: 'manual',
-        error_code: (err as { message?: string })?.message || 'restore_failed',
+        error_code: details.code ?? details.message ?? 'restore_failed',
       })
       throw err
     } finally {

@@ -92,7 +92,14 @@ export default function SubscriptionScreen() {
       }
     } catch (error) {
       console.error('[SubscriptionScreen] Purchase error:', error)
-      toast.error(t('common.error'), t('subscription.purchaseError'))
+      const details =
+        error && typeof error === 'object'
+          ? (error as { readableErrorCode?: string; code?: string | number; message?: string })
+          : null
+      const code = details?.readableErrorCode ?? (typeof details?.code === 'string' || typeof details?.code === 'number' ? String(details?.code) : null)
+      const message = typeof details?.message === 'string' ? details.message : null
+      const suffix = code ? ` (code: ${code})` : message ? ` (${message})` : ''
+      toast.error(t('common.error'), `${t('subscription.purchaseError')}${suffix}`)
     } finally {
       setPurchasingPackageId(null)
     }
