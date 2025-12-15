@@ -58,7 +58,7 @@ export function getActionTypeLabel(type: ActionType, showDescription: boolean = 
  * AI-powered action type suggestion based on title
  * Uses rule-based pattern matching with priority-based logic
  */
-function suggestActionTypeLegacy(title: string): AISuggestion {
+function _suggestActionTypeLegacy(title: string): AISuggestion {
   const lower = title.toLowerCase()
 
   // Detect patterns first (for complex logic)
