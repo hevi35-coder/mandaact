@@ -14,6 +14,8 @@
   Web(Vercel) + Mobile(EAS Build/Submit) 배포 절차의 기준 문서.
 - `docs/troubleshooting/TROUBLESHOOTING.md`  
   자주 발생하는 장애/오류의 진단 절차. 운영/디버깅 시 참조.
+- `docs/troubleshooting/SUBSCRIPTION_PURCHASE_NO_RESPONSE.md`  
+  (모바일) 구독 플랜 탭 “무반응”처럼 보이는 케이스 진단/대응 기록.
 
 ## Product / Planning (제품/기획)
 
