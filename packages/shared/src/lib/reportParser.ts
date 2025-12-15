@@ -88,6 +88,49 @@ interface DiagnosisReportData {
   priority_tasks?: string[]
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function readStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null
+  const strings = value.filter((v): v is string => typeof v === 'string')
+  return strings.length === value.length ? strings : null
+}
+
+function readMetricsArray(value: unknown): Array<{ label: string; value: string }> | null {
+  if (!Array.isArray(value)) return null
+  const metrics: Array<{ label: string; value: string }> = []
+  for (const item of value) {
+    if (!isPlainObject(item)) return null
+    const label = readString(item.label)
+    const metricValue = readString(item.value)
+    if (!label || !metricValue) return null
+    metrics.push({ label, value: metricValue })
+  }
+  return metrics
+}
+
+function readImprovementsArray(
+  value: unknown
+): Array<{ area: string; issue: string; solution: string }> | null {
+  if (!Array.isArray(value)) return null
+  const improvements: Array<{ area: string; issue: string; solution: string }> = []
+  for (const item of value) {
+    if (!isPlainObject(item)) return null
+    const area = readString(item.area)
+    const issue = readString(item.issue)
+    const solution = readString(item.solution)
+    if (!area || !issue || !solution) return null
+    improvements.push({ area, issue, solution })
+  }
+  return improvements
+}
+
 /**
  * Parse weekly practice report (JSON or markdown)
  * New reports are stored as JSON, old reports may be markdown
@@ -242,45 +285,62 @@ function parseWeeklyReportMarkdown(markdown: string): ReportSummary {
 export function parseDiagnosisReport(content: string): ReportSummary {
   // Try JSON parsing first (new format)
   try {
-    const data = JSON.parse(content) as any
+    const parsed = JSON.parse(content) as unknown
+    if (!isPlainObject(parsed)) throw new Error('Not an object')
 
-    const structureMetrics = data?.structure_metrics ?? data?.structureMetrics
-    const improvements = data?.improvements ?? []
-    const priorityTasks = data?.priority_tasks ?? data?.priorityTasks
+    const headline = readString(parsed.headline)
+    const structureMetricsRaw =
+      parsed.structure_metrics ?? parsed.structureMetrics
+    const structureMetrics = readMetricsArray(structureMetricsRaw)
 
-    if (data.headline && structureMetrics) {
+    const strengths = readStringArray(parsed.strengths)
+    const improvements = readImprovementsArray(parsed.improvements)
+    const priorityTasks = readStringArray(parsed.priority_tasks ?? parsed.priorityTasks)
+
+    const data: DiagnosisReportData | null =
+      headline && structureMetrics
+        ? {
+            headline,
+            structure_metrics: structureMetrics,
+            strengths: strengths ?? undefined,
+            improvements: improvements ?? undefined,
+            priority_tasks: priorityTasks ?? undefined,
+          }
+        : null
+
+    if (data) {
       // Build detail content from strengths and improvements
       let detailContent = ''
 
-      if (data.strengths && Array.isArray(data.strengths) && data.strengths.length > 0) {
+      if (data.strengths && data.strengths.length > 0) {
         detailContent += '## 💪 강점\n\n'
-        data.strengths.forEach((strength: string) => {
+        data.strengths.forEach((strength) => {
           detailContent += `• ${strength}\n\n`
         })
       }
 
-      if (improvements && Array.isArray(improvements) && improvements.length > 0) {
+      if (data.improvements && data.improvements.length > 0) {
         detailContent += '## ⚡ 개선 포인트\n\n'
-        improvements.forEach((improvement: any) => {
+        data.improvements.forEach((improvement) => {
           detailContent += `• **${improvement.area}**: ${improvement.issue} → ${improvement.solution}\n\n`
         })
       }
 
-      if (priorityTasks && Array.isArray(priorityTasks) && priorityTasks.length > 0) {
+      if (data.priority_tasks && data.priority_tasks.length > 0) {
         detailContent += '## 🎯 MandaAct의 제안\n\n'
-        priorityTasks.forEach((task: string) => {
+        data.priority_tasks.forEach((task) => {
           detailContent += `• ${task}\n\n`
         })
       }
 
       return {
         headline: data.headline,
-        metrics: structureMetrics.map((m: any) => ({
+        metrics: data.structure_metrics.map((m) => ({
           label: m.label,
           value: m.value,
-          variant: 'default' as const
+          variant: 'default' as const,
         })),
-        detailContent: detailContent.trim()
+        detailContent: detailContent.trim(),
       }
     }
   } catch (e) {
