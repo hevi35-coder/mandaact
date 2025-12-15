@@ -25,9 +25,11 @@ import {
   type MissionCompletionType,
   type MissionPeriodCycle,
   suggestActionType,
+  suggestActionTypeV2,
   getInitialPeriod,
 } from '@mandaact/shared'
 import { logger } from '../lib/logger'
+import { trackActionTypeSuggested } from '../lib'
 
 export interface ActionTypeData {
   type: ActionType
@@ -169,11 +171,20 @@ export default function ActionTypeSelector({
     }
 
     // Generate AI suggestion
+    const suggestionV2 = suggestActionTypeV2(actionTitle)
     const freshSuggestion = suggestActionType(actionTitle)
     setAiSuggestion({
       type: freshSuggestion.type,
       confidence: freshSuggestion.confidence,
       reason: freshSuggestion.reason,
+    })
+
+    trackActionTypeSuggested({
+      source_screen: 'action_type_selector',
+      input_language: suggestionV2.debug.input_language,
+      suggested_type: suggestionV2.type,
+      confidence: suggestionV2.confidence,
+      reason_code: suggestionV2.reason_code,
     })
 
     // Only auto-apply for new actions

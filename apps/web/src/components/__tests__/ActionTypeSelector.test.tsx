@@ -25,7 +25,7 @@ describe('ActionTypeSelector', () => {
     vi.mocked(actionTypes.suggestActionType).mockReturnValue({
       type: 'routine',
       confidence: 'high',
-      reason: '매일 반복되는 습관',
+      reason: 'actionType.selector.reasonRoutine',
     })
   })
 
@@ -60,7 +60,7 @@ describe('ActionTypeSelector', () => {
     vi.mocked(actionTypes.suggestActionType).mockReturnValue({
       type: 'routine',
       confidence: 'high',
-      reason: '매일 반복되는 습관으로 판단됩니다',
+      reason: 'actionType.selector.reasonRoutine',
     })
 
     renderWithProviders(
@@ -74,7 +74,7 @@ describe('ActionTypeSelector', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/자동 추천:/)).toBeInTheDocument()
-      expect(screen.getByText(/매일 반복되는 습관으로 판단됩니다/)).toBeInTheDocument()
+      expect(screen.getByText(/반복적으로 하는 실천\(루틴\)으로 보여요/)).toBeInTheDocument()
     })
   })
 

@@ -44,6 +44,7 @@ export {
   trackScreen,
   trackMandalartCreated,
   trackActionChecked,
+  trackActionTypeSuggested,
   trackBadgeUnlocked,
   trackTutorialCompleted,
   trackNotificationClicked,

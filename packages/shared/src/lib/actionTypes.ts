@@ -17,10 +17,58 @@ export interface AISuggestion {
   missionPeriodCycle?: MissionPeriodCycle
 }
 
+export interface ActionTypeSuggestionExtractedSettings {
+  routine_frequency?: RoutineFrequency
+  routine_weekdays?: number[]
+  routine_count_per_period?: number
+  mission_completion_type?: MissionCompletionType
+  mission_period_cycle?: MissionPeriodCycle
+}
+
+export interface ActionTypeSuggestionDebug {
+  input_language: 'en' | 'ko'
+  normalized_title: string
+}
+
+export interface ActionTypeSuggestionV2 {
+  type: ActionType
+  confidence: Confidence
+  reason_code: string
+  extracted_settings: ActionTypeSuggestionExtractedSettings
+  debug: ActionTypeSuggestionDebug
+}
+
 export interface ActionTypeLabels {
   main: string
   description: string
   icon: string
+}
+
+export function suggestActionTypeV2(title: string): ActionTypeSuggestionV2 {
+  const normalized = title.trim()
+  const suggestion = suggestActionType(normalized)
+  const input_language: 'en' | 'ko' = /[a-zA-Z]/.test(normalized) ? 'en' : 'ko'
+
+  const extracted_settings: ActionTypeSuggestionExtractedSettings = {
+    routine_frequency: suggestion.routineFrequency,
+    routine_weekdays: suggestion.routineWeekdays,
+    routine_count_per_period: suggestion.routineCountPerPeriod,
+    mission_completion_type: suggestion.missionCompletionType,
+    mission_period_cycle: suggestion.missionPeriodCycle,
+  }
+
+  const debug: ActionTypeSuggestionDebug = {
+    input_language,
+    normalized_title: normalized,
+  }
+
+  return {
+    type: suggestion.type,
+    confidence: suggestion.confidence,
+    reason_code: suggestion.reason,
+    extracted_settings,
+    debug,
+  }
 }
 
 /**
@@ -156,7 +204,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'high',
-      reason: 'actionType.selector.reasonReference'
+      reason: 'actionType.selector.reasonReference',
     }
   }
 
@@ -165,7 +213,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'high',
-      reason: 'actionType.selector.reasonReference'
+      reason: 'actionType.selector.reasonReference',
     }
   }
 
@@ -174,7 +222,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'high',
-      reason: 'actionType.selector.reasonReference'
+      reason: 'actionType.selector.reasonReference',
     }
   }
 
@@ -183,7 +231,7 @@ export function suggestActionType(title: string): AISuggestion {
     return {
       type: 'reference',
       confidence: 'medium',
-      reason: 'actionType.selector.reasonReference'
+      reason: 'actionType.selector.reasonReference',
     }
   }
 

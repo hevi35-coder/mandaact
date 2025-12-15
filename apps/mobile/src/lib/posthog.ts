@@ -10,6 +10,7 @@ import {
   POSTHOG_EVENTS,
   buildMandalartCreatedProps,
   buildActionCheckedProps,
+  buildActionTypeSuggestedProps,
   buildBadgeUnlockedProps,
   buildTutorialCompletedProps,
   buildNotificationClickedProps,
@@ -28,6 +29,7 @@ import {
   buildRewardEarnedProps,
   type MandalartCreatedData,
   type ActionCheckedData,
+  type ActionTypeSuggestedData,
   type BadgeUnlockedData,
   type TutorialCompletedData,
   type NotificationClickedData,
@@ -164,6 +166,16 @@ export const trackActionChecked = (data: ActionCheckedData): void => {
   trackEvent(
     POSTHOG_EVENTS.ACTION_CHECKED,
     buildActionCheckedProps(data, 'mobile')
+  )
+}
+
+/**
+ * 액션 타입 추천(자동 분류) 노출/계산
+ */
+export const trackActionTypeSuggested = (data: ActionTypeSuggestedData): void => {
+  trackEvent(
+    POSTHOG_EVENTS.ACTION_TYPE_SUGGESTED,
+    buildActionTypeSuggestedProps(data, 'mobile')
   )
 }
 

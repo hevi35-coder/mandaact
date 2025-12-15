@@ -19,6 +19,7 @@ import {
   MissionPeriodCycle,
   suggestActionType,
   getActionTypeLabel,
+  getSuggestionReasonText,
   getWeekdayNames,
   getInitialPeriod,
 } from '@/lib/actionTypes'
@@ -201,7 +202,7 @@ function ActionTypeSelector({
               </p>
               <p className="text-xs text-blue-700 mt-1 flex items-center gap-1">
                 <Info className="h-3 w-3 flex-shrink-0" />
-                <span>{aiSuggestion.reason} (신뢰도: {aiSuggestion.confidence === 'high' ? '높음' : aiSuggestion.confidence === 'medium' ? '중간' : '낮음'})</span>
+                <span>{getSuggestionReasonText(aiSuggestion.reason)} (신뢰도: {aiSuggestion.confidence === 'high' ? '높음' : aiSuggestion.confidence === 'medium' ? '중간' : '낮음'})</span>
               </p>
             </div>
           )}
