@@ -226,7 +226,7 @@ function SubGoalModal({
         })
       }
     }
-  }, [open]) // Only re-initialize when modal opens
+  }, [open, mode, subGoal, initialTitle, getInitialActions]) // Re-initialize when modal opens or inputs change
 
   // Action Title Handlers
   const handleTitleEdit = useCallback((actionId: string, currentTitle: string) => {

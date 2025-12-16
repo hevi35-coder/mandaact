@@ -180,7 +180,7 @@
   - Android 알림 채널 이름/설명 영어로 변경 (`notificationService.ts`)
   - buildNumber: 53 → 54
 
-**반려 사유 2: Guideline 3.1.2 - Business (구독 정보 누락)** ✅ **완료**
+**반려 사유 2: Guideline 3.1.2 - Business (구독 정보 누락)** ⚠️ **부분 완료**
 - 문제: 자동 갱신 구독 앱에서 필수 정보 누락
   - 앱 바이너리: Terms of Use (EULA) 링크 누락
   - 앱 메타데이터: EULA 링크 누락
@@ -188,15 +188,18 @@
   - ✅ SubscriptionScreen에 Terms of Use (Apple 표준 EULA) 링크 추가
   - ✅ SubscriptionScreen에 Privacy Policy 링크 추가
   - ✅ 구독 자동 갱신 안내 문구 보강 (i18n)
-  - [ ] App Store Connect 메타데이터에 EULA 링크 추가 (수동 작업 필요)
+  - [ ] App Store Connect 메타데이터(App Description)에 EULA 링크 추가 (수동 작업 필요)
+    - 가이드: `docs/development/APP_REVIEW_FIX_PLAN_2025-12-15.md`
 
-**반려 사유 3: Guideline 2.1 - Performance (Plans not displayed)** ✅ **완료**
-- 문제: iPad Air (5th generation) / iPadOS 26.1에서 인앱 구매 상품(플랜)이 표시되지 않음
-- 원인: RevenueCat Dashboard 또는 App Store Connect IAP 설정 미완료
-- 대응: ✅ 완료 (2025-12-13)
+**반려 사유 3: Guideline 2.1 - Performance (Plans not displayed)** 🔄 **재발(2025-12-15)**
+- 문제: iPad Air (5th generation) / iPadOS 26.0.1에서 인앱 구매 상품(플랜)이 표시되지 않음
+- 원인 후보: Offering 패키지 미노출/네트워크/환경 차이 등으로 `Offerings.current.availablePackages`가 비는 케이스
+- 대응: 진행 중
   - ✅ App Store Connect IAP 상품 메타데이터/현지화/가격/상태 정리 (월간/연간 "Ready to Submit")
   - ✅ RevenueCat Products/Offerings/Packages/Entitlement 설정 완료 (default offering current)
   - ✅ 구매 복원 자동화 추가 (`syncPurchases()` → 필요 시 `restorePurchases()`) + iPad 동작 검증 완료
+  - ✅ (코드) Offerings 패키지 미노출 시 StoreKit `getProducts()`로 플랜 노출 fallback + Retry 버튼 추가
+    - 상세: `docs/development/APP_REVIEW_FIX_PLAN_2025-12-15.md`
 
 **반려 사유 4: Guideline 5.1.1(v) - Data Collection (계정 삭제 기능 누락)** ✅ **완료**
 - 문제: 계정 생성을 지원하지만 계정 삭제 기능이 없음

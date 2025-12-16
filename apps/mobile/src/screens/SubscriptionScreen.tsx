@@ -22,7 +22,7 @@ import {
   RefreshCw,
   ChevronRight,
 } from 'lucide-react-native'
-import { PurchasesPackage } from 'react-native-purchases'
+import { PurchasesPackage, PurchasesStoreProduct } from 'react-native-purchases'
 import MaskedView from '@react-native-masked-view/masked-view'
 
 import { Header } from '../components'
@@ -50,13 +50,14 @@ export default function SubscriptionScreen() {
     isLoading,
     error,
     packages,
+    storeProducts,
     purchase,
     restore,
     refreshSubscription,
     isPremium,
   } = useSubscriptionContext()
 
-  const [purchasingPackageId, setPurchasingPackageId] = useState<string | null>(null)
+  const [purchasingPlanId, setPurchasingPlanId] = useState<string | null>(null)
   const [isRestoring, setIsRestoring] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const [justPurchased, setJustPurchased] = useState(false)
@@ -76,11 +77,12 @@ export default function SubscriptionScreen() {
   }, [isPremium, justPurchased])
 
   // Handle purchase
-  const handlePurchase = useCallback(async (pkg: PurchasesPackage) => {
-    console.log('[SubscriptionScreen] 🟣 Package pressed:', pkg.identifier)
-    setPurchasingPackageId(pkg.identifier)
+  const handlePurchase = useCallback(async (plan: PurchasesPackage | PurchasesStoreProduct) => {
+    const planId = 'product' in plan ? plan.identifier : plan.identifier
+    console.log('[SubscriptionScreen] 🟣 Plan pressed:', planId)
+    setPurchasingPlanId(planId)
     try {
-      const success = await purchase(pkg)
+      const success = await purchase(plan)
       if (success) {
         setJustPurchased(true)
 
@@ -105,7 +107,7 @@ export default function SubscriptionScreen() {
       const suffix = code ? ` (code: ${code})` : message ? ` (${message})` : ''
       toast.error(t('common.error'), `${t('subscription.purchaseError')}${suffix}`)
     } finally {
-      setPurchasingPackageId(null)
+      setPurchasingPlanId(null)
     }
   }, [purchase, refreshSubscription, toast, t])
 
@@ -137,9 +139,24 @@ export default function SubscriptionScreen() {
     }
   }, [restore, refreshSubscription, toast, t])
 
-  // Get package display info (monthly or yearly only)
-  const getPackageInfo = (pkg: PurchasesPackage) => {
-    const id = pkg.identifier.toLowerCase()
+  const isPurchasesPackage = (value: PurchasesPackage | PurchasesStoreProduct): value is PurchasesPackage =>
+    'product' in value
+
+  const plans: Array<PurchasesPackage | PurchasesStoreProduct> =
+    packages.length > 0 ? packages : storeProducts
+
+  const getPlanIdentifierLower = (plan: PurchasesPackage | PurchasesStoreProduct) =>
+    (isPurchasesPackage(plan) ? plan.identifier : plan.identifier).toLowerCase()
+
+  const getPlanPrice = (plan: PurchasesPackage | PurchasesStoreProduct) =>
+    isPurchasesPackage(plan) ? plan.product.price : plan.price
+
+  const getPlanPriceString = (plan: PurchasesPackage | PurchasesStoreProduct) =>
+    isPurchasesPackage(plan) ? plan.product.priceString : plan.priceString
+
+  // Get plan display info (monthly or yearly only)
+  const getPlanInfo = (plan: PurchasesPackage | PurchasesStoreProduct) => {
+    const id = getPlanIdentifierLower(plan)
     let type: 'monthly' | 'yearly' = 'monthly'
     let highlight = false
     let savings = ''
@@ -148,10 +165,10 @@ export default function SubscriptionScreen() {
       type = 'yearly'
       highlight = true
       // Calculate savings compared to monthly
-      const monthlyPkg = packages.find(p => p.identifier.toLowerCase().includes('monthly'))
-      if (monthlyPkg) {
-        const monthlyPrice = monthlyPkg.product.price * 12
-        const yearlyPrice = pkg.product.price
+      const monthlyPlan = plans.find(p => getPlanIdentifierLower(p).includes('monthly'))
+      if (monthlyPlan) {
+        const monthlyPrice = getPlanPrice(monthlyPlan) * 12
+        const yearlyPrice = getPlanPrice(plan)
         const savingsPercent = Math.round((1 - yearlyPrice / monthlyPrice) * 100)
         if (savingsPercent > 0) {
           savings = t('subscription.save', { percent: savingsPercent })
@@ -381,7 +398,7 @@ export default function SubscriptionScreen() {
                     {t('subscription.loadingPlans')}
                   </Text>
                 </View>
-              ) : packages.length === 0 ? (
+              ) : plans.length === 0 ? (
                 <View className="py-12 items-center bg-white rounded-2xl">
                   <Text
                     className="text-gray-500"
@@ -389,18 +406,30 @@ export default function SubscriptionScreen() {
                   >
                     {t('subscription.noPlansAvailable')}
                   </Text>
+                  <Pressable
+                    onPress={refreshSubscription}
+                    className="mt-4 px-5 py-3 rounded-xl bg-gray-100"
+                  >
+                    <Text
+                      className="text-gray-700"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      {t('common.retry')}
+                    </Text>
+                  </Pressable>
                 </View>
               ) : (
                 <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-                  {packages.map((pkg, index) => {
-                    const { type, highlight, savings } = getPackageInfo(pkg)
-                    const isPurchasing = purchasingPackageId === pkg.identifier
+                  {plans.map((plan, index) => {
+                    const { type, highlight, savings } = getPlanInfo(plan)
+                    const planId = isPurchasesPackage(plan) ? plan.identifier : plan.identifier
+                    const isPurchasing = purchasingPlanId === planId
 
                     return (
                       <Pressable
-                        key={pkg.identifier}
-                        onPress={() => handlePurchase(pkg)}
-                        disabled={isPurchasing || purchasingPackageId !== null}
+                        key={planId}
+                        onPress={() => handlePurchase(plan)}
+                        disabled={isPurchasing || purchasingPlanId !== null}
                         className={`mb-3 rounded-2xl overflow-hidden ${
                           isPurchasing ? 'opacity-70' : ''
                         }`}
@@ -449,7 +478,7 @@ export default function SubscriptionScreen() {
                                         className="text-xl text-gray-900"
                                         style={{ fontFamily: 'Pretendard-Bold' }}
                                       >
-                                        {pkg.product.priceString}
+                                        {getPlanPriceString(plan)}
                                       </Text>
                                       <Text
                                         className="text-xs text-gray-400"
@@ -492,7 +521,7 @@ export default function SubscriptionScreen() {
                                       className="text-xl text-gray-900"
                                       style={{ fontFamily: 'Pretendard-Bold' }}
                                     >
-                                      {pkg.product.priceString}
+                                      {getPlanPriceString(plan)}
                                     </Text>
                                     <Text
                                       className="text-xs text-gray-400"

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react'
-import { PurchasesPackage } from 'react-native-purchases'
+import { PurchasesPackage, PurchasesStoreProduct } from 'react-native-purchases'
 import {
   useSubscription,
   SubscriptionInfo,
@@ -18,9 +18,10 @@ interface SubscriptionContextValue {
 
   // Available packages
   packages: PurchasesPackage[]
+  storeProducts: PurchasesStoreProduct[]
 
   // Actions
-  purchase: (pkg: PurchasesPackage) => Promise<boolean>
+  purchase: (plan: PurchasesPackage | PurchasesStoreProduct) => Promise<boolean>
   restore: () => Promise<boolean>
   refreshSubscription: () => Promise<void>
 
@@ -47,6 +48,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     isLoading,
     error,
     packages,
+    storeProducts,
     purchase,
     restore,
     refreshSubscription,
@@ -59,6 +61,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     isLoading,
     error,
     packages,
+    storeProducts,
     purchase,
     restore,
     refreshSubscription,
