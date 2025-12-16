@@ -23,6 +23,7 @@ const NotificationSettingsPage = lazy(() => import('@/pages/NotificationSettings
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
 const TutorialPage = lazy(() => import('@/pages/TutorialPage'))
 const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
+const TermsOfServicePage = lazy(() => import('@/pages/TermsOfServicePage'))
 
 // Loading component
 function PageLoader() {
@@ -221,6 +222,7 @@ function AnimatedRoutes() {
             />
             <Route path="/tutorial" element={<TutorialPage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
             {/* More routes will be added in future phases */}
           </Routes>
         </Suspense>

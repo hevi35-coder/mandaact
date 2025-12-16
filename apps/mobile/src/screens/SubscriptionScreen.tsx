@@ -664,7 +664,7 @@ export default function SubscriptionScreen() {
             {/* Terms of Use and Privacy Policy Links */}
             <View className="flex-row items-center justify-center mt-3 flex-wrap">
               <Pressable
-                onPress={() => Linking.openURL('https://hevi35-coder.github.io/mandaact-terms/')}
+                onPress={() => Linking.openURL('https://mandaact.vercel.app/terms')}
               >
                 <Text
                   className="text-xs text-primary underline"
@@ -680,7 +680,7 @@ export default function SubscriptionScreen() {
                 {t('subscription.and')}
               </Text>
               <Pressable
-                onPress={() => Linking.openURL('https://hevi35-coder.github.io/mandaact-privacy/')}
+                onPress={() => Linking.openURL('https://mandaact.vercel.app/privacy')}
               >
                 <Text
                   className="text-xs text-primary underline"
