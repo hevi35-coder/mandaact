@@ -1,11 +1,10 @@
 import { useEffect, lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
-import ProtectedRoute from '@/components/ProtectedRoute'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import Navigation from '@/components/Navigation'
 import { Toaster } from '@/components/ui/toaster'
@@ -13,15 +12,6 @@ import { initPostHog, identifyUser, resetUser } from '@/lib/posthog'
 import { initSentry, setSentryUser, clearSentryUser } from '@/lib/sentry'
 
 // Lazy load pages for code splitting
-const LoginPage = lazy(() => import('@/pages/LoginPage'))
-const HomePage = lazy(() => import('@/pages/HomePage'))
-const MandalartCreatePage = lazy(() => import('@/pages/MandalartCreatePage'))
-const MandalartListPage = lazy(() => import('@/pages/MandalartListPage'))
-const MandalartDetailPage = lazy(() => import('@/pages/MandalartDetailPage'))
-const TodayChecklistPage = lazy(() => import('@/pages/TodayChecklistPage'))
-const NotificationSettingsPage = lazy(() => import('@/pages/NotificationSettingsPage'))
-const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
-const TutorialPage = lazy(() => import('@/pages/TutorialPage'))
 const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
 const TermsOfServicePage = lazy(() => import('@/pages/TermsOfServicePage'))
 
@@ -39,36 +29,6 @@ function PageLoader() {
 
 // LandingPage component
 function LandingPage() {
-  const navigate = useNavigate()
-  const user = useAuthStore((state) => state.user)
-  const loading = useAuthStore((state) => state.loading)
-
-  const handleLogout = async () => {
-    await useAuthStore.getState().signOut()
-    navigate('/login', { replace: true })
-  }
-
-  // Auto-redirect logic
-  useEffect(() => {
-    if (!loading) {
-      if (user) {
-        // Logged in -> go to home
-        navigate('/home', { replace: true })
-      } else {
-        // Not logged in -> go to login
-        navigate('/login', { replace: true })
-      }
-    }
-  }, [loading, user, navigate])
-
-  if (loading) {
-    return (
-      <div className="container mx-auto flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">로딩 중...</p>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -78,62 +38,53 @@ function LandingPage() {
           <p className="text-muted-foreground mb-2">
             AI-powered Mandalart Action Tracker
           </p>
-          <div className="inline-flex gap-4 text-sm">
-            <span>✅ Project setup complete</span>
-            <span>✅ Git initialized</span>
-            <span>✅ UI components ready</span>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            모바일 앱에서 더 나은 경험을 제공하고 있어요.
+          </p>
         </div>
 
-        {/* Auth Status */}
+        {/* CTA */}
         <Card>
           <CardHeader>
-            <CardTitle>인증 상태</CardTitle>
+            <CardTitle>앱에서 시작하기</CardTitle>
             <CardDescription>
-              {user ? `로그인됨: ${user.email}` : '로그인되지 않음'}
+              iOS 앱을 다운로드해 프리미엄 기능과 광고 제거 혜택을 이용하세요.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!user ? (
-              <div className="flex gap-2">
-                <Link to="/login" className="flex-1">
-                  <Button className="w-full">시작하기</Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  환영합니다! 만다라트를 만들어보세요.
-                </p>
-                <div className="flex gap-2">
-                  <Link to="/home" className="flex-1">
-                    <Button className="w-full">홈으로 가기</Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={handleLogout}
-                  >
-                    로그아웃
-                  </Button>
-                </div>
-              </div>
-            )}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <a
+                href="https://apps.apple.com/app/id6756198473"
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1"
+              >
+                <Button className="w-full">App Store 열기</Button>
+              </a>
+              <a
+                href="mailto:support@unwrittenbd.com"
+                className="flex-1"
+              >
+                <Button variant="outline" className="w-full">지원 문의</Button>
+              </a>
+            </div>
+            <div className="flex items-center justify-center gap-3 text-sm">
+              <Link to="/terms" className="text-primary underline">이용약관</Link>
+              <span className="text-muted-foreground">·</span>
+              <Link to="/privacy" className="text-primary underline">개인정보처리방침</Link>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Phase 1 Progress */}
+        {/* Notice */}
         <Card>
           <CardHeader>
-            <CardTitle>Phase 1 개발 진행 상황</CardTitle>
+            <CardTitle>안내</CardTitle>
           </CardHeader>
           <CardContent>
-            <ol className="list-decimal list-inside space-y-1 text-sm">
-              <li className="text-green-600 font-medium">✅ 회원가입 기능</li>
-              <li className="text-green-600 font-medium">✅ 로그인 기능</li>
-              <li className="text-green-600 font-medium">✅ Protected Routes</li>
-              <li className="text-green-600 font-medium">✅ 만다라트 직접 입력 (테스트 중)</li>
-            </ol>
+            <p className="text-sm text-muted-foreground">
+              웹에서는 소개/지원/약관 문서만 제공하며, 서비스 기능은 모바일 앱에서 이용할 수 있습니다.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -163,66 +114,40 @@ function AnimatedRoutes() {
         <Suspense fallback={<PageLoader />} key={location.pathname}>
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            {/* Short-term: web runs in "landing page mode" (block app routes) */}
+            <Route path="/login" element={<Navigate to="/" replace />} />
             <Route
               path="/home"
-              element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/" replace />}
             />
             <Route
               path="/mandalart/create"
-              element={
-                <ProtectedRoute>
-                  <MandalartCreatePage />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/" replace />}
             />
             <Route
               path="/mandalart/list"
-              element={
-                <ProtectedRoute>
-                  <MandalartListPage />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/" replace />}
             />
             <Route
               path="/mandalart/:id"
-              element={
-                <ProtectedRoute>
-                  <MandalartDetailPage />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/" replace />}
             />
             <Route
               path="/today"
-              element={
-                <ProtectedRoute>
-                  <TodayChecklistPage />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/" replace />}
             />
             <Route
               path="/settings/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationSettingsPage />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/" replace />}
             />
             <Route
               path="/reports"
-              element={
-                <ProtectedRoute>
-                  <ReportsPage />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/" replace />}
             />
-            <Route path="/tutorial" element={<TutorialPage />} />
+            <Route path="/tutorial" element={<Navigate to="/" replace />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
             {/* More routes will be added in future phases */}
           </Routes>
         </Suspense>
