@@ -148,8 +148,8 @@ export default function TermsOfServicePage() {
                                     <div>
                                         <h4 className="text-sm font-semibold mb-1">2.1 구독 상품</h4>
                                         <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                                            <li>월간 구독: $2.99/월</li>
-                                            <li>연간 구독: $22.99/년</li>
+                                            <li>월간 구독: ₩4,400/월</li>
+                                            <li>연간 구독: ₩33,000/년</li>
                                         </ul>
                                     </div>
                                     <div>
