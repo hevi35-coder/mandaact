@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Purchases, {
   PurchasesPackage,
+  PurchasesStoreProduct,
   CustomerInfo,
   LOG_LEVEL,
   PurchasesEntitlementInfo,
@@ -88,9 +89,10 @@ interface UseSubscriptionReturn {
 
   // Available packages
   packages: PurchasesPackage[]
+  storeProducts: PurchasesStoreProduct[]
 
   // Actions
-  purchase: (pkg: PurchasesPackage) => Promise<boolean>
+  purchase: (plan: PurchasesPackage | PurchasesStoreProduct) => Promise<boolean>
   restore: () => Promise<boolean>
   refreshSubscription: () => Promise<void>
 
@@ -100,7 +102,7 @@ interface UseSubscriptionReturn {
 }
 
 // Initialize RevenueCat (call once at app startup)
-export async function initializeRevenueCat(userId: string): Promise<void> {
+export async function initializeRevenueCat(userId?: string): Promise<boolean> {
   try {
     // Always set debug log level for now (to debug Sandbox issues)
     Purchases.setLogLevel(LOG_LEVEL.DEBUG)
@@ -117,17 +119,20 @@ export async function initializeRevenueCat(userId: string): Promise<void> {
 
     if (!apiKey) {
       console.error('[RevenueCat] API key not configured!')
-      return
+      return false
     }
 
-    await Purchases.configure({
-      apiKey,
-      appUserID: userId,
-    })
+    await Purchases.configure(
+      userId
+        ? { apiKey, appUserID: userId }
+        : { apiKey }
+    )
 
     console.log('[RevenueCat] Successfully initialized for user:', userId)
+    return true
   } catch (error) {
     console.error('[RevenueCat] Failed to initialize:', error)
+    return false
   }
 }
 
@@ -150,7 +155,22 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [packages, setPackages] = useState<PurchasesPackage[]>([])
+  const [storeProducts, setStoreProducts] = useState<PurchasesStoreProduct[]>([])
   const [isRevenueCatInitialized, setIsRevenueCatInitialized] = useState(false)
+
+  const isPurchasesPackage = (
+    value: PurchasesPackage | PurchasesStoreProduct
+  ): value is PurchasesPackage => 'product' in value
+
+  const loadFallbackProducts = useCallback(async (): Promise<PurchasesStoreProduct[]> => {
+    try {
+      const products = await Purchases.getProducts([PRODUCT_IDS.MONTHLY, PRODUCT_IDS.YEARLY])
+      return products
+    } catch (err) {
+      console.warn('[useSubscription] ⚠️ Failed to load fallback store products:', err)
+      return []
+    }
+  }, [])
 
   const applySubscriptionInfo = useCallback((
     nextInfo: SubscriptionInfo,
@@ -286,19 +306,30 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
   // Fetch customer info and packages
   const refreshSubscription = useCallback(async () => {
-    if (!userId) return
-
     setIsLoading(true)
     setError(null)
 
     try {
+      if (!isRevenueCatInitialized) {
+        const configured = await initializeRevenueCat(userId)
+        setIsRevenueCatInitialized(configured)
+        if (!configured) {
+          setPackages([])
+          setStoreProducts([])
+          setError(i18n.t('errors.unknown'))
+          return
+        }
+      }
+
       // Get customer info
       const customerInfo = await Purchases.getCustomerInfo()
       const parsed = parseCustomerInfo(customerInfo)
       applySubscriptionInfo(parsed.info, parsed.reason)
 
       // Sync to Supabase
-      await syncToSupabase(parsed.info)
+      if (userId) {
+        await syncToSupabase(parsed.info)
+      }
 
       // Get available packages
       const offerings = await Purchases.getOfferings()
@@ -322,6 +353,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
           price: p.product.priceString,
         })))
         setPackages(offerings.current.availablePackages)
+        setStoreProducts([])
       } else {
         // Try to find any offering with packages
         const offeringsWithPackages = Object.values(offerings.all || {}).find(
@@ -330,11 +362,15 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         if (offeringsWithPackages) {
           console.log('[RevenueCat] Found packages in non-current offering:', offeringsWithPackages.identifier)
           setPackages(offeringsWithPackages.availablePackages)
+          setStoreProducts([])
         } else {
           console.warn('[RevenueCat] No packages available in any offering. Please check RevenueCat dashboard:')
           console.warn('1. Ensure products are added (com.mandaact.sub.premium.monthly, com.mandaact.sub.premium.yearly)')
           console.warn('2. Create an Offering and set it as "Current"')
           console.warn('3. Add packages (Monthly, Yearly) to the Offering')
+          setPackages([])
+          const products = await loadFallbackProducts()
+          setStoreProducts(products)
         }
       }
     } catch (err) {
@@ -343,6 +379,8 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
       // Fallback: check Supabase directly
       try {
+        if (!userId) return
+
         const { data } = await supabase
           .from('user_subscriptions')
           .select('status, plan, expires_at')
@@ -364,23 +402,41 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     } finally {
       setIsLoading(false)
     }
-  }, [userId, parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
+  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase, applySubscriptionInfo, loadFallbackProducts])
 
-  // Purchase a package
-  const purchase = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
+  // Purchase a plan (RevenueCat package preferred; StoreKit product fallback)
+  const purchase = useCallback(async (plan: PurchasesPackage | PurchasesStoreProduct): Promise<boolean> => {
     try {
       setIsLoading(true)
       setError(null)
 
-      console.log('[useSubscription] 💳 Starting purchase:', pkg.identifier)
+      if (!isRevenueCatInitialized) {
+        const configured = await initializeRevenueCat(userId)
+        setIsRevenueCatInitialized(configured)
+        if (!configured) {
+          setError(i18n.t('subscription.purchaseError'))
+          return false
+        }
+      }
+
+      const productId = isPurchasesPackage(plan) ? plan.product.identifier : plan.identifier
+      const planId = isPurchasesPackage(plan) ? plan.identifier : plan.identifier
+      const price = isPurchasesPackage(plan) ? plan.product.price : plan.price
+      const currency = isPurchasesPackage(plan) ? plan.product.currencyCode : plan.currencyCode
+
+      console.log('[useSubscription] 💳 Starting purchase:', planId)
       trackPurchaseStarted({
-        product_id: pkg.product.identifier,
-        package_id: pkg.identifier,
-        price: pkg.product.price,
-        currency: pkg.product.currencyCode,
+        product_id: productId,
+        package_id: planId,
+        price,
+        currency,
       })
 
-      await Purchases.purchasePackage(pkg)
+      if (isPurchasesPackage(plan)) {
+        await Purchases.purchasePackage(plan)
+      } else {
+        await Purchases.purchaseStoreProduct(plan)
+      }
       console.log('[useSubscription] 💳 Purchase completed, parsing customer info...')
 
       // Force-refresh to avoid cached customer info immediately after purchase
@@ -396,9 +452,11 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         plan: parsed.info.plan,
       })
 
-      // Sync to Supabase
-      await syncToSupabase(parsed.info)
-      console.log('[useSubscription] 💳 Synced to Supabase')
+      // Sync to Supabase (only when signed in)
+      if (userId) {
+        await syncToSupabase(parsed.info)
+        console.log('[useSubscription] 💳 Synced to Supabase')
+      }
 
       // CRITICAL: Sandbox environment needs additional time for receipt validation
       // Wait 1.5 seconds and re-check subscription status to ensure it's fully updated
@@ -410,7 +468,9 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       const finalInfo = await Purchases.getCustomerInfo()
       const finalParsed = parseCustomerInfo(finalInfo)
       applySubscriptionInfo(finalParsed.info, finalParsed.reason)
-      await syncToSupabase(finalParsed.info)
+      if (userId) {
+        await syncToSupabase(finalParsed.info)
+      }
 
       console.log('[useSubscription] 💳 Final subscription state after re-check:', {
         isPremium: finalParsed.info.isPremium,
@@ -420,17 +480,17 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
       if (finalParsed.info.isPremium) {
         trackPurchaseSuccess({
-          product_id: pkg.product.identifier,
+          product_id: productId,
           plan: finalParsed.info.plan,
-          price: pkg.product.price,
-          currency: pkg.product.currencyCode,
+          price,
+          currency,
         })
       } else {
         trackPurchaseFailed({
-          product_id: pkg.product.identifier,
+          product_id: productId,
           plan: finalParsed.info.plan,
-          price: pkg.product.price,
-          currency: pkg.product.currencyCode,
+          price,
+          currency,
           error_code: 'no_premium_after_purchase',
         })
       }
@@ -455,28 +515,37 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       logger.captureException(err, {
         scope: 'subscription',
         action: 'purchase',
-        product_id: pkg.product.identifier,
-        package_id: pkg.identifier,
+        product_id: isPurchasesPackage(plan) ? plan.product.identifier : plan.identifier,
+        package_id: isPurchasesPackage(plan) ? plan.identifier : plan.identifier,
         error_code: details.code,
         error_message: details.message,
       })
       trackPurchaseFailed({
-        product_id: pkg.product.identifier,
-        price: pkg.product.price,
-        currency: pkg.product.currencyCode,
+        product_id: isPurchasesPackage(plan) ? plan.product.identifier : plan.identifier,
+        price: isPurchasesPackage(plan) ? plan.product.price : plan.price,
+        currency: isPurchasesPackage(plan) ? plan.product.currencyCode : plan.currencyCode,
         error_code: details.code ?? String(purchaseError.code ?? purchaseError.message ?? 'purchase_failed'),
       })
       throw err
     } finally {
       setIsLoading(false)
     }
-  }, [parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
+  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase, applySubscriptionInfo, isPurchasesPackage])
 
   // Restore purchases
   const restore = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoading(true)
       setError(null)
+
+      if (!isRevenueCatInitialized) {
+        const configured = await initializeRevenueCat(userId)
+        setIsRevenueCatInitialized(configured)
+        if (!configured) {
+          setError(i18n.t('subscription.restoreError'))
+          return false
+        }
+      }
 
       console.log('[useSubscription] 🔄 Starting restore purchases...')
       trackRestoreStarted({ trigger: 'manual' })
@@ -494,7 +563,9 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       })
 
       // Sync to Supabase
-      await syncToSupabase(parsed.info)
+      if (userId) {
+        await syncToSupabase(parsed.info)
+      }
 
       // CRITICAL: Similar to purchase, wait for sandbox receipt validation
       console.log('[useSubscription] 🔄 Waiting for sandbox receipt validation...')
@@ -505,7 +576,9 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       const finalInfo = await Purchases.getCustomerInfo()
       const finalParsed = parseCustomerInfo(finalInfo)
       applySubscriptionInfo(finalParsed.info, 'restore_manual')
-      await syncToSupabase(finalParsed.info)
+      if (userId) {
+        await syncToSupabase(finalParsed.info)
+      }
 
       console.log('[useSubscription] 🔄 Final restore result after re-check:', {
         isPremium: finalParsed.info.isPremium,
@@ -536,7 +609,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     } finally {
       setIsLoading(false)
     }
-  }, [parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
+  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase, applySubscriptionInfo])
 
   // Check if user can create more mandalarts
   const canCreateMandalart = useCallback((currentCount: number): boolean => {
@@ -552,12 +625,10 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
   // Initialize on mount
   useEffect(() => {
-    if (!userId) return
-
     let mounted = true
 
     const initialize = async () => {
-      console.log('[useSubscription] 🚀 Initializing for user:', userId)
+      console.log('[useSubscription] 🚀 Initializing for user:', userId ?? '(anonymous)')
 
       // Reset initialization state when user changes
       setIsRevenueCatInitialized(false)
@@ -567,33 +638,42 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         let supabaseFallbackStatus: 'active' | 'free' | null = null
 
         // Step 1: Load from Supabase first (faster, cached)
-        console.log('[useSubscription] 📦 Loading subscription from Supabase...')
-        const { data: supabaseData } = await supabase
-          .from('user_subscriptions')
-          .select('status, plan, expires_at')
-          .eq('user_id', userId)
-          .single()
+        if (userId) {
+          console.log('[useSubscription] 📦 Loading subscription from Supabase...')
+          const { data: supabaseData } = await supabase
+            .from('user_subscriptions')
+            .select('status, plan, expires_at')
+            .eq('user_id', userId)
+            .single()
 
-        if (supabaseData && mounted) {
-          supabaseFallbackStatus = supabaseData.status === 'active' ? 'active' : 'free'
-          const fallbackInfo: SubscriptionInfo = {
-            status: supabaseData.status === 'active' ? 'premium' : 'free',
-            isPremium: supabaseData.status === 'active',
-            expiresAt: supabaseData.expires_at ? new Date(supabaseData.expires_at) : null,
-            plan: supabaseData.plan,
-            willRenew: false,
+          if (supabaseData && mounted) {
+            supabaseFallbackStatus = supabaseData.status === 'active' ? 'active' : 'free'
+            const fallbackInfo: SubscriptionInfo = {
+              status: supabaseData.status === 'active' ? 'premium' : 'free',
+              isPremium: supabaseData.status === 'active',
+              expiresAt: supabaseData.expires_at ? new Date(supabaseData.expires_at) : null,
+              plan: supabaseData.plan,
+              willRenew: false,
+            }
+            console.log('[useSubscription] 📦 Loaded from Supabase:', fallbackInfo)
+            applySubscriptionInfo(fallbackInfo, 'supabase_fallback')
           }
-          console.log('[useSubscription] 📦 Loaded from Supabase:', fallbackInfo)
-          applySubscriptionInfo(fallbackInfo, 'supabase_fallback')
         }
 
         // Step 2: Initialize RevenueCat
         console.log('[useSubscription] 🔧 Initializing RevenueCat...')
-        await initializeRevenueCat(userId)
+        const configured = await initializeRevenueCat(userId)
 
         if (!mounted) return
 
-        setIsRevenueCatInitialized(true)
+        setIsRevenueCatInitialized(configured)
+
+        if (!configured) {
+          setPackages([])
+          setStoreProducts([])
+          setError(i18n.t('errors.unknown'))
+          return
+        }
 
         // Step 3: Refresh from RevenueCat (source of truth)
         console.log('[useSubscription] 🔄 Refreshing from RevenueCat...')
@@ -605,7 +685,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         // Auto-restore strategy (Sandbox & cross-device):
         // If RevenueCat doesn't show premium yet, do a rate-limited syncPurchases → (optional) restorePurchases
         // This helps when the receipt hasn't been synced on this device.
-        if (!info.isPremium) {
+        if (!info.isPremium && userId) {
           const now = Date.now()
           const autoRestoreKey = getAutoRestoreKey(userId)
           const lastAutoRestoreRaw = await AsyncStorage.getItem(autoRestoreKey)
@@ -665,7 +745,9 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
         if (mounted) {
           applySubscriptionInfo(info, parsed.reason)
-          await syncToSupabase(info)
+          if (userId) {
+            await syncToSupabase(info)
+          }
         }
 
         // Step 4: Load available packages
@@ -681,6 +763,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
           const currentPackages = offerings.current?.availablePackages ?? null
           if (currentPackages && currentPackages.length > 0) {
             setPackages(currentPackages)
+            setStoreProducts([])
             loadedPackagesCount = currentPackages.length
             console.log('[useSubscription] ✅ Packages loaded:', loadedPackagesCount)
           } else {
@@ -692,11 +775,14 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
               console.log('[useSubscription] 📦 Found packages in non-current offering:', offeringsWithPackages.identifier)
               const fallbackPackages = offeringsWithPackages.availablePackages
               setPackages(fallbackPackages)
+              setStoreProducts([])
               loadedPackagesCount = fallbackPackages.length
               console.log('[useSubscription] ✅ Packages loaded (fallback):', loadedPackagesCount)
             } else {
               console.warn('[useSubscription] ⚠️ No packages available in any offering')
               setPackages([])
+              const products = await loadFallbackProducts()
+              setStoreProducts(products)
             }
           }
 
@@ -723,8 +809,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     return () => {
       mounted = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]) // Only depend on userId, not refreshSubscription
+  }, [userId, applySubscriptionInfo, loadFallbackProducts, parseCustomerInfo, syncToSupabase])
 
   // Listen for customer info updates
   useEffect(() => {
@@ -755,6 +840,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     isLoading,
     error,
     packages,
+    storeProducts,
     purchase,
     restore,
     refreshSubscription,
