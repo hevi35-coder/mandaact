@@ -759,66 +759,8 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         let parsed = parseCustomerInfo(customerInfo)
         let info = parsed.info
 
-        // Auto-restore strategy (Sandbox & cross-device):
-        // If RevenueCat doesn't show premium yet, do a rate-limited syncPurchases → (optional) restorePurchases
-        // This helps when the receipt hasn't been synced on this device.
-        if (!info.isPremium && userId) {
-          const now = Date.now()
-          const autoRestoreKey = getAutoRestoreKey(userId)
-          const lastAutoRestoreRaw = await AsyncStorage.getItem(autoRestoreKey)
-          const lastAutoRestore = lastAutoRestoreRaw ? Number(lastAutoRestoreRaw) : 0
-          const shouldAttemptAutoRestore = !lastAutoRestore || now - lastAutoRestore > AUTO_RESTORE_COOLDOWN_MS
-
-          const shouldForceAttempt =
-            supabaseFallbackStatus === 'active' || // server says premium but RC says free
-            false
-
-          if (shouldAttemptAutoRestore || shouldForceAttempt) {
-            console.log('[useSubscription] 🔄 Auto-sync purchases (rate-limited)', {
-              supabaseFallbackStatus,
-              shouldAttemptAutoRestore,
-              lastAutoRestore,
-            })
-
-            await AsyncStorage.setItem(autoRestoreKey, String(now))
-            trackRestoreStarted({ trigger: 'auto' })
-
-            try {
-              await Purchases.syncPurchases()
-              await Purchases.invalidateCustomerInfoCache()
-              customerInfo = await Purchases.getCustomerInfo()
-              parsed = parseCustomerInfo(customerInfo)
-              info = parsed.info
-            } catch (syncErr) {
-              console.warn('[useSubscription] ⚠️ syncPurchases failed:', syncErr)
-            }
-
-            // If still not premium and we expected premium, try restorePurchases once (still rate-limited by the same key)
-            if (!info.isPremium && supabaseFallbackStatus === 'active') {
-              try {
-                console.log('[useSubscription] 🔄 Auto-restore purchases (fallback)')
-                await Purchases.restorePurchases()
-                await Purchases.invalidateCustomerInfoCache()
-                customerInfo = await Purchases.getCustomerInfo()
-                parsed = parseCustomerInfo(customerInfo)
-                info = parsed.info
-              } catch (restoreErr) {
-                console.warn('[useSubscription] ⚠️ auto restorePurchases failed:', restoreErr)
-              }
-            }
-
-            if (info.isPremium) {
-              trackRestoreSuccess({ trigger: 'auto', restored: true })
-            } else {
-              trackRestoreFailed({ trigger: 'auto', restored: false, error_code: 'no_premium_after_auto_restore' })
-            }
-          } else {
-            console.log('[useSubscription] ⏭️ Skipping auto-sync (cooldown)', {
-              lastAutoRestore,
-              cooldownMs: AUTO_RESTORE_COOLDOWN_MS,
-            })
-          }
-        }
+        // Auto-restore logic removed to prevent repetitive App Store password prompts.
+        // Users must manually tap "Restore Purchases" in Settings if needed.
 
         if (mounted) {
           applySubscriptionInfo(info, parsed.reason)
