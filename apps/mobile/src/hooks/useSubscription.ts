@@ -5,6 +5,7 @@ import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
   PurchasesEntitlementInfo,
+  PURCHASES_ERROR_CODE,
 } from 'react-native-purchases'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -43,6 +44,81 @@ export const PRODUCT_IDS = {
   MONTHLY: 'com.mandaact.sub.premium.monthly',  // ₩4,400/month
   YEARLY: 'com.mandaact.sub.premium.yearly',     // ₩33,000/year (~38% savings)
 } as const
+
+function isPurchasesPackage(
+  value: PurchasesPackage | PurchasesStoreProduct
+): value is PurchasesPackage {
+  return 'product' in value
+}
+
+let rcConfigurePromise: Promise<boolean> | null = null
+let rcIdentityPromise: Promise<boolean> | null = null
+let rcLastAppUserId: string | null = null
+
+function isPurchasesErrorCode(value: string | undefined): value is PURCHASES_ERROR_CODE {
+  if (!value) return false
+  return (Object.values(PURCHASES_ERROR_CODE) as string[]).includes(value)
+}
+
+async function configureRevenueCatOnce(): Promise<boolean> {
+  if (rcConfigurePromise) return rcConfigurePromise
+
+  rcConfigurePromise = (async () => {
+    try {
+      const alreadyConfigured = await Purchases.isConfigured()
+      if (alreadyConfigured) return true
+
+      const apiKey = Platform.OS === 'ios' ? REVENUECAT_IOS_API_KEY : REVENUECAT_ANDROID_API_KEY
+      if (!apiKey) return false
+
+      await Purchases.configure({ apiKey })
+      return true
+    } catch (err) {
+      console.error('[RevenueCat] configure failed:', err)
+      return false
+    }
+  })()
+
+  return rcConfigurePromise
+}
+
+async function ensureRevenueCatIdentity(userId?: string): Promise<boolean> {
+  if (rcIdentityPromise) return rcIdentityPromise
+
+  rcIdentityPromise = (async () => {
+    const configured = await configureRevenueCatOnce()
+    if (!configured) return false
+
+    try {
+      // Best-effort bootstrap of cached identity across app restarts.
+      if (rcLastAppUserId === null) {
+        const current = await Purchases.getAppUserID()
+        rcLastAppUserId = current.startsWith('$RCAnonymousID:') ? null : current
+      }
+
+      // Avoid repeated logIn/logOut calls which can cause receipt / identity issues.
+      if (userId) {
+        if (rcLastAppUserId !== userId) {
+          await Purchases.logIn(userId)
+          rcLastAppUserId = userId
+        }
+      } else if (rcLastAppUserId !== null) {
+        await Purchases.logOut()
+        rcLastAppUserId = null
+      }
+      return true
+    } catch (err) {
+      console.error('[RevenueCat] identity sync failed:', err)
+      // Still consider SDK usable even if identity sync fails (e.g. transient network error).
+      return true
+    } finally {
+      // Allow subsequent identity changes.
+      rcIdentityPromise = null
+    }
+  })()
+
+  return rcIdentityPromise
+}
 
 function getPurchaseErrorDetails(err: unknown): { code?: string; message?: string } {
   if (err && typeof err === 'object') {
@@ -122,14 +198,9 @@ export async function initializeRevenueCat(userId?: string): Promise<boolean> {
       return false
     }
 
-    await Purchases.configure(
-      userId
-        ? { apiKey, appUserID: userId }
-        : { apiKey }
-    )
-
+    const ok = await ensureRevenueCatIdentity(userId)
     console.log('[RevenueCat] Successfully initialized for user:', userId)
-    return true
+    return ok
   } catch (error) {
     console.error('[RevenueCat] Failed to initialize:', error)
     return false
@@ -157,10 +228,6 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
   const [packages, setPackages] = useState<PurchasesPackage[]>([])
   const [storeProducts, setStoreProducts] = useState<PurchasesStoreProduct[]>([])
   const [isRevenueCatInitialized, setIsRevenueCatInitialized] = useState(false)
-
-  const isPurchasesPackage = (
-    value: PurchasesPackage | PurchasesStoreProduct
-  ): value is PurchasesPackage => 'product' in value
 
   const loadFallbackProducts = useCallback(async (): Promise<PurchasesStoreProduct[]> => {
     try {
@@ -506,9 +573,13 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       }
 
       const details = getPurchaseErrorDetails(err)
-      const userMessage = details.code
-        ? `${i18n.t('subscription.purchaseError')} (code: ${details.code})`
-        : i18n.t('subscription.purchaseError')
+      const code = typeof details.code === 'string' ? details.code : undefined
+      const purchasesErrorCode = isPurchasesErrorCode(code) ? code : undefined
+      const userMessageBase =
+        purchasesErrorCode === PURCHASES_ERROR_CODE.INVALID_RECEIPT_ERROR
+          ? i18n.t('subscription.invalidReceiptError')
+          : i18n.t('subscription.purchaseError')
+      const userMessage = code ? `${userMessageBase} (code: ${code})` : userMessageBase
 
       console.error('[useSubscription] 💳 Purchase failed:', err)
       setError(userMessage)
@@ -517,14 +588,15 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         action: 'purchase',
         product_id: isPurchasesPackage(plan) ? plan.product.identifier : plan.identifier,
         package_id: isPurchasesPackage(plan) ? plan.identifier : plan.identifier,
-        error_code: details.code,
+        error_code: code,
+        purchases_error_code: purchasesErrorCode,
         error_message: details.message,
       })
       trackPurchaseFailed({
         product_id: isPurchasesPackage(plan) ? plan.product.identifier : plan.identifier,
         price: isPurchasesPackage(plan) ? plan.product.price : plan.price,
         currency: isPurchasesPackage(plan) ? plan.product.currencyCode : plan.currencyCode,
-        error_code: details.code ?? String(purchaseError.code ?? purchaseError.message ?? 'purchase_failed'),
+        error_code: code ?? String(purchaseError.code ?? purchaseError.message ?? 'purchase_failed'),
       })
       throw err
     } finally {
@@ -590,20 +662,25 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       return finalParsed.info.isPremium
     } catch (err) {
       const details = getPurchaseErrorDetails(err)
-      const userMessage = details.code
-        ? `${i18n.t('subscription.restoreError')} (code: ${details.code})`
-        : i18n.t('subscription.restoreError')
+      const code = typeof details.code === 'string' ? details.code : undefined
+      const purchasesErrorCode = isPurchasesErrorCode(code) ? code : undefined
+      const userMessageBase =
+        purchasesErrorCode === PURCHASES_ERROR_CODE.INVALID_RECEIPT_ERROR
+          ? i18n.t('subscription.invalidReceiptError')
+          : i18n.t('subscription.restoreError')
+      const userMessage = code ? `${userMessageBase} (code: ${code})` : userMessageBase
       console.error('[useSubscription] 🔄 Restore failed:', err)
       setError(userMessage)
       logger.captureException(err, {
         scope: 'subscription',
         action: 'restore',
-        error_code: details.code,
+        error_code: code,
+        purchases_error_code: purchasesErrorCode,
         error_message: details.message,
       })
       trackRestoreFailed({
         trigger: 'manual',
-        error_code: details.code ?? details.message ?? 'restore_failed',
+        error_code: code ?? details.message ?? 'restore_failed',
       })
       throw err
     } finally {

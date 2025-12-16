@@ -98,14 +98,6 @@ export default function SubscriptionScreen() {
       }
     } catch (error) {
       console.error('[SubscriptionScreen] Purchase error:', error)
-      const details =
-        error && typeof error === 'object'
-          ? (error as { readableErrorCode?: string; code?: string | number; message?: string })
-          : null
-      const code = details?.readableErrorCode ?? (typeof details?.code === 'string' || typeof details?.code === 'number' ? String(details?.code) : null)
-      const message = typeof details?.message === 'string' ? details.message : null
-      const suffix = code ? ` (code: ${code})` : message ? ` (${message})` : ''
-      toast.error(t('common.error'), `${t('subscription.purchaseError')}${suffix}`)
     } finally {
       setPurchasingPlanId(null)
     }
@@ -133,7 +125,6 @@ export default function SubscriptionScreen() {
       }
     } catch (error) {
       console.error('[SubscriptionScreen] Restore error:', error)
-      toast.error(t('common.error'), t('subscription.restoreError'))
     } finally {
       setIsRestoring(false)
     }
@@ -673,7 +664,7 @@ export default function SubscriptionScreen() {
             {/* Terms of Use and Privacy Policy Links */}
             <View className="flex-row items-center justify-center mt-3 flex-wrap">
               <Pressable
-                onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
+                onPress={() => Linking.openURL('https://hevi35-coder.github.io/mandaact-terms/')}
               >
                 <Text
                   className="text-xs text-primary underline"
