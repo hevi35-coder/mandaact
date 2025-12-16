@@ -346,7 +346,7 @@ export default function SettingsScreen() {
   }, [t])
 
   const handlePrivacyPolicy = useCallback(() => {
-    handleOpenURL('https://hevi35-coder.github.io/mandaact-privacy/')
+    handleOpenURL('https://mandaact.vercel.app/privacy')
   }, [handleOpenURL])
 
   const handleFeedback = useCallback(() => {
