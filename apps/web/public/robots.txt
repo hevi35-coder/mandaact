@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /terms
+Allow: /privacy
+
+# Block legacy app routes from indexing (landing page mode)
+Disallow: /login
+Disallow: /home
+Disallow: /mandalart
+Disallow: /today
+Disallow: /reports
+Disallow: /tutorial
+Disallow: /settings
+
