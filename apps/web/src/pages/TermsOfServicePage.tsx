@@ -129,7 +129,7 @@ export default function TermsOfServicePage() {
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Contact Information</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    If you have any questions about these Terms, please contact: <a href="mailto:hevi35@gmail.com" className="text-primary underline">hevi35@gmail.com</a>
+                                    If you have any questions about these Terms, please contact: <a href="mailto:support@unwrittenbd.com" className="text-primary underline">support@unwrittenbd.com</a>
                                 </p>
                             </section>
                         </TabsContent>
@@ -240,7 +240,7 @@ export default function TermsOfServicePage() {
                             <section>
                                 <h3 className="text-lg font-semibold mb-2">문의</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    본 약관에 대해 문의사항이 있으시면 <a href="mailto:hevi35@gmail.com" className="text-primary underline">hevi35@gmail.com</a>으로 연락 주시기 바랍니다.
+                                    본 약관에 대해 문의사항이 있으시면 <a href="mailto:support@unwrittenbd.com" className="text-primary underline">support@unwrittenbd.com</a>으로 연락 주시기 바랍니다.
                                 </p>
                             </section>
                         </TabsContent>
