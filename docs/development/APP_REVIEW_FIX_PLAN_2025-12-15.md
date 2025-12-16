@@ -63,9 +63,18 @@ Also ensure the Privacy Policy field in App Store Connect is set (already requir
 
 ---
 
+## Execution Log
+
+- 2025-12-16: PR merged (paywall plans fallback + retry)
+- 2025-12-16: Local iOS build + EAS Submit 완료
+  - IPA: `apps/mobile/build-1765846160124.ipa`
+  - Build number (CFBundleVersion): `201`
+  - EAS submission: https://expo.dev/accounts/hevi35/projects/mandaact/submissions/a1dde88c-3d0c-46e4-b8d5-473c87733141
+
+---
+
 ## Reply Template (Resolution Center)
 
 - We fixed the paywall to reliably display subscription plans by falling back to StoreKit product retrieval if RevenueCat Offerings are unavailable.
 - We added a retry action for plan loading failures.
 - We added the Apple Standard Terms of Use (EULA) link to the App Store Connect App Description.
-
