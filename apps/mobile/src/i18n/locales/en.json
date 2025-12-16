@@ -1129,6 +1129,7 @@
     "purchaseSuccess": "Purchase Complete!",
     "welcomePremium": "Welcome to Premium",
     "purchaseError": "Purchase failed. Please try again.",
+    "invalidReceiptError": "We couldn't verify the purchase receipt. Please try again, or tap Restore Purchases.",
     "manageSubscription": "Manage Subscription",
     "manageTitle": "Manage Subscription",
     "manageDescription": "You can manage your subscription in App Store settings.",

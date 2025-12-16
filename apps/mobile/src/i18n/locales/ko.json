@@ -1127,6 +1127,7 @@
     "purchaseSuccess": "구매 완료!",
     "welcomePremium": "프리미엄에 오신 것을 환영합니다",
     "purchaseError": "구매에 실패했습니다. 다시 시도해주세요.",
+    "invalidReceiptError": "결제 영수증 확인에 실패했습니다. 잠시 후 다시 시도하거나 '구매 복원'을 눌러주세요.",
     "manageSubscription": "구독 관리",
     "manageTitle": "구독 관리",
     "manageDescription": "App Store 설정에서 구독을 관리할 수 있습니다.",
