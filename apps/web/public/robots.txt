@@ -3,6 +3,15 @@ Allow: /
 Allow: /terms
 Allow: /privacy
 
+User-agent: Google-adstxt
+Disallow:
+
+User-agent: Mediapartners-Google
+Disallow:
+
+User-agent: Googlebot
+Disallow:
+
 # Block legacy app routes from indexing (landing page mode)
 Disallow: /login
 Disallow: /home
@@ -11,4 +20,3 @@ Disallow: /today
 Disallow: /reports
 Disallow: /tutorial
 Disallow: /settings
-
