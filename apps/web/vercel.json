@@ -1,7 +1,19 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/app-ads.txt",
+      "destination": "/app-ads.txt"
+    },
+    {
+      "source": "/privacy/app-ads.txt",
+      "destination": "/app-ads.txt"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
+      "source": "/((?!api|app-ads.txt|robots.txt|assets|landing|app-icon.png|favicon.ico).*)",
       "destination": "/index.html"
     }
   ]
