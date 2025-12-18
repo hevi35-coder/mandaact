@@ -1,11 +1,14 @@
 {
+  "redirects": [
+    {
+      "source": "/privacy/app-ads.txt",
+      "destination": "/app-ads.txt",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/app-ads.txt",
-      "destination": "/app-ads.txt"
-    },
-    {
-      "source": "/privacy/app-ads.txt",
       "destination": "/app-ads.txt"
     },
     {
