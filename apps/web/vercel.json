@@ -4,6 +4,11 @@
       "source": "/privacy/app-ads.txt",
       "destination": "/app-ads.txt",
       "permanent": true
+    },
+    {
+      "source": "/privacy/robots.txt",
+      "destination": "/robots.txt",
+      "permanent": true
     }
   ],
   "rewrites": [
