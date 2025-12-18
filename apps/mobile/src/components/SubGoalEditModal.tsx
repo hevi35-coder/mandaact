@@ -834,7 +834,7 @@ export default function SubGoalEditModal({
                         itemHeight={52}
                         onDragEnd={handleDragEnd}
                         renderItem={({ item: action, index: idx }) => (
-                          <View className="flex-row items-center bg-white border border-gray-200 rounded-lg p-3 mb-2">
+                          <View className="flex-row items-center bg-white border border-gray-200 rounded-lg p-2 mb-2">
                             {/* Handle + Position */}
                             <View className="flex-row items-center mr-2">
                               <GripVertical size={16} color="#9ca3af" />
@@ -849,11 +849,11 @@ export default function SubGoalEditModal({
                             {/* Action Content */}
                             <View className="flex-1">
                               {editingActionId === action.id ? (
-                                <View className="flex-row items-center" style={{ gap: 8 }}>
+                                <View className="flex-row items-center" style={{ gap: 4 }}>
                                   <TextInput
                                     value={editingActionTitle}
                                     onChangeText={setEditingActionTitle}
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
                                     style={{ fontFamily: 'Pretendard-Regular' }}
                                     autoFocus
                                     onSubmitEditing={() => handleActionTitleSave(action.id)}
