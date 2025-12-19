@@ -77,8 +77,10 @@ export function NicknameModal({
             // Update nickname
             const { error: updateError } = await supabase
                 .from('user_levels')
-                .update({ nickname: newNickname })
-                .eq('user_id', user.id)
+                .upsert(
+                    { user_id: user.id, nickname: newNickname },
+                    { onConflict: 'user_id' }
+                )
 
             if (updateError) throw updateError
 
