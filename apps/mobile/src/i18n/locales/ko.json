@@ -730,6 +730,7 @@
     "enterEmail": "이메일을 입력해주세요.",
     "enterPassword": "비밀번호를 입력해주세요.",
     "signupComplete": "회원가입 완료",
+    "signupSuccess": "회원가입이 완료되었습니다.",
     "verificationSent": "인증 이메일을 발송했습니다. 메일함을 확인해주세요.",
     "emailSent": "이메일 발송 완료",
     "resetLinkSent": "비밀번호 재설정 링크를 이메일로 보내드렸습니다. 메일함을 확인해주세요.",

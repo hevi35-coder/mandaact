@@ -2,11 +2,13 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
-import type { User } from '@supabase/supabase-js'
+import type { User, Session } from '@supabase/supabase-js'
 import { logger } from '../lib/logger'
 
 interface AuthResult {
   user: User | null
+  session?: Session | null
+  requiresEmailConfirmation?: boolean
 }
 
 interface AuthState {
@@ -51,7 +53,11 @@ export const useAuthStore = create<AuthState>()(
           })
           if (error) throw error
           set({ user: data.user })
-          return { user: data.user }
+          return {
+            user: data.user,
+            session: data.session,
+            requiresEmailConfirmation: !!data.user && !data.session,
+          }
         } finally {
           set({ loading: false })
         }
