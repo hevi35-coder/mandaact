@@ -745,6 +745,8 @@
     "title": "Sign Up",
     "email": "Email",
     "emailPlaceholder": "user@email.com",
+    "confirmEmail": "Confirm Email",
+    "confirmEmailPlaceholder": "Re-enter email",
     "password": "Password",
     "passwordPlaceholder": "Password (6+ characters)",
     "confirmPassword": "Confirm Password",
@@ -752,10 +754,19 @@
     "signUpButton": "Sign Up",
     "hasAccount": "Already have an account?",
     "login": "Sign In",
+    "emailTypo": {
+      "title": "Check your email address",
+      "message": "The domain looks like \"{{domain}}\".\nDid you mean \"{{suggested}}\"?",
+      "edit": "Edit",
+      "continue": "Continue",
+      "inlineHint": "Did you mean {{suggested}}?"
+    },
     "errors": {
       "passwordMismatch": "Passwords do not match",
       "weakPassword": "Password must be at least 6 characters",
-      "emailInUse": "This email is already in use"
+      "emailInUse": "This email is already in use",
+      "enterConfirmEmail": "Please re-enter your email.",
+      "emailMismatch": "Emails do not match."
     }
   },
   "resetPassword": {

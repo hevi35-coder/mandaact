@@ -743,6 +743,8 @@
     "title": "회원가입",
     "email": "이메일",
     "emailPlaceholder": "user@email.com",
+    "confirmEmail": "이메일 확인",
+    "confirmEmailPlaceholder": "이메일 다시 입력",
     "password": "비밀번호",
     "passwordPlaceholder": "비밀번호 (6자 이상)",
     "confirmPassword": "비밀번호 확인",
@@ -750,10 +752,19 @@
     "signUpButton": "회원가입",
     "hasAccount": "이미 계정이 있으신가요?",
     "login": "로그인",
+    "emailTypo": {
+      "title": "이메일 주소를 확인해주세요",
+      "message": "입력한 도메인이 \"{{domain}}\"로 보입니다.\n\"{{suggested}}\"을(를) 의도하셨나요?",
+      "edit": "수정하기",
+      "continue": "그대로 진행",
+      "inlineHint": "혹시 {{suggested}}을(를) 의미하셨나요?"
+    },
     "errors": {
       "passwordMismatch": "비밀번호가 일치하지 않습니다",
       "weakPassword": "비밀번호는 6자 이상이어야 합니다",
-      "emailInUse": "이미 사용 중인 이메일입니다"
+      "emailInUse": "이미 사용 중인 이메일입니다",
+      "enterConfirmEmail": "이메일을 한 번 더 입력해주세요.",
+      "emailMismatch": "이메일이 일치하지 않습니다."
     }
   },
   "resetPassword": {
