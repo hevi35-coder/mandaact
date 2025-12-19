@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { getDayBoundsUTC, getUserToday, utcToUserDate } from '@mandaact/shared'
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
@@ -34,6 +34,24 @@ export interface UserGamification {
   longest_streak_date: Date | null
   created_at: string
   updated_at: string
+}
+
+export function setCachedGamificationNickname(
+  queryClient: QueryClient,
+  userId: string,
+  nickname: string
+): void {
+  queryClient.setQueryData<UserGamification | null>(
+    statsKeys.gamification(userId),
+    (previous) => {
+      if (!previous) return previous
+      return {
+        ...previous,
+        nickname,
+        updated_at: new Date().toISOString(),
+      }
+    }
+  )
 }
 
 /**

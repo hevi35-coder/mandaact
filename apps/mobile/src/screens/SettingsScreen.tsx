@@ -48,7 +48,7 @@ import { useSubscriptionContext } from '../context'
 import { useAdFree, useRewardedAd } from '../hooks'
 import { useToast } from '../components/Toast'
 import type { RootStackParamList } from '../navigation/RootNavigator'
-import { useUserGamification, statsKeys } from '../hooks/useStats'
+import { useUserGamification, setCachedGamificationNickname, statsKeys } from '../hooks/useStats'
 import { useNotifications } from '../hooks/useNotifications'
 import { useUserProfile, getDeviceTimezone } from '../hooks/useUserProfile'
 import { APP_NAME } from '@mandaact/shared'
@@ -278,8 +278,10 @@ export default function SettingsScreen() {
         return
       }
 
-      // Refetch query to refresh immediately
-      await queryClient.refetchQueries({ queryKey: statsKeys.gamification(user?.id || '') })
+      if (user?.id) {
+        setCachedGamificationNickname(queryClient, user.id, trimmed)
+        void queryClient.invalidateQueries({ queryKey: statsKeys.gamification(user.id) })
+      }
       setShowNicknameModal(false)
     } catch {
       setNicknameError(t('settings.nickname.errors.updateError'))
