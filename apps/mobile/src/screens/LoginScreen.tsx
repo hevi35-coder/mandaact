@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useMemo } from 'react'
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { X, Mail, Lock, Eye, EyeOff, Globe, ChevronDown, Check } from 'lucide-re
 import { useTranslation } from 'react-i18next'
 import { changeLanguage, getCurrentLanguage, type SupportedLanguage } from '../i18n'
 import { useAuthStore } from '../store/authStore'
+import { useToast } from '../components/Toast'
 import { parseError, ERROR_MESSAGES } from '../lib/errorHandling'
 import { trackLogin, trackSignup, identifyUser } from '../lib'
 
@@ -29,6 +30,7 @@ const LANGUAGES = [
 
 export default function LoginScreen() {
   const { t } = useTranslation()
+  const toast = useToast()
   const [email, setEmail] = useState('')
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false)
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getCurrentLanguage())
@@ -54,12 +56,35 @@ export default function LoginScreen() {
   const [resetEmail, setResetEmail] = useState('')
   const [isResetting, setIsResetting] = useState(false)
   const [signUpEmail, setSignUpEmail] = useState('')
+  const [signUpConfirmEmail, setSignUpConfirmEmail] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('')
   const [showSignUpPassword, setShowSignUpPassword] = useState(false)
   const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false)
   const [signUpLoading, setSignUpLoading] = useState(false)
   const { signIn, signUp, resetPassword, loading } = useAuthStore()
+
+  const emailTypoSuggestion = useMemo(() => {
+    const value = signUpEmail.trim().toLowerCase()
+    const atIndex = value.lastIndexOf('@')
+    if (atIndex <= 0) return null
+
+    const domain = value.slice(atIndex + 1)
+    const typoMap: Record<string, string> = {
+      'gamil.com': 'gmail.com',
+      'gmial.com': 'gmail.com',
+      'gmai.com': 'gmail.com',
+      'hotnail.com': 'hotmail.com',
+      'yaho.com': 'yahoo.com',
+      'naver.con': 'naver.com',
+      'hanmail.con': 'hanmail.net',
+      'daum.ne': 'daum.net',
+    }
+
+    const suggested = typoMap[domain]
+    if (!suggested) return null
+    return { domain, suggested }
+  }, [signUpEmail])
 
   const handleLogin = async () => {
     if (!email.trim()) {
@@ -87,9 +112,55 @@ export default function LoginScreen() {
     }
   }
 
-  const handleSignUp = async () => {
+  const performSignUp = useCallback(async () => {
+    setSignUpLoading(true)
+    try {
+      const result = await signUp(signUpEmail.trim(), signUpPassword)
+
+      if (result?.user) {
+        trackSignup('email')
+        identifyUser(result.user.id, result.user.email ? { email: result.user.email } : undefined)
+      }
+
+      setIsSignUpModalOpen(false)
+      setSignUpEmail('')
+      setSignUpConfirmEmail('')
+      setSignUpPassword('')
+      setSignUpConfirmPassword('')
+
+      if (result?.requiresEmailConfirmation) {
+        Alert.alert(
+          t('login.signupComplete'),
+          t('login.verificationSent'),
+          [{ text: t('common.confirm') }]
+        )
+        return
+      }
+
+      // A안: 인증 없이 즉시 사용 → 별도 팝업 없이 토스트만 노출
+      toast.success(t('login.signupComplete'))
+    } catch (error) {
+      const errorKeyOrMessage = parseError(error)
+      const message = errorKeyOrMessage.startsWith('errors.')
+        ? t(errorKeyOrMessage)
+        : errorKeyOrMessage
+      Alert.alert(t('common.error'), message)
+    } finally {
+      setSignUpLoading(false)
+    }
+  }, [identifyUser, signUp, signUpConfirmEmail, signUpEmail, signUpPassword, t, toast])
+
+  const handleSignUp = useCallback(() => {
     if (!signUpEmail.trim()) {
       Alert.alert(t('login.inputError'), t('login.enterEmail'))
+      return
+    }
+    if (!signUpConfirmEmail.trim()) {
+      Alert.alert(t('login.inputError'), t('signup.errors.enterConfirmEmail'))
+      return
+    }
+    if (signUpEmail.trim().toLowerCase() !== signUpConfirmEmail.trim().toLowerCase()) {
+      Alert.alert(t('login.inputError'), t('signup.errors.emailMismatch'))
       return
     }
     if (!signUpPassword) {
@@ -105,33 +176,31 @@ export default function LoginScreen() {
       return
     }
 
-    setSignUpLoading(true)
-    try {
-      const result = await signUp(signUpEmail.trim(), signUpPassword)
-      // Track signup event
-      if (result?.user) {
-        trackSignup('email')
-        identifyUser(result.user.id, result.user.email ? { email: result.user.email } : undefined)
-      }
-      setIsSignUpModalOpen(false)
-      setSignUpEmail('')
-      setSignUpPassword('')
-      setSignUpConfirmPassword('')
+    if (emailTypoSuggestion) {
       Alert.alert(
-        t('login.signupComplete'),
-        result?.requiresEmailConfirmation ? t('login.verificationSent') : t('login.signupSuccess'),
-        [{ text: t('common.confirm') }]
+        t('signup.emailTypo.title'),
+        t('signup.emailTypo.message', {
+          domain: emailTypoSuggestion.domain,
+          suggested: emailTypoSuggestion.suggested,
+        }),
+        [
+          { text: t('signup.emailTypo.edit'), style: 'cancel' },
+          { text: t('signup.emailTypo.continue'), onPress: () => void performSignUp() },
+        ]
       )
-    } catch (error) {
-      const errorKeyOrMessage = parseError(error)
-      const message = errorKeyOrMessage.startsWith('errors.')
-        ? t(errorKeyOrMessage)
-        : errorKeyOrMessage
-      Alert.alert(t('common.error'), message)
-    } finally {
-      setSignUpLoading(false)
+      return
     }
-  }
+
+    void performSignUp()
+  }, [
+    emailTypoSuggestion,
+    performSignUp,
+    signUpConfirmEmail,
+    signUpConfirmPassword,
+    signUpEmail,
+    signUpPassword,
+    t,
+  ])
 
   const handleResetPassword = useCallback(async () => {
     if (!resetEmail.trim()) {
@@ -167,6 +236,7 @@ export default function LoginScreen() {
 
   const openSignUpModal = useCallback(() => {
     setSignUpEmail(email)
+    setSignUpConfirmEmail('')
     setIsSignUpModalOpen(true)
   }, [email])
 
@@ -393,6 +463,32 @@ export default function LoginScreen() {
                     placeholderTextColor="#9ca3af"
                     value={signUpEmail}
                     onChangeText={setSignUpEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+                {emailTypoSuggestion && (
+                  <Text className="text-xs text-amber-600 mt-2">
+                    {t('signup.emailTypo.inlineHint', {
+                      suggested: emailTypoSuggestion.suggested,
+                      defaultValue: `혹시 ${emailTypoSuggestion.suggested}을(를) 의미하셨나요?`,
+                    })}
+                  </Text>
+                )}
+              </View>
+
+              {/* Confirm Email */}
+              <View className="mb-4">
+                <Text className="text-sm font-medium text-gray-700 mb-2">{t('signup.confirmEmail')}</Text>
+                <View className="flex-row items-center border border-gray-300 rounded-lg px-3">
+                  <Mail size={18} color="#9ca3af" />
+                  <TextInput
+                    className="flex-1 py-3 px-3 text-base text-gray-900"
+                    placeholder={t('signup.confirmEmailPlaceholder')}
+                    placeholderTextColor="#9ca3af"
+                    value={signUpConfirmEmail}
+                    onChangeText={setSignUpConfirmEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
