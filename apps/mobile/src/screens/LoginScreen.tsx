@@ -119,7 +119,7 @@ export default function LoginScreen() {
       setSignUpConfirmPassword('')
       Alert.alert(
         t('login.signupComplete'),
-        t('login.verificationSent'),
+        result?.requiresEmailConfirmation ? t('login.verificationSent') : t('login.signupSuccess'),
         [{ text: t('common.confirm') }]
       )
     } catch (error) {

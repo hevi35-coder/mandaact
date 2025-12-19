@@ -732,6 +732,7 @@
     "enterEmail": "Please enter your email.",
     "enterPassword": "Please enter your password.",
     "signupComplete": "Sign Up Complete",
+    "signupSuccess": "Your account is ready.",
     "verificationSent": "Verification email has been sent. Please check your inbox.",
     "emailSent": "Email Sent",
     "resetLinkSent": "Password reset link has been sent to your email. Please check your inbox.",
