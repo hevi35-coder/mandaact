@@ -12,6 +12,7 @@ import {
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTranslation } from 'react-i18next'
+import { useFocusEffect } from '@react-navigation/native'
 import {
   Crown,
   Check,
@@ -61,6 +62,7 @@ export default function SubscriptionScreen() {
   const [isRestoring, setIsRestoring] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const [justPurchased, setJustPurchased] = useState(false)
+  const autoReloadedPlansRef = useRef(false)
 
   useEffect(() => {
     trackPaywallViewed({ source_screen: 'subscription_screen' })
@@ -169,6 +171,23 @@ export default function SubscriptionScreen() {
 
     return { type, highlight, savings }
   }
+
+  // Auto-retry once when plans are missing (common with transient Offering/StoreKit delays)
+  useFocusEffect(
+    useCallback(() => {
+      if (isPremium) return
+      if (isLoading) return
+      if (plans.length > 0) return
+      if (autoReloadedPlansRef.current) return
+
+      autoReloadedPlansRef.current = true
+      const timer = setTimeout(() => {
+        void refreshSubscription()
+      }, 600)
+
+      return () => clearTimeout(timer)
+    }, [isPremium, isLoading, plans.length, refreshSubscription])
+  )
 
   const formatExpiryDate = useCallback((value: unknown) => {
     if (!(value instanceof Date)) return null
@@ -390,12 +409,18 @@ export default function SubscriptionScreen() {
                   </Text>
                 </View>
               ) : plans.length === 0 ? (
-                <View className="py-12 items-center bg-white rounded-2xl">
+                <View className="py-10 items-center bg-white rounded-2xl border border-gray-100">
                   <Text
-                    className="text-gray-500"
+                    className="text-gray-700"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
                     {t('subscription.noPlansAvailable')}
+                  </Text>
+                  <Text
+                    className="text-xs text-gray-500 mt-2 text-center px-6"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {t('subscription.noPlansHint', { defaultValue: '스토어 연결이 지연되었을 수 있어요. 잠시 후 다시 시도해주세요.' })}
                   </Text>
                   <Pressable
                     onPress={refreshSubscription}
@@ -407,6 +432,20 @@ export default function SubscriptionScreen() {
                     >
                       {t('common.retry')}
                     </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      void Linking.openURL('mailto:support@unwrittenbd.com?subject=MandaAct%20Subscription%20Issue')
+                    }}
+                    className="mt-3 flex-row items-center"
+                  >
+                    <Text
+                      className="text-xs text-gray-500"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('subscription.contactSupport', { defaultValue: '계속 안되면 지원팀에 문의하기' })}
+                    </Text>
+                    <ChevronRight size={14} color="#9ca3af" />
                   </Pressable>
                 </View>
               ) : (
