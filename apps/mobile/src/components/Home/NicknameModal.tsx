@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../store/authStore'
 import { supabase } from '../../lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
-import { statsKeys } from '../../hooks/useStats'
+import { setCachedGamificationNickname, statsKeys } from '../../hooks/useStats'
 import {
     validateNickname,
     NICKNAME_ERRORS,
@@ -82,8 +82,8 @@ export function NicknameModal({
 
             if (updateError) throw updateError
 
-            // Refetch
-            await queryClient.refetchQueries({ queryKey: statsKeys.gamification(user.id) })
+            setCachedGamificationNickname(queryClient, user.id, newNickname)
+            void queryClient.invalidateQueries({ queryKey: statsKeys.gamification(user.id) })
 
             // Close and show success
             onClose()
