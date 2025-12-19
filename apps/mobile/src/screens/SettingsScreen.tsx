@@ -248,6 +248,8 @@ export default function SettingsScreen() {
   }, [nickname])
 
   const handleSaveNickname = useCallback(async () => {
+    if (!user?.id) return
+
     const trimmed = nicknameInput.trim()
 
     // Validation
@@ -266,8 +268,10 @@ export default function SettingsScreen() {
     try {
       const { error } = await supabase
         .from('user_levels')
-        .update({ nickname: trimmed })
-        .eq('user_id', user?.id)
+        .upsert(
+          { user_id: user.id, nickname: trimmed },
+          { onConflict: 'user_id' }
+        )
 
       if (error) {
         if (error.code === '23505') {
@@ -278,10 +282,8 @@ export default function SettingsScreen() {
         return
       }
 
-      if (user?.id) {
-        setCachedGamificationNickname(queryClient, user.id, trimmed)
-        void queryClient.invalidateQueries({ queryKey: statsKeys.gamification(user.id) })
-      }
+      setCachedGamificationNickname(queryClient, user.id, trimmed)
+      void queryClient.invalidateQueries({ queryKey: statsKeys.gamification(user.id) })
       setShowNicknameModal(false)
     } catch {
       setNicknameError(t('settings.nickname.errors.updateError'))

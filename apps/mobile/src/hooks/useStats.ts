@@ -44,12 +44,26 @@ export function setCachedGamificationNickname(
   queryClient.setQueryData<UserGamification | null>(
     statsKeys.gamification(userId),
     (previous) => {
-      if (!previous) return previous
-      return {
-        ...previous,
-        nickname,
-        updated_at: new Date().toISOString(),
+      const now = new Date().toISOString()
+
+      if (!previous) {
+        // Ensure nickname updates reflect immediately even before a user_levels row exists.
+        return {
+          id: userId,
+          user_id: userId,
+          nickname,
+          total_xp: 0,
+          current_level: 1,
+          current_streak: 0,
+          longest_streak: 0,
+          last_check_date: null,
+          longest_streak_date: null,
+          created_at: now,
+          updated_at: now,
+        }
       }
+
+      return { ...previous, nickname, updated_at: now }
     }
   )
 }
