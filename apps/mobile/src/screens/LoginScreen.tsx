@@ -56,7 +56,6 @@ export default function LoginScreen() {
   const [resetEmail, setResetEmail] = useState('')
   const [isResetting, setIsResetting] = useState(false)
   const [signUpEmail, setSignUpEmail] = useState('')
-  const [signUpConfirmEmail, setSignUpConfirmEmail] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('')
   const [showSignUpPassword, setShowSignUpPassword] = useState(false)
@@ -124,7 +123,6 @@ export default function LoginScreen() {
 
       setIsSignUpModalOpen(false)
       setSignUpEmail('')
-      setSignUpConfirmEmail('')
       setSignUpPassword('')
       setSignUpConfirmPassword('')
 
@@ -148,19 +146,11 @@ export default function LoginScreen() {
     } finally {
       setSignUpLoading(false)
     }
-  }, [identifyUser, signUp, signUpConfirmEmail, signUpEmail, signUpPassword, t, toast])
+  }, [identifyUser, signUp, signUpEmail, signUpPassword, t, toast])
 
   const handleSignUp = useCallback(() => {
     if (!signUpEmail.trim()) {
       Alert.alert(t('login.inputError'), t('login.enterEmail'))
-      return
-    }
-    if (!signUpConfirmEmail.trim()) {
-      Alert.alert(t('login.inputError'), t('signup.errors.enterConfirmEmail'))
-      return
-    }
-    if (signUpEmail.trim().toLowerCase() !== signUpConfirmEmail.trim().toLowerCase()) {
-      Alert.alert(t('login.inputError'), t('signup.errors.emailMismatch'))
       return
     }
     if (!signUpPassword) {
@@ -195,7 +185,6 @@ export default function LoginScreen() {
   }, [
     emailTypoSuggestion,
     performSignUp,
-    signUpConfirmEmail,
     signUpConfirmPassword,
     signUpEmail,
     signUpPassword,
@@ -236,7 +225,6 @@ export default function LoginScreen() {
 
   const openSignUpModal = useCallback(() => {
     setSignUpEmail(email)
-    setSignUpConfirmEmail('')
     setIsSignUpModalOpen(true)
   }, [email])
 
@@ -476,24 +464,6 @@ export default function LoginScreen() {
                     })}
                   </Text>
                 )}
-              </View>
-
-              {/* Confirm Email */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">{t('signup.confirmEmail')}</Text>
-                <View className="flex-row items-center border border-gray-300 rounded-lg px-3">
-                  <Mail size={18} color="#9ca3af" />
-                  <TextInput
-                    className="flex-1 py-3 px-3 text-base text-gray-900"
-                    placeholder={t('signup.confirmEmailPlaceholder')}
-                    placeholderTextColor="#9ca3af"
-                    value={signUpConfirmEmail}
-                    onChangeText={setSignUpConfirmEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
               </View>
 
               {/* Password */}
