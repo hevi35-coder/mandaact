@@ -17,6 +17,31 @@
 3.  **Code Disable (Optional)**: Temporarily comment out `<BannerAd />` in `HomeScreen.tsx` if needed.
 
 ---
+
+## 0.1 가독성 문제(현상/원인)
+
+현재 스크린샷이 “작아서 잘 안 보이는” 문제는 템플릿보다 먼저 **raw 캡처 해상도**가 병목일 수 있습니다.
+- `raw/en`이 저해상도(예: 537×1024)인 경우 확대 시 흐려져 가독성 개선의 한계가 큼
+
+우선순위:
+1) **공식 해상도로 raw 재캡처** (가독성 상한선 확보)
+2) 템플릿/레이아웃(타이틀/여백/크롭) 튜닝
+
+가이드: `docs/marketing/SCREENSHOT_CAPTURE_GUIDE.md`
+
+---
+
+## 0.2 2025 베스트 프랙티스(요약)
+
+- 첫 1~3장은 검색 결과에도 노출될 수 있으니 “핵심 가치”가 바로 보이게 구성
+- 한 장 = 한 베네핏(메시지를 욕심내지 않기)
+- UI는 충분히 크게(복잡한 화면은 데이터/상태를 단순화해서 캡처)
+
+참고:
+- Apple Product Page: https://developer.apple.com/app-store/product-page/
+- Apple Screenshot specs: https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications/
+
+---
 ## 1. Storytelling Strategy (The "User Journey" Flow)
 
 We will use a **5-Step Narrative** that guides the user from their "Big Goal" to "Daily Action" and finally "Achievement".
