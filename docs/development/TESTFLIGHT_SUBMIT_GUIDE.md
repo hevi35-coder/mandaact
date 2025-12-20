@@ -10,6 +10,11 @@
 
 단, **클라우드 빌드가 필요한 경우(예: CI, 로컬 Xcode 환경 부재, 팀 공유 빌드, 장시간 빌드/캐시 활용)** 에만 별도로 사용합니다.
 
+## 제출 전 필수: 릴리즈 블로커 회귀 테스트
+TestFlight 제출 전에 아래 체크리스트를 1회 수행합니다(릴리즈마다 반복).
+
+- `docs/mobile/RELEASE_BLOCKER_CHECKLIST.md`
+
 ## 결론
 Codex/CLI에서 **Apple ID 2FA(문자/Authenticator) 인증을 대신 처리**하는 건 불가능합니다.  
 대신 **비대화형 제출(non-interactive)** 이 가능한 2가지 방식이 있습니다:

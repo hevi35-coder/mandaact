@@ -219,12 +219,15 @@
 - [ ] (선택) 최소수집/동의 흐름 정리(EU 대상 GDPR 동의 배너 포함 여부 검토)
 
 ##### F) QA 운영(릴리즈 블로커 고정)
-- [ ] (모바일) 릴리즈 블로커 시나리오를 테스트 케이스로 고정
+- [x] (모바일) 릴리즈 블로커 시나리오를 테스트 케이스로 고정
   - 구독/복원, 로그인/회원가입, 닉네임, 권한, 네트워크 불안정, iPad
-- [ ] (모바일) TestFlight 체크리스트 운영(릴리즈마다 동일 항목 회귀 테스트)
+- [x] (모바일) TestFlight 체크리스트 운영(릴리즈마다 동일 항목 회귀 테스트)
+  - 체크리스트: `docs/mobile/RELEASE_BLOCKER_CHECKLIST.md`
+  - 제출 가이드 연결: `docs/development/TESTFLIGHT_SUBMIT_GUIDE.md`
 
 ##### 10.3.2 진행 이력 (Changelog)
 - 2025-12-20: 결제 오류 telemetry 보강(에러 category/stage/purchases_error_code/underlying code) + 에러 카피 추가(네트워크/스토어/제한/보류) + PostHog 이벤트 속성 확장
+- 2025-12-20: TestFlight 릴리즈 블로커 체크리스트 도입 + 제출 가이드/테스트 가이드 연결
 
 #### Build 53 심사 반려 사유 및 대응 (2025-12-10~11)
 

@@ -354,6 +354,7 @@ npm install
 - [ROADMAP.md](../project/ROADMAP.md) - 전체 프로젝트 로드맵
 - [CLAUDE.md](../../CLAUDE.md) - 개발 가이드라인
 - [apps/mobile/README.md](../../apps/mobile/README.md) - 모바일 앱 개요
+- `docs/mobile/RELEASE_BLOCKER_CHECKLIST.md` - TestFlight 제출 전 필수 회귀 테스트
 
 ---
 
