@@ -58,6 +58,8 @@
 
 - `docs/operations/PHASE8_SETUP_GUIDE.md`  
   PostHog/Sentry/CI 등 운영 구성 단계별 체크.
+- `docs/operations/RETENTION_ANALYTICS.md`  
+  리텐션 루프(온보딩→첫 성공→재방문→전환) 계측 기준 및 PostHog 퍼널/대시보드 초안.
 - `docs/operations/BACKUP_RECOVERY_STRATEGY.md`  
   백업/복구 절차 및 운영 정책.
 
