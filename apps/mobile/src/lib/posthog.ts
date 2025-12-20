@@ -6,6 +6,7 @@
 
 import PostHog from 'posthog-react-native'
 import type { PostHogEventProperties } from '@posthog/core'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   POSTHOG_EVENTS,
   buildMandalartCreatedProps,
@@ -36,7 +37,6 @@ import {
   type LevelUpData,
   type WeeklyReportGeneratedData,
   type GoalDiagnosisViewedData,
-  type LoginData,
   type PaywallViewedData,
   type PurchaseStartedData,
   type PurchaseResultData,
@@ -50,6 +50,25 @@ import {
 
 // PostHog 클라이언트 인스턴스
 let posthogClient: PostHog | null = null
+let currentUserId: string | null = null
+
+const FIRST_SUCCESS_KEY_PREFIX = 'first_success:v1'
+
+async function markFirstSuccessOnce(eventKey: string): Promise<boolean | undefined> {
+  if (!currentUserId) return undefined
+
+  const storageKey = `${FIRST_SUCCESS_KEY_PREFIX}:${currentUserId}:${eventKey}`
+
+  try {
+    const existing = await AsyncStorage.getItem(storageKey)
+    if (existing === '1') return false
+
+    await AsyncStorage.setItem(storageKey, '1')
+    return true
+  } catch {
+    return undefined
+  }
+}
 
 /**
  * PostHog 초기화
@@ -101,8 +120,9 @@ export const identifyUser = (
   userId: string,
   properties?: PostHogEventProperties
 ): void => {
-  if (!posthogClient) return
+  currentUserId = userId
 
+  if (!posthogClient) return
   posthogClient.identify(userId, properties)
 }
 
@@ -110,8 +130,9 @@ export const identifyUser = (
  * 사용자 로그아웃 시 호출
  */
 export const resetUser = (): void => {
-  if (!posthogClient) return
+  currentUserId = null
 
+  if (!posthogClient) return
   posthogClient.reset()
 }
 
@@ -153,20 +174,46 @@ export const trackScreen = (
  * 만다라트 생성
  */
 export const trackMandalartCreated = (data: MandalartCreatedData): void => {
-  trackEvent(
-    POSTHOG_EVENTS.MANDALART_CREATED,
-    buildMandalartCreatedProps(data, 'mobile')
-  )
+  if (!posthogClient) {
+    trackEvent(
+      POSTHOG_EVENTS.MANDALART_CREATED,
+      buildMandalartCreatedProps(data, 'mobile')
+    )
+    return
+  }
+
+  void (async () => {
+    const isFirst = await markFirstSuccessOnce(POSTHOG_EVENTS.MANDALART_CREATED)
+    const mergedData = isFirst === undefined ? data : { ...data, is_first: isFirst }
+
+    trackEvent(
+      POSTHOG_EVENTS.MANDALART_CREATED,
+      buildMandalartCreatedProps(mergedData, 'mobile')
+    )
+  })()
 }
 
 /**
  * 액션 체크
  */
 export const trackActionChecked = (data: ActionCheckedData): void => {
-  trackEvent(
-    POSTHOG_EVENTS.ACTION_CHECKED,
-    buildActionCheckedProps(data, 'mobile')
-  )
+  if (!posthogClient) {
+    trackEvent(
+      POSTHOG_EVENTS.ACTION_CHECKED,
+      buildActionCheckedProps(data, 'mobile')
+    )
+    return
+  }
+
+  void (async () => {
+    const isFirst = await markFirstSuccessOnce(POSTHOG_EVENTS.ACTION_CHECKED)
+    const mergedData = isFirst === undefined ? data : { ...data, is_first: isFirst }
+
+    trackEvent(
+      POSTHOG_EVENTS.ACTION_CHECKED,
+      buildActionCheckedProps(mergedData, 'mobile')
+    )
+  })()
 }
 
 /**
@@ -223,10 +270,23 @@ export const trackLevelUp = (data: LevelUpData): void => {
  * 주간 리포트 생성
  */
 export const trackWeeklyReportGenerated = (data: WeeklyReportGeneratedData): void => {
-  trackEvent(
-    POSTHOG_EVENTS.WEEKLY_REPORT_GENERATED,
-    buildWeeklyReportGeneratedProps(data, 'mobile')
-  )
+  if (!posthogClient) {
+    trackEvent(
+      POSTHOG_EVENTS.WEEKLY_REPORT_GENERATED,
+      buildWeeklyReportGeneratedProps(data, 'mobile')
+    )
+    return
+  }
+
+  void (async () => {
+    const isFirst = await markFirstSuccessOnce(POSTHOG_EVENTS.WEEKLY_REPORT_GENERATED)
+    const mergedData = isFirst === undefined ? data : { ...data, is_first: isFirst }
+
+    trackEvent(
+      POSTHOG_EVENTS.WEEKLY_REPORT_GENERATED,
+      buildWeeklyReportGeneratedProps(mergedData, 'mobile')
+    )
+  })()
 }
 
 /**

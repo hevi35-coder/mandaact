@@ -13,6 +13,7 @@ export interface MandalartCreatedData {
     input_method: 'image' | 'text' | 'manual'
     sub_goals_count: number
     actions_count: number
+    is_first?: boolean
 }
 
 export interface ActionCheckedData {
@@ -21,6 +22,7 @@ export interface ActionCheckedData {
     sub_goal_id: string
     mandalart_id: string
     checked_at: Date
+    is_first?: boolean
 }
 
 export interface BadgeUnlockedData {
@@ -54,6 +56,7 @@ export interface WeeklyReportGeneratedData {
     completion_rate?: number
     total_checks?: number
     generated?: boolean
+    is_first?: boolean
 }
 
 export interface GoalDiagnosisViewedData {
@@ -195,7 +198,7 @@ export function buildMandalartCreatedProps(
     data: MandalartCreatedData,
     platform: 'web' | 'mobile'
 ) {
-    return {
+    const props: Record<string, string | number | boolean> = {
         mandalart_id: data.mandalart_id,
         input_method: data.input_method,
         sub_goals_count: data.sub_goals_count,
@@ -203,6 +206,12 @@ export function buildMandalartCreatedProps(
         platform,
         timestamp: new Date().toISOString(),
     }
+
+    if (data.is_first !== undefined) {
+        props.is_first = data.is_first
+    }
+
+    return props
 }
 
 /**
@@ -212,7 +221,7 @@ export function buildActionCheckedProps(
     data: ActionCheckedData,
     platform: 'web' | 'mobile'
 ) {
-    return {
+    const props: Record<string, string | number | boolean> = {
         action_id: data.action_id,
         action_type: data.action_type,
         sub_goal_id: data.sub_goal_id,
@@ -222,6 +231,12 @@ export function buildActionCheckedProps(
         platform,
         timestamp: data.checked_at.toISOString(),
     }
+
+    if (data.is_first !== undefined) {
+        props.is_first = data.is_first
+    }
+
+    return props
 }
 
 /**
@@ -472,6 +487,9 @@ export function buildWeeklyReportGeneratedProps(
     }
     if (data.generated !== undefined) {
         props.generated = data.generated
+    }
+    if (data.is_first !== undefined) {
+        props.is_first = data.is_first
     }
 
     return props
