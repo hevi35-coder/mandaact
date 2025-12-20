@@ -78,6 +78,7 @@
 
 - `docs/marketing/APP_STORE_METADATA.md`
 - `docs/marketing/APP_STORE_SCREENSHOTS.md`
+- `docs/marketing/SCREENSHOT_CAPTURE_GUIDE.md`
 - `docs/marketing/PRIVACY_POLICY_PREP.md`
 - `docs/development/STORE_DISTRIBUTION_PREP.md`
 

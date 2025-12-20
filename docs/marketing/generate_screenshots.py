@@ -14,6 +14,7 @@ Design Philosophy:
 """
 
 from PIL import Image, ImageDraw, ImageFont
+import argparse
 import os
 
 # --- Configuration ---
@@ -23,8 +24,19 @@ ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 RAW_DIR = os.path.join(ASSETS_DIR, "raw")
 FINAL_DIR = os.path.join(ASSETS_DIR, "final")
 
-# Font Path
-FONT_BOLD = "/Users/jhsy/mandaact/apps/mobile/assets/fonts/Pretendard-Bold.otf"
+# Font Path (repo-relative; avoids absolute machine paths)
+FONT_BOLD = os.path.normpath(
+    os.path.join(
+        BASE_DIR,
+        "..",
+        "..",
+        "apps",
+        "mobile",
+        "assets",
+        "fonts",
+        "Pretendard-Bold.otf",
+    )
+)
 
 # Colors
 GRADIENT_START = (37, 99, 235)  # #2563eb (Blue)
@@ -32,6 +44,9 @@ GRADIENT_END = (147, 51, 234)   # #9333ea (Purple)
 TEXT_WHITE = (255, 255, 255)
 
 # Device Profiles
+# NOTE:
+# - `iphone` / `ipad` are legacy profiles that match currently committed assets.
+# - Prefer `iphone_6_9` / `ipad_13` for future submissions (Apple’s latest default specs).
 DEVICES = {
     "iphone": {
         "width": 1284,             # Compatible with 6.5"/6.7" Pro Max slots
@@ -43,6 +58,17 @@ DEVICES = {
         "line_spacing": 150,
         "corner_radius": 80,
     },
+    "iphone_6_9": {
+        # Apple (6.9" Display) portrait: 1320 x 2868
+        "width": 1320,
+        "height": 2868,
+        "screenshot_scale": 0.90,
+        "bottom_margin": 140,
+        "title_step_y": 300,
+        "title_size": 132,
+        "line_spacing": 152,
+        "corner_radius": 84,
+    },
     "ipad": {
         "width": 2048,             # Compatible with 12.9" Pro slots
         "height": 2732,
@@ -53,6 +79,18 @@ DEVICES = {
         "line_spacing": 180,
         "corner_radius": 60,
     }
+    ,
+    "ipad_13": {
+        # Apple (iPad Air M2/M3 etc.) portrait: 2064 x 2752
+        "width": 2064,
+        "height": 2752,
+        "screenshot_scale": 0.76,
+        "bottom_margin": 120,
+        "title_step_y": 300,
+        "title_size": 150,
+        "line_spacing": 180,
+        "corner_radius": 60,
+    },
 }
 
 # Content Localization (Full 5-screen set for each language)
@@ -95,9 +133,11 @@ def apply_rounded_corners(img, radius):
 
 # --- Generator ---
 
-def generate_screenshot(lang, device_key):
+def generate_screenshot(lang, device_key, only_id=None):
     device = DEVICES[device_key]
     lang_dir = f"ipad_{lang}" if device_key == "ipad" else lang
+    if device_key == "ipad_13":
+        lang_dir = f"ipad_{lang}"
     
     input_dir = os.path.join(RAW_DIR, lang_dir)
     output_dir = os.path.join(FINAL_DIR, lang_dir)
@@ -111,6 +151,8 @@ def generate_screenshot(lang, device_key):
         title_font = ImageFont.load_default()
 
     for item in CONTENT[lang]:
+        if only_id and item["id"] != only_id:
+            continue
         # 1. Create Canvas
         canvas = create_gradient(device["width"], device["height"], GRADIENT_START, GRADIENT_END)
         canvas = canvas.convert('RGBA')
@@ -160,10 +202,26 @@ def generate_screenshot(lang, device_key):
         print(f"  - Saved: {out_path}")
 
 def main():
-    print(f"Generating screenshots for English and Korean...")
-    for lang in ["en", "ko"]:
-        for device_key in ["iphone", "ipad"]:
-            generate_screenshot(lang, device_key)
+    parser = argparse.ArgumentParser(description="Generate App Store screenshots (MandaAct).")
+    parser.add_argument("--lang", choices=["en", "ko"], help="Generate only one language.")
+    parser.add_argument(
+        "--device",
+        choices=list(DEVICES.keys()),
+        help="Generate only one device profile.",
+    )
+    parser.add_argument(
+        "--id",
+        help="Generate only one screen id (e.g., 1_vision, 2_action, 3_magic, 4_reward, 5_insight).",
+    )
+    args = parser.parse_args()
+
+    langs = [args.lang] if args.lang else ["en", "ko"]
+    devices = [args.device] if args.device else ["iphone", "ipad"]
+
+    print("Generating screenshots...")
+    for lang in langs:
+        for device_key in devices:
+            generate_screenshot(lang, device_key, only_id=args.id)
     print("\nAll tasks completed successfully!")
 
 if __name__ == "__main__":
