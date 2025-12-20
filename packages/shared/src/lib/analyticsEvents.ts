@@ -88,6 +88,9 @@ export interface PurchaseResultData {
     price?: number
     currency?: string
     error_code?: string
+    purchases_error_code?: string
+    error_category?: string
+    error_stage?: string
 }
 
 export interface RestoreResultData {
@@ -95,6 +98,9 @@ export interface RestoreResultData {
     is_sandbox?: boolean
     restored?: boolean
     error_code?: string
+    purchases_error_code?: string
+    error_category?: string
+    error_stage?: string
 }
 
 export interface PremiumStateChangedData {
@@ -352,6 +358,9 @@ export function buildPurchaseResultProps(
     if (data.price !== undefined) props.price = data.price
     if (data.currency !== undefined) props.currency = data.currency
     if (data.error_code !== undefined) props.error_code = data.error_code
+    if (data.purchases_error_code !== undefined) props.purchases_error_code = data.purchases_error_code
+    if (data.error_category !== undefined) props.error_category = data.error_category
+    if (data.error_stage !== undefined) props.error_stage = data.error_stage
 
     return props
 }
@@ -369,6 +378,9 @@ export function buildRestoreResultProps(
     if (data.restored !== undefined) props.restored = data.restored
     if (data.is_sandbox !== undefined) props.is_sandbox = data.is_sandbox
     if (data.error_code !== undefined) props.error_code = data.error_code
+    if (data.purchases_error_code !== undefined) props.purchases_error_code = data.purchases_error_code
+    if (data.error_category !== undefined) props.error_category = data.error_category
+    if (data.error_stage !== undefined) props.error_stage = data.error_stage
 
     return props
 }
