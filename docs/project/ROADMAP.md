@@ -201,7 +201,9 @@
 - [x] (공통) 리텐션 루프 계측 스키마 정리(온보딩→첫 만다라트 생성→첫 체크→주간 리포트→재방문)
   - `mandalart_created`/`action_checked`/`weekly_report_generated`에 first-success 속성(`is_first`) 추가
   - 기준 문서: `docs/operations/RETENTION_ANALYTICS.md`
-  - [ ] PostHog 대시보드 구축(운영 작업): 이탈 구간/시간(24h/7d) 기준 퍼널/리텐션 리포트 생성
+  - [x] PostHog 대시보드 세팅 가이드 작성(운영용 템플릿)
+    - `docs/operations/POSTHOG_DASHBOARD_SETUP.md`
+  - [ ] PostHog 대시보드 구축(운영 작업): 이탈 구간/시간(24h/7d) 기준 퍼널/리텐션 리포트 실제 생성
 - [ ] (공통) 무료→유료 전환 트리거 단순화(1~2개로 고정) + 노출 정책 정의
   - 예: “리포트 생성”/“광고 제거” 중 하나를 핵심 트리거로 고정하고 메시지/배치를 통일
 
@@ -231,6 +233,7 @@
 - 2025-12-20: 결제 오류 telemetry 보강(에러 category/stage/purchases_error_code/underlying code) + 에러 카피 추가(네트워크/스토어/제한/보류) + PostHog 이벤트 속성 확장
 - 2025-12-20: TestFlight 릴리즈 블로커 체크리스트 도입 + 제출 가이드/테스트 가이드 연결
 - 2025-12-20: 리텐션 루프 계측 스키마 정리 + first-success(`is_first`) 속성 도입(만다라트/체크/리포트)
+- 2025-12-20: PostHog 리텐션/전환 대시보드 세팅 가이드 추가(운영용 템플릿)
 
 #### Build 53 심사 반려 사유 및 대응 (2025-12-10~11)
 
