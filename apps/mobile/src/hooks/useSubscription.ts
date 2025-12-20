@@ -120,13 +120,19 @@ async function ensureRevenueCatIdentity(userId?: string): Promise<boolean> {
   return rcIdentityPromise
 }
 
-function getPurchaseErrorDetails(err: unknown): { code?: string; message?: string } {
+function getPurchaseErrorDetails(err: unknown): {
+  code?: string
+  message?: string
+  underlyingCode?: string
+  underlyingMessage?: string
+} {
   if (err && typeof err === 'object') {
     const record = err as Record<string, unknown>
     const code = record.code
     const readableErrorCode = record.readableErrorCode
     const message = record.message
     const underlyingErrorMessage = record.underlyingErrorMessage
+    const underlyingErrorCode = record.underlyingErrorCode
 
     const codeString =
       typeof readableErrorCode === 'string'
@@ -135,18 +141,100 @@ function getPurchaseErrorDetails(err: unknown): { code?: string; message?: strin
           ? String(code)
           : undefined
 
-    const messageString =
-      typeof underlyingErrorMessage === 'string'
-        ? underlyingErrorMessage
-        : typeof message === 'string'
-          ? message
-          : undefined
+    const underlyingCodeString =
+      typeof underlyingErrorCode === 'string' || typeof underlyingErrorCode === 'number'
+        ? String(underlyingErrorCode)
+        : undefined
 
-    return { code: codeString, message: messageString }
+    const underlyingMessageString =
+      typeof underlyingErrorMessage === 'string' ? underlyingErrorMessage : undefined
+
+    const messageString =
+      underlyingMessageString ??
+      (typeof message === 'string' ? message : undefined)
+
+    return {
+      code: codeString,
+      message: messageString,
+      underlyingCode: underlyingCodeString,
+      underlyingMessage: underlyingMessageString,
+    }
   }
 
   if (err instanceof Error) return { message: err.message }
   return { message: String(err) }
+}
+
+type IapErrorCategory =
+  | 'cancelled'
+  | 'network'
+  | 'store_problem'
+  | 'not_allowed'
+  | 'payment_pending'
+  | 'product_unavailable'
+  | 'receipt'
+  | 'unknown'
+
+type IapStage =
+  | 'init'
+  | 'purchase_start'
+  | 'purchase_call'
+  | 'invalidate_customer_info_cache'
+  | 'get_customer_info'
+  | 'apply_subscription'
+  | 'sync_supabase'
+  | 'wait_validation'
+  | 'final_get_customer_info'
+  | 'restore_start'
+  | 'restore_call'
+
+function categorizePurchasesError(
+  purchasesErrorCode: PURCHASES_ERROR_CODE | undefined
+): IapErrorCategory {
+  switch (purchasesErrorCode) {
+    case PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR:
+      return 'cancelled'
+    case PURCHASES_ERROR_CODE.NETWORK_ERROR:
+    case PURCHASES_ERROR_CODE.OFFLINE_CONNECTION_ERROR:
+    case PURCHASES_ERROR_CODE.API_ENDPOINT_BLOCKED:
+      return 'network'
+    case PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR:
+    case PURCHASES_ERROR_CODE.UNEXPECTED_BACKEND_RESPONSE_ERROR:
+    case PURCHASES_ERROR_CODE.UNKNOWN_BACKEND_ERROR:
+    case PURCHASES_ERROR_CODE.CUSTOMER_INFO_ERROR:
+    case PURCHASES_ERROR_CODE.SYSTEM_INFO_ERROR:
+    case PURCHASES_ERROR_CODE.CONFIGURATION_ERROR:
+      return 'store_problem'
+    case PURCHASES_ERROR_CODE.PURCHASE_NOT_ALLOWED_ERROR:
+      return 'not_allowed'
+    case PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR:
+      return 'payment_pending'
+    case PURCHASES_ERROR_CODE.PRODUCT_NOT_AVAILABLE_FOR_PURCHASE_ERROR:
+    case PURCHASES_ERROR_CODE.PRODUCT_REQUEST_TIMED_OUT_ERROR:
+      return 'product_unavailable'
+    case PURCHASES_ERROR_CODE.INVALID_RECEIPT_ERROR:
+    case PURCHASES_ERROR_CODE.MISSING_RECEIPT_FILE_ERROR:
+      return 'receipt'
+    default:
+      return 'unknown'
+  }
+}
+
+function getUserMessageForCategory(category: IapErrorCategory): string | null {
+  switch (category) {
+    case 'network':
+      return i18n.t('subscription.networkError')
+    case 'store_problem':
+      return i18n.t('subscription.storeProblemError')
+    case 'not_allowed':
+      return i18n.t('subscription.notAllowedError')
+    case 'payment_pending':
+      return i18n.t('subscription.paymentPendingError')
+    case 'receipt':
+      return i18n.t('subscription.invalidReceiptError')
+    default:
+      return null
+  }
 }
 
 export interface SubscriptionInfo {
@@ -473,11 +561,13 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
   // Purchase a plan (RevenueCat package preferred; StoreKit product fallback)
   const purchase = useCallback(async (plan: PurchasesPackage | PurchasesStoreProduct): Promise<boolean> => {
+    let stage: IapStage = 'init'
     try {
       setIsLoading(true)
       setError(null)
 
       if (!isRevenueCatInitialized) {
+        stage = 'init'
         const configured = await initializeRevenueCat(userId)
         setIsRevenueCatInitialized(configured)
         if (!configured) {
@@ -492,6 +582,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       const currency = isPurchasesPackage(plan) ? plan.product.currencyCode : plan.currencyCode
 
       console.log('[useSubscription] 💳 Starting purchase:', planId)
+      stage = 'purchase_start'
       trackPurchaseStarted({
         product_id: productId,
         package_id: planId,
@@ -499,6 +590,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         currency,
       })
 
+      stage = 'purchase_call'
       if (isPurchasesPackage(plan)) {
         await Purchases.purchasePackage(plan)
       } else {
@@ -507,10 +599,13 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       console.log('[useSubscription] 💳 Purchase completed, parsing customer info...')
 
       // Force-refresh to avoid cached customer info immediately after purchase
+      stage = 'invalidate_customer_info_cache'
       await Purchases.invalidateCustomerInfoCache()
+      stage = 'get_customer_info'
       const latestInfo = await Purchases.getCustomerInfo()
 
       const parsed = parseCustomerInfo(latestInfo)
+      stage = 'apply_subscription'
       applySubscriptionInfo(parsed.info, parsed.reason)
 
       console.log('[useSubscription] 💳 Updated subscription state:', {
@@ -521,16 +616,19 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
       // Sync to Supabase (only when signed in)
       if (userId) {
+        stage = 'sync_supabase'
         await syncToSupabase(parsed.info)
         console.log('[useSubscription] 💳 Synced to Supabase')
       }
 
       // CRITICAL: Sandbox environment needs additional time for receipt validation
       // Wait 1.5 seconds and re-check subscription status to ensure it's fully updated
+      stage = 'wait_validation'
       console.log('[useSubscription] 💳 Waiting for sandbox receipt validation...')
       await new Promise(resolve => setTimeout(resolve, 1500))
 
       // Re-fetch customer info after delay
+      stage = 'final_get_customer_info'
       await Purchases.invalidateCustomerInfoCache()
       const finalInfo = await Purchases.getCustomerInfo()
       const finalParsed = parseCustomerInfo(finalInfo)
@@ -575,10 +673,8 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       const details = getPurchaseErrorDetails(err)
       const code = typeof details.code === 'string' ? details.code : undefined
       const purchasesErrorCode = isPurchasesErrorCode(code) ? code : undefined
-      const userMessageBase =
-        purchasesErrorCode === PURCHASES_ERROR_CODE.INVALID_RECEIPT_ERROR
-          ? i18n.t('subscription.invalidReceiptError')
-          : i18n.t('subscription.purchaseError')
+      const category = categorizePurchasesError(purchasesErrorCode)
+      const userMessageBase = getUserMessageForCategory(category) ?? i18n.t('subscription.purchaseError')
       const userMessage = code ? `${userMessageBase} (code: ${code})` : userMessageBase
 
       console.error('[useSubscription] 💳 Purchase failed:', err)
@@ -591,12 +687,19 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         error_code: code,
         purchases_error_code: purchasesErrorCode,
         error_message: details.message,
+        underlying_error_code: details.underlyingCode,
+        underlying_error_message: details.underlyingMessage,
+        stage,
+        category,
       })
       trackPurchaseFailed({
         product_id: isPurchasesPackage(plan) ? plan.product.identifier : plan.identifier,
         price: isPurchasesPackage(plan) ? plan.product.price : plan.price,
         currency: isPurchasesPackage(plan) ? plan.product.currencyCode : plan.currencyCode,
         error_code: code ?? String(purchaseError.code ?? purchaseError.message ?? 'purchase_failed'),
+        purchases_error_code: purchasesErrorCode,
+        error_category: category,
+        error_stage: stage,
       })
       throw err
     } finally {
@@ -606,11 +709,13 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
   // Restore purchases
   const restore = useCallback(async (): Promise<boolean> => {
+    let stage: IapStage = 'init'
     try {
       setIsLoading(true)
       setError(null)
 
       if (!isRevenueCatInitialized) {
+        stage = 'init'
         const configured = await initializeRevenueCat(userId)
         setIsRevenueCatInitialized(configured)
         if (!configured) {
@@ -620,12 +725,17 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       }
 
       console.log('[useSubscription] 🔄 Starting restore purchases...')
+      stage = 'restore_start'
       trackRestoreStarted({ trigger: 'manual' })
+      stage = 'restore_call'
       await Purchases.restorePurchases()
       // Force-refresh to make sure restored receipts are processed
+      stage = 'invalidate_customer_info_cache'
       await Purchases.invalidateCustomerInfoCache()
+      stage = 'get_customer_info'
       const latestInfo = await Purchases.getCustomerInfo()
       const parsed = parseCustomerInfo(latestInfo)
+      stage = 'apply_subscription'
       applySubscriptionInfo(parsed.info, 'restore_manual')
 
       console.log('[useSubscription] 🔄 Restore initial result:', {
@@ -636,14 +746,17 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
       // Sync to Supabase
       if (userId) {
+        stage = 'sync_supabase'
         await syncToSupabase(parsed.info)
       }
 
       // CRITICAL: Similar to purchase, wait for sandbox receipt validation
+      stage = 'wait_validation'
       console.log('[useSubscription] 🔄 Waiting for sandbox receipt validation...')
       await new Promise(resolve => setTimeout(resolve, 1500))
 
       // Re-fetch customer info after delay
+      stage = 'final_get_customer_info'
       await Purchases.invalidateCustomerInfoCache()
       const finalInfo = await Purchases.getCustomerInfo()
       const finalParsed = parseCustomerInfo(finalInfo)
@@ -664,10 +777,8 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
       const details = getPurchaseErrorDetails(err)
       const code = typeof details.code === 'string' ? details.code : undefined
       const purchasesErrorCode = isPurchasesErrorCode(code) ? code : undefined
-      const userMessageBase =
-        purchasesErrorCode === PURCHASES_ERROR_CODE.INVALID_RECEIPT_ERROR
-          ? i18n.t('subscription.invalidReceiptError')
-          : i18n.t('subscription.restoreError')
+      const category = categorizePurchasesError(purchasesErrorCode)
+      const userMessageBase = getUserMessageForCategory(category) ?? i18n.t('subscription.restoreError')
       const userMessage = code ? `${userMessageBase} (code: ${code})` : userMessageBase
       console.error('[useSubscription] 🔄 Restore failed:', err)
       setError(userMessage)
@@ -677,10 +788,17 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         error_code: code,
         purchases_error_code: purchasesErrorCode,
         error_message: details.message,
+        underlying_error_code: details.underlyingCode,
+        underlying_error_message: details.underlyingMessage,
+        stage,
+        category,
       })
       trackRestoreFailed({
         trigger: 'manual',
         error_code: code ?? details.message ?? 'restore_failed',
+        purchases_error_code: purchasesErrorCode,
+        error_category: category,
+        error_stage: stage,
       })
       throw err
     } finally {
