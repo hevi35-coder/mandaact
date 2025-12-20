@@ -17,35 +17,6 @@
 3.  **Code Disable (Optional)**: Temporarily comment out `<BannerAd />` in `HomeScreen.tsx` if needed.
 
 ---
-
-## 0.1 2025 트렌드/베스트 프랙티스(가독성 중심)
-
-스크린샷은 “세련됨”보다 먼저 **가독성**이 확보되어야 전환이 나옵니다. 특히 Apple 가이드 상 **첫 1~3장이 검색 결과에 노출**될 수 있으므로, 첫 장부터 “이 앱이 뭔지/왜 필요한지”가 5초 내 전달되어야 합니다.
-
-참고:
-- Apple Product Page: https://developer.apple.com/app-store/product-page/
-- SplitMetrics(ASO): https://splitmetrics.com/blog/app-store-screenshots/
-
-핵심 원칙:
-- **한 장 = 한 메시지**: 각 이미지에서 하나의 메인 베네핏만 강조
-- **UI 확대**: 상태바/탭바 등 “핵심이 아닌 영역” 비중을 줄이고, 핵심 콘텐츠를 크롭/확대
-- **스토리 구성**: 가치(왜) → 실행(어떻게) → 차별점 → 보상/동기 → 인사이트
-- **현지화**: 언어별 카피 길이에 따라 템플릿이 깨지지 않도록 레이아웃/줄바꿈을 템플릿화
-- **과한 합성 지양**: 앱 UI 캡처 기반(사람이 기기를 들고 있는 사진 등은 피하기)
-
----
-
-## 0.2 현재 스크린샷 문제(가독성)
-
-- UI가 상대적으로 작게 보여 “무엇을 하는 앱인지”가 한눈에 안 들어옴
-- 일부 raw 스크린샷은 해상도가 낮아, 확대 시 선명도가 떨어질 수 있음(가독성 상한선)
-
-개선 방향(우선순위):
-1) **템플릿에서 UI를 더 크게**(여백/타이틀 영역 최적화)
-2) **핵심 영역 크롭/줌**(상/하단 바 비중 축소)
-3) (권장) App Store 기준 해상도로 raw 재캡처 후 재생성
-
----
 ## 1. Storytelling Strategy (The "User Journey" Flow)
 
 We will use a **5-Step Narrative** that guides the user from their "Big Goal" to "Daily Action" and finally "Achievement".
