@@ -2,8 +2,8 @@
 
 > 문서 인덱스: `docs/README.md`
 
-**최종 업데이트**: 2025-12-20 - iOS 1.0 승인/출시 반영 + 1.0.1 패치 준비 항목 정리
-**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 기본 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n(추가 누수 정리 진행) ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 iOS 출시 완료 / 10.3.1 패치 준비** 🔄
+**최종 업데이트**: 2025-12-21 - 마케팅 Phase 11 (커뮤니티/블로그) 준비 완료 반영
+**현재 상태**: Phase 10.3 iOS 출시 완료 ✅ | **Phase 11 마케팅 런칭 준비 완료 (앱 심사 대기)** ⏸️
 
 ---
 
@@ -1329,6 +1329,31 @@ Week 11   | Phase 10.3: 스토어 배포        [🔴 Critical] 🔄
 
 ---
 
-**문서 버전**: 3.14
-**최종 수정**: 2025-12-11
+## 📢 Phase 11: 마케팅 및 커뮤니티 런칭 🔄 **진행 중 (앱 심사 대기)**
+
+> **목표**: 초기 유저 1,000명 확보 및 "실천하는 만다라트" 브랜딩 구축
+> **전략 문서**: [`docs/marketing/PROMOTION_PLAN.md`](../marketing/PROMOTION_PLAN.md)
+
+### 11.1 마케팅 전략 및 에셋 준비 ✅ **완료** (2025-12-21)
+- [x] 타겟 페르소나 및 채널 전략 수립 (Procrastinators, Ohtani Fans)
+- [x] 웹앱 "Landing Page Mode" 전환 및 SEO 최적화
+- [x] 브랜드 에셋 최신화 (iPhone 15 Pro 프레임 적용 스크린샷)
+
+### 11.2 블로그/커뮤니티 런칭 준비 ✅ **완료** (2025-12-21)
+- [x] **기술 블로그 (Dev.to) 런칭**
+  - [x] 운영 프로세스 정립: [`docs/marketing/BLOG_PUBLISHING_WORKFLOW.md`](../marketing/BLOG_PUBLISHING_WORKFLOW.md)
+  - [x] 자동 발행 스크립트 구축 (`scripts/publish_to_devto.js`)
+  - [x] 첫 게시글("iOS app that turns Mandalart into GTD") 초안 업로드 완료
+- [x] **커뮤니티 홍보 콘텐츠 준비**
+  - [x] 국내: 디스콰이엇(메이커 로그), 네이버 블로그, 오픈카톡 홍보글 작성 완료
+  - [x] 글로벌: Product Hunt, Reddit, X(Twitter) 홍보글 작성 완료
+
+### 11.3 숏폼 챌린지 (Week 3) 📅 **예정**
+- [ ] 숏폼 영상 기획 (TikTok/Reels/Shorts)
+- [ ] 챌린지 바이럴 루프 설계
+
+---
+
+**문서 버전**: 3.16
+**최종 수정**: 2025-12-21
 **작성자**: Development Team

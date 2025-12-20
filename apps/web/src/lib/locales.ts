@@ -22,7 +22,7 @@ export const locales = {
         },
         magic: {
             eyebrow: 'Magic Input',
-            title: '손글씨 목표도 1초 만에 디지털로',
+            title: '찰나의 순간, 디지털로 변환',
             description: '이미 종이에 적어둔 만다라트가 있나요? 사진 한 장만 찍으세요. 강력한 AI OCR이 81개의 칸을 완벽하게 인식합니다.',
             feature1: '사진 한 장으로',
             feature1Desc: '복잡한 타이핑 없이 찰칵',
@@ -31,12 +31,12 @@ export const locales = {
         },
         vision: {
             eyebrow: 'Step 1: Planning',
-            title: '81개의 조각으로 그려내는 인생의 지도',
+            title: '원대한 꿈을 시각화하세요',
             description: '막연했던 꿈을 8개의 세부 목표와 64개의 행동 아이템으로 구체화하세요. 만다라트 기법은 생각의 한계를 넘어 실현 가능한 계획을 만들어줍니다.',
         },
         action: {
             eyebrow: 'Step 2: Action',
-            title: '오늘은 오직 한 가지에만 집중하세요',
+            title: '계획만 하지 말고, 실천하세요',
             description: '81개의 목표를 다 볼 필요는 없습니다. MandaAct가 활성화된 목표만 골라 매일 아침 "오늘의 체크리스트"를 배달해 드립니다. 당신은 행동하기만 하면 됩니다.',
             feature1: '게임화 보상',
             feature1Desc: '실천할 때마다 쌓이는 XP와 레벨업의 즐거움',
@@ -45,7 +45,7 @@ export const locales = {
         },
         insight: {
             eyebrow: 'Step 3: Growth',
-            title: 'AI 코치가 분석하는 나의 일주일',
+            title: '똑똑한 주간 리포트',
             description: '내가 어떤 요일에 강한지, 어떤 시간대에 나태해지는지 AI가 정밀하게 분석하여 맞춤형 인사이트와 다음 주 성장 전략을 제안합니다.',
             quote: '"지난주 목요일 실천율이 20% 상승했어요! 오전 시간대를 공략하는 전략이 주효했네요."',
         },
@@ -97,7 +97,7 @@ export const locales = {
         },
         magic: {
             eyebrow: 'Magic Input',
-            title: 'Paper to Digital in Seconds',
+            title: 'Snap & Digitize Instantly',
             description: 'Already have a Mandalart on paper? Just take a photo. Our advanced AI OCR perfectly recognizes all 81 slots instantly.',
             feature1: 'Instant Capture',
             feature1Desc: 'Zero typing required',
@@ -106,12 +106,12 @@ export const locales = {
         },
         vision: {
             eyebrow: 'Step 1: Planning',
-            title: 'Map Your Success in 81 Blocks',
+            title: 'Visualize Your Big Dreams',
             description: 'Break down vague dreams into 8 core goals and 64 actionable items. The Mandalart method pushes your boundaries to create a truly achievable roadmap.',
         },
         action: {
             eyebrow: 'Step 2: Action',
-            title: 'Unwavering Daily Focus',
+            title: "Don't Just Plan. Do.",
             description: "You don't need to see all 81 blocks at once. MandaAct delivers a curated 'Today's Checklist' every morning. You just need to act.",
             feature1: 'Gamified Progress',
             feature1Desc: 'Earn XP and level up as you complete tasks',
@@ -120,7 +120,7 @@ export const locales = {
         },
         insight: {
             eyebrow: 'Step 3: Growth',
-            title: 'AI-Powered Growth Insights',
+            title: 'Smart Weekly Insights',
             description: 'Understand your patterns. Our AI analyzes which days and times you excel, offering tailored strategies for the week ahead.',
             quote: '"Your completion rate jumped by 20% last Thursday! The morning focus strategy is working perfectly."',
         },
