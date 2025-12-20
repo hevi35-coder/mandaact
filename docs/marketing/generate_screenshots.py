@@ -13,7 +13,7 @@ Design Philosophy:
 ================================================================================
 """
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import os
 
 # --- Configuration ---
@@ -23,8 +23,10 @@ ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 RAW_DIR = os.path.join(ASSETS_DIR, "raw")
 FINAL_DIR = os.path.join(ASSETS_DIR, "final")
 
-# Font Path
-FONT_BOLD = "/Users/jhsy/mandaact/apps/mobile/assets/fonts/Pretendard-Bold.otf"
+# Font Path (repo-relative)
+FONT_BOLD = os.path.normpath(
+    os.path.join(BASE_DIR, "..", "..", "apps", "mobile", "assets", "fonts", "Pretendard-Bold.otf")
+)
 
 # Colors
 GRADIENT_START = (37, 99, 235)  # #2563eb (Blue)
@@ -36,22 +38,25 @@ DEVICES = {
     "iphone": {
         "width": 1284,             # Compatible with 6.5"/6.7" Pro Max slots
         "height": 2778,
-        "screenshot_scale": 0.88,  # Slightly smaller for premium balance
-        "bottom_margin": 140,      # More space at the bottom 
-        "title_step_y": 280,       # Start title higher
-        "title_size": 130,
-        "line_spacing": 150,
+        "screenshot_scale": 0.95,  # Larger for readability
+        "bottom_margin": 90,       # More room for UI
+        "title_step_y": 190,       # Reduce title block height
+        "title_size": 120,
+        "line_spacing": 138,
         "corner_radius": 80,
+        # Optional crop to enlarge content area (ratios of the raw screenshot)
+        "content_crop": {"top": 0.06, "bottom": 0.08, "left": 0.00, "right": 0.00},
     },
     "ipad": {
         "width": 2048,             # Compatible with 12.9" Pro slots
         "height": 2732,
-        "screenshot_scale": 0.72,
-        "bottom_margin": 120,
-        "title_step_y": 300,
-        "title_size": 150,
-        "line_spacing": 180,
+        "screenshot_scale": 0.82,  # Larger for readability
+        "bottom_margin": 110,
+        "title_step_y": 210,
+        "title_size": 140,
+        "line_spacing": 165,
         "corner_radius": 60,
+        "content_crop": {"top": 0.04, "bottom": 0.06, "left": 0.00, "right": 0.00},
     }
 }
 
@@ -92,6 +97,34 @@ def apply_rounded_corners(img, radius):
     output = Image.new('RGBA', img.size, (0, 0, 0, 0))
     output.paste(img, (0, 0), mask)
     return output
+
+def apply_content_crop(img, crop):
+    """Crop out UI chrome (status/tab bars) to enlarge the meaningful area."""
+    if not crop:
+        return img
+    w, h = img.size
+    left = int(w * crop.get("left", 0))
+    right = int(w * (1 - crop.get("right", 0)))
+    top = int(h * crop.get("top", 0))
+    bottom = int(h * (1 - crop.get("bottom", 0)))
+    if right <= left or bottom <= top:
+        return img
+    return img.crop((left, top, right, bottom))
+
+def add_shadow(card, blur=18, opacity=110, offset=(0, 16)):
+    """Create a soft shadow for an RGBA image with transparency."""
+    shadow = Image.new("RGBA", (card.width + blur * 4, card.height + blur * 4), (0, 0, 0, 0))
+    alpha = card.split()[-1]
+    shadow_alpha = Image.new("L", alpha.size, 0)
+    shadow_alpha.paste(alpha, (0, 0))
+    shadow_layer = Image.new("RGBA", alpha.size, (0, 0, 0, opacity))
+    shadow_layer.putalpha(shadow_alpha)
+    shadow.paste(shadow_layer, (blur * 2, blur * 2))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=blur))
+    result = Image.new("RGBA", shadow.size, (0, 0, 0, 0))
+    result.paste(shadow, offset, shadow)
+    result.paste(card, (blur * 2, blur * 2), card)
+    return result
 
 # --- Generator ---
 
@@ -137,6 +170,9 @@ def generate_screenshot(lang, device_key):
         bbox = ss.getbbox()
         if bbox:
             ss = ss.crop(bbox)
+
+        # Crop UI chrome to increase legibility (optional, per device)
+        ss = apply_content_crop(ss, device.get("content_crop"))
         
         # Scale
         target_w = int(device["width"] * device["screenshot_scale"])
@@ -146,13 +182,18 @@ def generate_screenshot(lang, device_key):
         
         # Apply Rounded Corners
         ss = apply_rounded_corners(ss, device["corner_radius"])
+
+        # Add subtle shadow for separation from gradient background
+        ss_with_shadow = add_shadow(ss, blur=18 if device_key == "iphone" else 14, opacity=120)
         
         # Position (Centered horizontally, specific bottom margin)
         ss_x = (device["width"] - target_w) // 2
         ss_y = device["height"] - target_h - device["bottom_margin"]
         
         # Paste onto background
-        canvas.paste(ss, (ss_x, ss_y), ss)
+        shadow_x = ss_x - (ss_with_shadow.width - ss.width) // 2
+        shadow_y = ss_y - (ss_with_shadow.height - ss.height) // 2
+        canvas.paste(ss_with_shadow, (shadow_x, shadow_y), ss_with_shadow)
         
         # 4. Save Final Image
         out_path = os.path.join(output_dir, item["out_filename"])
