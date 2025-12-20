@@ -1,196 +1,170 @@
 #!/usr/bin/env python3
 """
-App Store Screenshot Generator for MandaAct
-Generates composite images with text overlays for App Store submission.
+================================================================================
+FINAL CONSOLIDATED APP STORE SCREENSHOT GENERATOR FOR MANDAACT
+================================================================================
+This is the SINGLE SOURCE OF TRUTH for generating App Store screenshots.
+All other generate_screenshots_*.py files are redundant and should be ignored.
+
+Design Philosophy:
+- Minimalist: Titles only, no subtitles, no background shadows.
+- Balanced & Professional: Enough breathing room for content and text.
+- Clean Assets: Trusts pre-cleaned raw files (no internal cropping).
+================================================================================
 """
 
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-# Paths
+# --- Configuration ---
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RAW_DIR = os.path.join(BASE_DIR, "assets/raw/en")
-OUTPUT_DIR = os.path.join(BASE_DIR, "assets/final/en")
+ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+RAW_DIR = os.path.join(ASSETS_DIR, "raw")
+FINAL_DIR = os.path.join(ASSETS_DIR, "final")
 
-# Create output directory
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-# App Store dimensions (iPhone 6.7" - 1284x2778 required)
-CANVAS_WIDTH = 1284
-CANVAS_HEIGHT = 2778
+# Font Path
+FONT_BOLD = "/Users/jhsy/mandaact/apps/mobile/assets/fonts/Pretendard-Bold.otf"
 
 # Colors
-GRADIENT_START = (37, 99, 235)  # #2563eb (blue)
-GRADIENT_END = (147, 51, 234)   # #9333ea (purple)
-WHITE = (255, 255, 255)
-LIGHT_GRAY = (200, 200, 200)
+GRADIENT_START = (37, 99, 235)  # #2563eb (Blue)
+GRADIENT_END = (147, 51, 234)   # #9333ea (Purple)
+TEXT_WHITE = (255, 255, 255)
 
-# Copy specifications from marketing doc (English)
-SCREENS = [
-    {
-        "filename": "screen_1_vision.png",
-        "title": "Visualize Your\nBig Dreams",
-        "subtitle": "Structure goals into a 9×9 grid",
-        "output": "01_vision.png"
+# Device Profiles
+DEVICES = {
+    "iphone": {
+        "width": 1284,             # Compatible with 6.5"/6.7" Pro Max slots
+        "height": 2778,
+        "screenshot_scale": 0.88,  # Slightly smaller for premium balance
+        "bottom_margin": 140,      # More space at the bottom 
+        "title_step_y": 280,       # Start title higher
+        "title_size": 130,
+        "line_spacing": 150,
+        "corner_radius": 80,
     },
-    {
-        "filename": "screen_2_action.png",
-        "title": "Don't Just Plan.\nDo.",
-        "subtitle": "Goals turn into daily to-do lists",
-        "output": "02_action.png"
-    },
-    {
-        "filename": "screen_3_magic.png",
-        "title": "Snap & Digitize\nInstantly",
-        "subtitle": "AI converts your handwriting to digital",
-        "output": "03_magic.png"
-    },
-    {
-        "filename": "screen_4_reward.png",
-        "title": "Make Growth\nAddictive",
-        "subtitle": "Earn XP, badges, and level up",
-        "output": "04_reward.png"
-    },
-    {
-        "filename": "screen_5_insight.png",
-        "title": "Smart Weekly\nInsights",
-        "subtitle": "AI analyzes your habit patterns",
-        "output": "05_insight.png"
+    "ipad": {
+        "width": 2048,             # Compatible with 12.9" Pro slots
+        "height": 2732,
+        "screenshot_scale": 0.72,
+        "bottom_margin": 120,
+        "title_step_y": 300,
+        "title_size": 150,
+        "line_spacing": 180,
+        "corner_radius": 60,
     }
-]
+}
+
+# Content Localization (Full 5-screen set for each language)
+CONTENT = {
+    "en": [
+        {"id": "1_vision", "title": "Visualize Your\nBig Dreams", "raw_filename": "screen_1_vision.png", "out_filename": "01_vision.png"},
+        {"id": "2_action", "title": "Don't Just Plan.\nDo.", "raw_filename": "screen_2_action.png", "out_filename": "02_action.png"},
+        {"id": "3_magic", "title": "Snap & Digitize\nInstantly", "raw_filename": "screen_3_magic.png", "out_filename": "03_magic.png"},
+        {"id": "4_reward", "title": "Make Growth\nAddictive", "raw_filename": "screen_4_reward.png", "out_filename": "04_reward.png"},
+        {"id": "5_insight", "title": "Smart Weekly\nInsights", "raw_filename": "screen_5_insight.png", "out_filename": "05_insight.png"}
+    ],
+    "ko": [
+        {"id": "1_vision", "title": "원대한 꿈을\n시각화하세요", "raw_filename": "screen_1_vision.png", "out_filename": "01_vision.png"},
+        {"id": "2_action", "title": "계획만 하지 말고,\n실천하세요", "raw_filename": "screen_2_action.png", "out_filename": "02_action.png"},
+        {"id": "3_magic", "title": "찰나의 순간,\n디지털로 변환", "raw_filename": "screen_3_magic.png", "out_filename": "03_magic.png"},
+        {"id": "4_reward", "title": "성장이 즐거운\n갓생 루틴", "raw_filename": "screen_4_reward.png", "out_filename": "04_reward.png"},
+        {"id": "5_insight", "title": "똑똑한\n주간 리포트", "raw_filename": "screen_5_insight.png", "out_filename": "05_insight.png"}
+    ]
+}
+
+# --- Utility Functions ---
 
 def create_gradient(width, height, start_color, end_color):
-    """Create a vertical gradient image."""
-    img = Image.new('RGB', (width, height))
+    """Create a high-quality vertical gradient."""
+    top = Image.new('RGB', (width, height), start_color)
+    bottom = Image.new('RGB', (width, height), end_color)
+    mask = Image.new('L', (width, height))
     for y in range(height):
-        ratio = y / height
-        r = int(start_color[0] * (1 - ratio) + end_color[0] * ratio)
-        g = int(start_color[1] * (1 - ratio) + end_color[1] * ratio)
-        b = int(start_color[2] * (1 - ratio) + end_color[2] * ratio)
-        for x in range(width):
-            img.putpixel((x, y), (r, g, b))
-    return img
+        mask.paste(int(255 * (y / height)), (0, y, width, y + 1))
+    return Image.composite(bottom, top, mask)
 
-def add_rounded_corners(img, radius):
-    """Add rounded corners to an image."""
-    # Create a mask with rounded corners
+def apply_rounded_corners(img, radius):
+    """Apply rounded corners with transparency support."""
     mask = Image.new('L', img.size, 0)
     draw = ImageDraw.Draw(mask)
-    draw.rounded_rectangle([(0, 0), img.size], radius=radius, fill=255)
-
-    # Apply mask
+    draw.rounded_rectangle((0, 0) + img.size, radius=radius, fill=255)
     output = Image.new('RGBA', img.size, (0, 0, 0, 0))
-    output.paste(img, mask=mask)
+    output.paste(img, (0, 0), mask)
     return output
 
-def add_device_shadow(canvas, x, y, width, height, radius=60):
-    """Add a subtle shadow behind the device."""
-    shadow_offset = 20
-    shadow_blur = 40
+# --- Generator ---
 
-    # Create shadow layer
-    shadow = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
-    shadow_draw = ImageDraw.Draw(shadow)
-
-    # Draw shadow rectangle (slightly offset and larger)
-    shadow_draw.rounded_rectangle(
-        [(x + shadow_offset, y + shadow_offset),
-         (x + width + shadow_offset, y + height + shadow_offset)],
-        radius=radius,
-        fill=(0, 0, 0, 60)
-    )
-
-    # Composite shadow onto canvas
-    return Image.alpha_composite(canvas.convert('RGBA'), shadow)
-
-def generate_screenshot(screen_config):
-    """Generate a single App Store screenshot."""
-    print(f"Generating: {screen_config['output']}")
-
-    # Create gradient background
-    canvas = create_gradient(CANVAS_WIDTH, CANVAS_HEIGHT, GRADIENT_START, GRADIENT_END)
-    canvas = canvas.convert('RGBA')
-
-    # Load screenshot
-    screenshot_path = os.path.join(RAW_DIR, screen_config['filename'])
-    screenshot = Image.open(screenshot_path).convert('RGBA')
-
-    # Scale screenshot to fit nicely (about 70% of canvas width)
-    target_width = int(CANVAS_WIDTH * 0.75)
-    scale_ratio = target_width / screenshot.width
-    target_height = int(screenshot.height * scale_ratio)
-    screenshot = screenshot.resize((target_width, target_height), Image.LANCZOS)
-
-    # Add rounded corners to screenshot
-    screenshot = add_rounded_corners(screenshot, 50)
-
-    # Calculate position (center horizontally, lower third vertically)
-    x = (CANVAS_WIDTH - target_width) // 2
-    y = CANVAS_HEIGHT - target_height - 150  # 150px from bottom
-
-    # Add shadow
-    canvas = add_device_shadow(canvas, x, y, target_width, target_height)
-
-    # Paste screenshot
-    canvas.paste(screenshot, (x, y), screenshot)
-
-    # Add text
-    draw = ImageDraw.Draw(canvas)
-
-    # Try to use system fonts
+def generate_screenshot(lang, device_key):
+    device = DEVICES[device_key]
+    lang_dir = f"ipad_{lang}" if device_key == "ipad" else lang
+    
+    input_dir = os.path.join(RAW_DIR, lang_dir)
+    output_dir = os.path.join(FINAL_DIR, lang_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Load Font
     try:
-        # macOS system fonts
-        title_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 100)
-        subtitle_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 48)
-    except:
-        try:
-            title_font = ImageFont.truetype("/System/Library/Fonts/SFNSDisplay.ttf", 100)
-            subtitle_font = ImageFont.truetype("/System/Library/Fonts/SFNSDisplay.ttf", 48)
-        except:
-            # Fallback to default
-            title_font = ImageFont.load_default()
-            subtitle_font = ImageFont.load_default()
+        title_font = ImageFont.truetype(FONT_BOLD, device["title_size"])
+    except Exception as e:
+        print(f"  Warning: Could not load Pretendard font: {e}. Falling back to default.")
+        title_font = ImageFont.load_default()
 
-    # Draw title (centered, near top)
-    title = screen_config['title']
-    title_y = 180
-
-    for i, line in enumerate(title.split('\n')):
-        bbox = draw.textbbox((0, 0), line, font=title_font)
-        text_width = bbox[2] - bbox[0]
-        text_x = (CANVAS_WIDTH - text_width) // 2
-        draw.text((text_x, title_y + i * 120), line, font=title_font, fill=WHITE)
-
-    # Draw subtitle (centered, below title)
-    subtitle = screen_config['subtitle']
-    subtitle_y = title_y + len(title.split('\n')) * 120 + 40
-
-    bbox = draw.textbbox((0, 0), subtitle, font=subtitle_font)
-    text_width = bbox[2] - bbox[0]
-    text_x = (CANVAS_WIDTH - text_width) // 2
-    draw.text((text_x, subtitle_y), subtitle, font=subtitle_font, fill=LIGHT_GRAY)
-
-    # Save
-    output_path = os.path.join(OUTPUT_DIR, screen_config['output'])
-    canvas.convert('RGB').save(output_path, 'PNG', quality=95)
-    print(f"  Saved: {output_path}")
+    for item in CONTENT[lang]:
+        # 1. Create Canvas
+        canvas = create_gradient(device["width"], device["height"], GRADIENT_START, GRADIENT_END)
+        canvas = canvas.convert('RGBA')
+        draw = ImageDraw.Draw(canvas)
+        
+        # 2. Draw Text (Title Only)
+        y_cursor = device["title_step_y"]
+        lines = item["title"].split('\n')
+        for line in lines:
+            bbox = draw.textbbox((0, 0), line, font=title_font)
+            w = bbox[2] - bbox[0]
+            draw.text(((device["width"] - w) // 2, y_cursor), line, font=title_font, fill=TEXT_WHITE)
+            y_cursor += device["line_spacing"]
+        
+        # 3. Process App Screenshot
+        ss_path = os.path.join(input_dir, item["raw_filename"])
+        if not os.path.exists(ss_path):
+            print(f"  [Error] {ss_path} not found. Skipping.")
+            continue
+            
+        ss = Image.open(ss_path).convert('RGBA')
+        
+        # Auto-trim transparency (shadows/padding)
+        bbox = ss.getbbox()
+        if bbox:
+            ss = ss.crop(bbox)
+        
+        # Scale
+        target_w = int(device["width"] * device["screenshot_scale"])
+        scale_ratio = target_w / ss.width
+        target_h = int(ss.height * scale_ratio)
+        ss = ss.resize((target_w, target_h), Image.Resampling.LANCZOS)
+        
+        # Apply Rounded Corners
+        ss = apply_rounded_corners(ss, device["corner_radius"])
+        
+        # Position (Centered horizontally, specific bottom margin)
+        ss_x = (device["width"] - target_w) // 2
+        ss_y = device["height"] - target_h - device["bottom_margin"]
+        
+        # Paste onto background
+        canvas.paste(ss, (ss_x, ss_y), ss)
+        
+        # 4. Save Final Image
+        out_path = os.path.join(output_dir, item["out_filename"])
+        canvas.convert('RGB').save(out_path, 'PNG', quality=95)
+        print(f"  - Saved: {out_path}")
 
 def main():
-    print("=" * 50)
-    print("MandaAct App Store Screenshot Generator")
-    print("=" * 50)
-    print(f"Canvas size: {CANVAS_WIDTH} x {CANVAS_HEIGHT}")
-    print(f"Output directory: {OUTPUT_DIR}")
-    print()
-
-    for screen in SCREENS:
-        generate_screenshot(screen)
-
-    print()
-    print("=" * 50)
-    print(f"Done! Generated {len(SCREENS)} screenshots.")
-    print(f"Output: {OUTPUT_DIR}")
-    print("=" * 50)
+    print(f"Generating screenshots for English and Korean...")
+    for lang in ["en", "ko"]:
+        for device_key in ["iphone", "ipad"]:
+            generate_screenshot(lang, device_key)
+    print("\nAll tasks completed successfully!")
 
 if __name__ == "__main__":
     main()
