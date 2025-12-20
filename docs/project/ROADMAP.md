@@ -2,8 +2,8 @@
 
 > 문서 인덱스: `docs/README.md`
 
-**최종 업데이트**: 2025-12-17 - 웹앱 랜딩 페이지 모드(단기 대응) + 타입 추천 로직/프롬프트 효율성 현황 정리 반영
-**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 기본 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n(추가 누수 정리 진행) ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 스토어 배포(심사 대기)** 🔄
+**최종 업데이트**: 2025-12-20 - iOS 1.0 승인/출시 반영 + 1.0.1 패치 준비 항목 정리
+**현재 상태**: Phase 4 완료 ✅ | Phase 5 완료 ✅ | Phase 8 기본 완료 ✅ | Phase 9.1 iPad 완료 ✅ | Phase 9.2 i18n(추가 누수 정리 진행) ✅ | Phase 10.2 AdMob 완료 ✅ | **Phase 10.3 iOS 출시 완료 / 10.3.1 패치 준비** 🔄
 
 ---
 
@@ -93,7 +93,7 @@
   - [x] `XPBoostButton` 컴포넌트 구현
   - [x] HomeScreen 배치 (ProfileCard와 StreakCard 사이)
   - [x] TodayScreen 배치 (ProgressCard 아래)
-  - [x] `xp_multipliers` 테이블 연동
+  - [x] `user_bonus_xp` 테이블 연동 (XP multiplier)
 
 #### 10.2.3 추가 보상형 광고 (Phase 3) ✅ **완료** (2025-12-07)
 - [x] `StreakFreezeButton` 컴포넌트 구현
@@ -157,14 +157,25 @@
   - [ ] iPad Pro 12.9" (추후)
   - [ ] Android Phone (추후)
   - [ ] Android Tablet (추후)
-- [ ] iOS App Store 제출 🔄 **심사 진행/대기**
+- [x] iOS App Store 제출 ✅ **승인/출시 완료**
   - [x] App Store Connect 앱 생성
   - [x] TestFlight 베타 테스트 (Build 53 반려 → Build 80 업로드)
   - [x] App Store Connect 메타데이터 입력 (가격, 연령등급, 개인정보)
   - [x] Build 53 심사 제출 → **반려** (2025-12-10)
   - [x] Build 80 TestFlight 업로드 ✅ (2025-12-13)
   - [x] Build 80 심사 제출 ✅ (2025-12-13)
-  - [ ] App Review 결과 대기 🔄 (App Store Connect에서 확인)
+  - [x] App Review 승인 ✅ (v1.0 출시)
+
+#### 10.3.1 iOS 1.0.1 패치 준비 🔄
+
+**목표**: 실사용자 피드백 기반의 안정화 패치 릴리즈
+
+**작업 목록**:
+- [x] (모바일) 닉네임 변경 즉시 반영(홈/설정) 개선
+- [x] (모바일) 회원가입 UX 문구 정리(“인증메일 발송” 오해 제거) + 불필요한 confirm email 제거
+- [x] (모바일) 구독 플랜 미노출 시 재시도/대체 조회 fallback 보강
+- [ ] (모바일) 월간 구독 구매 실패(`code: 8`) 재현/원인 분석 및 개선
+- [ ] (스토어) TestFlight 제출 및 실제 기기 회귀 테스트(구독/복원/로그인/닉네임)
 - [ ] Android Google Play 제출 (추후 진행)
   - [ ] Google Play Console 앱 생성
   - [ ] 내부 테스트 트랙
@@ -1160,7 +1171,7 @@ Week 11   | Phase 10.3: 스토어 배포        [🔴 Critical] 🔄
   - ✅ 앱 메타데이터 입력 완료 (이름, 설명, 키워드)
   - ✅ Build 53 제출 → 반려, Build 79 업로드/제출 완료
   - 🔄 App Store Connect: EULA 링크/IAP 메타데이터/RevenueCat 설정 진행
-  - 🔄 App Review 결과 대기
+  - 🔄 iOS 1.0.1 패치 준비/제출
 
 ### 이전 완료 (2025-12-07)
 ✅ **Phase 10.2 AdMob 광고 연동 완료**
