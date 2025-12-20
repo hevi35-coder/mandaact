@@ -25,6 +25,8 @@ This repo is a pnpm + Turbo monorepo. Keep changes minimal, scoped, and aligned 
 - `docs/development/DEPLOYMENT_GUIDE.md` (deploy flow: web/mobile)
 - `docs/development/TESTFLIGHT_SUBMIT_GUIDE.md` (iOS submit specifics)
 - `docs/project/ROADMAP.md` / `docs/project/PRD_mandaact.md` (planning/spec)
+- `docs/marketing/PROMOTION_PLAN.md` (marketing strategy)
+- `docs/marketing/BLOG_PUBLISHING_WORKFLOW.md` (blog automation SOP)
 - `docs/troubleshooting/TROUBLESHOOTING.md` (troubleshooting index)
 
 ## Coding Conventions
