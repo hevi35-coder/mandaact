@@ -1,43 +1,54 @@
-# Repository Guidelines
+# Repository Guidelines (Agent Notes)
 
-## Project Structure & Module Organization
-- Monorepo managed by pnpm + Turbo. Main apps live in `apps/web` (React + Vite) and `apps/mobile` (React Native + Expo); shared logic, types, and constants live in `packages/shared`.
-- Backend assets sit in `supabase/migrations` and `supabase/functions`. Additional reference docs are under `docs/`.
-- Keep feature-specific UI, hooks, and utilities grouped by domain inside each app’s `src` to reduce cross-module coupling.
+This repo is a pnpm + Turbo monorepo. Keep changes minimal, scoped, and aligned with existing patterns.
 
-## Must-Read Docs
-- `docs/README.md` – 문서 인덱스(어디에 무엇이 있는지)
-- `docs/development/SETUP_GUIDE.md` – 로컬 개발 환경 세팅
-- `docs/development/DEVELOPMENT.md` – 개발 규칙/코딩 가이드
-- `docs/development/BUILD_GUIDE.md` – 빌드/EAS Secrets/트러블슈팅
-- `docs/development/DEPLOYMENT_GUIDE.md` – Web/Mobile 배포 절차
-- `docs/project/ROADMAP.md` – 우선순위/진행 계획(관련 문서 링크 허브)
-- `docs/project/PRD_mandaact.md` – 제품 요구사항/스펙
-- `docs/troubleshooting/TROUBLESHOOTING.md` – 자주 발생하는 장애 진단
+## Quick Start (Most Common)
+- Install: `pnpm install` (repo root)
+- Web dev: `pnpm --filter @mandaact/web dev`
+- Mobile dev (Expo): `pnpm --filter @mandaact/mobile start` (then use simulator/device)
+- Type-check: `pnpm type-check` (or `pnpm --filter @mandaact/mobile type-check`)
+- Lint: `pnpm lint`
+- Tests: `pnpm test` (web/shared; coverage before PR when feasible)
 
-## Build, Test, and Development Commands
-- `pnpm install` – install workspace dependencies (root).
-- `pnpm dev` / `pnpm --filter @mandaact/web dev` – run the web app locally.
-- `pnpm --filter @mandaact/mobile start` – start the Expo dev server for mobile; `pnpm android` / `pnpm ios` to run on device/simulator.
-- `pnpm build` – Turbo build for web + shared; use `pnpm build:web` or `pnpm build:mobile` for app-specific builds.
-- `pnpm lint`, `pnpm type-check`, `pnpm test` – run linting, TS checks, and Vitest suites (web/shared). Prefer `pnpm test -- --coverage` before PRs.
+## Project Structure
+- `apps/web`: React + Vite (web/PWA)
+- `apps/mobile`: React Native + Expo (iOS/Android)
+- `packages/shared`: shared types/logic/constants
+- `supabase/migrations`, `supabase/functions`: backend schema/functions
+- `docs/`: project documentation (index: `docs/README.md`)
 
-## Coding Style & Naming Conventions
-- TypeScript-first; avoid `any`. Use explicit return types and narrow unions. Shared types belong in `packages/shared/src/types`.
-- React components are functional; files and components use `PascalCase` (e.g., `MandalartGrid.tsx`). Hooks use `useName` camelCase, utilities camelCase, constants `UPPER_SNAKE_CASE`.
-- Favor small components (<200 lines) and extract non-trivial logic into hooks in `hooks/` or helpers in `lib/`.
-- ESLint is the source of truth; match existing Tailwind class ordering and shadcn/ui patterns in `apps/web`.
+## Must-Read Docs (Before Bigger Changes)
+- `docs/README.md` (docs index)
+- `docs/development/SETUP_GUIDE.md` (local setup)
+- `docs/development/DEVELOPMENT.md` (coding rules)
+- `docs/development/BUILD_GUIDE.md` (build + troubleshooting)
+- `docs/development/DEPLOYMENT_GUIDE.md` (deploy flow: web/mobile)
+- `docs/development/TESTFLIGHT_SUBMIT_GUIDE.md` (iOS submit specifics)
+- `docs/project/ROADMAP.md` / `docs/project/PRD_mandaact.md` (planning/spec)
+- `docs/troubleshooting/TROUBLESHOOTING.md` (troubleshooting index)
 
-## Testing Guidelines
-- Web tests use Vitest + Testing Library; name files `*.test.ts`/`*.test.tsx` colocated with code or under `__tests__/`.
-- Keep coverage steady; add regression tests for bugs and edge cases around Mandalart calculations, action scheduling, and Supabase interactions.
-- For mobile, add lightweight unit tests where feasible; manually verify critical flows (auth, notifications, image upload) when changing native modules.
+## Coding Conventions
+- TypeScript-first; avoid `any` (prefer narrow unions + explicit return types).
+- React components: functional. Components/files `PascalCase`; hooks `useX`; utils `camelCase`; constants `UPPER_SNAKE_CASE`.
+- Keep components small (<200 LOC); extract logic into `hooks/` or `lib/`.
+- Web UI: follow existing Tailwind/shadcn patterns; ESLint is the source of truth.
 
-## Commit & Pull Request Guidelines
-- Branch naming: `feature/…`, `fix/…`, `hotfix/…` (see `docs/development/DEVELOPMENT.md`).
-- Use Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, etc.); keep messages scoped and present tense.
-- PRs should include: purpose summary, key changes, testing performed (`pnpm test`, device runs), and screenshots or recordings for UI updates (web/mobile). Link related issues/tasks and call out known risks or follow-ups.
+## Data/State & Supabase
+- Prefer fixing root cause over UI-only patches (e.g., handle “no row exists” cases by `upsert` when appropriate).
+- When touching migrations/functions: document breaking changes and validate against a safe/local project.
 
-## Security & Configuration
-- Do not commit secrets. Required env vars (e.g., Supabase keys, Vision API keys) stay in local `.env`/`.env.local`; request rotation if exposed.
-- When touching Supabase functions or migrations, run against a local/safe project and document any breaking schema changes in the PR.
+## Mobile Build / TestFlight (iOS)
+- Apple rejects duplicate `CFBundleVersion` (Expo `expo.ios.buildNumber`); ensure it monotonically increases.
+- If doing `eas build --local`, avoid committing temporary `app.json` buildNumber bumps unless explicitly requested.
+- Submit flow reference: `docs/development/TESTFLIGHT_SUBMIT_GUIDE.md`.
+
+## PR / Merge Workflow
+- Branch naming: `feature/...`, `fix/...`, `hotfix/...`, `chore/...`.
+- Conventional Commits required (`feat:`, `fix:`, `docs:`, `chore:`, etc.).
+- Preferred flow: open PR → enable auto-merge (no “force merge”).
+- PR description should include: purpose, key changes, and how it was tested.
+
+## Docs Hygiene
+- Don’t commit secrets or `.p8` keys; keep credentials local.
+- Avoid touching binary marketing assets unless intentionally editing screenshots.
+- Remove accidental macOS metadata files (`.DS_Store`) if they appear.
