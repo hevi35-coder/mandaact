@@ -19,14 +19,19 @@
 ## 2. Channel Strategy (채널별 전략)
 
 ### 🇰🇷 South Korea (Domestic)
-1.  **Disquiet (디스콰이엇)**: "제품 메이커 로그" 연재. 개발 과정과 "실천"에 집중한 철학 공유.
-2.  **Naver Blog/Cafe**: 갓생, 자기계발 커뮤니티 타겟. "오타니 만다라트 양식" 키워드 선점.
-3.  **Open Kakao Chats**: 오운완, 루틴, 미라클 모닝 방에 제품 소개 및 피드백 요청.
+1.  **Disquiet (디스콰이엇)**: 메이커 로그/빌드 스토리(“실천” 철학 + 시행착오)로 초기 유저/피드백 확보.
+2.  **OKKY / Velog**: 개발자 타겟(생산성/AI 활용/빌드인퍼블릭 톤). “홍보”보다 “문제→해결→배운점” 형태가 유리.
+3.  **Open Kakao Chats / Discord**: 루틴/자기계발/생산성 방에 “피드백 요청 + 도움되는 팁”으로 자연스럽게 진입.
+4.  **(선택) Naver Blog/SEO**: 오타니/만다라트/갓생 키워드 공략(단, 자동 업로드 API는 불확실하므로 수동 운영 권장).
 
 ### 🌎 Global (US/Global)
-1.  **Product Hunt**: 공식 런칭 진행. "Mandalart meets GTD" 컨셉 강조.
-2.  **Reddit**: `r/productivity`, `r/selfimprovement`, `r/getdisciplined` 서브레딧 활동.
-3.  **X (Twitter)**: #BuildInPublic 태그 사용 및 생산성 인플루언서에게 멘션.
+1.  **Product Hunt**: 공식 런칭(댓글/업데이트 운영이 성패를 좌우).
+2.  **Reddit**: `r/productivity`, `r/selfimprovement`, `r/getdisciplined` 중심의 “가치 제공형 글”로 유입.
+3.  **Hacker News**: “Show HN” 톤(기술/교훈/빌드 과정 중심).
+4.  **X (Twitter)**: #BuildInPublic / #productivity / #ai 태그 + 짧은 데모/스크린샷.
+5.  **Dev.to / Hashnode**: 개발자 블로그(장문 콘텐츠) → 커뮤니티로 확산(링크/요약).
+
+> 채널별 “자동 업로드(API)” 가능 여부/수익화(광고/구독) 가능성은 `docs/marketing/CHANNELS_CATALOG.md` 참고.
 
 ---
 

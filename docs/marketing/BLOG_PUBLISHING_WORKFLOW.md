@@ -5,6 +5,7 @@ This document defines the standard workflow for creating and publishing blog con
 ## 1. System Overview
 *   **Draft File**: [`docs/marketing/DEVTO_CONTENT_DRAFTS.md`](file:///Users/jhsy/mandaact/docs/marketing/DEVTO_CONTENT_DRAFTS.md) (The single source of truth for the *next* post)
 *   **Publishing Script**: [`scripts/publish_to_devto.js`](file:///Users/jhsy/mandaact/scripts/publish_to_devto.js) (Node.js script that uploads the draft)
+*   **(Optional) Hashnode Script**: `scripts/publish_to_hashnode.js` (GraphQL `publishPost`, requires env vars)
 *   **API Key**: Stored in `.env.local`
 
 ---
@@ -28,6 +29,7 @@ This document defines the standard workflow for creating and publishing blog con
 **User Command**: "드래프트 올려줘" (or "Upload draft")
 **Agent Action**:
 1.  Runs `node scripts/publish_to_devto.js`.
+2.  (Optional) Runs `node scripts/publish_to_hashnode.js` to cross-post to Hashnode.
 2.  Verifies the output (Success message + URL).
 3.  Provides the **Preview URL** to the user.
 

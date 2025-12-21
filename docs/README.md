@@ -79,6 +79,9 @@
 - `docs/marketing/APP_STORE_METADATA.md`
 - `docs/marketing/APP_STORE_SCREENSHOTS.md`
 - `docs/marketing/SCREENSHOT_CAPTURE_GUIDE.md`
+- `docs/marketing/CHANNELS_CATALOG.md`
+- `docs/marketing/HASHNODE_LAUNCH_GUIDE.md`
+- `docs/marketing/COMMUNITY_POST_TEMPLATES.md`
 - `docs/marketing/PRIVACY_POLICY_PREP.md`
 - `docs/development/STORE_DISTRIBUTION_PREP.md`
 
