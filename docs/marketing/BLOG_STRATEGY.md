@@ -28,6 +28,7 @@ However, considering MandaAct is a tech/productivity product, **Medium** is the 
 | **Instant Traffic**: Millions of users already searching for "Productivity". Your text is exposed to them immediately. | **Domain Authority**: SEO traffic goes to `medium.com`, not your website. |
 | **Zero Maintenance**: No coding, no server, no design work. Just write. | **Paywall Friction**: Medium often tries to lock articles behind a paywall (even if you don't want to). |
 | **Dual Market**: Active communities in both KR (Dev/Startup) and US (Tech/Self-improvement). | **Limited Customization**: You can't change the design to match your brand perfectly. |
+| **Easy Manual Publishing**: Great UX for writing/editing. | **API Not Available (for new integrations)**: Medium API is no longer supported for new integrations. |
 
 ### Option B: Custom Blog (Direct Integration)
 **Best for**: long-term brand equity, SEO ownership, full control.
@@ -44,8 +45,9 @@ However, considering MandaAct is a tech/productivity product, **Medium** is the 
 | Platform | KR Support | API Status | Cost | Verdict |
 | :--- | :--- | :--- | :--- | :--- |
 | **Dev.to** | ⭐⭐ (Tech only) | ✅ **Full (Create/Update)** | **Free** | Best for reach |
-| **Hashnode** | ⭐ (English mostly) | ✅ **Full (GraphQL)** | **Free** | Best for custom domain |
-| **Tistory** | ⭐⭐⭐⭐⭐ (General) | ❌ **Terminated (2024)** | Free | **API Broken (Avoid)** |
+| **Hashnode** | ⭐ (English mostly) | ✅ **Full (GraphQL publishPost)** | **Free~Paid** | Best for dev audience + custom domain options |
+| **Medium** | ⭐⭐⭐ (KR/EN) | ⚠️ **No new API integrations** | Free~Paid | Manual publishing OK, API automation 제외 |
+| **Tistory** | ⭐⭐⭐⭐⭐ (General) | ⚠️ **운영 리스크 높음** | Free | API/정책 변동 가능성 높아 자동화 채널로 비권장 |
 
 #### Why "Dev.to" is the best free alternative:
 1.  **Totally Free**: Unlimited posts, no hidden fees.
