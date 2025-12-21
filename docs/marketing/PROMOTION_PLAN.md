@@ -67,7 +67,7 @@ This section tracks the actual execution history and results of each promotion c
 
 | Channel | Content Type | Status | Execution Date | Result / Note |
 | :--- | :--- | :--- | :--- | :--- |
-| **Dev.to** | Tech Blog | 🟡 **Draft Ready** | - | Draft uploaded via API. Waiting for v1.0.1 approval to publish. |
+| **Dev.to** | Tech Blog | 🟡 **Draft Ready** | - | Draft published (v1.0). See [`BLOG_ROADMAP.md`](BLOG_ROADMAP.md) for weekly schedule. |
 | **Disquiet** | Maker Log | 🟡 **Draft Ready** | - | Content drafted in `COMMUNITY_CONTENT_DRAFTS.md`. |
 | **Naver Blog** | SEO Post | 🟡 **Draft Ready** | - | Content drafted. |
 | **Kakao OpenChat**| Viral Msg | 🟡 **Draft Ready** | - | Content drafted. |
