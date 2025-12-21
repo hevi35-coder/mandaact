@@ -26,6 +26,7 @@ This repo is a pnpm + Turbo monorepo. Keep changes minimal, scoped, and aligned 
 - `docs/development/TESTFLIGHT_SUBMIT_GUIDE.md` (iOS submit specifics)
 - `docs/project/ROADMAP.md` / `docs/project/PRD_mandaact.md` (planning/spec)
 - `docs/marketing/PROMOTION_PLAN.md` (marketing strategy)
+- `docs/marketing/BLOG_ROADMAP.md` (content schedule)
 - `docs/marketing/BLOG_PUBLISHING_WORKFLOW.md` (blog automation SOP)
 - `docs/troubleshooting/TROUBLESHOOTING.md` (troubleshooting index)
 
@@ -49,6 +50,11 @@ This repo is a pnpm + Turbo monorepo. Keep changes minimal, scoped, and aligned 
 - Conventional Commits required (`feat:`, `fix:`, `docs:`, `chore:`, etc.).
 - Preferred flow: open PR → enable auto-merge (no “force merge”).
 - PR description should include: purpose, key changes, and how it was tested.
+- **Auto-Merge Rule**: Since CI is set up, ALWAYS enable auto-merge immediately after creating a PR.
+  ```bash
+  gh pr create --title "feat: ..." --body "..."
+  gh pr merge --auto --merge
+  ```
 
 ## Docs Hygiene
 - Don’t commit secrets or `.p8` keys; keep credentials local.

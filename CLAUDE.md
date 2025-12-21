@@ -6,7 +6,7 @@ Guidance for Claude Code (claude.ai/code) when working in this repository. Keep 
 - Repo rules / workflow: `AGENTS.md`
 - Docs index (source of links): `docs/README.md`
 - Product/plan: `docs/project/PRD_mandaact.md`, `docs/project/ROADMAP.md`
-- Marketing/Ops: `docs/marketing/PROMOTION_PLAN.md`, `docs/marketing/BLOG_PUBLISHING_WORKFLOW.md`
+- Marketing/Ops: `docs/marketing/PROMOTION_PLAN.md`, `docs/marketing/BLOG_PUBLISHING_WORKFLOW.md`, `docs/marketing/BLOG_ROADMAP.md`
 
 ## Quick Commands (repo root)
 ```bash
