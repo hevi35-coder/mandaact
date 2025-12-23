@@ -41,7 +41,7 @@ catalog:
   react-native-svg: 15.8.0
 
   # Expo SDK 52 packages (for mobile only)
-  expo: ~52.0.0
+  expo: ~52.0.48
   expo-application: ~6.0.0
   expo-device: ~7.0.0
   expo-file-system: ~18.0.0

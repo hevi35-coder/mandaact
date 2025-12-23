@@ -21,7 +21,7 @@
     "turbo": "^2.3.0"
   },
   "dependencies": {
-    "expo": "~52.0.47",
+    "expo": "~52.0.48",
     "react": "18.3.1",
     "react-native": "0.76.9"
   }
