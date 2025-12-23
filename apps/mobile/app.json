@@ -15,7 +15,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
-      "buildNumber": "112",
+      "buildNumber": "114",
       "supportsTablet": true,
       "requireFullScreen": false,
       "splash": {

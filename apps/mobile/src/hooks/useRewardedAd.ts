@@ -57,6 +57,8 @@ export function useRewardedAd({
   const user = useAuthStore((state) => state.user)
   const adRef = useRef<RewardedAd | null>(null)
   const unsubscribersRef = useRef<(() => void)[]>([])
+  // Track if PAID event was received (ad generated revenue = ad was completed)
+  const paidReceivedRef = useRef(false)
   // Track if reward was earned to trigger fallback on ad close
   const rewardEarnedRef = useRef(false)
 
@@ -83,6 +85,7 @@ export function useRewardedAd({
 
     setIsLoading(true)
     setError(null)
+    paidReceivedRef.current = false // Reset paid tracking
     rewardEarnedRef.current = false // Reset reward tracking
 
     // Cleanup previous ad instance
@@ -102,12 +105,16 @@ export function useRewardedAd({
         logger.info(`Rewarded ad loaded: ${adType}`)
         setIsLoaded(true)
         setIsLoading(false)
+        // Reset tracking flags when new ad is loaded
+        paidReceivedRef.current = false
+        rewardEarnedRef.current = false
       }
     )
 
     const unsubOpened = rewardedAd.addAdEventListener(
       AdEventType.OPENED,
       () => {
+        logger.info(`Rewarded ad opened: ${adType}`)
         trackAdImpression({ ad_format: 'rewarded', placement, ad_unit_id: adUnitId })
       }
     )
@@ -123,6 +130,9 @@ export function useRewardedAd({
       AdEventType.PAID,
       (event) => {
         const paid = event as unknown as { value: number; currency: string; precision: string }
+        // PAID event = ad generated revenue = ad was completed successfully
+        paidReceivedRef.current = true
+        logger.info(`Rewarded ad PAID event received: ${adType}`)
         trackAdRevenue({
           ad_format: 'rewarded',
           placement,
@@ -156,11 +166,19 @@ export function useRewardedAd({
         logger.info(`Rewarded ad closed: ${adType}`)
         setIsLoaded(false)
 
-        // Fallback: If reward wasn't earned via EARNED_REWARD event, trigger it now
-        // This handles cases where AdMob SDK fails to fire EARNED_REWARD
-        if (!rewardEarnedRef.current) {
-          logger.warn(`Reward not earned via event, triggering fallback for: ${adType}`)
+        // Fallback: Trigger reward if:
+        // 1. EARNED_REWARD event didn't fire, AND
+        // 2. PAID event was received (ad generated revenue = user completed the ad)
+        // This handles SDK bug where EARNED_REWARD doesn't fire but PAID does
+        if (!rewardEarnedRef.current && paidReceivedRef.current) {
+          logger.warn(
+            `PAID received but EARNED_REWARD missing, triggering fallback reward: ${adType}`
+          )
           onRewardEarned?.({ type: 'fallback', amount: 1 })
+        } else if (!rewardEarnedRef.current && !paidReceivedRef.current) {
+          logger.info(
+            `Ad closed without PAID event, user likely closed early: ${adType}`
+          )
         }
 
         onAdClosed?.()
