@@ -343,3 +343,22 @@ eas build --profile production --platform android
 - [ ] 필요한 환경 변수가 `.env` (로컬) 또는 EAS Secrets (클라우드)에 있는가?
 - [ ] `app.json`의 버전(`version`, `buildNumber`, `versionCode`)을 업데이트했는가?
 - [ ] `eas.json`의 `channel` 설정이 유지되어 있는가? (제거 금지)
+
+### 5.7 로컬 EAS 빌드가 오래 걸리는 이유
+
+로컬 `eas build --local`은 아래 단계가 모두 실행되므로 시간이 오래 걸립니다.
+
+**느려지는 원인**
+- 임시 작업 디렉터리 생성 + 프로젝트 압축/해제
+- `expo doctor` 실행 (의존성/설정 검증)
+- `expo prebuild` + CocoaPods 설치
+- 별도 워크스페이스에서 `pnpm install` 재실행
+- Xcode 아카이브 생성/서명/IPA 패키징
+
+**건드리면 안되는 부분**
+- `apps/mobile/eas.json`의 `channel` 설정: 제거 금지 (interactive 프롬프트 유발)
+- `apps/mobile/eas.json`의 `autoIncrement`: 빌드 넘버 고정이 필요하면 `false` 유지
+- `pnpm-workspace.yaml`의 Expo 버전 카탈로그: `package.json`과 불일치하면 `expo doctor` 실패
+
+**주의**
+- `NODE_ENV=production`으로 실행하면 devDependencies가 빠져 `expo doctor`가 실패할 수 있음
