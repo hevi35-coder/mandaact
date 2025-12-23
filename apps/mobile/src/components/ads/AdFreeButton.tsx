@@ -23,13 +23,13 @@ export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
   const { t } = useTranslation()
   const toast = useToast()
   const { isPremium } = useSubscriptionContext()
-  const { isAdFree, remainingTimeFormatted, isLoading: isAdFreeLoading, activate, refresh } = useAdFree()
+  const { isAdFree, remainingTimeFormatted, isLoading: isAdFreeLoading, activate } = useAdFree()
 
   const { isLoading: isAdLoading, show: showAd } = useRewardedAd({
     adType: 'REWARDED_XP_BOOST', // Reuse XP boost ad unit for now
     onRewardEarned: async () => {
       try {
-        const expiryDate = await activate()
+        await activate()
         toast.success(
           t('ads.adFree.activated', '🛡️ 집중 모드 활성화!'),
           t('ads.adFree.activatedDesc', '24시간 동안 배너 광고가 보이지 않습니다.')
@@ -122,10 +122,10 @@ export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
       </View>
       <View className="flex-1">
         <Text className="text-gray-900 font-semibold text-base">
-          {t('ads.adFree.button', '24시간 광고 없이 집중하기')}
+          {t('ads.adFree.button', '광고 보고 집중 모드')}
         </Text>
         <Text className="text-gray-500 text-sm mt-0.5">
-          {t('ads.adFree.subtitle', '짧은 영상 1개만 보면 배너가 사라져요')}
+          {t('ads.adFree.subtitle', '24시간 배너 광고 숨김')}
         </Text>
       </View>
     </Pressable>

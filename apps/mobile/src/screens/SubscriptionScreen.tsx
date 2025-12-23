@@ -469,9 +469,17 @@ export default function SubscriptionScreen() {
                             colors={['#2563eb', '#9333ea', '#db2777']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
-                            className="p-0.5 rounded-2xl"
+                            style={{
+                              padding: 1,
+                              borderRadius: 16,
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 2 },
+                              shadowOpacity: 0.04,
+                              shadowRadius: 8,
+                              elevation: 2,
+                            }}
                           >
-                            <View className="bg-white rounded-[14px] p-4">
+                            <View className="bg-white rounded-[15px] p-4">
                               <View className="flex-row items-center justify-between">
                                 <View>
                                   <View className="flex-row items-center">

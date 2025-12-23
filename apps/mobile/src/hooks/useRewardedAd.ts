@@ -57,6 +57,8 @@ export function useRewardedAd({
   const user = useAuthStore((state) => state.user)
   const adRef = useRef<RewardedAd | null>(null)
   const unsubscribersRef = useRef<(() => void)[]>([])
+  // Track if reward was earned to trigger fallback on ad close
+  const rewardEarnedRef = useRef(false)
 
   // Check new user protection - don't show rewarded ads to new users (banner only period)
   const adRestriction = getNewUserAdRestriction(user?.created_at ?? null)
@@ -81,6 +83,7 @@ export function useRewardedAd({
 
     setIsLoading(true)
     setError(null)
+    rewardEarnedRef.current = false // Reset reward tracking
 
     // Cleanup previous ad instance
     cleanup()
@@ -135,6 +138,7 @@ export function useRewardedAd({
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
         logger.info(`Reward earned: ${reward.type} - ${reward.amount}`)
+        rewardEarnedRef.current = true // Mark reward as earned
         trackRewardEarned({
           ad_format: 'rewarded',
           placement,
@@ -151,6 +155,14 @@ export function useRewardedAd({
       () => {
         logger.info(`Rewarded ad closed: ${adType}`)
         setIsLoaded(false)
+
+        // Fallback: If reward wasn't earned via EARNED_REWARD event, trigger it now
+        // This handles cases where AdMob SDK fails to fire EARNED_REWARD
+        if (!rewardEarnedRef.current) {
+          logger.warn(`Reward not earned via event, triggering fallback for: ${adType}`)
+          onRewardEarned?.({ type: 'fallback', amount: 1 })
+        }
+
         onAdClosed?.()
         // Preload next ad
         setTimeout(() => load(), 1000)
@@ -192,7 +204,8 @@ export function useRewardedAd({
   const show = useCallback(async (): Promise<boolean> => {
     if (!canShowAds) {
       logger.info('Rewarded ad show skipped - new user protection period')
-      // Return true to allow the action without watching ad
+      // Trigger reward callback directly for new users (they get the feature for free)
+      onRewardEarned?.({ type: 'skip', amount: 1 })
       return true
     }
 
@@ -208,7 +221,7 @@ export function useRewardedAd({
       logger.error('Failed to show rewarded ad', err)
       return false
     }
-  }, [canShowAds, isLoaded])
+  }, [canShowAds, isLoaded, onRewardEarned])
 
   // Auto-load on mount if ads are allowed and autoLoad is true
   useEffect(() => {

@@ -73,6 +73,7 @@ export default function TodayScreen() {
 
   // Scroll to top on tab re-press
   const scrollRef = useRef<ScrollView>(null)
+  const unconfiguredSectionYRef = useRef<number | null>(null)
   useScrollToTop('Today', scrollRef)
 
   // Calculate "today" in user's timezone
@@ -301,6 +302,11 @@ export default function TodayScreen() {
       case 'unconfigured':
         // Expand unconfigured section and scroll to it
         setUnconfiguredCollapsed(false)
+        requestAnimationFrame(() => {
+          const y = unconfiguredSectionYRef.current
+          if (y == null) return
+          scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true })
+        })
         break
       case 'noFilterMatch':
         // Clear all filters
@@ -966,6 +972,9 @@ export default function TodayScreen() {
                 <Pressable
                   onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
                   className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  onLayout={(e) => {
+                    unconfiguredSectionYRef.current = e.nativeEvent.layout.y
+                  }}
                 >
                   <View className="flex-1">
                     <View className="flex-row items-center">

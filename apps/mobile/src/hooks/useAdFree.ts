@@ -7,12 +7,8 @@
  * @see ADMOB_MONETIZATION_STRATEGY.md Section 3.1
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import {
-  isAdFreeActive,
-  getAdFreeRemainingTime,
-  activateAdFree,
-} from '../lib/ads'
+import { useEffect, useMemo } from 'react'
+import { useAdStore } from '../store/adStore'
 
 interface UseAdFreeReturn {
   /** Whether Ad-Free mode is currently active */
@@ -30,69 +26,27 @@ interface UseAdFreeReturn {
 }
 
 export function useAdFree(): UseAdFreeReturn {
-  const [isAdFree, setIsAdFree] = useState(false)
-  const [remainingTime, setRemainingTime] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+  const isAdFree = useAdStore((s) => s.isAdFree)
+  const remainingTime = useAdStore((s) => s.remainingTime)
+  const isLoading = useAdStore((s) => s.isLoading)
+  const refreshAdFree = useAdStore((s) => s.refreshAdFree)
+  const activateAdFreeStore = useAdStore((s) => s.activateAdFree)
 
   // Format remaining time as "HH:MM" or "M분"
-  const remainingTimeFormatted = formatRemainingTime(remainingTime)
-
-  // Check Ad-Free status
-  const refresh = useCallback(async () => {
-    try {
-      const active = await isAdFreeActive()
-      setIsAdFree(active)
-
-      if (active) {
-        const remaining = await getAdFreeRemainingTime()
-        setRemainingTime(remaining)
-      } else {
-        setRemainingTime(0)
-      }
-    } catch (error) {
-      console.warn('[useAdFree] Failed to check status:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  // Activate Ad-Free mode
-  const activate = useCallback(async () => {
-    const expiryDate = await activateAdFree()
-    await refresh()
-    return expiryDate
-  }, [refresh])
+  const remainingTimeFormatted = useMemo(() => formatRemainingTime(remainingTime), [remainingTime])
 
   // Initial load
   useEffect(() => {
-    refresh()
-  }, [refresh])
-
-  // Update remaining time every minute when active
-  useEffect(() => {
-    if (!isAdFree) return
-
-    const interval = setInterval(() => {
-      getAdFreeRemainingTime().then((remaining) => {
-        if (remaining <= 0) {
-          setIsAdFree(false)
-          setRemainingTime(0)
-        } else {
-          setRemainingTime(remaining)
-        }
-      })
-    }, 60000) // Update every minute
-
-    return () => clearInterval(interval)
-  }, [isAdFree])
+    refreshAdFree()
+  }, [refreshAdFree])
 
   return {
     isAdFree,
     remainingTime,
     remainingTimeFormatted,
     isLoading,
-    activate,
-    refresh,
+    activate: activateAdFreeStore,
+    refresh: refreshAdFree,
   }
 }
 

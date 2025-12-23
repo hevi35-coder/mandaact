@@ -16,3 +16,5 @@
 ## AI Coach
 - `docs/troubleshooting/AI_COACH_UNAUTHORIZED.md`
 
+## Ads / AdMob
+- `docs/troubleshooting/ADMOB_APP_VERIFICATION.md`
