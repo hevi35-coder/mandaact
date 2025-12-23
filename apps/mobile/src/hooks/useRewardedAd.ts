@@ -44,6 +44,13 @@ interface UseRewardedAdReturn {
   load: () => void
 }
 
+const FALLBACK_REWARD_BY_AD_TYPE: Record<RewardedAdType, { type: string; amount: number }> = {
+  REWARDED_REPORT_GENERATE: { type: 'report', amount: 1 },
+  REWARDED_XP_BOOST: { type: 'xp_boost', amount: 1 },
+  REWARDED_STREAK_FREEZE: { type: 'streak_freeze', amount: 1 },
+  REWARDED_YESTERDAY_CHECK: { type: 'yesterday_check', amount: 1 },
+}
+
 export function useRewardedAd({
   adType,
   onRewardEarned,
@@ -61,6 +68,10 @@ export function useRewardedAd({
   const paidReceivedRef = useRef(false)
   // Track if reward was earned to trigger fallback on ad close
   const rewardEarnedRef = useRef(false)
+  // Track if reward was already granted to prevent double rewards
+  const rewardGrantedRef = useRef(false)
+  // Track if ad actually opened before allowing fallback
+  const didShowRef = useRef(false)
 
   // Check new user protection - don't show rewarded ads to new users (banner only period)
   const adRestriction = getNewUserAdRestriction(user?.created_at ?? null)
@@ -87,6 +98,8 @@ export function useRewardedAd({
     setError(null)
     paidReceivedRef.current = false // Reset paid tracking
     rewardEarnedRef.current = false // Reset reward tracking
+    rewardGrantedRef.current = false // Reset reward grant tracking
+    didShowRef.current = false // Reset ad shown tracking
 
     // Cleanup previous ad instance
     cleanup()
@@ -108,6 +121,8 @@ export function useRewardedAd({
         // Reset tracking flags when new ad is loaded
         paidReceivedRef.current = false
         rewardEarnedRef.current = false
+        rewardGrantedRef.current = false
+        didShowRef.current = false
       }
     )
 
@@ -115,6 +130,7 @@ export function useRewardedAd({
       AdEventType.OPENED,
       () => {
         logger.info(`Rewarded ad opened: ${adType}`)
+        didShowRef.current = true
         trackAdImpression({ ad_format: 'rewarded', placement, ad_unit_id: adUnitId })
       }
     )
@@ -149,6 +165,11 @@ export function useRewardedAd({
       (reward) => {
         logger.info(`Reward earned: ${reward.type} - ${reward.amount}`)
         rewardEarnedRef.current = true // Mark reward as earned
+        if (rewardGrantedRef.current) {
+          logger.warn(`Reward already granted, skipping duplicate: ${adType}`)
+          return
+        }
+        rewardGrantedRef.current = true
         trackRewardEarned({
           ad_format: 'rewarded',
           placement,
@@ -168,13 +189,18 @@ export function useRewardedAd({
 
         // Fallback: Trigger reward if:
         // 1. EARNED_REWARD event didn't fire, AND
-        // 2. PAID event was received (ad generated revenue = user completed the ad)
+        // 2. PAID event was received (ad generated revenue = user completed the ad), AND
+        // 3. Ad actually opened (avoid rewards on failed show)
         // This handles SDK bug where EARNED_REWARD doesn't fire but PAID does
-        if (!rewardEarnedRef.current && paidReceivedRef.current) {
+        if (!rewardEarnedRef.current && paidReceivedRef.current && didShowRef.current) {
           logger.warn(
             `PAID received but EARNED_REWARD missing, triggering fallback reward: ${adType}`
           )
-          onRewardEarned?.({ type: 'fallback', amount: 1 })
+          if (!rewardGrantedRef.current) {
+            rewardGrantedRef.current = true
+            rewardEarnedRef.current = true
+            onRewardEarned?.(FALLBACK_REWARD_BY_AD_TYPE[adType])
+          }
         } else if (!rewardEarnedRef.current && !paidReceivedRef.current) {
           logger.info(
             `Ad closed without PAID event, user likely closed early: ${adType}`
@@ -223,6 +249,7 @@ export function useRewardedAd({
     if (!canShowAds) {
       logger.info('Rewarded ad show skipped - new user protection period')
       // Trigger reward callback directly for new users (they get the feature for free)
+      rewardGrantedRef.current = false
       onRewardEarned?.({ type: 'skip', amount: 1 })
       return true
     }
@@ -233,6 +260,7 @@ export function useRewardedAd({
     }
 
     try {
+      didShowRef.current = false
       await adRef.current.show()
       return true
     } catch (err) {
