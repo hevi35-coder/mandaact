@@ -57,6 +57,8 @@ export function useRewardedAd({
   const user = useAuthStore((state) => state.user)
   const adRef = useRef<RewardedAd | null>(null)
   const unsubscribersRef = useRef<(() => void)[]>([])
+  // Track if ad was completed (watched fully) - only true when EARNED_REWARD fires
+  const adCompletedRef = useRef(false)
   // Track if reward was earned to trigger fallback on ad close
   const rewardEarnedRef = useRef(false)
 
@@ -83,6 +85,7 @@ export function useRewardedAd({
 
     setIsLoading(true)
     setError(null)
+    adCompletedRef.current = false // Reset ad completion tracking
     rewardEarnedRef.current = false // Reset reward tracking
 
     // Cleanup previous ad instance
@@ -102,6 +105,9 @@ export function useRewardedAd({
         logger.info(`Rewarded ad loaded: ${adType}`)
         setIsLoaded(true)
         setIsLoading(false)
+        // Reset tracking flags when new ad is loaded
+        adCompletedRef.current = false
+        rewardEarnedRef.current = false
       }
     )
 
@@ -138,6 +144,7 @@ export function useRewardedAd({
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
         logger.info(`Reward earned: ${reward.type} - ${reward.amount}`)
+        adCompletedRef.current = true // Mark ad as completed (watched fully)
         rewardEarnedRef.current = true // Mark reward as earned
         trackRewardEarned({
           ad_format: 'rewarded',
@@ -156,11 +163,15 @@ export function useRewardedAd({
         logger.info(`Rewarded ad closed: ${adType}`)
         setIsLoaded(false)
 
-        // Fallback: If reward wasn't earned via EARNED_REWARD event, trigger it now
-        // This handles cases where AdMob SDK fails to fire EARNED_REWARD
-        if (!rewardEarnedRef.current) {
-          logger.warn(`Reward not earned via event, triggering fallback for: ${adType}`)
+        // Fallback: Only trigger if ad was completed but reward event didn't fire
+        // This prevents rewarding users who closed the ad early
+        if (adCompletedRef.current && !rewardEarnedRef.current) {
+          logger.warn(
+            `Ad completed but reward event missing, triggering fallback for: ${adType}`
+          )
           onRewardEarned?.({ type: 'fallback', amount: 1 })
+        } else if (!adCompletedRef.current) {
+          logger.info(`Ad closed early without completion, no reward given: ${adType}`)
         }
 
         onAdClosed?.()
