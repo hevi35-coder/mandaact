@@ -57,10 +57,14 @@ export function useRewardedAd({
   const user = useAuthStore((state) => state.user)
   const adRef = useRef<RewardedAd | null>(null)
   const unsubscribersRef = useRef<(() => void)[]>([])
-  // Track if ad was completed (watched fully) - only true when EARNED_REWARD fires
-  const adCompletedRef = useRef(false)
+  // Track ad start time to determine if user watched enough
+  const adStartTimeRef = useRef<number | null>(null)
   // Track if reward was earned to trigger fallback on ad close
   const rewardEarnedRef = useRef(false)
+
+  // Minimum watch time (in seconds) to consider ad as "completed"
+  // Most rewarded ads are 15-30 seconds, so 25 seconds is a safe threshold
+  const MIN_WATCH_TIME_SECONDS = 25
 
   // Check new user protection - don't show rewarded ads to new users (banner only period)
   const adRestriction = getNewUserAdRestriction(user?.created_at ?? null)
@@ -85,7 +89,7 @@ export function useRewardedAd({
 
     setIsLoading(true)
     setError(null)
-    adCompletedRef.current = false // Reset ad completion tracking
+    adStartTimeRef.current = null // Reset ad start time
     rewardEarnedRef.current = false // Reset reward tracking
 
     // Cleanup previous ad instance
@@ -106,7 +110,7 @@ export function useRewardedAd({
         setIsLoaded(true)
         setIsLoading(false)
         // Reset tracking flags when new ad is loaded
-        adCompletedRef.current = false
+        adStartTimeRef.current = null
         rewardEarnedRef.current = false
       }
     )
@@ -114,6 +118,9 @@ export function useRewardedAd({
     const unsubOpened = rewardedAd.addAdEventListener(
       AdEventType.OPENED,
       () => {
+        // Track ad start time for watch duration calculation
+        adStartTimeRef.current = Date.now()
+        logger.info(`Rewarded ad opened: ${adType}`)
         trackAdImpression({ ad_format: 'rewarded', placement, ad_unit_id: adUnitId })
       }
     )
@@ -144,7 +151,6 @@ export function useRewardedAd({
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
         logger.info(`Reward earned: ${reward.type} - ${reward.amount}`)
-        adCompletedRef.current = true // Mark ad as completed (watched fully)
         rewardEarnedRef.current = true // Mark reward as earned
         trackRewardEarned({
           ad_format: 'rewarded',
@@ -163,15 +169,25 @@ export function useRewardedAd({
         logger.info(`Rewarded ad closed: ${adType}`)
         setIsLoaded(false)
 
-        // Fallback: Only trigger if ad was completed but reward event didn't fire
-        // This prevents rewarding users who closed the ad early
-        if (adCompletedRef.current && !rewardEarnedRef.current) {
+        // Calculate watch duration
+        const watchDurationSeconds = adStartTimeRef.current
+          ? (Date.now() - adStartTimeRef.current) / 1000
+          : 0
+
+        logger.info(`Ad watch duration: ${watchDurationSeconds.toFixed(1)}s (minimum: ${MIN_WATCH_TIME_SECONDS}s)`)
+
+        // Fallback: Trigger reward if:
+        // 1. Reward event didn't fire, AND
+        // 2. User watched for minimum required time (prevents early closure exploit)
+        if (!rewardEarnedRef.current && watchDurationSeconds >= MIN_WATCH_TIME_SECONDS) {
           logger.warn(
-            `Ad completed but reward event missing, triggering fallback for: ${adType}`
+            `Ad watched (${watchDurationSeconds.toFixed(1)}s) but reward event missing, triggering fallback: ${adType}`
           )
           onRewardEarned?.({ type: 'fallback', amount: 1 })
-        } else if (!adCompletedRef.current) {
-          logger.info(`Ad closed early without completion, no reward given: ${adType}`)
+        } else if (!rewardEarnedRef.current) {
+          logger.info(
+            `Ad closed early (${watchDurationSeconds.toFixed(1)}s < ${MIN_WATCH_TIME_SECONDS}s), no reward given: ${adType}`
+          )
         }
 
         onAdClosed?.()
