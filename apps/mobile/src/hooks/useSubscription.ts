@@ -327,6 +327,60 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     }
   }, [])
 
+  const loadPlansWithRetry = useCallback(async (): Promise<{
+    packages: PurchasesPackage[]
+    storeProducts: PurchasesStoreProduct[]
+    source: 'current_offering' | 'fallback_offering' | 'store_products' | 'none'
+  }> => {
+    const loadOnce = async () => {
+      const offerings = await Purchases.getOfferings()
+
+      const currentPackages = offerings.current?.availablePackages ?? []
+      if (currentPackages.length > 0) {
+        return {
+          packages: currentPackages,
+          storeProducts: [],
+          source: 'current_offering' as const,
+        }
+      }
+
+      const offeringsWithPackages = Object.values(offerings.all || {}).find(
+        (offering) => (offering.availablePackages?.length ?? 0) > 0
+      )
+      if (offeringsWithPackages) {
+        return {
+          packages: offeringsWithPackages.availablePackages,
+          storeProducts: [],
+          source: 'fallback_offering' as const,
+        }
+      }
+
+      const products = await loadFallbackProducts()
+      if (products.length > 0) {
+        return {
+          packages: [],
+          storeProducts: products,
+          source: 'store_products' as const,
+        }
+      }
+
+      return { packages: [], storeProducts: [], source: 'none' as const }
+    }
+
+    const retryDelaysMs = [0, 1200, 3000] // StoreKit/Offerings propagation can be delayed
+    let lastResult: Awaited<ReturnType<typeof loadOnce>> | null = null
+
+    for (const delayMs of retryDelaysMs) {
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+      }
+      lastResult = await loadOnce()
+      if (lastResult.source !== 'none') return lastResult
+    }
+
+    return lastResult ?? { packages: [], storeProducts: [], source: 'none' }
+  }, [loadFallbackProducts])
+
   const applySubscriptionInfo = useCallback((
     nextInfo: SubscriptionInfo,
     reason?: Parameters<typeof trackPremiumStateChanged>[0]['reason']
@@ -471,7 +525,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         if (!configured) {
           setPackages([])
           setStoreProducts([])
-          setError(i18n.t('errors.unknown'))
+          setError(i18n.t('errors.unknown', { defaultValue: 'Something went wrong. Please try again.' }))
           return
         }
       }
@@ -486,51 +540,18 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         await syncToSupabase(parsed.info)
       }
 
-      // Get available packages
-      const offerings = await Purchases.getOfferings()
-      console.log('[RevenueCat] Offerings response:', JSON.stringify({
-        current: offerings.current?.identifier,
-        hasPackages: !!offerings.current?.availablePackages,
-        packageCount: offerings.current?.availablePackages?.length || 0,
-        allOfferings: Object.keys(offerings.all || {}),
-        // Debug: Show all offerings and their packages
-        allOfferingsDetail: Object.entries(offerings.all || {}).map(([id, offering]) => ({
-          id,
-          packageCount: offering.availablePackages?.length || 0,
-          packages: offering.availablePackages?.map(p => p.identifier),
-        })),
-      }, null, 2))
-
-      if (offerings.current?.availablePackages) {
-        console.log('[RevenueCat] Packages:', offerings.current.availablePackages.map(p => ({
-          id: p.identifier,
-          product: p.product.identifier,
-          price: p.product.priceString,
-        })))
-        setPackages(offerings.current.availablePackages)
-        setStoreProducts([])
-      } else {
-        // Try to find any offering with packages
-        const offeringsWithPackages = Object.values(offerings.all || {}).find(
-          offering => offering.availablePackages && offering.availablePackages.length > 0
-        )
-        if (offeringsWithPackages) {
-          console.log('[RevenueCat] Found packages in non-current offering:', offeringsWithPackages.identifier)
-          setPackages(offeringsWithPackages.availablePackages)
-          setStoreProducts([])
-        } else {
-          console.warn('[RevenueCat] No packages available in any offering. Please check RevenueCat dashboard:')
-          console.warn('1. Ensure products are added (com.mandaact.sub.premium.monthly, com.mandaact.sub.premium.yearly)')
-          console.warn('2. Create an Offering and set it as "Current"')
-          console.warn('3. Add packages (Monthly, Yearly) to the Offering')
-          setPackages([])
-          const products = await loadFallbackProducts()
-          setStoreProducts(products)
-        }
-      }
+      // Get available packages (Offerings) with a small retry to handle transient StoreKit delays.
+      const planLoad = await loadPlansWithRetry()
+      console.log('[useSubscription] 📦 Plans loaded:', {
+        source: planLoad.source,
+        packagesCount: planLoad.packages.length,
+        storeProductsCount: planLoad.storeProducts.length,
+      })
+      setPackages(planLoad.packages)
+      setStoreProducts(planLoad.storeProducts)
     } catch (err) {
       console.error('Failed to refresh subscription:', err)
-      setError(i18n.t('errors.unknown'))
+      setError(i18n.t('errors.unknown', { defaultValue: 'Something went wrong. Please try again.' }))
 
       // Fallback: check Supabase directly
       try {
@@ -557,7 +578,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     } finally {
       setIsLoading(false)
     }
-  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase, applySubscriptionInfo, loadFallbackProducts])
+  }, [userId, isRevenueCatInitialized, parseCustomerInfo, syncToSupabase, applySubscriptionInfo, loadPlansWithRetry])
 
   // Purchase a plan (RevenueCat package preferred; StoreKit product fallback)
   const purchase = useCallback(async (plan: PurchasesPackage | PurchasesStoreProduct): Promise<boolean> => {
@@ -887,52 +908,30 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
           }
         }
 
-        // Step 4: Load available packages
-        console.log('[useSubscription] 📦 Loading packages...')
-        const offerings = await Purchases.getOfferings()
-        console.log('[useSubscription] 📦 Offerings loaded:', {
-          currentOffering: offerings.current?.identifier,
-          packageCount: offerings.current?.availablePackages?.length || 0,
+        // Step 4: Load available packages (Offerings)
+        console.log('[useSubscription] 📦 Loading plans...')
+        const planLoad = await loadPlansWithRetry()
+        console.log('[useSubscription] 📦 Plans loaded:', {
+          source: planLoad.source,
+          packagesCount: planLoad.packages.length,
+          storeProductsCount: planLoad.storeProducts.length,
         })
 
         if (mounted) {
-          let loadedPackagesCount = 0
-          const currentPackages = offerings.current?.availablePackages ?? null
-          if (currentPackages && currentPackages.length > 0) {
-            setPackages(currentPackages)
-            setStoreProducts([])
-            loadedPackagesCount = currentPackages.length
-            console.log('[useSubscription] ✅ Packages loaded:', loadedPackagesCount)
-          } else {
-            // Try to find any offering with packages
-            const offeringsWithPackages = Object.values(offerings.all || {}).find(
-              offering => offering.availablePackages && offering.availablePackages.length > 0
-            )
-            if (offeringsWithPackages) {
-              console.log('[useSubscription] 📦 Found packages in non-current offering:', offeringsWithPackages.identifier)
-              const fallbackPackages = offeringsWithPackages.availablePackages
-              setPackages(fallbackPackages)
-              setStoreProducts([])
-              loadedPackagesCount = fallbackPackages.length
-              console.log('[useSubscription] ✅ Packages loaded (fallback):', loadedPackagesCount)
-            } else {
-              console.warn('[useSubscription] ⚠️ No packages available in any offering')
-              setPackages([])
-              const products = await loadFallbackProducts()
-              setStoreProducts(products)
-            }
-          }
-
+          setPackages(planLoad.packages)
+          setStoreProducts(planLoad.storeProducts)
           console.log('[useSubscription] ✅ Initialization complete:', {
             isPremium: info.isPremium,
             status: info.status,
-            packagesCount: loadedPackagesCount,
+            plansSource: planLoad.source,
+            packagesCount: planLoad.packages.length,
+            storeProductsCount: planLoad.storeProducts.length,
           })
         }
       } catch (error) {
         console.error('[useSubscription] ❌ Initialization error:', error)
         if (mounted) {
-          setError(i18n.t('errors.unknown'))
+          setError(i18n.t('errors.unknown', { defaultValue: 'Something went wrong. Please try again.' }))
         }
       } finally {
         if (mounted) {
@@ -946,7 +945,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     return () => {
       mounted = false
     }
-  }, [userId, applySubscriptionInfo, loadFallbackProducts, parseCustomerInfo, syncToSupabase])
+  }, [userId, applySubscriptionInfo, loadPlansWithRetry, parseCustomerInfo, syncToSupabase])
 
   // Listen for customer info updates
   useEffect(() => {

@@ -14,6 +14,15 @@ MandaAct 모바일 앱의 AdMob 광고 통합 가이드입니다.
 
 ---
 
+## 운영/검증 체크 (광고가 안 뜰 때)
+
+AdMob 콘솔에서 앱이 “Verify app” 상태이거나 광고가 24시간 이상 서빙되지 않으면 아래 문서를 우선 확인하세요.
+
+- `docs/troubleshooting/ADMOB_APP_VERIFICATION.md`
+  - App Store Connect의 `Marketing URL`(스토어 페이지의 Developer Website) 미설정으로 검증 실패하는 케이스
+  - `app-ads.txt` 배포/반영 확인 커맨드
+  - 앱 내부 “신규 사용자 보호(0~3일 광고 없음 / 7일 배너만)”로 인해 테스트 화면에서 광고가 안 보일 수 있는 케이스
+
 ## 구현 진행 현황
 
 ### ✅ Phase 1: 배너 광고 (완료)

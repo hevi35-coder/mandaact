@@ -9,7 +9,7 @@
  * @see https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads
  */
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { View, StyleSheet, Platform } from 'react-native'
 import {
   BannerAd as GoogleBannerAd,
@@ -18,8 +18,9 @@ import {
   TestIds,
   type PaidEvent,
 } from 'react-native-google-mobile-ads'
-import { AD_UNITS, getNewUserAdRestriction, isAdFreeActive } from '../../lib/ads'
+import { AD_UNITS, getNewUserAdRestriction } from '../../lib/ads'
 import { useAuthStore } from '../../store/authStore'
+import { useAdFree } from '../../hooks'
 import { useSubscriptionContextSafe } from '../../context'
 import { trackAdClicked, trackAdFailed, trackAdImpression, trackAdRevenue } from '../../lib'
 
@@ -43,10 +44,13 @@ const DEFAULT_BANNER_HEIGHT = 50
 export function BannerAd({ location, style }: BannerAdProps) {
   const [hasError, setHasError] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [isAdFree, setIsAdFree] = useState(false)
   const [adHeight, setAdHeight] = useState(DEFAULT_BANNER_HEIGHT)
   const [reloadSeq, setReloadSeq] = useState(0)
+  const [retryAttempt, setRetryAttempt] = useState(0)
+  const [bannerSize, setBannerSize] = useState(BannerAdSize.ANCHORED_ADAPTIVE_BANNER)
   const user = useAuthStore((state) => state.user)
+  const { isAdFree, refresh: refreshAdFree } = useAdFree()
+  const isLoadedRef = useRef(false)
 
   // Check premium status - hide ads for premium users
   const subscription = useSubscriptionContextSafe()
@@ -68,7 +72,10 @@ export function BannerAd({ location, style }: BannerAdProps) {
       setAdHeight(dimensions.height)
     }
     setIsLoaded(true)
+    isLoadedRef.current = true
     setHasError(false)
+    setRetryAttempt(0)
+    setBannerSize(BannerAdSize.ANCHORED_ADAPTIVE_BANNER)
   }, [location])
 
   const handleAdFailed = useCallback((error: Error) => {
@@ -81,11 +88,22 @@ export function BannerAd({ location, style }: BannerAdProps) {
       ad_unit_id: adUnitId,
       error_code: error.message,
     })
-    setHasError(true)
     setIsLoaded(false)
-    // Reset height to 0 when ad fails (hide container)
-    setAdHeight(0)
-  }, [location, placement, adUnitId])
+    isLoadedRef.current = false
+    setHasError(true)
+
+    // If adaptive banner fails, try a fixed size once before backing off.
+    if (bannerSize === BannerAdSize.ANCHORED_ADAPTIVE_BANNER) {
+      setBannerSize(BannerAdSize.BANNER)
+      setHasError(false)
+      setReloadSeq((prev) => prev + 1)
+      setAdHeight(DEFAULT_BANNER_HEIGHT)
+      return
+    }
+
+    // Keep a placeholder height so the layout doesn't jump.
+    setAdHeight(DEFAULT_BANNER_HEIGHT)
+  }, [location, placement, adUnitId, bannerSize])
 
   const handleAdImpression = useCallback(() => {
     trackAdImpression({
@@ -150,20 +168,36 @@ export function BannerAd({ location, style }: BannerAdProps) {
       setReloadSeq((prev) => prev + 1)
     }
     // Also check Ad-Free status on foreground
-    isAdFreeActive().then(setIsAdFree)
+    refreshAdFree()
   })
 
-  // Check Ad-Free status on mount and periodically
+  // If banner load fails (e.g., "No fill" during app verification), retry with backoff.
   useEffect(() => {
-    isAdFreeActive().then(setIsAdFree)
+    if (!hasError) return
 
-    // Check every minute for expiry
-    const interval = setInterval(() => {
-      isAdFreeActive().then(setIsAdFree)
-    }, 60000)
+    const backoffMs = Math.min(60000, 5000 * Math.pow(2, retryAttempt)) // 5s, 10s, 20s, 40s, 60s...
+    const timeout = setTimeout(() => {
+      setHasError(false)
+      setReloadSeq((prev) => prev + 1)
+      setRetryAttempt((prev) => prev + 1)
+    }, backoffMs)
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearTimeout(timeout)
+  }, [hasError, retryAttempt])
+
+  // Watchdog: sometimes BannerAd never triggers loaded/failed callbacks (stuck empty banner).
+  // If it stays unloaded for too long, force a retry so the UI doesn't show a permanent grey placeholder.
+  useEffect(() => {
+    isLoadedRef.current = false
+    setIsLoaded(false)
+
+    const timeout = setTimeout(() => {
+      if (isLoadedRef.current) return
+      setHasError(true)
+    }, 15000)
+
+    return () => clearTimeout(timeout)
+  }, [location, reloadSeq, bannerSize])
 
   // Hide banner if Premium, Ad-Free mode is active, or new user protection
   if (isPremium || adRestriction === 'no_ads' || isAdFree) {
@@ -177,17 +211,14 @@ export function BannerAd({ location, style }: BannerAdProps) {
 
   console.log('[BannerAd] ✅ Showing ad for location:', location)
 
-  // Don't render anything if there's an error
-  if (hasError) {
-    return null
-  }
+  const shouldCollapse = hasError && !isLoaded
 
   return (
-    <View style={[styles.container, { minHeight: adHeight }, style]}>
+    <View style={[styles.container, { minHeight: shouldCollapse ? 0 : adHeight }, style]}>
       <GoogleBannerAd
         key={`${location}-${reloadSeq}`}
         unitId={adUnitId}
-        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+        size={bannerSize}
         requestOptions={{
           requestNonPersonalizedAdsOnly: false,
         }}
@@ -199,7 +230,7 @@ export function BannerAd({ location, style }: BannerAdProps) {
         onPaid={handleAdPaid}
       />
       {!isLoaded && (
-        <View style={[styles.placeholder, { height: DEFAULT_BANNER_HEIGHT }]}>
+        <View style={[styles.placeholder, { height: shouldCollapse ? 0 : DEFAULT_BANNER_HEIGHT }]}>
           {/* Loading placeholder */}
         </View>
       )}

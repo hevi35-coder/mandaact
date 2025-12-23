@@ -722,10 +722,6 @@ export default function ReportsScreen() {
   const weeklyReportCount = getThisWeekReportCount()
   const canGenerateThisWeek = canGenerateReport(weeklyReportCount)
 
-  // Premium users: Always can generate
-  // Free users: 주 1회 제한 (첫 리포트 또는 주간 제한 내)
-  const canDirectlyGenerate = isPremium || canGenerateFirstReport || canGenerateThisWeek
-
   // Translate metric labels using i18n
   const translateLabel = useCallback(
     (label: string): string => {
@@ -745,14 +741,16 @@ export default function ReportsScreen() {
     setRefreshing(false)
   }, [refetchWeekly])
 
-  const handleGenerateAll = async () => {
+  const handleGenerateAll = async (trigger: 'direct' | 'rewarded' = 'direct') => {
     if (!user?.id) return
 
-    // Check if user can generate report
-    if (!canDirectlyGenerate) {
+    // Policy:
+    // - Premium users: can generate without ads.
+    // - Free users: 1 rewarded ad = 1 report generation (no weekly hard-stop in UI).
+    if (!isPremium && trigger !== 'rewarded') {
       Alert.alert(
-        t('reports.limitReached.title'),
-        t('reports.limitReached.message')
+        t('ads.notReady.title'),
+        t('ads.reportGenerate.subtitle')
       )
       return
     }
@@ -862,10 +860,12 @@ export default function ReportsScreen() {
             </View>
           </View>
 
-          {/* 첫 리포트 생성 버튼 (리포트 0개 + 실천 1회 이상) */}
+          {/* 첫 리포트 생성 CTA (리포트 0개 + 실천 1회 이상) */}
           {canGenerateFirstReport && (
+            <>
+              {isPremium ? (
             <Pressable
-              onPress={handleGenerateAll}
+              onPress={() => handleGenerateAll('direct')}
               disabled={isGenerating}
               className="rounded-2xl overflow-hidden"
               style={{
@@ -927,9 +927,15 @@ export default function ReportsScreen() {
                 </View>
               </LinearGradient>
             </Pressable>
+              ) : (
+                <View className="mt-4">
+                  <ReportGenerateButton onGenerateReport={() => handleGenerateAll('rewarded')} />
+                </View>
+              )}
+            </>
           )}
 
-          {/* 다음 리포트 안내 (Free 유저, 기존 리포트가 있는 경우) - 그라디언트 테두리 + 텍스트 */}
+          {/* 다음 리포트 안내 (Free 유저, 자동 생성 일정) - 그라디언트 테두리 + 텍스트 */}
           {!isPremium && hasExistingReports && (
             <View
               className="rounded-2xl overflow-hidden"
@@ -985,7 +991,7 @@ export default function ReportsScreen() {
           {/* Premium 유저: 리포트 즉시 생성 버튼 (Login 버튼과 동일한 스타일) */}
           {isPremium && hasExistingReports && hasMandalarts && (
             <Pressable
-              onPress={handleGenerateAll}
+              onPress={() => handleGenerateAll('direct')}
               disabled={generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending}
               style={{
                 opacity: generateWeeklyMutation.isPending || generateDiagnosisMutation.isPending ? 0.6 : 1,
@@ -1057,12 +1063,13 @@ export default function ReportsScreen() {
           )}
 
           {/* ReportGenerateButton - Generate new report with rewarded ad (Free users only) */}
-          {!isPremium && !canDirectlyGenerate && hasExistingReports && hasMandalarts && (
+          {/* Free users: always show rewarded CTA (1 ad = 1 report generation). */}
+          {!isPremium && hasExistingReports && (
             <View className="mt-4">
               <ReportGenerateButton
                 onGenerateReport={() => {
                   // Generate new report after watching ad
-                  handleGenerateAll()
+                  handleGenerateAll('rewarded')
                 }}
               />
             </View>

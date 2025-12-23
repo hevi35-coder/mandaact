@@ -1057,6 +1057,8 @@
     "xpBoost": {
       "button": "Watch Ad for XP Boost",
       "duration": "Double XP for 1 hour",
+      "remaining": "{{time}} left",
+      "pill": "Boost Mode",
       "activated": "XP Boost Activated!",
       "activatedDesc": "All XP will be doubled for 1 hour",
       "error": "Failed to activate XP boost"
@@ -1129,6 +1131,8 @@
     "oneTimePurchase": "One-time purchase, forever access",
     "loadingPlans": "Loading plans...",
     "noPlansAvailable": "No plans available at the moment",
+    "noPlansHint": "Store connection may be delayed. Please try again in a moment.",
+    "contactSupport": "Contact support if this keeps happening",
     "restorePurchases": "Restore Purchases",
     "restoreTitle": "Restore Purchases",
     "noSubscriptionFound": "No subscription to restore",

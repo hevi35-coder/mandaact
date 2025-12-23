@@ -82,6 +82,8 @@
   - [x] iOS 앱 등록 (`ca-app-pub-3170834290529005~1573851405`)
   - [x] 광고 단위 ID 발급 (배너 3개, 전면 3개, 보상형 4개)
   - [x] 테스트 Ad Unit ID 자동 적용 (`__DEV__` 환경)
+- [x] 운영 검증(스토어/도메인): App Store Connect `Marketing URL`(Developer Website) 설정 + `https://<domain>/app-ads.txt` 배포
+  - 가이드: `docs/troubleshooting/ADMOB_APP_VERIFICATION.md`
 - [x] `react-native-google-mobile-ads` v14.x 설치
 - [x] iOS 네이티브 설정 (`app.json` - GADApplicationIdentifier)
 - [x] **배너 광고 구현**: HomeScreen, MandalartListScreen, ReportsScreen 하단 (TodayScreen은 Clean Zone 정책으로 제거)

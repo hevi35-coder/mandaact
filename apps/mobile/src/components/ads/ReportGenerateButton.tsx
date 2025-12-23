@@ -7,7 +7,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native'
-import { Play, FileText, Sparkles, Clock } from 'lucide-react-native'
+import { Play, Sparkles } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { useRewardedAd } from '../../hooks/useRewardedAd'
@@ -145,15 +145,12 @@ export function ReportGenerateButton({
               >
                 {t('ads.reportGenerate.button')}
               </Text>
-              <View className="flex-row items-center mt-0.5">
-                <FileText size={12} color="#9ca3af" />
-                <Text
-                  className="text-xs text-gray-400 ml-1"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('ads.reportGenerate.subtitle')}
-                </Text>
-              </View>
+              <Text
+                className="text-xs text-gray-400 mt-0.5"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('ads.reportGenerate.subtitle')}
+              </Text>
             </View>
           </View>
 
