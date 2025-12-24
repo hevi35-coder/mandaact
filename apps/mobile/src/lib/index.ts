@@ -87,6 +87,7 @@ export {
   formatShortDate,
   formatMonthDay,
   formatFullDate,
+  formatDateTime,
   formatDateRange,
   formatDayLabel,
   formatMonthLabel,
