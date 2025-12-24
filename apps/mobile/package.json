@@ -50,7 +50,7 @@
     "react-native": "catalog:",
     "react-native-gesture-handler": "catalog:",
     "react-native-get-random-values": "~1.11.0",
-    "react-native-google-mobile-ads": "^16.0.0",
+    "react-native-google-mobile-ads": "^16.0.1",
     "react-native-purchases": "^9.6.9",
     "react-native-reanimated": "catalog:",
     "react-native-safe-area-context": "catalog:",

@@ -241,8 +241,8 @@ importers:
         specifier: ~1.11.0
         version: 1.11.0(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))
       react-native-google-mobile-ads:
-        specifier: ^16.0.0
-        version: 16.0.0(expo@52.0.48(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        specifier: ^16.0.1
+        version: 16.0.1(expo@52.0.48(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1))(react@18.3.1)
       react-native-purchases:
         specifier: ^9.6.9
         version: 9.6.9(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1)
@@ -6118,8 +6118,8 @@ packages:
     peerDependencies:
       react-native: '>=0.56'
 
-  react-native-google-mobile-ads@16.0.0:
-    resolution: {integrity: sha512-jjSolMj0Q5CBXQjUrow4D0IQ8CpNXocEYYt6xi1xVSUSWg0QQRuTzjXrHLczIMXLm2qWPr1ZllN/VGCOIz0n/g==}
+  react-native-google-mobile-ads@16.0.1:
+    resolution: {integrity: sha512-fBbJ34LAHb9Z2agVocqYMgj45UGGh7epMdaT5E3tbZEWTMN+nNxXnK9BVH9RQXD51D9AgEOcxvIIf4um5gIaYA==}
     peerDependencies:
       expo: '>=47.0.0'
     peerDependenciesMeta:
@@ -13957,7 +13957,7 @@ snapshots:
       fast-base64-decode: 1.0.0
       react-native: 0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1)
 
-  react-native-google-mobile-ads@16.0.0(expo@52.0.48(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1))(react@18.3.1):
+  react-native-google-mobile-ads@16.0.1(expo@52.0.48(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(react-native@0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5(@babel/core@7.28.5))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1))(react@18.3.1):
     dependencies:
       '@iabtcf/core': 1.5.6
       use-deep-compare-effect: 1.8.1(react@18.3.1)
