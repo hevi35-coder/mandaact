@@ -663,7 +663,11 @@
       "title": "정보",
       "appInfo": "앱 정보",
       "appInfoFormat": "{{appName}}\n\n버전: {{version}} ({{build}})\n플랫폼: React Native + Expo\n\n© 2025 {{appName}}",
-      "privacyPolicy": "개인정보 처리방침"
+      "privacyPolicy": "개인정보 처리방침",
+      "privacyChoices": "광고 개인정보 설정",
+      "privacyChoicesUnavailableTitle": "현재 사용 불가",
+      "privacyChoicesUnavailableDesc": "현재 지역에서는 추가 설정이 필요하지 않습니다.",
+      "privacyChoicesError": "설정을 여는 데 실패했습니다. 잠시 후 다시 시도해주세요."
     },
     "focus": {
       "title": "집중 모드"

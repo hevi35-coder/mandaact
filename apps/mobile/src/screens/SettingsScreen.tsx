@@ -23,6 +23,7 @@ import {
   Info,
   ChevronRight,
   Shield,
+  SlidersHorizontal,
   MessageCircle,
   Star,
   ExternalLink,
@@ -41,6 +42,7 @@ import {
 import * as Application from 'expo-application'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { AdsConsent, AdsConsentPrivacyOptionsRequirementStatus } from 'react-native-google-mobile-ads'
 import { Header } from '../components'
 import { Toggle } from '../components/ui/Toggle'
 import { useAuthStore } from '../store/authStore'
@@ -352,6 +354,23 @@ export default function SettingsScreen() {
   const handlePrivacyPolicy = useCallback(() => {
     handleOpenURL('https://mandaact.vercel.app/privacy')
   }, [handleOpenURL])
+
+  const handleManagePrivacyChoices = useCallback(async () => {
+    try {
+      const consentInfo = await AdsConsent.requestInfoUpdate()
+      if (consentInfo.privacyOptionsRequirementStatus === AdsConsentPrivacyOptionsRequirementStatus.REQUIRED) {
+        await AdsConsent.showPrivacyOptionsForm()
+        return
+      }
+      toast.info(
+        t('settings.info.privacyChoicesUnavailableTitle'),
+        t('settings.info.privacyChoicesUnavailableDesc')
+      )
+    } catch (error) {
+      console.error('[SettingsScreen] Failed to open privacy choices:', error)
+      toast.error(t('common.error'), t('settings.info.privacyChoicesError'))
+    }
+  }, [t, toast])
 
   const handleFeedback = useCallback(() => {
     Alert.alert(t('settings.support.feedback'), t('settings.support.feedbackConfirm'), [
@@ -955,7 +974,7 @@ export default function SettingsScreen() {
             </Pressable>
             <Pressable
               onPress={handlePrivacyPolicy}
-              className="flex-row items-center px-5 py-4"
+              className="flex-row items-center px-5 py-4 border-b border-gray-100"
             >
               <Shield size={22} color="#6b7280" />
               <Text
@@ -965,6 +984,19 @@ export default function SettingsScreen() {
                 {t('settings.info.privacyPolicy')}
               </Text>
               <ExternalLink size={16} color="#9ca3af" />
+            </Pressable>
+            <Pressable
+              onPress={handleManagePrivacyChoices}
+              className="flex-row items-center px-5 py-4"
+            >
+              <SlidersHorizontal size={22} color="#6b7280" />
+              <Text
+                className="flex-1 ml-3 text-base text-gray-900"
+                style={{ fontFamily: 'Pretendard-Regular' }}
+              >
+                {t('settings.info.privacyChoices')}
+              </Text>
+              <ChevronRight size={18} color="#9ca3af" />
             </Pressable>
           </Animated.View>
 
