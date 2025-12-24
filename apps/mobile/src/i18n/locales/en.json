@@ -1021,8 +1021,13 @@
       "weeklyReport": "Weekly Practice Report"
     },
     "nextReport": "Next Report: {{date}}",
+    "lastUpdated": "Last updated",
+    "lastUpdatedWithValue": "Last updated: {{date}}",
     "generateReport": "Generate Report",
     "generating": "Generating...",
+    "toast": {
+      "generated": "Report generated"
+    },
     "mandalartNeeded": "Mandalart Needed",
     "mandalartNeededDesc": "Create or activate a mandalart\nto receive goal diagnosis",
     "newDiagnosisNotice": "Create or activate a mandalart to receive new diagnosis",

@@ -33,7 +33,7 @@ import { useInterstitialAd } from '../hooks/useInterstitialAd'
 import { logger } from '../lib/logger'
 
 import { useAuthStore } from '../store/authStore'
-import { formatDateRange, formatMonthDay, formatShortDate, formatZonedWeekday, trackWeeklyReportGenerated, trackGoalDiagnosisViewed } from '../lib'
+import { formatDateRange, formatDateTime, formatMonthDay, formatShortDate, formatZonedWeekday, trackWeeklyReportGenerated, trackGoalDiagnosisViewed } from '../lib'
 import { useActiveMandalarts } from '../hooks/useMandalarts'
 import { useProfileStats } from '../hooks/useStats'
 import { useSubscriptionContext } from '../context'
@@ -46,6 +46,7 @@ import {
   useReportHistory,
 } from '../hooks/useReports'
 import { parseWeeklyReport, parseDiagnosisReport, getMetricLabelKey, type ReportSummary, type ReportErrorReason } from '../lib/reportParser'
+import { useToast } from '../components/Toast'
 import { toZonedTime } from 'date-fns-tz'
 
 // Get week dates for display
@@ -643,6 +644,7 @@ export default function ReportsScreen() {
   const isEnglish = i18n.language === 'en'
   const { timezone } = useUserProfile(user?.id)
   const { canGenerateReport, isPremium } = useSubscriptionContext()
+  const toast = useToast()
 
   // Log premium status changes for debugging
   useEffect(() => {
@@ -722,6 +724,15 @@ export default function ReportsScreen() {
   const weeklyReportCount = getThisWeekReportCount()
   const canGenerateThisWeek = canGenerateReport(weeklyReportCount)
 
+  const latestUpdatedAt = useMemo(() => {
+    const candidates = [weeklyReport?.created_at, diagnosis?.created_at].filter(Boolean) as string[]
+    if (candidates.length === 0) return null
+    return candidates
+      .map((value) => new Date(value))
+      .filter((date) => !Number.isNaN(date.getTime()))
+      .sort((a, b) => b.getTime() - a.getTime())[0]
+  }, [weeklyReport?.created_at, diagnosis?.created_at])
+
   // Translate metric labels using i18n
   const translateLabel = useCallback(
     (label: string): string => {
@@ -769,6 +780,10 @@ export default function ReportsScreen() {
         week_start: new Date().toISOString().split('T')[0],
         generated: true,
       })
+
+      if (trigger === 'rewarded') {
+        toast.success(t('reports.toast.generated'), '')
+      }
 
       // Show interstitial ad after report generation (only for non-premium users)
       if (!isPremium) {
@@ -953,7 +968,7 @@ export default function ReportsScreen() {
                 end={{ x: 1, y: 0 }}
                 style={{ padding: 1, borderRadius: 16 }}
               >
-                <View className="bg-white rounded-2xl py-4 px-5 flex-row items-center justify-center">
+                <View className="bg-white rounded-2xl py-4 px-5 items-center justify-center">
                   <MaskedView
                     maskElement={
                       <View className="flex-row items-center">
@@ -983,6 +998,19 @@ export default function ReportsScreen() {
                       </View>
                     </LinearGradient>
                   </MaskedView>
+                  {latestUpdatedAt && (
+                    <Text
+                      className="text-xs text-gray-500 mt-1"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
+                    >
+                      {t('reports.lastUpdatedWithValue', {
+                        date: formatDateTime(latestUpdatedAt, {
+                          language: i18n.language,
+                          timeZone: timezone,
+                        }),
+                      })}
+                    </Text>
+                  )}
                 </View>
               </LinearGradient>
             </View>
