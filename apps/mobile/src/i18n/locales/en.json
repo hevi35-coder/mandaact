@@ -665,7 +665,11 @@
       "title": "Info",
       "appInfo": "App Info",
       "appInfoFormat": "{{appName}}\n\nVersion: {{version}} ({{build}})\nPlatform: React Native + Expo\n\n© 2025 {{appName}}",
-      "privacyPolicy": "Privacy Policy"
+      "privacyPolicy": "Privacy Policy",
+      "privacyChoices": "Manage Ad Privacy Choices",
+      "privacyChoicesUnavailableTitle": "Not Available",
+      "privacyChoicesUnavailableDesc": "Privacy choices are not required for your region right now.",
+      "privacyChoicesError": "Unable to open privacy choices. Please try again."
     },
     "focus": {
       "title": "Focus Mode"
