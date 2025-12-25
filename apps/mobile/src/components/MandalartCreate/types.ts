@@ -18,7 +18,7 @@ export interface MandalartData {
     }>
 }
 
-export type InputMethod = 'image' | 'text' | 'manual' | null
+export type InputMethod = 'image' | 'text' | 'manual' | 'coaching' | null
 export type Step = 'select-method' | 'input' | 'preview'
 
 export interface CreateState {

@@ -76,6 +76,10 @@ export default function MandalartCreateScreen() {
   }, [step, navigation, t])
 
   const handleSelectMethod = useCallback((method: InputMethod) => {
+    if (method === 'coaching') {
+      navigation.navigate('CoachingGate')
+      return
+    }
     setInputMethod(method)
     if (method === 'manual') {
       // Initialize empty data for manual mode

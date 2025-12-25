@@ -44,6 +44,8 @@ import LoginScreen from '../screens/LoginScreen'
 import LoadingScreen from '../screens/LoadingScreen'
 import SubscriptionScreen from '../screens/SubscriptionScreen'
 import CoachingFlowScreen from '../screens/CoachingFlowScreen'
+import CoachingGateScreen from '../screens/CoachingGateScreen'
+import CoachingSlotGateScreen from '../screens/CoachingSlotGateScreen'
 
 export type RootStackParamList = {
   Main: undefined
@@ -53,6 +55,8 @@ export type RootStackParamList = {
   Settings: undefined
   Tutorial: undefined
   Subscription: undefined
+  CoachingGate: undefined
+  CoachingSlotGate: undefined
   CoachingFlow: undefined
 }
 
@@ -231,6 +235,20 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Subscription"
               component={SubscriptionScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="CoachingGate"
+              component={CoachingGateScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="CoachingSlotGate"
+              component={CoachingSlotGateScreen}
               options={{
                 animation: 'slide_from_right',
               }}

@@ -26,6 +26,7 @@ type RewardedAdType =
   | 'REWARDED_XP_BOOST'
   | 'REWARDED_STREAK_FREEZE'
   | 'REWARDED_YESTERDAY_CHECK'
+  | 'REWARDED_COACHING_SESSION'
 
 interface UseRewardedAdOptions {
   adType: RewardedAdType
@@ -49,6 +50,7 @@ const FALLBACK_REWARD_BY_AD_TYPE: Record<RewardedAdType, { type: string; amount:
   REWARDED_XP_BOOST: { type: 'xp_boost', amount: 1 },
   REWARDED_STREAK_FREEZE: { type: 'streak_freeze', amount: 1 },
   REWARDED_YESTERDAY_CHECK: { type: 'yesterday_check', amount: 1 },
+  REWARDED_COACHING_SESSION: { type: 'coaching', amount: 1 },
 }
 
 export function useRewardedAd({

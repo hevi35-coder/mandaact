@@ -167,6 +167,46 @@
     "inProgress": "Coaching session in progress",
     "resume": "Resume",
     "pause": "Pause",
+    "gate": {
+      "title": "AI Coaching",
+      "summaryTitle": "This week",
+      "summaryValue": "{{used}} / {{total}} sessions used",
+      "summaryHint": "Free users get 1 free + 1 ad session per week.",
+      "footer": "No ads during your session.",
+      "adError": "Ad is not ready yet. Please try again.",
+      "welcome": {
+        "title": "Welcome gift",
+        "body": "Your first coaching session is on us.",
+        "primary": "Start Now",
+        "secondary": "Go Unlimited"
+      },
+      "ad": {
+        "title": "Weekly sessions used",
+        "body": "Watch an ad to unlock one more session this week.",
+        "primary": "Watch an Ad to Start",
+        "secondary": "Go Unlimited"
+      },
+      "limit": {
+        "title": "Weekly limit reached",
+        "body": "You can start again next week or upgrade for unlimited sessions.",
+        "primary": "Go Unlimited",
+        "secondary": "Go Back",
+        "footer": "Weekly limit resets every Monday."
+      }
+    },
+    "slotGate": {
+      "title": "Mandalart slots",
+      "heading": "Your Mandalart slots are full",
+      "body": "Delete one Mandalart to start AI coaching.",
+      "createdAt": "Created {{date}}",
+      "deleteCta": "Delete",
+      "upgradeCta": "Go Unlimited",
+      "confirmTitle": "Delete this Mandalart?",
+      "confirmBody": "This action cannot be undone.",
+      "confirmDelete": "Delete",
+      "deleteSuccess": "Deleted. You can now start AI coaching.",
+      "deleteError": "Failed to delete. Please try again."
+    },
     "step1": {
       "title": "Tell us about your current situation",
       "subtitle": "Choose the closest options so we can tailor your plan.",
@@ -632,6 +672,10 @@
         "image": "Image",
         "text": "Text",
         "manual": "Manual"
+      },
+      "aiCoaching": {
+        "title": "AI Coaching",
+        "description": "Create goals with a warm coaching session"
       },
       "imageUpload": {
         "title": "Upload Image",
