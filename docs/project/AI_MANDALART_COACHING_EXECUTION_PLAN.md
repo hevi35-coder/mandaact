@@ -169,9 +169,9 @@
 - Notes: Server sync is in place; action sync to real actions still pending.
 
 ### Phase 6 Log
-- Date:
-- Work done:
-- Notes:
+- Date: 2025-12-25
+- Work done: Added coaching access gate + slot gate screens; added weekly session counters with weekly reset and lifetime tracking; wired AI coaching entry from Mandalart create method; added rewarded ad type and gate copy (KO/EN).
+- Notes: Free users auto-start on available weekly slot; first-time users see welcome gate. Slot gate deletes one mandalart then redirects to gate.
 
 ### Phase 7 Log
 - Date:
@@ -261,9 +261,9 @@ Last updated: 2025-12-25
 - [x] Minimum toggle deep-link + visibility rules
 
 ### Phase 6 Checklist
-- [ ] Weekly limits + counters
-- [ ] Ad gate screens
-- [ ] Slot delete flow
+- [x] Weekly limits + counters
+- [x] Ad gate screens
+- [x] Slot delete flow
 
 ### Phase 7 Checklist
 - [ ] LLM comparison execution
@@ -278,6 +278,7 @@ Last updated: 2025-12-25
 - [ ] Active/inactive actions behave correctly in Today
 - [ ] Pre-save validation blocks unconfigured actions
 - [ ] Slot delete gate works at limit
+- [ ] Phase 6 gate flow (slot-full → delete → ad gate → start) works end-to-end
 
 ### UX
 - [ ] No mid-session paywalls

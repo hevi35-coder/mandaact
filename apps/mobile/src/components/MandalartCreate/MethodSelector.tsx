@@ -7,13 +7,19 @@
 import React from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Image as ImageIcon, FileText, PenLine } from 'lucide-react-native'
+import { Image as ImageIcon, FileText, PenLine, Sparkles } from 'lucide-react-native'
 import type { MethodSelectorProps } from './types'
 
 export function MethodSelector({ onSelectMethod }: MethodSelectorProps) {
     const { t } = useTranslation()
 
     const methods = [
+        {
+            id: 'coaching' as const,
+            icon: Sparkles,
+            titleKey: 'mandalart.create.aiCoaching.title',
+            descKey: 'mandalart.create.aiCoaching.description',
+        },
         {
             id: 'image' as const,
             icon: ImageIcon,

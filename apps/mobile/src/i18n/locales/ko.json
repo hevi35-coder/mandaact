@@ -165,6 +165,46 @@
     "inProgress": "코칭 세션이 진행 중이에요",
     "resume": "재개",
     "pause": "일시 중지",
+    "gate": {
+      "title": "AI 코칭",
+      "summaryTitle": "이번 주",
+      "summaryValue": "{{used}} / {{total}}회 사용",
+      "summaryHint": "무료는 주 1회 + 광고 1회(최대 2회).",
+      "footer": "세션 중에는 광고가 나오지 않아요.",
+      "adError": "광고가 아직 준비되지 않았어요. 잠시 후 다시 시도해주세요.",
+      "welcome": {
+        "title": "첫 코칭 선물",
+        "body": "첫 AI 코칭은 무료로 제공돼요.",
+        "primary": "지금 시작",
+        "secondary": "무제한 이용"
+      },
+      "ad": {
+        "title": "이번 주 무료 이용 완료",
+        "body": "광고를 보면 이번 주 1회를 더 열 수 있어요.",
+        "primary": "광고 보고 시작",
+        "secondary": "무제한 이용"
+      },
+      "limit": {
+        "title": "주간 한도 도달",
+        "body": "다음 주에 다시 시작하거나 무제한으로 업그레이드하세요.",
+        "primary": "무제한 이용",
+        "secondary": "뒤로 가기",
+        "footer": "주간 한도는 매주 월요일 초기화돼요."
+      }
+    },
+    "slotGate": {
+      "title": "만다라트 슬롯",
+      "heading": "만다라트 공간이 가득 찼어요",
+      "body": "AI 코칭을 시작하려면 하나를 삭제해야 해요.",
+      "createdAt": "{{date}} 생성",
+      "deleteCta": "삭제",
+      "upgradeCta": "무제한 이용",
+      "confirmTitle": "만다라트를 삭제할까요?",
+      "confirmBody": "삭제 후 되돌릴 수 없어요.",
+      "confirmDelete": "삭제",
+      "deleteSuccess": "삭제 완료. 이제 AI 코칭을 시작할 수 있어요.",
+      "deleteError": "삭제에 실패했어요. 다시 시도해주세요."
+    },
     "step1": {
       "title": "현재 상황을 알려주세요",
       "subtitle": "가장 가까운 선택지를 골라 맞춤 계획을 만들게요.",
@@ -630,6 +670,10 @@
         "image": "이미지",
         "text": "텍스트",
         "manual": "직접 입력"
+      },
+      "aiCoaching": {
+        "title": "AI 코칭",
+        "description": "따뜻한 코칭으로 목표를 함께 설계해요"
       },
       "imageUpload": {
         "title": "이미지 업로드",
