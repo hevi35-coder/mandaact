@@ -6,7 +6,7 @@
  * Only extract reusable UI components.
  */
 
-import React, { useRef, useCallback, useState } from 'react'
+import React, { useRef, useCallback, useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -188,7 +188,7 @@ export default function MandalartDetailScreen() {
   }, [refetch])
 
   // Sync expandedSubGoal when mandalart data changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (expandedSubGoal && mandalart) {
       const updatedSubGoal = mandalart.sub_goals.find(
         sg => sg.id === expandedSubGoal.id
@@ -200,7 +200,7 @@ export default function MandalartDetailScreen() {
   }, [mandalart])
 
   // Sync selectedSubGoal when mandalart data changes (for modal updates)
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedSubGoal && mandalart) {
       const updatedSubGoal = mandalart.sub_goals.find(
         sg => sg.id === selectedSubGoal.id

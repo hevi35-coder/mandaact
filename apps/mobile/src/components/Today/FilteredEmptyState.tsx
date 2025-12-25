@@ -4,7 +4,7 @@
  * Shows contextual empty states for Today screen when no actions match filters or criteria
  */
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import {
@@ -35,7 +35,7 @@ export function FilteredEmptyState({
   const { t } = useTranslation()
 
   // Determine icon, color, and content based on scenario
-  const config = React.useMemo(() => {
+  const config = useMemo(() => {
     switch (scenario) {
       case 'unconfigured':
         return {

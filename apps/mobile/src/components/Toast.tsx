@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { View, Text, Pressable, Animated } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react-native'
@@ -44,7 +44,7 @@ function ToastItem({
   const config = TOAST_CONFIG[toast.type]
   const Icon = config.icon
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       onHide(toast.id)
     }, toast.duration || 3000)
