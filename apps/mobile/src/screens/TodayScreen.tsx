@@ -43,6 +43,9 @@ import type { Action, Mandalart, ActionType } from '@mandaact/shared'
 import { logger, trackActionChecked, trackBadgeUnlocked } from '../lib'
 import { badgeService } from '../lib/badge'
 import ActionTypeSelector, { type ActionTypeData } from '../components/ActionTypeSelector'
+import { Toggle } from '../components/ui/Toggle'
+import { usePlanStore } from '../store/planStore'
+import { supabase } from '../lib/supabase'
 import {
   DateNavigation,
   ProgressCard,
@@ -97,6 +100,7 @@ export default function TodayScreen() {
   // Action type selector state
   const [typeSelectorVisible, setTypeSelectorVisible] = useState(false)
   const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionWithContext | null>(null)
+  const [minimumModeEnabled, setMinimumModeEnabled] = useState(false)
 
   // Interstitial ad for level up - DISABLED (harms user experience)
   // const { show: showLevelUpAd } = useInterstitialAd({
@@ -248,7 +252,24 @@ export default function TodayScreen() {
 
   // Filter configured actions based on type and shouldShowToday logic
   const filteredActions = useMemo(() => {
-    return configuredActions.filter((action) => {
+    const visibleConfigured = configuredActions.filter((action) => {
+      const subGoalId = action.sub_goal?.id
+      if (!subGoalId) return true
+
+      const activeId = activeBySubGoal[subGoalId]
+      const minimumId = minimumBySubGoal[subGoalId]
+
+      if (minimumModeEnabled) {
+        if (minimumId) return action.id === minimumId
+        if (activeId) return action.id === activeId
+        return true
+      }
+
+      if (activeId) return action.id === activeId
+      return true
+    })
+
+    return visibleConfigured.filter((action) => {
       // Apply shouldShowToday logic
       const shouldShow = shouldShowToday(action, selectedDate)
       if (!shouldShow) return false
@@ -260,7 +281,7 @@ export default function TodayScreen() {
       // Show only if action type is in active filters
       return activeFilters.has(action.type)
     })
-  }, [configuredActions, activeFilters, selectedDate])
+  }, [configuredActions, activeFilters, selectedDate, activeBySubGoal, minimumBySubGoal, minimumModeEnabled])
 
   // State for unconfigured and completed section collapse
   const [unconfiguredCollapsed, setUnconfiguredCollapsed] = useState(true)
@@ -625,6 +646,24 @@ export default function TodayScreen() {
             onToggleFilter={toggleFilter}
             onClearAllFilters={clearAllFilters}
           />
+        )}
+
+        {hasMinimumSelections && actions.length > 0 && (
+          <View className="bg-white rounded-2xl px-4 py-3 mb-4 border border-gray-100 flex-row items-center justify-between">
+            <View>
+              <Text className="text-sm text-gray-900" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                {t('today.minimumMode.title')}
+              </Text>
+              <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+                {t('today.minimumMode.subtitle')}
+              </Text>
+            </View>
+            <Toggle
+              value={minimumModeEnabled}
+              onValueChange={setMinimumModeEnabled}
+              size="sm"
+            />
+          </View>
         )}
 
         {/* XP Boost Button - Below Progress Card (Phone only, iPad has it in right column) */}
@@ -1158,3 +1197,52 @@ export default function TodayScreen() {
     </View>
   )
 }
+  const { activeBySubGoal, minimumBySubGoal, mergePreferences } = usePlanStore()
+
+  const hasMinimumSelections = useMemo(() => {
+    return actions.some((action) => minimumBySubGoal[action.sub_goal.id] === action.id)
+  }, [actions, minimumBySubGoal])
+  React.useEffect(() => {
+    if (!user?.id || actions.length === 0) return
+
+    const subGoalIds = Array.from(
+      new Set(actions.map((action) => action.sub_goal?.id).filter(Boolean))
+    ) as string[]
+
+    if (subGoalIds.length === 0) return
+
+    let isMounted = true
+
+    const fetchPreferences = async () => {
+      const { data, error } = await supabase
+        .from('action_preferences')
+        .select('sub_goal_id, active_action_id, minimum_action_id')
+        .eq('user_id', user.id)
+        .in('sub_goal_id', subGoalIds)
+
+      if (error || !data || !isMounted) return
+
+      const nextActive: Record<string, string> = {}
+      const nextMinimum: Record<string, string> = {}
+
+      data.forEach((row) => {
+        if (row.active_action_id) {
+          nextActive[row.sub_goal_id] = row.active_action_id
+        }
+        if (row.minimum_action_id) {
+          nextMinimum[row.sub_goal_id] = row.minimum_action_id
+        }
+      })
+
+      mergePreferences({
+        activeBySubGoal: nextActive,
+        minimumBySubGoal: nextMinimum,
+      })
+    }
+
+    fetchPreferences()
+
+    return () => {
+      isMounted = false
+    }
+  }, [actions, mergePreferences, user?.id])

@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react'
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, Pressable } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -27,6 +27,7 @@ import {
 import { xpService } from '../lib/xp'
 import type { XPMultiplier } from '@mandaact/shared'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
+import { useCoachingStore } from '../store/coachingStore'
 
 // Sub-components
 import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal } from '../components/Home'
@@ -69,6 +70,8 @@ export default function HomeScreen() {
   const { data: badgeProgress = [] } = useBadgeProgress(user?.id)
   const { data: activeMandalarts = [] } = useActiveMandalarts(user?.id)
   const hasActiveMandalarts = activeMandalarts.length > 0
+  const { sessionId, status, currentStep, summary, resumeSession } = useCoachingStore()
+  const hasCoachingSession = Boolean(sessionId && status && status !== 'completed')
 
   const isLoading = gamificationLoading || profileStatsLoading
 
@@ -104,6 +107,13 @@ export default function HomeScreen() {
     setNicknameModalVisible(true)
   }, [])
 
+  const handleResumeCoaching = useCallback(() => {
+    if (status === 'paused') {
+      resumeSession()
+    }
+    navigation.navigate('CoachingFlow')
+  }, [navigation, resumeSession, status])
+
   return (
     <View className="flex-1 bg-gray-50">
       <Header />
@@ -135,6 +145,35 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
+
+          {hasCoachingSession && (
+            <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-base text-gray-900" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('home.coachingResume.title')}
+                </Text>
+                <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>
+                  {t(status === 'paused' ? 'home.coachingResume.status.paused' : 'home.coachingResume.status.active')}
+                </Text>
+              </View>
+              <Text className="text-sm text-gray-500 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
+                {t('home.coachingResume.step', { step: currentStep })}
+              </Text>
+              {summary?.shortSummary ? (
+                <Text className="text-sm text-gray-600 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  {summary.shortSummary}
+                </Text>
+              ) : null}
+              <Pressable
+                onPress={handleResumeCoaching}
+                className="mt-3 bg-primary rounded-xl py-3 items-center"
+              >
+                <Text className="text-white text-sm" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('home.coachingResume.cta')}
+                </Text>
+              </Pressable>
+            </View>
+          )}
 
           {/* iPad: 2-column layout for cards */}
           <View style={isTablet ? { flexDirection: 'row', gap: 20 } : undefined}>

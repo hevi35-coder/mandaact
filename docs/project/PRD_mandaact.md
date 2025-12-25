@@ -627,6 +627,7 @@ function extractActionsForSubGoal(subGoalIndex: number, grid: string[]) {
 ---
 
 ### 5.2 Perplexity for AI Coaching
+> 관련 문서: `docs/project/AI_MANDALART_COACHING_MILESTONE.md`, `docs/project/AI_MANDALART_COACHING_EXECUTION_PLAN.md`
 
 **Context Building**:
 ```typescript

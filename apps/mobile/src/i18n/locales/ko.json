@@ -148,6 +148,216 @@
         "saveError": "닉네임 저장 중 오류가 발생했습니다",
         "updateError": "닉네임 변경 중 오류가 발생했습니다"
       }
+    },
+    "coachingResume": {
+      "title": "AI 코칭 진행 중",
+      "status": {
+        "active": "진행 중",
+        "paused": "일시 중지"
+      },
+      "step": "{{step}}단계",
+      "cta": "계속하기"
+    }
+  },
+  "coaching": {
+    "title": "AI 코칭",
+    "step": "{{step}}단계",
+    "inProgress": "코칭 세션이 진행 중이에요",
+    "resume": "재개",
+    "pause": "일시 중지",
+    "step1": {
+      "title": "현재 상황을 알려주세요",
+      "subtitle": "가장 가까운 선택지를 골라 맞춤 계획을 만들게요.",
+      "persona": {
+        "working_professional": "직장인",
+        "student": "학생",
+        "freelancer": "프리랜서",
+        "custom": "직접 입력"
+      },
+      "questions": {
+        "dailyTime": "하루에 확보 가능한 시간",
+        "energyPeak": "에너지가 가장 좋은 시간대",
+        "priorityArea": "가장 중요한 영역",
+        "afterWorkDifficulty": "퇴근 후 실천이 어려운 편인가요?",
+        "goalStyle": "이번 달 목표 스타일",
+        "scheduleType": "주요 일정 유형",
+        "busyDifficulty": "바쁠 때 지속이 어려운가요?",
+        "timeframe": "목표 기간",
+        "scheduleVariability": "일정 변동성",
+        "weeklyWorkingTime": "주간 작업 시간",
+        "planStability": "일정 변경 시 계획 유지 가능?",
+        "goalType": "목표 유형",
+        "customSituation": "현재 상황을 간단히 적어주세요",
+        "customPriority": "가장 중요한 우선순위",
+        "customObstacle": "지속을 방해하는 가장 큰 요인"
+      },
+      "options": {
+        "time": {
+          "10": "10분",
+          "30": "30분",
+          "60": "60분",
+          "90": "90분",
+          "120": "120분",
+          "120+": "120분 이상"
+        },
+        "energy": {
+          "morning": "아침",
+          "lunch": "점심",
+          "evening": "저녁"
+        },
+        "priority": {
+          "work": "업무",
+          "health": "건강",
+          "learning": "학습",
+          "relationships": "관계",
+          "life": "생활",
+          "other": "기타"
+        },
+        "priorityStudent": {
+          "grades": "성적",
+          "career": "진로",
+          "habits": "습관",
+          "health": "건강",
+          "other": "기타"
+        },
+        "priorityFreelancer": {
+          "income": "수익",
+          "delivery": "납기",
+          "health": "건강",
+          "learning": "학습",
+          "other": "기타"
+        },
+        "difficulty": {
+          "yes": "예, 어려워요",
+          "neutral": "보통이에요",
+          "no": "아니요"
+        },
+        "goalStyle": {
+          "maintain": "유지",
+          "balanced": "균형",
+          "challenge": "도전"
+        },
+        "schedule": {
+          "classes": "수업",
+          "exams": "시험",
+          "projects": "프로젝트",
+          "other": "기타"
+        },
+        "timeframe": {
+          "short": "1~4주",
+          "mid": "1~2개월",
+          "long": "2~3개월"
+        },
+        "variability": {
+          "low": "낮음",
+          "medium": "보통",
+          "high": "높음"
+        },
+        "weeklyTime": {
+          "20-30": "20~30시간",
+          "30-40": "30~40시간",
+          "40-50": "40~50시간",
+          "50+": "50시간 이상"
+        },
+        "goalType": {
+          "outcome": "성과",
+          "mixed": "혼합",
+          "routine": "루틴"
+        }
+      },
+      "placeholders": {
+        "customSituation": "예: 이직 준비 중",
+        "customPriority": "예: 건강, 재정, 관계",
+        "customObstacle": "예: 일정이 들쭉날쭉함"
+      },
+      "validation": "필수 항목을 모두 선택해주세요.",
+      "cta": "계속하기",
+      "summary": "페르소나 설정: {{persona}}"
+    },
+    "step2": {
+      "title": "핵심 목표 확인",
+      "subtitle": "구체적이고 측정 가능하도록 수정해보세요.",
+      "label": "핵심 목표",
+      "placeholder": "예: 꾸준한 운동 루틴 만들기",
+      "validation": "핵심 목표를 입력해주세요.",
+      "summary": "핵심 목표 저장됨.",
+      "prompt": "다음: 핵심 목표 확인"
+    },
+    "step3": {
+      "title": "서브 목표 8개 작성",
+      "subtitle": "핵심 목표를 뒷받침하는 8개 항목을 적어주세요.",
+      "itemLabel": "{{index}}번째 서브 목표",
+      "placeholder": "예: 주간 운동 계획 세우기",
+      "validation": "아직 {{count}}개 비어 있어요.",
+      "summary": "서브 목표 저장됨.",
+      "prompt": "다음: 서브 목표 작성"
+    },
+    "step4": {
+      "title": "실천 항목 초안",
+      "subtitle": "각 서브 목표에 대해 기본/최소/도전 실천을 적어주세요.",
+      "labels": {
+        "base": "기본 실천",
+        "minimum": "최소 실천",
+        "challenge": "도전 실천",
+        "extra": "추가 실천 {{index}}"
+      },
+      "placeholders": {
+        "base": "예: 20분 실천",
+        "minimum": "예: 10분 실천",
+        "challenge": "예: 40분 실천",
+        "extra": "예: 15분 실천"
+      },
+      "defaults": {
+        "base": "{{goal}} 20분 실천",
+        "minimum": "{{goal}} 10분 실천",
+        "challenge": "{{goal}} 40분 실천"
+      },
+      "validation": "모든 실천 항목을 입력해주세요.",
+      "empty": "서브 목표를 완성하면 실천 항목을 생성할 수 있어요.",
+      "addAction": "+ 실천 항목 추가",
+      "subGoalFallback": "{{index}}번째 서브 목표",
+      "summary": "실천 항목 저장됨.",
+      "prompt": "다음: 실천 항목 초안",
+      "pending": "4단계는 다음에 이어집니다."
+    },
+    "step5": {
+      "title": "현실성 점검",
+      "subtitle": "명확도를 위해 간단한 수정안을 제안해요.",
+      "suggestion": "제안: 시간 기준을 추가해보세요(예: 10분).",
+      "suggestionSuffix": "10분",
+      "apply": "제안 적용하기",
+      "reject": "원본 유지",
+      "summary": "현실성 점검 저장됨.",
+      "prompt": "다음: 루틴 설정"
+    },
+    "step6": {
+      "title": "루틴 설정",
+      "subtitle": "주간 실천 리듬을 선택하세요.",
+      "options": {
+        "weekly2": "주 2회 (화/목)",
+        "weekly3": "주 3회 (월/수/금)",
+        "daily": "매일"
+      },
+      "validation": "루틴을 선택해주세요.",
+      "summary": "루틴 저장됨.",
+      "prompt": "다음: 루틴 설정",
+      "pending": "6단계는 다음에 이어집니다."
+    },
+    "step7": {
+      "title": "최종 검토",
+      "subtitle": "저장 전에 계획을 확인하세요.",
+      "coreGoal": "핵심 목표",
+      "subGoals": "서브 목표",
+      "activeActions": "활성 실천",
+      "noActions": "아직 실천 항목이 없어요.",
+      "editAction": "타입 편집",
+      "customized": "개별 설정 적용됨",
+      "routine": "루틴",
+      "cta": "저장하기",
+      "validation": "필수 항목을 먼저 완료해주세요.",
+      "summary": "코칭 저장 완료",
+      "prompt": "다음: 최종 검토",
+      "completed": "세션 완료"
     }
   },
   "today": {
@@ -222,6 +432,10 @@
       "title": "달성 완료",
       "hint": "이번 기간 목표를 달성한 항목",
       "badge": "완료"
+    },
+    "minimumMode": {
+      "title": "최소모드",
+      "subtitle": "오늘만 최소 실천을 보여줘요"
     }
   },
   "actionType": {
@@ -300,6 +514,15 @@
     }
   },
   "mandalart": {
+    "plan": {
+      "title": "플랜",
+      "subtitle": "오늘의 활성/최소 실천을 선택하세요.",
+      "active": "활성",
+      "minimum": "최소",
+      "empty": "아직 서브 목표가 없어요.",
+      "noActions": "실천 항목이 없어요.",
+      "subGoalFallback": "제목 없는 서브 목표"
+    },
     "cell": {
       "subGoalLabel": "세부 {{position}}",
       "subGoalPlaceholder": "세부목표",

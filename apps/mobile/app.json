@@ -2,7 +2,7 @@
   "expo": {
     "name": "MandaAct",
     "slug": "mandaact",
-    "version": "1.0.4",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
-      "buildNumber": "119",
+      "buildNumber": "120",
       "supportsTablet": true,
       "requireFullScreen": false,
       "splash": {

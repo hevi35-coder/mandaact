@@ -864,6 +864,10 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 **목표**: AI 기능 재도입 (사용자 피드백 기반 결정)
 **기간**: 2-3주
 
+### AI 만다라트 코칭 문서
+- `docs/project/AI_MANDALART_COACHING_MILESTONE.md`
+- `docs/project/AI_MANDALART_COACHING_EXECUTION_PLAN.md`
+
 ### 옵션 A: 간소화된 AI 도우미
 **컨셉**: 전체 만다라트 생성이 아닌, 보조 기능으로만 활용
 

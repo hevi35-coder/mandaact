@@ -1,23 +1,24 @@
 # CURRENT_STATUS
 
-**최종 업데이트**: 2025-12-20  
-**상태**: iOS 1.0 출시(승인) 완료 / 1.0.1 패치 준비 및 스토어 운영 안정화
+**최종 업데이트**: 2025-12-25  
+**상태**: iOS 1.1.0 TestFlight 준비 / AI 코칭 Phase 2 구현 진행
 
 ## Mobile (iOS)
 - **App Store**: v1.0 승인/출시 ✅
-- **다음 릴리즈**: v1.0.1 패치(테스트/제출 준비) 🔄
+- **현재 빌드**: v1.1.0 (build 120) 로컬 빌드 완료 ✅
+- **다음 릴리즈**: v1.1.0 TestFlight 제출 및 QA 🔄
 - **주의**: TestFlight/App Store 제출 시 `CFBundleVersion`(Expo `expo.ios.buildNumber`)는 항상 증가해야 함.
 
 ## 최근 반영된 변경(요약)
-- (모바일) 닉네임 변경이 홈/설정에 즉시 반영되지 않는 문제 수정(신규 유저 케이스 포함)
-- (모바일) 회원가입 UX 정리: “인증메일 발송” 오해 문구 제거 + 불필요한 confirm email 입력 제거
-- (모바일) 구독 플랜 미노출 시 재시도/대체 조회(스토어 상품 목록)로 fallback 강화
-- (웹) 랜딩 페이지 모드 전환 + `/terms`, `/privacy` 유지
-- (문서) `docs/` 구조 정리 및 `AGENTS.md`/`CLAUDE.md` 최신화
+- (모바일) AI 코칭 Step 1–7 UI 구현(페르소나~최종 검토)
+- (모바일) Plan 모달 + 활성/최소 실천 선택 + 투데이 최소모드 토글
+- (백엔드) action_preferences 테이블 추가로 Plan 선택값 서버 동기화
+- (모바일) AI 코칭 인프라: 세션 스토어, 리줌 카드, 코칭 플로우 스크린 연결
+- (문서) AI 코칭 이행 문서 Phase 2–3 진행 사항 업데이트
 
 ## 바로 다음 해야 할 일(Release-Blocking)
-- (iOS) v1.0.1 TestFlight 제출 및 실제 기기 테스트(구독/복원/로그인/닉네임)
-- (iOS) App Store Connect 메타데이터 점검(EULA/Privacy/Support URL 등)
+- (iOS) v1.1.0 TestFlight 제출 및 실제 기기 테스트(로그인/홈/리포트/광고)
+- (모바일) AI 코칭 Phase 2 (Steps 1–3) 구현
 
 ## 문서
 - 로드맵: `docs/project/ROADMAP.md`

@@ -23,6 +23,10 @@
   제품 요구사항/화면/기능 정의(스펙의 소스 오브 트루스 역할).
 - `docs/project/ROADMAP.md`  
   우선순위/단계별 계획과 관련 문서 링크의 허브.
+- `docs/project/AI_MANDALART_COACHING_MILESTONE.md`  
+  AI 만다라트 코칭 서비스의 스펙/정책/UX 마일스톤.
+- `docs/project/AI_MANDALART_COACHING_EXECUTION_PLAN.md`  
+  AI 만다라트 코칭 개발 로드맵/작업 로그/체크리스트.
 - `docs/project/IMPROVEMENTS.md`  
   개선 과제 모음(백로그 성격). ROADMAP/PRD와 연결해서 관리 권장.
 
@@ -43,6 +47,17 @@
 - `docs/features/REPORT_COST_OPTIMIZATION.md`
 - `docs/features/ADMOB_INTEGRATION.md`
 - `docs/features/MONETIZATION_ANALYTICS_TAXONOMY.md`
+- `docs/features/AI_COACHING_ANALYTICS.md`
+- `docs/features/AI_COACHING_COST_LOGGING.md`
+- `docs/features/AI_COACHING_DB_GAP_REPORT.md`
+- `docs/features/AI_COACHING_SESSION_MODEL.md`
+- `docs/features/AI_COACHING_CLIENT_SESSION_STORE.md`
+- `docs/features/AI_COACHING_STEP_NAVIGATION.md`
+- `docs/features/AI_COACHING_STEP_FLOW.md`
+- `docs/features/AI_COACHING_CONTEXT_USAGE.md`
+- `docs/features/AI_COACHING_ACTIONS_FLOW.md`
+- `docs/features/AI_COACHING_SAVE_FLOW.md`
+- `docs/features/AI_COACHING_DB_MIGRATION_DRAFT.md`
 - `docs/features/BADGE_SYSTEM_V5_RENEWAL.md`
 - `docs/features/XP_SYSTEM_PHASE2_COMPLETE.md`
 

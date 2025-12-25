@@ -43,6 +43,7 @@ import TutorialScreen from '../screens/TutorialScreen'
 import LoginScreen from '../screens/LoginScreen'
 import LoadingScreen from '../screens/LoadingScreen'
 import SubscriptionScreen from '../screens/SubscriptionScreen'
+import CoachingFlowScreen from '../screens/CoachingFlowScreen'
 
 export type RootStackParamList = {
   Main: undefined
@@ -52,6 +53,7 @@ export type RootStackParamList = {
   Settings: undefined
   Tutorial: undefined
   Subscription: undefined
+  CoachingFlow: undefined
 }
 
 export type MainTabParamList = {
@@ -229,6 +231,13 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Subscription"
               component={SubscriptionScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="CoachingFlow"
+              component={CoachingFlowScreen}
               options={{
                 animation: 'slide_from_right',
               }}
