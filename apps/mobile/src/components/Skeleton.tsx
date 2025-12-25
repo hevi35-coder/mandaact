@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { View, Animated, Easing, ViewStyle, DimensionValue } from 'react-native'
 
 interface SkeletonProps {
@@ -15,9 +15,9 @@ export function Skeleton({
   borderRadius = 8,
   style,
 }: SkeletonProps) {
-  const animatedValue = React.useRef(new Animated.Value(0)).current
+  const animatedValue = useRef(new Animated.Value(0)).current
 
-  React.useEffect(() => {
+  useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(animatedValue, {

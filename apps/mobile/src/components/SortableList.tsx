@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { View, StyleSheet } from 'react-native'
 import {
   GestureDetector,
@@ -149,7 +149,7 @@ export default function SortableList<T>({
 
   // Sync items with data prop - use JSON comparison for deep equality check
   const dataJson = JSON.stringify(data)
-  React.useEffect(() => {
+  useEffect(() => {
     setItems(data)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataJson])

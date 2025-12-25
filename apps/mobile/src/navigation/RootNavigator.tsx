@@ -22,7 +22,7 @@ const ScrollToTopContext = createContext<ScrollToTopContextType | null>(null)
 export function useScrollToTop(tabName: string, scrollRef: React.RefObject<ScrollView>) {
   const context = useContext(ScrollToTopContext)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (context && scrollRef.current) {
       context.registerScrollView(tabName, scrollRef)
       return () => context.unregisterScrollView(tabName)

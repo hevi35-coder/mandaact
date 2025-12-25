@@ -4,7 +4,7 @@
  * Shows actions for the selected date with progress tracking and XP rewards
  */
 
-import React, { useMemo, useState, useCallback, useRef } from 'react'
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react'
 import {
   View,
   Text,
@@ -144,6 +144,56 @@ export default function TodayScreen() {
     refetch,
   } = useTodayActions(user?.id, selectedDate)
   const { data: _dailyStats, refetch: refetchStats } = useDailyStats(user?.id)
+  const { activeBySubGoal, minimumBySubGoal, mergePreferences } = usePlanStore()
+
+  const hasMinimumSelections = useMemo(() => {
+    return actions.some((action) => minimumBySubGoal[action.sub_goal.id] === action.id)
+  }, [actions, minimumBySubGoal])
+
+  useEffect(() => {
+    if (!user?.id || actions.length === 0) return
+
+    const subGoalIds = Array.from(
+      new Set(actions.map((action) => action.sub_goal?.id).filter(Boolean))
+    ) as string[]
+
+    if (subGoalIds.length === 0) return
+
+    let isMounted = true
+
+    const fetchPreferences = async () => {
+      const { data, error } = await supabase
+        .from('action_preferences')
+        .select('sub_goal_id, active_action_id, minimum_action_id')
+        .eq('user_id', user.id)
+        .in('sub_goal_id', subGoalIds)
+
+      if (error || !data || !isMounted) return
+
+      const nextActive: Record<string, string> = {}
+      const nextMinimum: Record<string, string> = {}
+
+      data.forEach((row) => {
+        if (row.active_action_id) {
+          nextActive[row.sub_goal_id] = row.active_action_id
+        }
+        if (row.minimum_action_id) {
+          nextMinimum[row.sub_goal_id] = row.minimum_action_id
+        }
+      })
+
+      mergePreferences({
+        activeBySubGoal: nextActive,
+        minimumBySubGoal: nextMinimum,
+      })
+    }
+
+    fetchPreferences()
+
+    return () => {
+      isMounted = false
+    }
+  }, [actions, mergePreferences, user?.id])
 
   // DISABLED - rewarded ad feature removed per AdMob policy review
   // Fetch yesterday's missed actions (only shown on "today" view)
@@ -1197,52 +1247,3 @@ export default function TodayScreen() {
     </View>
   )
 }
-  const { activeBySubGoal, minimumBySubGoal, mergePreferences } = usePlanStore()
-
-  const hasMinimumSelections = useMemo(() => {
-    return actions.some((action) => minimumBySubGoal[action.sub_goal.id] === action.id)
-  }, [actions, minimumBySubGoal])
-  React.useEffect(() => {
-    if (!user?.id || actions.length === 0) return
-
-    const subGoalIds = Array.from(
-      new Set(actions.map((action) => action.sub_goal?.id).filter(Boolean))
-    ) as string[]
-
-    if (subGoalIds.length === 0) return
-
-    let isMounted = true
-
-    const fetchPreferences = async () => {
-      const { data, error } = await supabase
-        .from('action_preferences')
-        .select('sub_goal_id, active_action_id, minimum_action_id')
-        .eq('user_id', user.id)
-        .in('sub_goal_id', subGoalIds)
-
-      if (error || !data || !isMounted) return
-
-      const nextActive: Record<string, string> = {}
-      const nextMinimum: Record<string, string> = {}
-
-      data.forEach((row) => {
-        if (row.active_action_id) {
-          nextActive[row.sub_goal_id] = row.active_action_id
-        }
-        if (row.minimum_action_id) {
-          nextMinimum[row.sub_goal_id] = row.minimum_action_id
-        }
-      })
-
-      mergePreferences({
-        activeBySubGoal: nextActive,
-        minimumBySubGoal: nextMinimum,
-      })
-    }
-
-    fetchPreferences()
-
-    return () => {
-      isMounted = false
-    }
-  }, [actions, mergePreferences, user?.id])

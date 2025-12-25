@@ -4,7 +4,7 @@
  * Modal for editing user nickname
  */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { View, Text, Modal, Pressable, TextInput, Alert } from 'react-native'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
@@ -32,7 +32,7 @@ export function NicknameModal({
     const [nicknameSaving, setNicknameSaving] = useState(false)
 
     // Reset state when modal opens
-    React.useEffect(() => {
+    useEffect(() => {
         if (visible) {
             setNewNickname(currentNickname)
             setNicknameError('')
