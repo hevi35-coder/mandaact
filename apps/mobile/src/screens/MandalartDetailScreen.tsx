@@ -28,6 +28,7 @@ import {
   Lightbulb,
   Trash2,
   ArrowLeft,
+  SlidersHorizontal,
 } from 'lucide-react-native'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -38,11 +39,13 @@ import MandalartExportGrid from '../components/MandalartExportGrid'
 import MandalartInfoModal from '../components/MandalartInfoModal'
 import SubGoalEditModal from '../components/SubGoalEditModal'
 import DeleteMandalartModal from '../components/DeleteMandalartModal'
+import PlanModal from '../components/PlanModal'
 import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import type { Action, SubGoal, ActionType } from '@mandaact/shared'
 import { logger } from '../lib/logger'
 import { mandalartKeys } from '../hooks/useMandalarts'
+import { useAuthStore } from '../store/authStore'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 type DetailRouteProp = RouteProp<RootStackParamList, 'MandalartDetail'>
@@ -81,6 +84,7 @@ export default function MandalartDetailScreen() {
   const queryClient = useQueryClient()
   const insets = useSafeAreaInsets()
   const { width: screenWidth, height: screenHeight, isTablet, contentMaxWidth } = useResponsive()
+  const { user } = useAuthStore()
 
   // Responsive layout values
   const CONTAINER_PADDING = isTablet ? 32 : DEFAULT_CONTAINER_PADDING
@@ -98,6 +102,7 @@ export default function MandalartDetailScreen() {
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [planModalVisible, setPlanModalVisible] = useState(false)
   const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoalWithActions | null>(null)
 
   const {
@@ -378,6 +383,12 @@ export default function MandalartDetailScreen() {
           </View>
           <View className="flex-row items-center">
             <Pressable
+              onPress={() => setPlanModalVisible(true)}
+              className="p-2.5 rounded-full active:bg-gray-100"
+            >
+              <SlidersHorizontal size={20} color="#4b5563" />
+            </Pressable>
+            <Pressable
               onPress={() => handleExport('save')}
               className="p-2.5 rounded-full active:bg-gray-100"
             >
@@ -638,6 +649,13 @@ export default function MandalartDetailScreen() {
         mandalart={mandalart}
         onClose={() => setDeleteModalVisible(false)}
         onSuccess={handleDeleteSuccess}
+      />
+
+      <PlanModal
+        visible={planModalVisible}
+        mandalart={mandalart}
+        userId={user?.id ?? ''}
+        onClose={() => setPlanModalVisible(false)}
       />
     </View>
   )

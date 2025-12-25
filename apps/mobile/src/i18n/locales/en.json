@@ -150,6 +150,216 @@
         "saveError": "Failed to save nickname.",
         "updateError": "Failed to update nickname."
       }
+    },
+    "coachingResume": {
+      "title": "AI Coaching in Progress",
+      "status": {
+        "active": "Active",
+        "paused": "Paused"
+      },
+      "step": "Step {{step}}",
+      "cta": "Continue Coaching"
+    }
+  },
+  "coaching": {
+    "title": "AI Coaching",
+    "step": "Step {{step}}",
+    "inProgress": "Coaching session in progress",
+    "resume": "Resume",
+    "pause": "Pause",
+    "step1": {
+      "title": "Tell us about your current situation",
+      "subtitle": "Choose the closest options so we can tailor your plan.",
+      "persona": {
+        "working_professional": "Working Professional",
+        "student": "Student",
+        "freelancer": "Freelancer",
+        "custom": "Custom"
+      },
+      "questions": {
+        "dailyTime": "How much time can you spend daily?",
+        "energyPeak": "When is your energy peak?",
+        "priorityArea": "Which area matters most right now?",
+        "afterWorkDifficulty": "Is it hard to follow through after work?",
+        "goalStyle": "This month’s goal style",
+        "scheduleType": "What best describes your schedule?",
+        "busyDifficulty": "Is it hard to keep up when busy?",
+        "timeframe": "Preferred timeframe",
+        "scheduleVariability": "How variable is your schedule?",
+        "weeklyWorkingTime": "Weekly working time",
+        "planStability": "Can you keep plans during schedule changes?",
+        "goalType": "Goal type",
+        "customSituation": "Describe your current situation",
+        "customPriority": "What is your top priority?",
+        "customObstacle": "Biggest obstacle to consistency"
+      },
+      "options": {
+        "time": {
+          "10": "10 min",
+          "30": "30 min",
+          "60": "60 min",
+          "90": "90 min",
+          "120": "120 min",
+          "120+": "120 min+"
+        },
+        "energy": {
+          "morning": "Morning",
+          "lunch": "Lunch",
+          "evening": "Evening"
+        },
+        "priority": {
+          "work": "Work",
+          "health": "Health",
+          "learning": "Learning",
+          "relationships": "Relationships",
+          "life": "Life",
+          "other": "Other"
+        },
+        "priorityStudent": {
+          "grades": "Grades",
+          "career": "Career",
+          "habits": "Habits",
+          "health": "Health",
+          "other": "Other"
+        },
+        "priorityFreelancer": {
+          "income": "Income",
+          "delivery": "Delivery",
+          "health": "Health",
+          "learning": "Learning",
+          "other": "Other"
+        },
+        "difficulty": {
+          "yes": "Yes, it’s hard",
+          "neutral": "Sometimes",
+          "no": "Not really"
+        },
+        "goalStyle": {
+          "maintain": "Maintain",
+          "balanced": "Balanced",
+          "challenge": "Challenge"
+        },
+        "schedule": {
+          "classes": "Classes",
+          "exams": "Exams",
+          "projects": "Projects",
+          "other": "Other"
+        },
+        "timeframe": {
+          "short": "1–4 weeks",
+          "mid": "1–2 months",
+          "long": "2–3 months"
+        },
+        "variability": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "weeklyTime": {
+          "20-30": "20–30 hrs",
+          "30-40": "30–40 hrs",
+          "40-50": "40–50 hrs",
+          "50+": "50+ hrs"
+        },
+        "goalType": {
+          "outcome": "Outcome",
+          "mixed": "Mixed",
+          "routine": "Routine"
+        }
+      },
+      "placeholders": {
+        "customSituation": "e.g., preparing for a career change",
+        "customPriority": "e.g., health, finance, relationships",
+        "customObstacle": "e.g., inconsistent schedule"
+      },
+      "validation": "Please answer all required questions.",
+      "cta": "Continue",
+      "summary": "Persona set: {{persona}}"
+    },
+    "step2": {
+      "title": "Confirm your core goal",
+      "subtitle": "Edit it so it feels specific and measurable.",
+      "label": "Core goal",
+      "placeholder": "e.g., Build a sustainable workout routine",
+      "validation": "Please enter a core goal.",
+      "summary": "Core goal saved.",
+      "prompt": "Next: confirm your core goal."
+    },
+    "step3": {
+      "title": "Draft 8 sub-goals",
+      "subtitle": "Name eight sub-goals that support your core goal.",
+      "itemLabel": "Sub-goal {{index}}",
+      "placeholder": "e.g., Plan weekly workouts",
+      "validation": "{{count}} sub-goals left to fill.",
+      "summary": "Sub-goals saved.",
+      "prompt": "Next: draft 8 sub-goals."
+    },
+    "step4": {
+      "title": "Draft action items",
+      "subtitle": "Write baseline, minimum, and challenge actions for each sub-goal.",
+      "labels": {
+        "base": "Baseline action",
+        "minimum": "Minimum action",
+        "challenge": "Challenge action",
+        "extra": "Extra action {{index}}"
+      },
+      "placeholders": {
+        "base": "e.g., Practice for 20 min",
+        "minimum": "e.g., Practice for 10 min",
+        "challenge": "e.g., Practice for 40 min",
+        "extra": "e.g., Practice for 15 min"
+      },
+      "defaults": {
+        "base": "{{goal}} for 20 min",
+        "minimum": "{{goal}} for 10 min",
+        "challenge": "{{goal}} for 40 min"
+      },
+      "validation": "Please fill in all action fields.",
+      "empty": "Complete sub-goals to generate action drafts.",
+      "addAction": "+ Add another action",
+      "subGoalFallback": "Sub-goal {{index}}",
+      "summary": "Action drafts saved.",
+      "prompt": "Next: draft action items.",
+      "pending": "Step 4 will be available next."
+    },
+    "step5": {
+      "title": "Reality check",
+      "subtitle": "We suggest small tweaks for clarity and feasibility.",
+      "suggestion": "Suggestion: add a time cue (e.g., 10 min).",
+      "suggestionSuffix": "for 10 min",
+      "apply": "Apply suggestions",
+      "reject": "Keep original",
+      "summary": "Reality check saved.",
+      "prompt": "Next: set your routine."
+    },
+    "step6": {
+      "title": "Set your routine",
+      "subtitle": "Pick a weekly rhythm for active actions.",
+      "options": {
+        "weekly2": "2x/week (Tue/Thu)",
+        "weekly3": "3x/week (Mon/Wed/Fri)",
+        "daily": "Daily"
+      },
+      "validation": "Choose a routine to continue.",
+      "summary": "Routine saved.",
+      "prompt": "Next: set your routine.",
+      "pending": "Step 6 will be available next."
+    },
+    "step7": {
+      "title": "Final review",
+      "subtitle": "Review your plan before saving.",
+      "coreGoal": "Core goal",
+      "subGoals": "Sub-goals",
+      "activeActions": "Active actions",
+      "noActions": "No actions yet.",
+      "editAction": "Edit type",
+      "customized": "Custom settings applied",
+      "routine": "Routine",
+      "cta": "Save plan",
+      "validation": "Please complete required fields before saving.",
+      "summary": "Coaching session saved.",
+      "prompt": "Next: final review.",
+      "completed": "Session completed."
     }
   },
   "today": {
@@ -224,6 +434,10 @@
       "title": "Completed",
       "hint": "Period target achieved",
       "badge": "Done"
+    },
+    "minimumMode": {
+      "title": "Minimum mode",
+      "subtitle": "Show minimum actions for today only"
     }
   },
   "actionType": {
@@ -302,6 +516,15 @@
     }
   },
   "mandalart": {
+    "plan": {
+      "title": "Plan",
+      "subtitle": "Pick which action is active or minimum for today.",
+      "active": "Active",
+      "minimum": "Minimum",
+      "empty": "No sub-goals yet.",
+      "noActions": "No actions yet.",
+      "subGoalFallback": "Untitled sub-goal"
+    },
     "cell": {
       "subGoalLabel": "Sub {{position}}",
       "subGoalPlaceholder": "Sub-goal",

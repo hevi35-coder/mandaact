@@ -34,6 +34,7 @@ export { default as ActivityHeatmap } from './ActivityHeatmap'
 
 // Action editing
 export { default as ActionEditModal } from './ActionEditModal'
+export { default as PlanModal } from './PlanModal'
 
 // Mandalart modals
 export { default as MandalartInfoModal } from './MandalartInfoModal'
