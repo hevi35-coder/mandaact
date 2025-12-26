@@ -164,25 +164,37 @@
   "coaching": {
     "title": "AI Coaching",
     "step": "Step {{step}}",
-    "inProgress": "Coaching session in progress",
+    "inProgress": "Coaching in progress — I’m here to help.",
     "resume": "Resume",
     "pause": "Pause",
+    "recap": {
+      "show": "View recap",
+      "hide": "Hide recap",
+      "persona": "Persona: {{persona}}",
+      "coreGoal": "Core goal: {{goal}}",
+      "subGoals": "Sub-goals filled: {{count}}",
+      "actions": "Action items: {{count}}",
+      "routine": "Routine: {{routine}}",
+      "realityCheck": "Reality check: {{status}}",
+      "realityApplied": "Applied suggestions",
+      "realityKept": "Kept original"
+    },
     "gate": {
       "title": "AI Coaching",
       "summaryTitle": "This week",
       "summaryValue": "{{used}} / {{total}} sessions used",
-      "summaryHint": "Free users get 1 free + 1 ad session per week.",
-      "footer": "No ads during your session.",
+      "summaryHint": "We limit weekly sessions to keep coaching quality high. Free users get 1 free + 1 ad session.",
+      "footer": "Ads appear only before starting a session.",
       "adError": "Ad is not ready yet. Please try again.",
       "welcome": {
         "title": "Welcome gift",
-        "body": "Your first coaching session is on us.",
+        "body": "Your first coaching session is on us. It helps us keep costs low for everyone.",
         "primary": "Start Now",
         "secondary": "Go Unlimited"
       },
       "ad": {
         "title": "Weekly sessions used",
-        "body": "Watch an ad to unlock one more session this week.",
+        "body": "Watch one ad to unlock one more session this week.",
         "primary": "Watch an Ad to Start",
         "secondary": "Go Unlimited"
       },
@@ -209,7 +221,9 @@
     },
     "step1": {
       "title": "Tell us about your current situation",
-      "subtitle": "Choose the closest options so we can tailor your plan.",
+      "subtitle": "Let’s find a plan that fits your life.",
+      "moreQuestions": "Show more questions",
+      "hideQuestions": "Hide extra questions",
       "persona": {
         "working_professional": "Working Professional",
         "student": "Student",
@@ -312,13 +326,22 @@
         "customPriority": "e.g., health, finance, relationships",
         "customObstacle": "e.g., inconsistent schedule"
       },
-      "validation": "Please answer all required questions.",
+      "validation": "Please answer the required questions so I can tailor your plan.",
       "cta": "Continue",
       "summary": "Persona set: {{persona}}"
     },
     "step2": {
       "title": "Confirm your core goal",
-      "subtitle": "Edit it so it feels specific and measurable.",
+      "subtitle": "Let’s make it specific and measurable.",
+      "smartTitle": "SMART tip",
+      "smartGood": "Good: \"Launch MandaAct beta with 50 users by March\"",
+      "smartBad": "Avoid: \"Make MandaAct successful\"",
+      "personaTip": {
+        "working_professional": "Tip: focus on a goal that fits your work rhythm and energy window.",
+        "student": "Tip: anchor your goal around the semester timeline or next exam cycle.",
+        "freelancer": "Tip: tie your goal to income or delivery milestones you control.",
+        "custom": "Tip: choose a goal that you can measure weekly."
+      },
       "label": "Core goal",
       "placeholder": "e.g., Build a sustainable workout routine",
       "validation": "Please enter a core goal.",
@@ -326,17 +349,36 @@
       "prompt": "Next: confirm your core goal."
     },
     "step3": {
-      "title": "Draft 8 sub-goals",
-      "subtitle": "Name eight sub-goals that support your core goal.",
+      "title": "Draft sub-goals",
+      "subtitle": "We can start with a few and add more later.",
+      "minNote": "Start with {{count}}; you can add more anytime.",
+      "addMore": "+ Add more sub-goals",
+      "personaTip": {
+        "working_professional": "Consider skills, health, and relationships that support your work-life balance.",
+        "student": "Consider study habits, projects, health, and rest.",
+        "freelancer": "Consider delivery, outreach, finances, and recovery time.",
+        "custom": "Cover the main areas that keep your goal sustainable."
+      },
       "itemLabel": "Sub-goal {{index}}",
       "placeholder": "e.g., Plan weekly workouts",
       "validation": "{{count}} sub-goals left to fill.",
+      "validationMin": "Please fill at least {{count}} sub-goals to continue.",
       "summary": "Sub-goals saved.",
-      "prompt": "Next: draft 8 sub-goals."
+      "prompt": "Next: draft sub-goals."
     },
     "step4": {
       "title": "Draft action items",
-      "subtitle": "Write baseline, minimum, and challenge actions for each sub-goal.",
+      "subtitle": "We’ll outline baseline, minimum, and challenge actions for each sub-goal.",
+      "criteriaTitle": "How to choose",
+      "criteriaBase": "Baseline: doable on a normal day.",
+      "criteriaMinimum": "Minimum: the smallest action to keep momentum.",
+      "criteriaChallenge": "Challenge: a stretch for strong days.",
+      "personaTip": {
+        "working_professional": "Tip: keep minimum actions under 10–15 minutes on busy weekdays.",
+        "student": "Tip: tie actions to study blocks between classes.",
+        "freelancer": "Tip: align actions with delivery or outreach blocks you control.",
+        "custom": "Tip: keep actions small enough to repeat weekly."
+      },
       "labels": {
         "base": "Baseline action",
         "minimum": "Minimum action",
@@ -357,6 +399,8 @@
       "validation": "Please fill in all action fields.",
       "empty": "Complete sub-goals to generate action drafts.",
       "addAction": "+ Add another action",
+      "expand": "Expand",
+      "collapse": "Collapse",
       "subGoalFallback": "Sub-goal {{index}}",
       "summary": "Action drafts saved.",
       "prompt": "Next: draft action items.",
@@ -364,22 +408,35 @@
     },
     "step5": {
       "title": "Reality check",
-      "subtitle": "We suggest small tweaks for clarity and feasibility.",
+      "subtitle": "I’ll suggest small tweaks so each action is measurable.",
+      "rationale": "Why: measurable cues make progress easier to verify.",
       "suggestion": "Suggestion: add a time cue (e.g., 10 min).",
       "suggestionSuffix": "for 10 min",
       "apply": "Apply suggestions",
       "reject": "Keep original",
+      "rejectNote": "No worries — we’ll keep your original wording. You can fine-tune later.",
       "summary": "Reality check saved.",
       "prompt": "Next: set your routine."
     },
     "step6": {
       "title": "Set your routine",
-      "subtitle": "Pick a weekly rhythm for active actions.",
+      "subtitle": "Pick a rhythm that feels realistic this week.",
+      "personaTip": {
+        "working_professional": "Weekday routines work best for most work schedules.",
+        "student": "Match the routine to your class or exam calendar.",
+        "freelancer": "Choose days that won’t clash with delivery peaks.",
+        "custom": "Pick a rhythm you can keep for at least two weeks."
+      },
       "options": {
         "weekly2": "2x/week (Tue/Thu)",
         "weekly3": "3x/week (Mon/Wed/Fri)",
-        "daily": "Daily"
+        "daily": "Daily",
+        "custom": "Custom"
       },
+      "customTitle": "Custom routine",
+      "customWeekdaysLabel": "Select weekdays (optional)",
+      "customCountLabel": "Weekly count",
+      "customHint": "If no weekdays are selected, weekly count is used.",
       "validation": "Choose a routine to continue.",
       "summary": "Routine saved.",
       "prompt": "Next: set your routine.",
@@ -387,13 +444,16 @@
     },
     "step7": {
       "title": "Final review",
-      "subtitle": "Review your plan before saving.",
+      "subtitle": "Give it a final look — you can edit later.",
       "coreGoal": "Core goal",
       "subGoals": "Sub-goals",
       "activeActions": "Active actions",
       "noActions": "No actions yet.",
       "editAction": "Edit type",
       "customized": "Custom settings applied",
+      "typeSummary": "Type: {{type}} · {{detail}}",
+      "typeSummaryOnly": "Type: {{type}}",
+      "modeNote": "Minimum/Challenge modes can be toggled later in Mandalart detail (AI coaching plans only).",
       "routine": "Routine",
       "cta": "Save plan",
       "validation": "Please complete required fields before saving.",

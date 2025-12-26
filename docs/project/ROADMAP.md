@@ -892,6 +892,7 @@ Phase 10.4: Premium 구독 (3일) - 출시 후 진행 가능
 
 ### 옵션 B: 풀스택 AI 코칭 재구현
 **컨셉**: 채팅 기반 만다라트 생성 재도입 (처음부터 재설계)
+**진행 관리**: `docs/project/AI_MANDALART_COACHING_REVIEW_TRACKER.md`
 
 **설계 원칙**:
 1. **단순화**: 4단계 → 2-3단계로 축소

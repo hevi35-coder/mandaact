@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Header } from '../components'
 import ActionTypeSelector, { type ActionTypeData } from '../components/ActionTypeSelector'
 import { Button, Input } from '../components/ui'
+import { formatTypeDetailsLocalized } from '../components/Today/utils'
 import { useCoachingStore, type PersonaType } from '../store/coachingStore'
 
 type Step1Values = Record<string, string>
@@ -87,17 +88,23 @@ export default function CoachingFlowScreen() {
   } = useCoachingStore()
   const [step1Values, setStep1Values] = useState<Step1Values>({})
   const [step1Error, setStep1Error] = useState<string | null>(null)
+  const [showMoreQuestions, setShowMoreQuestions] = useState(false)
   const [coreGoal, setCoreGoal] = useState('')
   const [coreGoalError, setCoreGoalError] = useState<string | null>(null)
   const [subGoals, setSubGoals] = useState<string[]>(Array.from({ length: 8 }, () => ''))
+  const [step3VisibleCount, setStep3VisibleCount] = useState(4)
   const [subGoalError, setSubGoalError] = useState<string | null>(null)
   const [actionDrafts, setActionDrafts] = useState<ActionDraft[]>([])
+  const [expandedStep4Sections, setExpandedStep4Sections] = useState<boolean[]>([])
   const [step4Error, setStep4Error] = useState<string | null>(null)
   const [step5Applied, setStep5Applied] = useState(false)
   const [step5Rejected, setStep5Rejected] = useState(false)
   const [routinePlan, setRoutinePlan] = useState<RoutinePlan | null>(null)
+  const [customWeekdays, setCustomWeekdays] = useState<number[]>([])
+  const [customCountPerWeek, setCustomCountPerWeek] = useState(3)
   const [step6Error, setStep6Error] = useState<string | null>(null)
   const [step7Error, setStep7Error] = useState<string | null>(null)
+  const [showRecap, setShowRecap] = useState(false)
   const [actionTypeEdits, setActionTypeEdits] = useState<Record<string, ActionTypeData>>({})
   const [actionTypeModalVisible, setActionTypeModalVisible] = useState(false)
   const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionItem | null>(null)
@@ -127,12 +134,69 @@ export default function CoachingFlowScreen() {
     [t]
   )
 
+  const personaKey = (personaType || (step1Values.persona as PersonaType) || 'working_professional') as PersonaType
+
+  const recapItems = useMemo(() => {
+    const items: string[] = []
+    if (personaKey) {
+      items.push(t('coaching.recap.persona', { persona: personaLabels[personaKey] }))
+    }
+    if (coreGoal.trim()) {
+      items.push(t('coaching.recap.coreGoal', { goal: coreGoal.trim() }))
+    }
+    const filledSubGoals = subGoals.filter((goal) => goal.trim()).length
+    if (filledSubGoals > 0) {
+      items.push(t('coaching.recap.subGoals', { count: filledSubGoals }))
+    }
+    if (actionItems.length > 0) {
+      items.push(t('coaching.recap.actions', { count: actionItems.length }))
+    }
+    if (routinePlan?.label) {
+      items.push(t('coaching.recap.routine', { routine: routinePlan.label }))
+    }
+    const savedStep5 = answersByStep['step5'] as { correctionsApplied?: boolean; rejected?: boolean } | undefined
+    const applied = savedStep5?.correctionsApplied ?? step5Applied
+    const rejected = savedStep5?.rejected ?? step5Rejected
+    if (applied || rejected) {
+      items.push(
+        t('coaching.recap.realityCheck', {
+          status: applied ? t('coaching.recap.realityApplied') : t('coaching.recap.realityKept'),
+        })
+      )
+    }
+    return items
+  }, [
+    actionItems.length,
+    answersByStep,
+    coreGoal,
+    personaKey,
+    personaLabels,
+    routinePlan?.label,
+    step5Applied,
+    step5Rejected,
+    subGoals,
+    t,
+  ])
+
   useEffect(() => {
     const savedStep1 = answersByStep['step1'] as Step1Values | undefined
     if (savedStep1) {
       setStep1Values(savedStep1)
+      const hasOptional =
+        Boolean(savedStep1.afterWorkDifficulty) ||
+        Boolean(savedStep1.goalStyle) ||
+        Boolean(savedStep1.scheduleType) ||
+        Boolean(savedStep1.busyDifficulty) ||
+        Boolean(savedStep1.scheduleVariability) ||
+        Boolean(savedStep1.goalType) ||
+        Boolean(savedStep1.customObstacle)
+      setShowMoreQuestions(hasOptional)
     }
   }, [answersByStep])
+
+  useEffect(() => {
+    setShowMoreQuestions(false)
+  }, [step1Values.persona])
 
   useEffect(() => {
     const savedStep2 = answersByStep['step2'] as { coreGoal?: string } | undefined
@@ -147,6 +211,15 @@ export default function CoachingFlowScreen() {
       setSubGoals(savedStep3.subGoals)
     }
   }, [answersByStep])
+
+  useEffect(() => {
+    const lastFilledIndex = subGoals.reduce((lastIndex, value, index) => {
+      if (value.trim()) return index
+      return lastIndex
+    }, -1)
+    const nextVisible = Math.min(8, Math.max(4, lastFilledIndex + 1))
+    setStep3VisibleCount((prev) => (nextVisible > prev ? nextVisible : prev))
+  }, [subGoals])
 
   useEffect(() => {
     const savedStep4 = answersByStep['step4'] as { actionDrafts?: ActionDraft[] } | undefined
@@ -172,9 +245,55 @@ export default function CoachingFlowScreen() {
   useEffect(() => {
     const savedStep6 = answersByStep['step6'] as { routinePlan?: RoutinePlan } | undefined
     if (savedStep6?.routinePlan) {
-      setRoutinePlan(savedStep6.routinePlan)
+      const savedPlan = savedStep6.routinePlan
+      const isStandard = ['weekly-2', 'weekly-3', 'daily'].includes(savedPlan.id)
+      if (isStandard) {
+        setRoutinePlan(savedPlan)
+      } else {
+        setRoutinePlan({
+          ...savedPlan,
+          id: 'custom',
+          label: t('coaching.step6.options.custom'),
+        })
+      }
     }
-  }, [answersByStep])
+  }, [answersByStep, t])
+
+  useEffect(() => {
+    if (actionDrafts.length === 0) return
+    setExpandedStep4Sections((prev) => {
+      if (prev.length === actionDrafts.length) return prev
+      return actionDrafts.map((_, index) => prev[index] ?? index === 0)
+    })
+  }, [actionDrafts.length])
+
+  useEffect(() => {
+    if (routinePlan?.id !== 'custom') return
+    setCustomWeekdays(routinePlan.weekdays || [])
+    setCustomCountPerWeek(routinePlan.countPerWeek || 3)
+  }, [routinePlan])
+
+  useEffect(() => {
+    if (routinePlan?.id !== 'custom') return
+    setRoutinePlan((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        weekdays: customWeekdays,
+        countPerWeek: customCountPerWeek,
+      }
+    })
+  }, [customWeekdays, customCountPerWeek, routinePlan?.id])
+
+  const weekdayOptions = useMemo(() => ([
+    { value: 1, label: t('actionType.weekdayShort.mon') },
+    { value: 2, label: t('actionType.weekdayShort.tue') },
+    { value: 3, label: t('actionType.weekdayShort.wed') },
+    { value: 4, label: t('actionType.weekdayShort.thu') },
+    { value: 5, label: t('actionType.weekdayShort.fri') },
+    { value: 6, label: t('actionType.weekdayShort.sat') },
+    { value: 0, label: t('actionType.weekdayShort.sun') },
+  ]), [t])
 
   const updateStep1Field = (key: string, value: string) => {
     setStep1Values((prev) => ({ ...prev, [key]: value }))
@@ -183,14 +302,14 @@ export default function CoachingFlowScreen() {
   const requiredStep1Keys = useMemo(() => {
     switch (step1Values.persona) {
       case 'student':
-        return ['persona', 'scheduleType', 'dailyTime', 'priorityArea', 'busyDifficulty', 'timeframe']
+        return ['persona', 'dailyTime', 'priorityArea', 'timeframe']
       case 'freelancer':
-        return ['persona', 'scheduleVariability', 'weeklyWorkingTime', 'priorityArea', 'planStability', 'goalType']
+        return ['persona', 'weeklyWorkingTime', 'priorityArea', 'planStability']
       case 'custom':
-        return ['persona', 'customSituation', 'dailyTime', 'customPriority', 'customObstacle', 'goalStyle']
+        return ['persona', 'customSituation', 'dailyTime', 'customPriority']
       case 'working_professional':
       default:
-        return ['persona', 'dailyTime', 'energyPeak', 'priorityArea', 'afterWorkDifficulty', 'goalStyle']
+        return ['persona', 'dailyTime', 'energyPeak', 'priorityArea']
     }
   }, [step1Values.persona])
 
@@ -255,9 +374,9 @@ export default function CoachingFlowScreen() {
   }
 
   const handleStep3Continue = () => {
-    const missingCount = subGoals.filter((item) => !item.trim()).length
-    if (missingCount > 0) {
-      setSubGoalError(t('coaching.step3.validation', { count: missingCount }))
+    const filledCount = subGoals.filter((item) => item.trim()).length
+    if (filledCount < 4) {
+      setSubGoalError(t('coaching.step3.validationMin', { count: 4 }))
       return
     }
     setSubGoalError(null)
@@ -402,6 +521,9 @@ export default function CoachingFlowScreen() {
 
   const renderStep1 = () => {
     const personaValue = step1Values.persona as PersonaType | undefined
+    const toggleLabel = showMoreQuestions
+      ? t('coaching.step1.hideQuestions')
+      : t('coaching.step1.moreQuestions')
 
     return (
       <>
@@ -467,52 +589,51 @@ export default function CoachingFlowScreen() {
               ))}
             </View>
 
-            <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.step1.questions.afterWorkDifficulty')}
-            </Text>
-            <View className="space-y-2">
-              {['yes', 'neutral', 'no'].map((value) => (
-                <OptionButton
-                  key={value}
-                  label={t(`coaching.step1.options.difficulty.${value}`)}
-                  selected={step1Values.afterWorkDifficulty === value}
-                  onPress={() => updateStep1Field('afterWorkDifficulty', value)}
-                />
-              ))}
-            </View>
+            <Pressable
+              onPress={() => setShowMoreQuestions((prev) => !prev)}
+              className="items-center mt-2"
+            >
+              <Text className="text-sm text-blue-600" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                {toggleLabel}
+              </Text>
+            </Pressable>
 
-            <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.step1.questions.goalStyle')}
-            </Text>
-            <View className="space-y-2">
-              {['maintain', 'balanced', 'challenge'].map((value) => (
-                <OptionButton
-                  key={value}
-                  label={t(`coaching.step1.options.goalStyle.${value}`)}
-                  selected={step1Values.goalStyle === value}
-                  onPress={() => updateStep1Field('goalStyle', value)}
-                />
-              ))}
-            </View>
+            {showMoreQuestions && (
+              <>
+                <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step1.questions.afterWorkDifficulty')}
+                </Text>
+                <View className="space-y-2">
+                  {['yes', 'neutral', 'no'].map((value) => (
+                    <OptionButton
+                      key={value}
+                      label={t(`coaching.step1.options.difficulty.${value}`)}
+                      selected={step1Values.afterWorkDifficulty === value}
+                      onPress={() => updateStep1Field('afterWorkDifficulty', value)}
+                    />
+                  ))}
+                </View>
+
+                <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step1.questions.goalStyle')}
+                </Text>
+                <View className="space-y-2">
+                  {['maintain', 'balanced', 'challenge'].map((value) => (
+                    <OptionButton
+                      key={value}
+                      label={t(`coaching.step1.options.goalStyle.${value}`)}
+                      selected={step1Values.goalStyle === value}
+                      onPress={() => updateStep1Field('goalStyle', value)}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
           </View>
         )}
 
         {personaValue === 'student' && (
           <View className="mt-6 space-y-4">
-            <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.step1.questions.scheduleType')}
-            </Text>
-            <View className="space-y-2">
-              {['classes', 'exams', 'projects', 'other'].map((value) => (
-                <OptionButton
-                  key={value}
-                  label={t(`coaching.step1.options.schedule.${value}`)}
-                  selected={step1Values.scheduleType === value}
-                  onPress={() => updateStep1Field('scheduleType', value)}
-                />
-              ))}
-            </View>
-
             <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
               {t('coaching.step1.questions.dailyTime')}
             </Text>
@@ -542,20 +663,6 @@ export default function CoachingFlowScreen() {
             </View>
 
             <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.step1.questions.busyDifficulty')}
-            </Text>
-            <View className="space-y-2">
-              {['yes', 'neutral', 'no'].map((value) => (
-                <OptionButton
-                  key={value}
-                  label={t(`coaching.step1.options.difficulty.${value}`)}
-                  selected={step1Values.busyDifficulty === value}
-                  onPress={() => updateStep1Field('busyDifficulty', value)}
-                />
-              ))}
-            </View>
-
-            <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
               {t('coaching.step1.questions.timeframe')}
             </Text>
             <View className="space-y-2">
@@ -568,25 +675,52 @@ export default function CoachingFlowScreen() {
                 />
               ))}
             </View>
+
+            <Pressable
+              onPress={() => setShowMoreQuestions((prev) => !prev)}
+              className="items-center mt-2"
+            >
+              <Text className="text-sm text-blue-600" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                {toggleLabel}
+              </Text>
+            </Pressable>
+
+            {showMoreQuestions && (
+              <>
+                <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step1.questions.scheduleType')}
+                </Text>
+                <View className="space-y-2">
+                  {['classes', 'exams', 'projects', 'other'].map((value) => (
+                    <OptionButton
+                      key={value}
+                      label={t(`coaching.step1.options.schedule.${value}`)}
+                      selected={step1Values.scheduleType === value}
+                      onPress={() => updateStep1Field('scheduleType', value)}
+                    />
+                  ))}
+                </View>
+
+                <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step1.questions.busyDifficulty')}
+                </Text>
+                <View className="space-y-2">
+                  {['yes', 'neutral', 'no'].map((value) => (
+                    <OptionButton
+                      key={value}
+                      label={t(`coaching.step1.options.difficulty.${value}`)}
+                      selected={step1Values.busyDifficulty === value}
+                      onPress={() => updateStep1Field('busyDifficulty', value)}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
           </View>
         )}
 
         {personaValue === 'freelancer' && (
           <View className="mt-6 space-y-4">
-            <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.step1.questions.scheduleVariability')}
-            </Text>
-            <View className="space-y-2">
-              {['low', 'medium', 'high'].map((value) => (
-                <OptionButton
-                  key={value}
-                  label={t(`coaching.step1.options.variability.${value}`)}
-                  selected={step1Values.scheduleVariability === value}
-                  onPress={() => updateStep1Field('scheduleVariability', value)}
-                />
-              ))}
-            </View>
-
             <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
               {t('coaching.step1.questions.weeklyWorkingTime')}
             </Text>
@@ -629,19 +763,46 @@ export default function CoachingFlowScreen() {
               ))}
             </View>
 
-            <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.step1.questions.goalType')}
-            </Text>
-            <View className="space-y-2">
-              {['outcome', 'mixed', 'routine'].map((value) => (
-                <OptionButton
-                  key={value}
-                  label={t(`coaching.step1.options.goalType.${value}`)}
-                  selected={step1Values.goalType === value}
-                  onPress={() => updateStep1Field('goalType', value)}
-                />
-              ))}
-            </View>
+            <Pressable
+              onPress={() => setShowMoreQuestions((prev) => !prev)}
+              className="items-center mt-2"
+            >
+              <Text className="text-sm text-blue-600" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                {toggleLabel}
+              </Text>
+            </Pressable>
+
+            {showMoreQuestions && (
+              <>
+                <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step1.questions.scheduleVariability')}
+                </Text>
+                <View className="space-y-2">
+                  {['low', 'medium', 'high'].map((value) => (
+                    <OptionButton
+                      key={value}
+                      label={t(`coaching.step1.options.variability.${value}`)}
+                      selected={step1Values.scheduleVariability === value}
+                      onPress={() => updateStep1Field('scheduleVariability', value)}
+                    />
+                  ))}
+                </View>
+
+                <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step1.questions.goalType')}
+                </Text>
+                <View className="space-y-2">
+                  {['outcome', 'mixed', 'routine'].map((value) => (
+                    <OptionButton
+                      key={value}
+                      label={t(`coaching.step1.options.goalType.${value}`)}
+                      selected={step1Values.goalType === value}
+                      onPress={() => updateStep1Field('goalType', value)}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
           </View>
         )}
 
@@ -672,25 +833,38 @@ export default function CoachingFlowScreen() {
               onChangeText={(value) => updateStep1Field('customPriority', value)}
               placeholder={t('coaching.step1.placeholders.customPriority')}
             />
-            <Input
-              label={t('coaching.step1.questions.customObstacle')}
-              value={step1Values.customObstacle || ''}
-              onChangeText={(value) => updateStep1Field('customObstacle', value)}
-              placeholder={t('coaching.step1.placeholders.customObstacle')}
-            />
-            <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.step1.questions.goalStyle')}
-            </Text>
-            <View className="space-y-2">
-              {['maintain', 'balanced', 'challenge'].map((value) => (
-                <OptionButton
-                  key={value}
-                  label={t(`coaching.step1.options.goalStyle.${value}`)}
-                  selected={step1Values.goalStyle === value}
-                  onPress={() => updateStep1Field('goalStyle', value)}
+            <Pressable
+              onPress={() => setShowMoreQuestions((prev) => !prev)}
+              className="items-center mt-2"
+            >
+              <Text className="text-sm text-blue-600" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                {toggleLabel}
+              </Text>
+            </Pressable>
+
+            {showMoreQuestions && (
+              <>
+                <Input
+                  label={t('coaching.step1.questions.customObstacle')}
+                  value={step1Values.customObstacle || ''}
+                  onChangeText={(value) => updateStep1Field('customObstacle', value)}
+                  placeholder={t('coaching.step1.placeholders.customObstacle')}
                 />
-              ))}
-            </View>
+                <Text className="text-sm text-gray-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step1.questions.goalStyle')}
+                </Text>
+                <View className="space-y-2">
+                  {['maintain', 'balanced', 'challenge'].map((value) => (
+                    <OptionButton
+                      key={value}
+                      label={t(`coaching.step1.options.goalStyle.${value}`)}
+                      selected={step1Values.goalStyle === value}
+                      onPress={() => updateStep1Field('goalStyle', value)}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
           </View>
         )}
 
@@ -711,8 +885,22 @@ export default function CoachingFlowScreen() {
       <Text className="text-xl text-gray-900 mb-2" style={{ fontFamily: 'Pretendard-Bold' }}>
         {t('coaching.step2.title')}
       </Text>
-      <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+      <Text className="text-sm text-gray-500 mb-3" style={{ fontFamily: 'Pretendard-Regular' }}>
         {t('coaching.step2.subtitle')}
+      </Text>
+      <View className="mb-5 bg-blue-50 border border-blue-100 rounded-xl p-3">
+        <Text className="text-xs text-blue-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+          {t('coaching.step2.smartTitle')}
+        </Text>
+        <Text className="text-xs text-blue-700 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t('coaching.step2.smartGood')}
+        </Text>
+        <Text className="text-xs text-blue-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t('coaching.step2.smartBad')}
+        </Text>
+      </View>
+      <Text className="text-xs text-gray-500 mb-3" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {t(`coaching.step2.personaTip.${personaKey}`)}
       </Text>
       <Input
         label={t('coaching.step2.label')}
@@ -735,11 +923,17 @@ export default function CoachingFlowScreen() {
       <Text className="text-xl text-gray-900 mb-2" style={{ fontFamily: 'Pretendard-Bold' }}>
         {t('coaching.step3.title')}
       </Text>
-      <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+      <Text className="text-sm text-gray-500 mb-2" style={{ fontFamily: 'Pretendard-Regular' }}>
         {t('coaching.step3.subtitle')}
       </Text>
+      <Text className="text-xs text-gray-400 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {t('coaching.step3.minNote', { count: 4 })}
+      </Text>
+      <Text className="text-xs text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {t(`coaching.step3.personaTip.${personaKey}`)}
+      </Text>
       <View className="space-y-3">
-        {subGoals.map((value, index) => (
+        {subGoals.slice(0, step3VisibleCount).map((value, index) => (
           <Input
             key={`sub-goal-${index}`}
             label={t('coaching.step3.itemLabel', { index: index + 1 })}
@@ -755,6 +949,16 @@ export default function CoachingFlowScreen() {
           />
         ))}
       </View>
+      {step3VisibleCount < subGoals.length && (
+        <Pressable
+          onPress={() => setStep3VisibleCount((prev) => Math.min(8, prev + 2))}
+          className="mt-3"
+        >
+          <Text className="text-sm text-primary" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+            {t('coaching.step3.addMore')}
+          </Text>
+        </Pressable>
+      )}
       {subGoalError && (
         <Text className="text-xs text-red-500 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
           {subGoalError}
@@ -777,6 +981,23 @@ export default function CoachingFlowScreen() {
       <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
         {t('coaching.step4.subtitle')}
       </Text>
+      <View className="mb-4 border border-blue-100 bg-blue-50 rounded-xl p-3">
+        <Text className="text-xs text-blue-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+          {t('coaching.step4.criteriaTitle')}
+        </Text>
+        <Text className="text-xs text-blue-700 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t('coaching.step4.criteriaBase')}
+        </Text>
+        <Text className="text-xs text-blue-700 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t('coaching.step4.criteriaMinimum')}
+        </Text>
+        <Text className="text-xs text-blue-700 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t('coaching.step4.criteriaChallenge')}
+        </Text>
+      </View>
+      <Text className="text-xs text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {t(`coaching.step4.personaTip.${personaKey}`)}
+      </Text>
       {actionDrafts.length === 0 ? (
         <Text className="text-sm text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>
           {t('coaching.step4.empty')}
@@ -785,88 +1006,107 @@ export default function CoachingFlowScreen() {
         <View className="space-y-4">
           {actionDrafts.map((draft, index) => (
             <View key={`action-draft-${index}`} className="border border-gray-200 rounded-xl p-4">
-              <Text className="text-sm text-gray-900 mb-3" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                {draft.subGoal || t('coaching.step4.subGoalFallback', { index: index + 1 })}
-              </Text>
-              <Input
-                label={t('coaching.step4.labels.base')}
-                value={draft.actions.base}
-                onChangeText={(text) => {
-                  setActionDrafts((prev) =>
-                    prev.map((item, itemIndex) =>
-                      itemIndex === index
-                        ? { ...item, actions: { ...item.actions, base: text } }
-                        : item
-                    )
-                  )
-                }}
-                placeholder={t('coaching.step4.placeholders.base')}
-              />
-              <Input
-                label={t('coaching.step4.labels.minimum')}
-                value={draft.actions.minimum}
-                onChangeText={(text) => {
-                  setActionDrafts((prev) =>
-                    prev.map((item, itemIndex) =>
-                      itemIndex === index
-                        ? { ...item, actions: { ...item.actions, minimum: text } }
-                        : item
-                    )
-                  )
-                }}
-                placeholder={t('coaching.step4.placeholders.minimum')}
-                className="mt-3"
-              />
-              <Input
-                label={t('coaching.step4.labels.challenge')}
-                value={draft.actions.challenge}
-                onChangeText={(text) => {
-                  setActionDrafts((prev) =>
-                    prev.map((item, itemIndex) =>
-                      itemIndex === index
-                        ? { ...item, actions: { ...item.actions, challenge: text } }
-                        : item
-                    )
-                  )
-                }}
-                placeholder={t('coaching.step4.placeholders.challenge')}
-                className="mt-3"
-              />
-              {draft.extras.map((extra, extraIndex) => (
-                <Input
-                  key={`extra-${index}-${extraIndex}`}
-                  label={t('coaching.step4.labels.extra', { index: extraIndex + 1 })}
-                  value={extra}
-                  onChangeText={(text) => {
-                    setActionDrafts((prev) =>
-                      prev.map((item, itemIndex) => {
-                        if (itemIndex !== index) return item
-                        const nextExtras = [...item.extras]
-                        nextExtras[extraIndex] = text
-                        return { ...item, extras: nextExtras }
-                      })
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-sm text-gray-900" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {draft.subGoal || t('coaching.step4.subGoalFallback', { index: index + 1 })}
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setExpandedStep4Sections((prev) =>
+                      prev.map((value, valueIndex) => (valueIndex === index ? !value : value))
                     )
                   }}
-                  placeholder={t('coaching.step4.placeholders.extra')}
-                  className="mt-3"
-                />
-              ))}
-              <Pressable
-                onPress={() => {
-                  setActionDrafts((prev) =>
-                    prev.map((item, itemIndex) =>
-                      itemIndex === index
-                        ? { ...item, extras: [...item.extras, ''] }
-                        : item
-                    )
-                  )
-                }}
-                className="mt-3"
-              >
-                <Text className="text-sm text-primary" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                  {t('coaching.step4.addAction')}
-                </Text>
-              </Pressable>
+                >
+                  <Text className="text-xs text-primary" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                    {expandedStep4Sections[index]
+                      ? t('coaching.step4.collapse')
+                      : t('coaching.step4.expand')}
+                  </Text>
+                </Pressable>
+              </View>
+              {expandedStep4Sections[index] && (
+                <>
+                  <Input
+                    label={t('coaching.step4.labels.base')}
+                    value={draft.actions.base}
+                    onChangeText={(text) => {
+                      setActionDrafts((prev) =>
+                        prev.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { ...item, actions: { ...item.actions, base: text } }
+                            : item
+                        )
+                      )
+                    }}
+                    placeholder={t('coaching.step4.placeholders.base')}
+                  />
+                  <Input
+                    label={t('coaching.step4.labels.minimum')}
+                    value={draft.actions.minimum}
+                    onChangeText={(text) => {
+                      setActionDrafts((prev) =>
+                        prev.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { ...item, actions: { ...item.actions, minimum: text } }
+                            : item
+                        )
+                      )
+                    }}
+                    placeholder={t('coaching.step4.placeholders.minimum')}
+                    className="mt-3"
+                  />
+                  <Input
+                    label={t('coaching.step4.labels.challenge')}
+                    value={draft.actions.challenge}
+                    onChangeText={(text) => {
+                      setActionDrafts((prev) =>
+                        prev.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { ...item, actions: { ...item.actions, challenge: text } }
+                            : item
+                        )
+                      )
+                    }}
+                    placeholder={t('coaching.step4.placeholders.challenge')}
+                    className="mt-3"
+                  />
+                  {draft.extras.map((extra, extraIndex) => (
+                    <Input
+                      key={`extra-${index}-${extraIndex}`}
+                      label={t('coaching.step4.labels.extra', { index: extraIndex + 1 })}
+                      value={extra}
+                      onChangeText={(text) => {
+                        setActionDrafts((prev) =>
+                          prev.map((item, itemIndex) => {
+                            if (itemIndex !== index) return item
+                            const nextExtras = [...item.extras]
+                            nextExtras[extraIndex] = text
+                            return { ...item, extras: nextExtras }
+                          })
+                        )
+                      }}
+                      placeholder={t('coaching.step4.placeholders.extra')}
+                      className="mt-3"
+                    />
+                  ))}
+                  <Pressable
+                    onPress={() => {
+                      setActionDrafts((prev) =>
+                        prev.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { ...item, extras: [...item.extras, ''] }
+                            : item
+                        )
+                      )
+                    }}
+                    className="mt-3"
+                  >
+                    <Text className="text-sm text-primary" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                      {t('coaching.step4.addAction')}
+                    </Text>
+                  </Pressable>
+                </>
+              )}
             </View>
           ))}
         </View>
@@ -913,9 +1153,14 @@ export default function CoachingFlowScreen() {
                       {t(`coaching.step4.labels.${variant}`)}: {text || '-'}
                     </Text>
                     {needsDetail && (
-                      <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
-                        {t('coaching.step5.suggestion', { action: text })}
-                      </Text>
+                      <View className="mt-1 space-y-1">
+                        <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>
+                          {t('coaching.step5.rationale')}
+                        </Text>
+                        <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>
+                          {t('coaching.step5.suggestion', { action: text })}
+                        </Text>
+                      </View>
                     )}
                   </View>
                 )
@@ -931,6 +1176,11 @@ export default function CoachingFlowScreen() {
             <Button variant="ghost" onPress={handleRejectSuggestions}>
               {t('coaching.step5.reject')}
             </Button>
+            {step5Rejected && (
+              <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+                {t('coaching.step5.rejectNote')}
+              </Text>
+            )}
           </View>
         )}
         <View className="mt-6 flex-row items-center justify-between">
@@ -948,6 +1198,7 @@ export default function CoachingFlowScreen() {
       { id: 'weekly-2', label: t('coaching.step6.options.weekly2'), frequency: 'weekly', countPerWeek: 2, weekdays: [2, 4] },
       { id: 'weekly-3', label: t('coaching.step6.options.weekly3'), frequency: 'weekly', countPerWeek: 3, weekdays: [1, 3, 5] },
       { id: 'daily', label: t('coaching.step6.options.daily'), frequency: 'daily' },
+      { id: 'custom', label: t('coaching.step6.options.custom'), frequency: 'weekly', countPerWeek: customCountPerWeek, weekdays: customWeekdays },
     ]
 
     return (
@@ -955,9 +1206,12 @@ export default function CoachingFlowScreen() {
         <Text className="text-xl text-gray-900 mb-2" style={{ fontFamily: 'Pretendard-Bold' }}>
           {t('coaching.step6.title')}
         </Text>
-        <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
-          {t('coaching.step6.subtitle')}
-        </Text>
+      <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {t('coaching.step6.subtitle')}
+      </Text>
+      <Text className="text-xs text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {t(`coaching.step6.personaTip.${personaKey}`)}
+      </Text>
         <View className="space-y-2">
           {options.map((option) => (
             <OptionButton
@@ -968,6 +1222,64 @@ export default function CoachingFlowScreen() {
             />
           ))}
         </View>
+        {routinePlan?.id === 'custom' && (
+          <View className="mt-4 border border-gray-200 rounded-xl p-4">
+            <Text className="text-sm text-gray-700 mb-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+              {t('coaching.step6.customTitle')}
+            </Text>
+            <Text className="text-xs text-gray-500 mb-2" style={{ fontFamily: 'Pretendard-Regular' }}>
+              {t('coaching.step6.customWeekdaysLabel')}
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {weekdayOptions.map((day) => {
+                const selected = customWeekdays.includes(day.value)
+                return (
+                  <Pressable
+                    key={`weekday-${day.value}`}
+                    onPress={() => {
+                      setCustomWeekdays((prev) =>
+                        prev.includes(day.value) ? prev.filter((value) => value !== day.value) : [...prev, day.value]
+                      )
+                    }}
+                    className={`px-3 py-2 rounded-full border ${selected ? 'border-primary bg-primary/10' : 'border-gray-200 bg-white'}`}
+                  >
+                    <Text
+                      className={`text-xs ${selected ? 'text-gray-900' : 'text-gray-600'}`}
+                      style={{ fontFamily: selected ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
+                    >
+                      {day.label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+            <Text className="text-xs text-gray-500 mt-3" style={{ fontFamily: 'Pretendard-Regular' }}>
+              {t('coaching.step6.customCountLabel')}
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mt-2">
+              {[1, 2, 3, 4, 5, 6, 7].map((count) => {
+                const selected = customCountPerWeek === count
+                return (
+                  <Pressable
+                    key={`custom-count-${count}`}
+                    onPress={() => setCustomCountPerWeek(count)}
+                    className={`px-3 py-2 rounded-full border ${selected ? 'border-primary bg-primary/10' : 'border-gray-200 bg-white'}`}
+                  >
+                    <Text
+                      className={`text-xs ${selected ? 'text-gray-900' : 'text-gray-600'}`}
+                      style={{ fontFamily: selected ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
+                    >
+                      {count}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+            <Text className="text-xs text-gray-400 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
+              {t('coaching.step6.customHint')}
+            </Text>
+          </View>
+        )}
         {step6Error && (
           <Text className="text-xs text-red-500 mt-3" style={{ fontFamily: 'Pretendard-Regular' }}>
             {step6Error}
@@ -1016,6 +1328,21 @@ export default function CoachingFlowScreen() {
         ) : (
           actionItems.map((item, index) => {
             const override = actionTypeEdits[item.id]
+            const typeData = override ?? {
+              type: 'routine',
+              routine_frequency: routinePlan?.frequency || 'weekly',
+              routine_weekdays: routinePlan?.weekdays || [],
+              routine_count_per_period: routinePlan?.countPerWeek,
+            }
+            const typeLabel = t(`actionType.${typeData.type}`)
+            const detail = formatTypeDetailsLocalized({
+              type: typeData.type,
+              routine_frequency: typeData.routine_frequency,
+              routine_weekdays: typeData.routine_weekdays,
+              routine_count_per_period: typeData.routine_count_per_period,
+              mission_completion_type: typeData.mission_completion_type,
+              mission_period_cycle: typeData.mission_period_cycle,
+            }, t)
             return (
               <View key={`action-summary-${item.id}`} className="mt-2">
                 <View className="flex-row items-center justify-between">
@@ -1031,6 +1358,11 @@ export default function CoachingFlowScreen() {
                     </Text>
                   </Pressable>
                 </View>
+                <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  {detail
+                    ? t('coaching.step7.typeSummary', { type: typeLabel, detail })
+                    : t('coaching.step7.typeSummaryOnly', { type: typeLabel })}
+                </Text>
                 {override && (
                   <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
                     {t('coaching.step7.customized')}
@@ -1040,6 +1372,9 @@ export default function CoachingFlowScreen() {
             )
           })
         )}
+        <Text className="text-xs text-gray-400 mt-3" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t('coaching.step7.modeNote')}
+        </Text>
         <Text className="text-sm text-gray-700 mt-4" style={{ fontFamily: 'Pretendard-SemiBold' }}>
           {t('coaching.step7.routine')}
         </Text>
@@ -1105,6 +1440,24 @@ export default function CoachingFlowScreen() {
               {summary.nextPromptPreview}
             </Text>
           ) : null}
+          {recapItems.length > 0 && (
+            <View className="mt-3">
+              <Pressable onPress={() => setShowRecap((prev) => !prev)}>
+                <Text className="text-xs text-primary" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {showRecap ? t('coaching.recap.hide') : t('coaching.recap.show')}
+                </Text>
+              </Pressable>
+              {showRecap && (
+                <View className="mt-2 space-y-1">
+                  {recapItems.map((item, index) => (
+                    <Text key={`recap-${index}`} className="text-xs text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                      • {item}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
           {status && (
             <View className="flex-row items-center justify-between mt-4">
               <Button variant="ghost" onPress={pauseSession}>

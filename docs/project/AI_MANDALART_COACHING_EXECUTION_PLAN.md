@@ -5,6 +5,7 @@
 ## 1) Scope Reference
 - Primary spec source: `docs/project/AI_MANDALART_COACHING_MILESTONE.md`
 - This plan focuses on implementation order, dependencies, and tracking.
+- UX review tracker: `docs/project/AI_MANDALART_COACHING_REVIEW_TRACKER.md`
 
 ## 2) Execution Principles
 - Ship in small, testable slices.
