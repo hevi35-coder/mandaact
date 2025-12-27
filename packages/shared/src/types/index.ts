@@ -10,6 +10,7 @@ export interface Mandalart {
   created_at: string
   updated_at: string
   sub_goals?: SubGoal[]
+  current_plan_mode?: 'base' | 'minimum' | 'challenge'
 }
 
 export interface SubGoal {
@@ -49,6 +50,8 @@ export interface Action {
     confidence: string
     reason: string
   }
+
+  variant?: 'base' | 'minimum' | 'challenge' | 'extra'
 }
 
 export interface CheckHistory {

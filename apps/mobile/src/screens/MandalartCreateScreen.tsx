@@ -157,7 +157,7 @@ export default function MandalartCreateScreen() {
         if (subGoalsError) throw subGoalsError
 
         // 3. Create Actions
-        const actionsToInsert: any[] = []
+        const actionsToInsert: unknown[] = []
 
         subGoals?.forEach((dbSubGoal) => {
           const originalSubGoal = mandalartData.sub_goals.find(

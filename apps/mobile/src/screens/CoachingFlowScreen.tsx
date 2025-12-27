@@ -6,6 +6,9 @@ import ActionTypeSelector, { type ActionTypeData } from '../components/ActionTyp
 import { Button, Input } from '../components/ui'
 import { formatTypeDetailsLocalized } from '../components/Today/utils'
 import { useCoachingStore, type PersonaType } from '../store/coachingStore'
+import { coachingService, ActionVariant as ActionVariantService, RealityCorrection } from '../services/coachingService'
+import { useAuthStore } from '../store/authStore'
+import { logger } from '../lib/logger'
 
 type Step1Values = Record<string, string>
 type ActionVariant = 'base' | 'minimum' | 'challenge'
@@ -25,15 +28,17 @@ type RoutinePlan = {
   weekdays?: number[]
 }
 
-type ActionConfig = ActionTypeData & {
-  subGoalIndex: number
-  title: string
-}
-
 type ActionItem = {
   id: string
   subGoalIndex: number
   title: string
+  variant?: ActionVariant | 'extra'
+}
+
+type ActionConfig = ActionTypeData & {
+  subGoalIndex: number
+  title: string
+  variant?: ActionVariant | 'extra'
 }
 
 const PERSONA_KEYS: PersonaType[] = [
@@ -69,23 +74,6 @@ function OptionButton({
 
 export default function CoachingFlowScreen() {
   const { t } = useTranslation()
-  const {
-    status,
-    currentStep,
-    summary,
-    personaType,
-    resumeSession,
-    pauseSession,
-    startSession,
-    setCurrentStep,
-    updateStepState,
-    saveAnswer,
-    setSummary,
-    answersByStep,
-    setPersonaType,
-    setContext,
-    completeSession,
-  } = useCoachingStore()
   const [step1Values, setStep1Values] = useState<Step1Values>({})
   const [step1Error, setStep1Error] = useState<string | null>(null)
   const [showMoreQuestions, setShowMoreQuestions] = useState(false)
@@ -108,19 +96,62 @@ export default function CoachingFlowScreen() {
   const [actionTypeEdits, setActionTypeEdits] = useState<Record<string, ActionTypeData>>({})
   const [actionTypeModalVisible, setActionTypeModalVisible] = useState(false)
   const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionItem | null>(null)
+  const [isSuggestingSubGoals, setIsSuggestingSubGoals] = useState(false)
+
+  const [isGeneratingActions, setIsGeneratingActions] = useState(false)
+  const [isCheckingReality, setIsCheckingReality] = useState(false)
+  const [realityFeedback, setRealityFeedback] = useState<string | null>(null)
+  const [realityCorrections, setRealityCorrections] = useState<RealityCorrection[]>([])
+
+  const {
+    status,
+    currentStep,
+    answersByStep,
+    summary,
+    personaType,
+    sessionId,
+    setCurrentStep,
+    updateStepState,
+    setPersonaType,
+    setContext,
+    saveAnswer,
+    setSummary,
+    startSession,
+    resumeSession,
+    pauseSession,
+    completeSession,
+  } = useCoachingStore()
+
+  const { user } = useAuthStore()
+
+  const handleStart = async (persona: PersonaType) => {
+    if (user?.id) {
+      await startSession(user.id, persona)
+    } else {
+      setPersonaType(persona)
+      setCurrentStep(1)
+      updateStepState(1, 'in_progress')
+    }
+  }
 
   const actionItems = useMemo<ActionItem[]>(
     () =>
       actionDrafts.flatMap((draft, subGoalIndex) => {
-        const titles = [
-          draft.actions.base,
-          ...draft.extras,
-        ].map((item) => item.trim()).filter(Boolean)
-        return titles.map((title, actionIndex) => ({
-          id: `${subGoalIndex}-${actionIndex}`,
-          subGoalIndex,
-          title,
-        }))
+        const variants: { variant: ActionVariant | 'extra'; title: string }[] = [
+          { variant: 'base', title: draft.actions.base },
+          { variant: 'minimum', title: draft.actions.minimum },
+          { variant: 'challenge', title: draft.actions.challenge },
+          ...draft.extras.map((title) => ({ variant: 'extra' as const, title })),
+        ]
+
+        return variants
+          .filter((v) => v.title.trim().length > 0)
+          .map((v, actionIndex) => ({
+            id: `${subGoalIndex}-${v.variant}-${actionIndex}`,
+            subGoalIndex,
+            title: v.title.trim(),
+            variant: v.variant,
+          }))
       }),
     [actionDrafts]
   )
@@ -235,8 +266,8 @@ export default function CoachingFlowScreen() {
           minimum: goal ? t('coaching.step4.defaults.minimum', { goal }) : '',
           challenge: goal ? t('coaching.step4.defaults.challenge', { goal }) : '',
         },
-        activeVariant: 'base',
-        extras: [],
+        activeVariant: 'base' as ActionVariant,
+        extras: [] as string[],
       }))
       setActionDrafts(nextDrafts)
     }
@@ -313,7 +344,7 @@ export default function CoachingFlowScreen() {
     }
   }, [step1Values.persona])
 
-  const handleStep1Continue = () => {
+  const handleStep1Continue = async () => {
     const missing = requiredStep1Keys.filter((key) => !step1Values[key])
     if (missing.length > 0) {
       setStep1Error(t('coaching.step1.validation'))
@@ -325,22 +356,13 @@ export default function CoachingFlowScreen() {
     const availableTime = step1Values.dailyTime || step1Values.weeklyWorkingTime || ''
 
     if (!status) {
-      startSession({
-        sessionId: `coaching-${Date.now()}`,
-        personaType: selectedPersona,
-      })
+      await handleStart(selectedPersona)
     } else {
       setPersonaType(selectedPersona)
     }
 
-    setContext({
-      persona: selectedPersona,
-      availableTime,
-      energyPeak: step1Values.energyPeak,
-      priorityArea,
-    })
-    saveAnswer('step1', step1Values)
-    saveAnswer('rule_inputs', {
+    await saveAnswer('step1', step1Values)
+    await saveAnswer('rule_inputs', {
       persona: selectedPersona,
       time: availableTime,
       energy: step1Values.energyPeak || '',
@@ -359,21 +381,56 @@ export default function CoachingFlowScreen() {
     )
   }
 
-  const handleStep2Continue = () => {
+  const handleStep2Continue = async () => {
     if (!coreGoal.trim()) {
       setCoreGoalError(t('coaching.step2.validation'))
       return
     }
     setCoreGoalError(null)
     setContext({ coreGoal: coreGoal.trim() })
-    saveAnswer('step2', { coreGoal: coreGoal.trim() })
+    await saveAnswer('step2', { coreGoal: coreGoal.trim() })
     updateStepState(2, 'completed')
     updateStepState(3, 'in_progress')
     setCurrentStep(3)
     setSummary(t('coaching.step2.summary'), t('coaching.step3.prompt'))
   }
 
-  const handleStep3Continue = () => {
+  const handleAISuggestSubGoals = async () => {
+    setIsSuggestingSubGoals(true)
+    try {
+      const ruleInputs = answersByStep['rule_inputs'] as Record<string, string> | undefined
+      const availableTime = ruleInputs?.time || '30'
+      const suggestions = await coachingService.suggestSubGoals({
+        persona: personaKey,
+        coreGoal: coreGoal.trim(),
+        availableTime,
+        energyPeak: step1Values.energyPeak || '',
+        priorityArea: step1Values.priorityArea || '',
+      }, sessionId)
+
+      const subGoalArray = suggestions.map((sg: string, idx: number) => ({
+        position: idx + 1,
+        title: sg,
+      }))
+
+      if (suggestions.length > 0) {
+        setSubGoals((prev) => {
+          const next = [...prev]
+          suggestions.forEach((sg, idx) => {
+            if (idx < 8) next[idx] = sg
+          })
+          return next
+        })
+      }
+      await saveAnswer('step3', { subGoals: suggestions })
+    } catch (error) {
+      logger.error('Failed to suggest sub goals', error)
+    } finally {
+      setIsSuggestingSubGoals(false)
+    }
+  }
+
+  const handleStep3Continue = async () => {
     const filledCount = subGoals.filter((item) => item.trim()).length
     if (filledCount < 4) {
       setSubGoalError(t('coaching.step3.validationMin', { count: 4 }))
@@ -382,14 +439,51 @@ export default function CoachingFlowScreen() {
     setSubGoalError(null)
     const trimmedSubGoals = subGoals.map((item) => item.trim())
     setContext({ subGoals: trimmedSubGoals })
-    saveAnswer('step3', { subGoals: trimmedSubGoals })
+    await saveAnswer('step3', { subGoals: trimmedSubGoals })
     updateStepState(3, 'completed')
     updateStepState(4, 'in_progress')
     setCurrentStep(4)
     setSummary(t('coaching.step3.summary'), t('coaching.step4.prompt'))
   }
 
-  const handleStep4Continue = () => {
+  const handleAIGenerateActions = async () => {
+    setIsGeneratingActions(true)
+    try {
+      const ruleInputs = answersByStep['rule_inputs'] as Record<string, string> | undefined
+      const availableTime = ruleInputs?.time || '30'
+      const generated = await coachingService.generateActions({
+        subGoals: subGoals.filter(s => s.trim()),
+        persona: personaKey,
+        availableTime,
+      }, sessionId)
+
+      const drafts = (generated as ActionVariantService[]).map((gen) => ({
+        subGoal: gen.sub_goal,
+        actions: {
+          base: gen.base,
+          minimum: gen.minimum,
+          challenge: gen.challenge,
+        },
+        activeVariant: 'base' as const,
+        extras: [],
+      }))
+
+      setActionDrafts(drafts)
+      await saveAnswer('rule_inputs', {
+        persona: personaKey,
+        availableTime,
+        energyPeak: step1Values.energyPeak || '',
+        priorityArea: step1Values.priorityArea || '',
+      })
+      await saveAnswer('step4', { actionDrafts: drafts })
+    } catch (error) {
+      logger.error('Failed to generate actions', error)
+    } finally {
+      setIsGeneratingActions(false)
+    }
+  }
+
+  const handleStep4Continue = async () => {
     const missingActions = actionDrafts.some((draft) => {
       const { base, minimum, challenge } = draft.actions
       return !base.trim() || !minimum.trim() || !challenge.trim()
@@ -399,27 +493,48 @@ export default function CoachingFlowScreen() {
       return
     }
     setStep4Error(null)
-    saveAnswer('step4', { actionDrafts })
+    await saveAnswer('step4', { actionDrafts })
     updateStepState(4, 'completed')
     updateStepState(5, 'in_progress')
     setCurrentStep(5)
     setSummary(t('coaching.step4.summary'), t('coaching.step5.prompt'))
+    handleRunRealityCheck()
+  }
+
+  const handleRunRealityCheck = async () => {
+    setIsCheckingReality(true)
+    try {
+      const ruleInputs = answersByStep['rule_inputs'] as Record<string, string> | undefined
+      const availableTime = ruleInputs?.time || '30'
+      const result = await coachingService.runRealityCheck({
+        coreGoal: coreGoal.trim(),
+        subGoals: subGoals.filter(g => g.trim()),
+        actions: actionDrafts,
+        availableTime,
+        energyPeak: step1Values.energyPeak || '',
+      }, sessionId)
+      setRealityFeedback(result.overall_feedback)
+      setRealityCorrections(result.corrections)
+    } catch (error) {
+      logger.error('Failed to run reality check', error)
+    } finally {
+      setIsCheckingReality(false)
+    }
   }
 
   const handleApplySuggestions = () => {
-    const suffix = t('coaching.step5.suggestionSuffix')
     setActionDrafts((prev) =>
       prev.map((draft) => {
         const nextActions: Record<ActionVariant, string> = { ...draft.actions }
-        ;(['base', 'minimum', 'challenge'] as ActionVariant[]).forEach((variant) => {
-          const text = nextActions[variant]
-          if (text && !/\d/.test(text)) {
-            nextActions[variant] = `${text} ${suffix}`.trim()
-          }
+        realityCorrections.forEach(c => {
+          if (nextActions.base === c.original) nextActions.base = c.suggested
+          if (nextActions.minimum === c.original) nextActions.minimum = c.suggested
+          if (nextActions.challenge === c.original) nextActions.challenge = c.suggested
         })
         return { ...draft, actions: nextActions }
       })
     )
+    setRealityCorrections([])
     setStep5Applied(true)
     setStep5Rejected(false)
   }
@@ -429,34 +544,73 @@ export default function CoachingFlowScreen() {
     setStep5Rejected(true)
   }
 
-  const handleStep5Continue = () => {
-    const fallbackMinimums = actionDrafts.map((draft) => draft.actions.minimum).filter(Boolean)
-    saveAnswer('step5', {
-      actionDrafts,
-      correctionsApplied: step5Applied,
-      rejected: step5Rejected,
-      fallbackMinimums,
-    })
+  const handleStep5Continue = async () => {
+    setStep5Applied(true)
     updateStepState(5, 'completed')
     updateStepState(6, 'in_progress')
     setCurrentStep(6)
+    await saveAnswer('step5', {
+      correctionsApplied: true,
+      rejected: false,
+      corrections: realityCorrections
+    })
     setSummary(t('coaching.step5.summary'), t('coaching.step6.prompt'))
   }
 
-  const handleStep6Continue = () => {
+  const handleStep5Reject = async () => {
+    setStep5Rejected(true)
+    updateStepState(5, 'completed')
+    updateStepState(6, 'in_progress')
+    setCurrentStep(6)
+    await saveAnswer('step5', {
+      correctionsApplied: false,
+      rejected: true
+    })
+    setSummary(t('coaching.step5.summary'), t('coaching.step6.prompt'))
+  }
+
+  const handleStep6Continue = async () => {
     if (!routinePlan) {
       setStep6Error(t('coaching.step6.validation'))
       return
     }
     setStep6Error(null)
-    saveAnswer('step6', { routinePlan })
+    await saveAnswer('step6', { routinePlan })
     updateStepState(6, 'completed')
     updateStepState(7, 'in_progress')
     setCurrentStep(7)
     setSummary(t('coaching.step6.summary'), t('coaching.step7.prompt'))
   }
 
-  const handleStep7Save = () => {
+  const handleAutoSetDefaults = () => {
+    if (!routinePlan) return
+
+    const availableTime = (answersByStep['rule_inputs'] as Record<string, string> | undefined)?.time || ''
+    const lowTime = ['10', '30'].includes(availableTime)
+    const routineFrequency = routinePlan.frequency
+    const routineCount = routinePlan.frequency === 'weekly'
+      ? routinePlan.countPerWeek || (lowTime ? 1 : 3)
+      : undefined
+    const routineWeekdays = routinePlan.frequency === 'weekly'
+      ? routinePlan.weekdays || (lowTime ? [2] : [1, 3, 5])
+      : undefined
+
+    const newEdits: Record<string, ActionTypeData> = { ...actionTypeEdits }
+    actionItems.forEach((item) => {
+      if (!newEdits[item.id]) {
+        newEdits[item.id] = {
+          type: 'routine',
+          routine_frequency: routineFrequency,
+          routine_weekdays: routineWeekdays,
+          routine_count_per_period: routineCount,
+        }
+      }
+    })
+    setActionTypeEdits(newEdits)
+    setStep7Error(null)
+  }
+
+  const handleStep7Save = async () => {
     if (!coreGoal.trim()) {
       setStep7Error(t('coaching.step7.validation'))
       return
@@ -467,6 +621,11 @@ export default function CoachingFlowScreen() {
     }
     if (actionDrafts.length === 0) {
       setStep7Error(t('coaching.step7.validation'))
+      return
+    }
+    const unconfigured = actionItems.filter((item) => !actionTypeEdits[item.id])
+    if (unconfigured.length > 0) {
+      setStep7Error(t('coaching.step7.unconfiguredWarning', { count: unconfigured.length }))
       return
     }
     setStep7Error(null)
@@ -482,18 +641,19 @@ export default function CoachingFlowScreen() {
       ? routinePlan.weekdays || (lowTime ? [2] : [1, 3, 5])
       : undefined
 
-    const defaultTypeData: ActionTypeData = {
-      type: 'routine',
-      routine_frequency: routineFrequency,
-      routine_weekdays: routineWeekdays,
-      routine_count_per_period: routineCount,
-    }
-
-    const actionConfigs: ActionConfig[] = actionItems.map((item) => {
+    // Collect all configurations
+    const actionConfigs = actionItems.map((item) => {
       const override = actionTypeEdits[item.id]
+      const defaultTypeData: ActionTypeData = {
+        type: 'routine',
+        routine_frequency: routineFrequency,
+        routine_weekdays: routineWeekdays,
+        routine_count_per_period: routineCount,
+      }
       return {
         subGoalIndex: item.subGoalIndex,
         title: item.title,
+        variant: item.variant,
         ...(override ?? defaultTypeData),
       }
     })
@@ -503,7 +663,7 @@ export default function CoachingFlowScreen() {
       return
     }
 
-    saveAnswer('step7', {
+    await saveAnswer('step7', {
       savedAt: new Date().toISOString(),
       routinePlan,
       actionConfigs,
@@ -959,6 +1119,15 @@ export default function CoachingFlowScreen() {
           </Text>
         </Pressable>
       )}
+      <View className="mt-4">
+        <Button
+          variant="secondary"
+          onPress={handleAISuggestSubGoals}
+          loading={isSuggestingSubGoals}
+        >
+          {t('coaching.step3.aiSuggest')}
+        </Button>
+      </View>
       {subGoalError && (
         <Text className="text-xs text-red-500 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
           {subGoalError}
@@ -998,6 +1167,15 @@ export default function CoachingFlowScreen() {
       <Text className="text-xs text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
         {t(`coaching.step4.personaTip.${personaKey}`)}
       </Text>
+      <View className="mb-6">
+        <Button
+          variant="secondary"
+          onPress={handleAIGenerateActions}
+          loading={isGeneratingActions}
+        >
+          {t('coaching.step4.aiGenerate')}
+        </Button>
+      </View>
       {actionDrafts.length === 0 ? (
         <Text className="text-sm text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>
           {t('coaching.step4.empty')}
@@ -1168,21 +1346,71 @@ export default function CoachingFlowScreen() {
             </View>
           ))}
         </View>
-        {hasSuggestions && (
-          <View className="mt-4 space-y-2">
-            <Button variant="secondary" onPress={handleApplySuggestions}>
-              {t('coaching.step5.apply')}
-            </Button>
-            <Button variant="ghost" onPress={handleRejectSuggestions}>
-              {t('coaching.step5.reject')}
-            </Button>
+
+        {isCheckingReality ? (
+          <View className="mt-4 py-8 items-center bg-blue-50/50 rounded-2xl border border-blue-100 border-dashed">
+            <Text className="text-sm text-blue-600" style={{ fontFamily: 'Pretendard-Medium' }}>
+              {t('coaching.step5.checking')}
+            </Text>
+          </View>
+        ) : (
+          <>
+            {realityFeedback && (
+              <View className="mt-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <Text className="text-sm text-gray-900 leading-5" style={{ fontFamily: 'Pretendard-Regular' }}>
+                  {realityFeedback}
+                </Text>
+              </View>
+            )}
+
+            {realityCorrections.length > 0 && (
+              <View className="mt-4 space-y-3">
+                <Text className="text-xs text-gray-500 uppercase px-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                  {t('coaching.step5.suggestionsTitle')}
+                </Text>
+                {realityCorrections.map((correction, idx) => (
+                  <View key={`correction-${idx}`} className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+                    <View className="flex-row items-center space-x-2 mb-1">
+                      <Text className="text-xs text-gray-400 line-through" style={{ fontFamily: 'Pretendard-Regular' }}>
+                        {correction.original}
+                      </Text>
+                      <Text className="text-xs text-blue-400"> → </Text>
+                      <Text className="text-xs text-blue-700" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                        {correction.suggested}
+                      </Text>
+                    </View>
+                    <Text className="text-xs text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                      {correction.reason}
+                    </Text>
+                  </View>
+                ))}
+                <View className="mt-2 space-y-2">
+                  <Button variant="secondary" onPress={handleApplySuggestions}>
+                    {t('coaching.step5.apply')}
+                  </Button>
+                  <Button variant="ghost" onPress={handleRejectSuggestions}>
+                    {t('coaching.step5.reject')}
+                  </Button>
+                </View>
+              </View>
+            )}
+
+            {!realityFeedback && !isCheckingReality && !step5Applied && !step5Rejected && (
+              <View className="mt-4">
+                <Button variant="secondary" onPress={handleRunRealityCheck} loading={isCheckingReality}>
+                  {t('coaching.step5.runCheck')}
+                </Button>
+              </View>
+            )}
+
             {step5Rejected && (
-              <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+              <Text className="text-xs text-gray-500 mt-4 px-1" style={{ fontFamily: 'Pretendard-Regular' }}>
                 {t('coaching.step5.rejectNote')}
               </Text>
             )}
-          </View>
+          </>
         )}
+
         <View className="mt-6 flex-row items-center justify-between">
           <Button variant="ghost" onPress={handleBack}>
             {t('common.previous')}
@@ -1192,6 +1420,7 @@ export default function CoachingFlowScreen() {
       </>
     )
   }
+
 
   const renderStep6 = () => {
     const options: RoutinePlan[] = [
@@ -1206,12 +1435,12 @@ export default function CoachingFlowScreen() {
         <Text className="text-xl text-gray-900 mb-2" style={{ fontFamily: 'Pretendard-Bold' }}>
           {t('coaching.step6.title')}
         </Text>
-      <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
-        {t('coaching.step6.subtitle')}
-      </Text>
-      <Text className="text-xs text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
-        {t(`coaching.step6.personaTip.${personaKey}`)}
-      </Text>
+        <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t('coaching.step6.subtitle')}
+        </Text>
+        <Text className="text-xs text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+          {t(`coaching.step6.personaTip.${personaKey}`)}
+        </Text>
         <View className="space-y-2">
           {options.map((option) => (
             <OptionButton
@@ -1382,6 +1611,35 @@ export default function CoachingFlowScreen() {
           {routinePlan?.label || '-'}
         </Text>
       </View>
+      <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {t('coaching.step7.subtitle')}
+      </Text>
+
+      {actionItems.filter(it => !actionTypeEdits[it.id]).length > 0 && (
+        <View className="bg-orange-50 p-4 rounded-xl mb-6 border border-orange-100">
+          <Text className="text-orange-800 text-sm mb-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+            {t('coaching.step7.unconfiguredTitle', { count: actionItems.filter(it => !actionTypeEdits[it.id]).length })}
+          </Text>
+          <Text className="text-orange-700 text-xs mb-3" style={{ fontFamily: 'Pretendard-Regular' }}>
+            {t('coaching.step7.unconfiguredDesc')}
+          </Text>
+          <Button
+            onPress={handleAutoSetDefaults}
+            variant="outline"
+            size="sm"
+            className="bg-white border-orange-200"
+          >
+            <Text className="text-orange-800 text-xs">{t('coaching.step7.autoSet')}</Text>
+          </Button>
+        </View>
+      )}
+
+      <Text className="text-sm text-gray-700 mb-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+        {t('coaching.step7.actions')}
+      </Text>
+      <Text className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+        {routinePlan?.label || '-'}
+      </Text>
       {step7Error && (
         <Text className="text-xs text-red-500 mt-3" style={{ fontFamily: 'Pretendard-Regular' }}>
           {step7Error}
@@ -1400,11 +1658,11 @@ export default function CoachingFlowScreen() {
         initialData={
           selectedActionForTypeEdit
             ? actionTypeEdits[selectedActionForTypeEdit.id] || {
-                type: 'routine',
-                routine_frequency: routinePlan?.frequency || 'weekly',
-                routine_weekdays: routinePlan?.weekdays || [],
-                routine_count_per_period: routinePlan?.countPerWeek,
-              }
+              type: 'routine',
+              routine_frequency: routinePlan?.frequency || 'weekly',
+              routine_weekdays: routinePlan?.weekdays || [],
+              routine_count_per_period: routinePlan?.countPerWeek,
+            }
             : undefined
         }
         onClose={() => setActionTypeModalVisible(false)}

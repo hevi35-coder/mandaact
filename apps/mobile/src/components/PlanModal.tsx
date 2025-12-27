@@ -14,6 +14,7 @@ interface MandalartWithDetails {
   id: string
   center_goal: string
   sub_goals: SubGoalWithActions[]
+  current_plan_mode?: 'base' | 'minimum' | 'challenge'
 }
 
 interface PlanModalProps {
@@ -21,6 +22,7 @@ interface PlanModalProps {
   mandalart: MandalartWithDetails
   userId: string
   onClose: () => void
+  onSuccess?: () => void
 }
 
 function ToggleChip({
@@ -35,14 +37,12 @@ function ToggleChip({
   return (
     <Pressable
       onPress={onPress}
-      className={`px-3 py-1.5 rounded-full border ${
-        selected ? 'border-primary bg-primary/10' : 'border-gray-200 bg-white'
-      }`}
+      className={`px-3 py-1.5 rounded-full border ${selected ? 'border-primary bg-primary/10' : 'border-gray-200 bg-white'
+        }`}
     >
       <Text
-        className={`text-xs ${
-          selected ? 'text-gray-900' : 'text-gray-600'
-        }`}
+        className={`text-xs ${selected ? 'text-gray-900' : 'text-gray-600'
+          }`}
         style={{ fontFamily: selected ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
       >
         {label}
@@ -51,7 +51,7 @@ function ToggleChip({
   )
 }
 
-export default function PlanModal({ visible, mandalart, userId, onClose }: PlanModalProps) {
+export default function PlanModal({ visible, mandalart, userId, onClose, onSuccess }: PlanModalProps) {
   const { t } = useTranslation()
   const {
     activeBySubGoal,
@@ -105,7 +105,7 @@ export default function PlanModal({ visible, mandalart, userId, onClose }: PlanM
     return () => {
       isMounted = false
     }
-  }, [mandalart.sub_goals, setPreferences, visible])
+  }, [mandalart.sub_goals, mergePreferences, visible])
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -122,6 +122,43 @@ export default function PlanModal({ visible, mandalart, userId, onClose }: PlanM
           <ScrollView className="px-5 py-4">
             <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
               {t('mandalart.plan.subtitle')}
+            </Text>
+
+            {/* Global Plan Mode Selector */}
+            <View className="mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+              <Text className="text-sm text-gray-900 mb-3" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+                {t('mandalart.plan.globalModeTitle')}
+              </Text>
+              <View className="flex-row gap-2">
+                {(['base', 'minimum', 'challenge'] as const).map((mode) => (
+                  <ToggleChip
+                    key={mode}
+                    label={t(`mandalart.plan.modes.${mode}`)}
+                    selected={(mandalart.current_plan_mode || 'base') === mode}
+                    onPress={async () => {
+                      try {
+                        await supabase
+                          .from('mandalarts')
+                          .update({ current_plan_mode: mode })
+                          .eq('id', mandalart.id)
+
+                        onSuccess?.()
+                      } catch (err) {
+                        console.error('Failed to update plan mode', err)
+                      }
+                    }}
+                  />
+                ))}
+              </View>
+              <Text className="text-xs text-gray-400 mt-3" style={{ fontFamily: 'Pretendard-Regular' }}>
+                {t('mandalart.plan.globalModeDesc')}
+              </Text>
+            </View>
+
+            <View className="h-px bg-gray-100 mb-6" />
+
+            <Text className="text-sm text-gray-900 mb-3" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+              {t('mandalart.plan.manualSelectionTitle')}
             </Text>
             {sortedSubGoals.length === 0 && (
               <Text className="text-sm text-gray-500" style={{ fontFamily: 'Pretendard-Regular' }}>

@@ -256,7 +256,16 @@ export default function MandalartDetailScreen() {
       )
     }
 
-    const action = expandedSubGoal.actions?.find(a => a.position === cellPos)
+    const mode = mandalart?.current_plan_mode || 'base'
+    const action = expandedSubGoal.actions?.find(a => {
+      if (a.position !== cellPos) return false
+      // If action has a variant, it must match the current mode
+      if (a.variant && a.variant !== 'extra') {
+        return a.variant === mode
+      }
+      // If no variant or 'extra', always show
+      return true
+    })
 
     return (
       <Pressable
@@ -656,6 +665,7 @@ export default function MandalartDetailScreen() {
         mandalart={mandalart}
         userId={user?.id ?? ''}
         onClose={() => setPlanModalVisible(false)}
+        onSuccess={handleModalSuccess}
       />
     </View>
   )

@@ -147,7 +147,9 @@ export default function TodayScreen() {
   const { activeBySubGoal, minimumBySubGoal, mergePreferences } = usePlanStore()
 
   const hasMinimumSelections = useMemo(() => {
-    return actions.some((action) => minimumBySubGoal[action.sub_goal.id] === action.id)
+    return actions.some((action) =>
+      action.variant === 'minimum' || (action.sub_goal?.id && minimumBySubGoal[action.sub_goal.id] === action.id)
+    )
   }, [actions, minimumBySubGoal])
 
   useEffect(() => {
@@ -310,13 +312,24 @@ export default function TodayScreen() {
       const minimumId = minimumBySubGoal[subGoalId]
 
       if (minimumModeEnabled) {
-        if (minimumId) return action.id === minimumId
-        if (activeId) return action.id === activeId
-        return true
+        // Priority 1: Action with variant 'minimum'
+        if (action.variant === 'minimum') return true
+        // Priority 2: Action explicitly selected as minimum
+        if (minimumId && action.id === minimumId) return true
+
+        // If minimumMode is on but this action is not a minimum, hide it
+        // (Unless it's a 'base' action and no minimum exists, but that's handled by picking minimum specifically)
+        return false
       }
 
-      if (activeId) return action.id === activeId
-      return true
+      // Default Mode: show 'base' actions or explicitly active actions
+      if (action.variant === 'base') return true
+      if (activeId && action.id === activeId) return true
+
+      // If no explicit variant or preference, show it if it's not challenge/minimum
+      if (!action.variant || action.variant === 'extra') return true
+
+      return false
     })
 
     return visibleConfigured.filter((action) => {
@@ -619,7 +632,25 @@ export default function TodayScreen() {
   // Render: Use conditional rendering instead of early returns to comply with Rules of Hooks
   return (
     <View className="flex-1 bg-gray-50">
-      <Header />
+      <Header
+        rightElement={
+          hasMinimumSelections ? (
+            <View className="flex-row items-center mr-2">
+              <Text
+                className="text-xs text-gray-500 mr-2"
+                style={{ fontFamily: 'Pretendard-SemiBold' }}
+              >
+                {t('today.minimumMode.title')}
+              </Text>
+              <Toggle
+                value={minimumModeEnabled}
+                onValueChange={setMinimumModeEnabled}
+                size="sm"
+              />
+            </View>
+          ) : null
+        }
+      />
 
       {/* Loading State */}
       {isLoading && (
@@ -647,231 +678,394 @@ export default function TodayScreen() {
       {/* Main Content */}
       {!isLoading && !error && (
         <ScrollView
-        ref={scrollRef}
-        className="flex-1 px-5 pt-5"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
-        {/* Page Title - Center Aligned */}
-        <View className="mb-5">
-          <View className="items-center mb-4">
-            <View className="flex-row items-center">
-              <Text
-                className="text-3xl text-gray-900"
-                style={{ fontFamily: 'Pretendard-Bold' }}
-              >
-                {t('today.title')}
-              </Text>
-              <Text
-                className="text-base text-gray-500 ml-3"
-                style={{ fontFamily: 'Pretendard-Medium' }}
-              >
-                {t('today.subtitle')}
-              </Text>
+          ref={scrollRef}
+          className="flex-1 px-5 pt-5"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        >
+          {/* Page Title - Center Aligned */}
+          <View className="mb-5">
+            <View className="items-center mb-4">
+              <View className="flex-row items-center">
+                <Text
+                  className="text-3xl text-gray-900"
+                  style={{ fontFamily: 'Pretendard-Bold' }}
+                >
+                  {t('today.title')}
+                </Text>
+                <Text
+                  className="text-base text-gray-500 ml-3"
+                  style={{ fontFamily: 'Pretendard-Medium' }}
+                >
+                  {t('today.subtitle')}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          {/* Date Navigation */}
-          <DateNavigation
-            selectedDate={selectedDate}
-            isToday={isToday}
-            timezone={timezone}
-            onPreviousDay={handlePreviousDay}
-            onNextDay={handleNextDay}
-            onToday={handleToday}
-            onDateSelect={handleDateSelect}
-          />
-        </View>
-
-        {/* Progress Card with Type Filter */}
-        {actions.length > 0 && (
-          <ProgressCard
-            checkedCount={checkedCount}
-            totalCount={totalCount}
-            progressPercentage={progressPercentage}
-            activeFilters={activeFilters}
-            typeFilterCollapsed={typeFilterCollapsed}
-            onToggleTypeFilter={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
-            onToggleFilter={toggleFilter}
-            onClearAllFilters={clearAllFilters}
-          />
-        )}
-
-        {hasMinimumSelections && actions.length > 0 && (
-          <View className="bg-white rounded-2xl px-4 py-3 mb-4 border border-gray-100 flex-row items-center justify-between">
-            <View>
-              <Text className="text-sm text-gray-900" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                {t('today.minimumMode.title')}
-              </Text>
-              <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
-                {t('today.minimumMode.subtitle')}
-              </Text>
-            </View>
-            <Toggle
-              value={minimumModeEnabled}
-              onValueChange={setMinimumModeEnabled}
-              size="sm"
+            {/* Date Navigation */}
+            <DateNavigation
+              selectedDate={selectedDate}
+              isToday={isToday}
+              timezone={timezone}
+              onPreviousDay={handlePreviousDay}
+              onNextDay={handleNextDay}
+              onToday={handleToday}
+              onDateSelect={handleDateSelect}
             />
           </View>
-        )}
 
-        {/* XP Boost Button - Below Progress Card (Phone only, iPad has it in right column) */}
-        {!isTablet && actions.length > 0 && (
-          <XPBoostButton />
-        )}
+          {/* Progress Card with Type Filter */}
+          {actions.length > 0 && (
+            <ProgressCard
+              checkedCount={checkedCount}
+              totalCount={totalCount}
+              progressPercentage={progressPercentage}
+              activeFilters={activeFilters}
+              typeFilterCollapsed={typeFilterCollapsed}
+              onToggleTypeFilter={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
+              onToggleFilter={toggleFilter}
+              onClearAllFilters={clearAllFilters}
+            />
+          )}
 
-        {/* Empty State - 액션이 없을 때 */}
-        {actions.length === 0 && (
-          <Animated.View
-            entering={FadeInUp.delay(100).duration(400)}
-            className="bg-white rounded-2xl p-6"
-          >
-            {/* Icon */}
-            <View className="items-center mb-4">
-              <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
-                <Grid3X3 size={28} color="#9ca3af" />
+
+          {/* XP Boost Button - Below Progress Card (Phone only, iPad has it in right column) */}
+          {!isTablet && actions.length > 0 && (
+            <XPBoostButton />
+          )}
+
+          {/* Empty State - 액션이 없을 때 */}
+          {actions.length === 0 && (
+            <Animated.View
+              entering={FadeInUp.delay(100).duration(400)}
+              className="bg-white rounded-2xl p-6"
+            >
+              {/* Icon */}
+              <View className="items-center mb-4">
+                <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
+                  <Grid3X3 size={28} color="#9ca3af" />
+                </View>
               </View>
-            </View>
 
-            {/* Title & Description */}
-            <Text
-              className="text-lg text-gray-900 text-center mb-2"
-              style={{ fontFamily: 'Pretendard-SemiBold' }}
-            >
-              {t('today.empty.title')}
-            </Text>
-            <Text
-              className="text-sm text-gray-500 text-center mb-5"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('today.empty.description')}
-            </Text>
-
-            {/* Guide Box */}
-            <View className="bg-gray-50 rounded-xl p-4 mb-5">
+              {/* Title & Description */}
               <Text
-                className="text-sm text-gray-700 mb-3"
+                className="text-lg text-gray-900 text-center mb-2"
                 style={{ fontFamily: 'Pretendard-SemiBold' }}
               >
-                {t('today.empty.howTo.title')}
+                {t('today.empty.title')}
               </Text>
-              <View className="flex-row items-center mb-2">
-                <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
-                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-                  {t('today.empty.howTo.step1')}
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
-                <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-                  {t('today.empty.howTo.step2')}
-                </Text>
-              </View>
-            </View>
-
-            {/* Action Buttons */}
-            <View className="flex-row gap-3">
-              <Pressable
-                className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
-                onPress={() => navigation.navigate('Tutorial')}
+              <Text
+                className="text-sm text-gray-500 text-center mb-5"
+                style={{ fontFamily: 'Pretendard-Regular' }}
               >
+                {t('today.empty.description')}
+              </Text>
+
+              {/* Guide Box */}
+              <View className="bg-gray-50 rounded-xl p-4 mb-5">
                 <Text
-                  className="text-sm text-gray-700 text-center"
+                  className="text-sm text-gray-700 mb-3"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  {t('today.empty.guide')}
+                  {t('today.empty.howTo.title')}
                 </Text>
-              </Pressable>
-              <Pressable
-                className="flex-1 rounded-xl overflow-hidden"
-                onPress={() => navigation.navigate('CreateMandalart')}
-              >
-                <LinearGradient
-                  colors={['#2563eb', '#9333ea', '#db2777']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{ padding: 1, borderRadius: 12 }}
+                <View className="flex-row items-center mb-2">
+                  <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
+                  <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                    {t('today.empty.howTo.step1')}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
+                  <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
+                    {t('today.empty.howTo.step2')}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View className="flex-row gap-3">
+                <Pressable
+                  className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
+                  onPress={() => navigation.navigate('Tutorial')}
                 >
-                  <View className="bg-white rounded-xl py-3 items-center justify-center">
-                    <MaskedView
-                      maskElement={
-                        <Text
-                          className="text-sm text-center"
-                          style={{ fontFamily: 'Pretendard-SemiBold' }}
-                        >
-                          {t('today.empty.create')}
-                        </Text>
-                      }
-                    >
-                      <LinearGradient
-                        colors={['#2563eb', '#9333ea', '#db2777']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
+                  <Text
+                    className="text-sm text-gray-700 text-center"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
+                  >
+                    {t('today.empty.guide')}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  className="flex-1 rounded-xl overflow-hidden"
+                  onPress={() => navigation.navigate('CreateMandalart')}
+                >
+                  <LinearGradient
+                    colors={['#2563eb', '#9333ea', '#db2777']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ padding: 1, borderRadius: 12 }}
+                  >
+                    <View className="bg-white rounded-xl py-3 items-center justify-center">
+                      <MaskedView
+                        maskElement={
+                          <Text
+                            className="text-sm text-center"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            {t('today.empty.create')}
+                          </Text>
+                        }
                       >
-                        <Text
-                          className="text-sm opacity-0"
-                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        <LinearGradient
+                          colors={['#2563eb', '#9333ea', '#db2777']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
                         >
-                          {t('today.empty.create')}
-                        </Text>
-                      </LinearGradient>
-                    </MaskedView>
-                  </View>
-                </LinearGradient>
-              </Pressable>
-            </View>
-          </Animated.View>
-        )}
+                          <Text
+                            className="text-sm opacity-0"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            {t('today.empty.create')}
+                          </Text>
+                        </LinearGradient>
+                      </MaskedView>
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            </Animated.View>
+          )}
 
-        {/* Filtered Empty State - 필터 결과가 없을 때 */}
-        {emptyStateScenario && (
-          <FilteredEmptyState
-            scenario={emptyStateScenario}
-            onAction={handleEmptyStateAction}
-            hasCompletedActions={completedActions.length > 0}
-          />
-        )}
+          {/* Filtered Empty State - 필터 결과가 없을 때 */}
+          {emptyStateScenario && (
+            <FilteredEmptyState
+              scenario={emptyStateScenario}
+              onAction={handleEmptyStateAction}
+              hasCompletedActions={completedActions.length > 0}
+            />
+          )}
 
-        {/* iPad: 2-column layout (Left: Configured, Right: XP Boost + Unconfigured + Completed) */}
-        {isTablet && (filteredActions.length > 0 || unconfiguredActions.length > 0 || completedActions.length > 0) && (
-          <View style={{ flexDirection: 'row', gap: 16 }} className="pb-4">
-            {/* Left Column - Configured Actions */}
-            <View style={{ flex: 1 }}>
-              {filteredActions.length > 0 ? (
-                Object.entries(actionsByMandalart).map(
-                  ([mandalartId, { mandalart, actions: mandalartActions }]) => (
-                    <MandalartSection
-                      key={mandalartId}
-                      mandalartId={mandalartId}
-                      mandalartTitle={mandalart.title}
-                      actions={mandalartActions}
-                      isCollapsed={collapsedSections.has(mandalartId)}
-                      onToggleSection={() => toggleSection(mandalartId)}
-                      onToggleCheck={handleToggleCheck}
-                      onTypeBadgePress={handleTypeBadgePress}
-                      canCheck={canCheck}
-                      checkingActions={checkingActions}
-                      isTablet={isTablet}
-                    // DISABLED - rewarded ad feature removed per AdMob policy review
-                    // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
-                    // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
-                    />
+          {/* iPad: 2-column layout (Left: Configured, Right: XP Boost + Unconfigured + Completed) */}
+          {isTablet && (filteredActions.length > 0 || unconfiguredActions.length > 0 || completedActions.length > 0) && (
+            <View style={{ flexDirection: 'row', gap: 16 }} className="pb-4">
+              {/* Left Column - Configured Actions */}
+              <View style={{ flex: 1 }}>
+                {filteredActions.length > 0 ? (
+                  Object.entries(actionsByMandalart).map(
+                    ([mandalartId, { mandalart, actions: mandalartActions }]) => (
+                      <MandalartSection
+                        key={mandalartId}
+                        mandalartId={mandalartId}
+                        mandalartTitle={mandalart.title}
+                        actions={mandalartActions}
+                        isCollapsed={collapsedSections.has(mandalartId)}
+                        onToggleSection={() => toggleSection(mandalartId)}
+                        onToggleCheck={handleToggleCheck}
+                        onTypeBadgePress={handleTypeBadgePress}
+                        canCheck={canCheck}
+                        checkingActions={checkingActions}
+                        isTablet={isTablet}
+                      // DISABLED - rewarded ad feature removed per AdMob policy review
+                      // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
+                      // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
+                      />
+                    )
                   )
-                )
-              ) : (
-                <View className="bg-gray-50 rounded-lg border border-gray-200 p-6 items-center">
-                  <Text className="text-gray-400 text-sm">{t('today.noFilterResult')}</Text>
+                ) : (
+                  <View className="bg-gray-50 rounded-lg border border-gray-200 p-6 items-center">
+                    <Text className="text-gray-400 text-sm">{t('today.noFilterResult')}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Right Column - XP Boost + Unconfigured + Completed */}
+              <View style={{ flex: 1 }}>
+                {/* XP Boost Button - Top of right column on iPad */}
+                <XPBoostButton />
+
+                {/* Unconfigured Actions - iPad */}
+                {unconfiguredActions.length > 0 && (
+                  <Animated.View
+                    entering={FadeInUp.delay(300).duration(400)}
+                    className="mb-4"
+                  >
+                    {/* Section Header */}
+                    <Pressable
+                      onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
+                      className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <View className="flex-1">
+                        <View className="flex-row items-center">
+                          <Settings size={16} color="#6b7280" />
+                          <Text
+                            className="text-base font-semibold text-gray-900 ml-2"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            {t('today.unconfigured.title')}
+                          </Text>
+                          <Text className="text-sm text-gray-500 ml-2">
+                            {unconfiguredActions.length}
+                          </Text>
+                        </View>
+                        <Text
+                          className="text-sm text-gray-500 mt-1"
+                          numberOfLines={1}
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {t('today.unconfigured.hint')}
+                        </Text>
+                      </View>
+                      {unconfiguredCollapsed ? (
+                        <ChevronRight size={20} color="#6b7280" />
+                      ) : (
+                        <ChevronDown size={20} color="#6b7280" />
+                      )}
+                    </Pressable>
+
+                    {/* Unconfigured Items - Same style as ActionItem */}
+                    {!unconfiguredCollapsed && (
+                      <View className="mt-2 space-y-2">
+                        {unconfiguredActions.map((action) => (
+                          <Pressable
+                            key={action.id}
+                            className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
+                            onPress={() => handleTypeBadgePress(action)}
+                          >
+                            <View className="flex-1">
+                              <Text
+                                className="text-base text-gray-900"
+                                numberOfLines={1}
+                              >
+                                {action.title}
+                              </Text>
+                              <Text
+                                className="text-xs text-gray-400 mt-1"
+                                numberOfLines={1}
+                              >
+                                {action.sub_goal.title}
+                              </Text>
+                            </View>
+                            <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                              <ActionTypeIcon type={action.type} size={14} />
+                              <Text className="text-xs text-amber-600 ml-1">
+                                {t('actionType.unconfigured')}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+                  </Animated.View>
+                )}
+
+                {/* Completed Actions Section - iPad */}
+                {completedActions.length > 0 && (
+                  <Animated.View
+                    entering={FadeInUp.delay(400).duration(400)}
+                  >
+                    {/* Section Header */}
+                    <Pressable
+                      onPress={() => setCompletedCollapsed(!completedCollapsed)}
+                      className="flex-row items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200"
+                    >
+                      <View className="flex-1">
+                        <View className="flex-row items-center">
+                          <CheckCircle size={16} color="#16a34a" />
+                          <Text
+                            className="text-base font-semibold text-gray-900 ml-2"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                          >
+                            {t('today.completed.title')}
+                          </Text>
+                          <Text className="text-sm text-gray-500 ml-2">
+                            {completedActions.length}
+                          </Text>
+                        </View>
+                        <Text
+                          className="text-sm text-gray-500 mt-1"
+                          numberOfLines={1}
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {t('today.completed.hint')}
+                        </Text>
+                      </View>
+                      {completedCollapsed ? (
+                        <ChevronRight size={20} color="#16a34a" />
+                      ) : (
+                        <ChevronDown size={20} color="#16a34a" />
+                      )}
+                    </Pressable>
+
+                    {/* Completed Items */}
+                    {!completedCollapsed && (
+                      <View className="mt-2 space-y-2">
+                        {completedActions.map((action) => (
+                          <View
+                            key={action.id}
+                            className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200 opacity-60"
+                          >
+                            <View className="flex-1">
+                              <Text
+                                className="text-base text-gray-900"
+                                numberOfLines={1}
+                              >
+                                {action.title}
+                              </Text>
+                              <Text
+                                className="text-xs text-gray-400 mt-1"
+                                numberOfLines={1}
+                              >
+                                {action.sub_goal.title}
+                              </Text>
+                            </View>
+                            <View className="flex-row items-center bg-green-50 px-2 py-1 rounded-lg border border-green-200">
+                              <CheckCircle size={14} color="#16a34a" />
+                              <Text className="text-xs text-green-600 ml-1">
+                                {t('today.completed.badge')}
+                              </Text>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </Animated.View>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Phone: Single column layout */}
+          {!isTablet && (
+            <>
+              {/* Configured Actions */}
+              {filteredActions.length > 0 && (
+                <View className="space-y-4 pb-4">
+                  {Object.entries(actionsByMandalart).map(
+                    ([mandalartId, { mandalart, actions: mandalartActions }]) => (
+                      <MandalartSection
+                        key={mandalartId}
+                        mandalartId={mandalartId}
+                        mandalartTitle={mandalart.title}
+                        actions={mandalartActions}
+                        isCollapsed={collapsedSections.has(mandalartId)}
+                        onToggleSection={() => toggleSection(mandalartId)}
+                        onToggleCheck={handleToggleCheck}
+                        onTypeBadgePress={handleTypeBadgePress}
+                        canCheck={canCheck}
+                        checkingActions={checkingActions}
+                        isTablet={isTablet}
+                      // DISABLED - rewarded ad feature removed per AdMob policy review
+                      // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
+                      // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
+                      />
+                    )
+                  )}
                 </View>
               )}
-            </View>
 
-            {/* Right Column - XP Boost + Unconfigured + Completed */}
-            <View style={{ flex: 1 }}>
-              {/* XP Boost Button - Top of right column on iPad */}
-              <XPBoostButton />
-
-              {/* Unconfigured Actions - iPad */}
+              {/* Unconfigured Actions Section */}
               {unconfiguredActions.length > 0 && (
                 <Animated.View
                   entering={FadeInUp.delay(300).duration(400)}
@@ -881,6 +1075,9 @@ export default function TodayScreen() {
                   <Pressable
                     onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
                     className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    onLayout={(e) => {
+                      unconfiguredSectionYRef.current = e.nativeEvent.layout.y
+                    }}
                   >
                     <View className="flex-1">
                       <View className="flex-row items-center">
@@ -911,45 +1108,49 @@ export default function TodayScreen() {
                   </Pressable>
 
                   {/* Unconfigured Items - Same style as ActionItem */}
-                  {!unconfiguredCollapsed && (
-                    <View className="mt-2 space-y-2">
-                      {unconfiguredActions.map((action) => (
-                        <Pressable
-                          key={action.id}
-                          className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
-                          onPress={() => handleTypeBadgePress(action)}
-                        >
-                          <View className="flex-1">
-                            <Text
-                              className="text-base text-gray-900"
-                              numberOfLines={1}
-                            >
-                              {action.title}
-                            </Text>
-                            <Text
-                              className="text-xs text-gray-400 mt-1"
-                              numberOfLines={1}
-                            >
-                              {action.sub_goal.title}
-                            </Text>
-                          </View>
-                          <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-                            <ActionTypeIcon type={action.type} size={14} />
-                            <Text className="text-xs text-amber-600 ml-1">
-                              {t('actionType.unconfigured')}
-                            </Text>
-                          </View>
-                        </Pressable>
-                      ))}
-                    </View>
-                  )}
+                  {!unconfiguredCollapsed && (() => {
+                    // Phone: single column (iPad has its own layout at top level)
+                    return (
+                      <View className="mt-2 space-y-2">
+                        {unconfiguredActions.map((action) => (
+                          <Pressable
+                            key={action.id}
+                            className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
+                            onPress={() => handleTypeBadgePress(action)}
+                          >
+                            <View className="flex-1">
+                              <Text
+                                className="text-base text-gray-900"
+                                numberOfLines={1}
+                              >
+                                {action.title}
+                              </Text>
+                              <Text
+                                className="text-xs text-gray-400 mt-1"
+                                numberOfLines={1}
+                              >
+                                {action.sub_goal.title}
+                              </Text>
+                            </View>
+                            <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                              <ActionTypeIcon type={action.type} size={14} />
+                              <Text className="text-xs text-amber-600 ml-1">
+                                {t('actionType.unconfigured')}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )
+                  })()}
                 </Animated.View>
               )}
 
-              {/* Completed Actions Section - iPad */}
+              {/* Completed Actions Section - Period target achieved */}
               {completedActions.length > 0 && (
                 <Animated.View
                   entering={FadeInUp.delay(400).duration(400)}
+                  className="mb-4"
                 >
                   {/* Section Header */}
                   <Pressable
@@ -1018,199 +1219,12 @@ export default function TodayScreen() {
                   )}
                 </Animated.View>
               )}
-            </View>
-          </View>
-        )}
+            </>
+          )}
 
-        {/* Phone: Single column layout */}
-        {!isTablet && (
-          <>
-            {/* Configured Actions */}
-            {filteredActions.length > 0 && (
-              <View className="space-y-4 pb-4">
-                {Object.entries(actionsByMandalart).map(
-                  ([mandalartId, { mandalart, actions: mandalartActions }]) => (
-                    <MandalartSection
-                      key={mandalartId}
-                      mandalartId={mandalartId}
-                      mandalartTitle={mandalart.title}
-                      actions={mandalartActions}
-                      isCollapsed={collapsedSections.has(mandalartId)}
-                      onToggleSection={() => toggleSection(mandalartId)}
-                      onToggleCheck={handleToggleCheck}
-                      onTypeBadgePress={handleTypeBadgePress}
-                      canCheck={canCheck}
-                      checkingActions={checkingActions}
-                      isTablet={isTablet}
-                    // DISABLED - rewarded ad feature removed per AdMob policy review
-                    // yesterdayMissedIds={isToday ? yesterdayMissedIds : undefined}
-                    // onYesterdayCheckCompleted={handleYesterdayCheckCompleted}
-                    />
-                  )
-                )}
-              </View>
-            )}
-
-            {/* Unconfigured Actions Section */}
-            {unconfiguredActions.length > 0 && (
-              <Animated.View
-                entering={FadeInUp.delay(300).duration(400)}
-                className="mb-4"
-              >
-                {/* Section Header */}
-                <Pressable
-                  onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
-                  className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
-                  onLayout={(e) => {
-                    unconfiguredSectionYRef.current = e.nativeEvent.layout.y
-                  }}
-                >
-                  <View className="flex-1">
-                    <View className="flex-row items-center">
-                      <Settings size={16} color="#6b7280" />
-                      <Text
-                        className="text-base font-semibold text-gray-900 ml-2"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                      >
-                        {t('today.unconfigured.title')}
-                      </Text>
-                      <Text className="text-sm text-gray-500 ml-2">
-                        {unconfiguredActions.length}
-                      </Text>
-                    </View>
-                    <Text
-                      className="text-sm text-gray-500 mt-1"
-                      numberOfLines={1}
-                      style={{ fontFamily: 'Pretendard-Regular' }}
-                    >
-                      {t('today.unconfigured.hint')}
-                    </Text>
-                  </View>
-                  {unconfiguredCollapsed ? (
-                    <ChevronRight size={20} color="#6b7280" />
-                  ) : (
-                    <ChevronDown size={20} color="#6b7280" />
-                  )}
-                </Pressable>
-
-                {/* Unconfigured Items - Same style as ActionItem */}
-                {!unconfiguredCollapsed && (() => {
-                  // Phone: single column (iPad has its own layout at top level)
-                  return (
-                    <View className="mt-2 space-y-2">
-                      {unconfiguredActions.map((action) => (
-                        <Pressable
-                          key={action.id}
-                          className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
-                          onPress={() => handleTypeBadgePress(action)}
-                        >
-                          <View className="flex-1">
-                            <Text
-                              className="text-base text-gray-900"
-                              numberOfLines={1}
-                            >
-                              {action.title}
-                            </Text>
-                            <Text
-                              className="text-xs text-gray-400 mt-1"
-                              numberOfLines={1}
-                            >
-                              {action.sub_goal.title}
-                            </Text>
-                          </View>
-                          <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-                            <ActionTypeIcon type={action.type} size={14} />
-                            <Text className="text-xs text-amber-600 ml-1">
-                              {t('actionType.unconfigured')}
-                            </Text>
-                          </View>
-                        </Pressable>
-                      ))}
-                    </View>
-                  )
-                })()}
-              </Animated.View>
-            )}
-
-            {/* Completed Actions Section - Period target achieved */}
-            {completedActions.length > 0 && (
-              <Animated.View
-                entering={FadeInUp.delay(400).duration(400)}
-                className="mb-4"
-              >
-                {/* Section Header */}
-                <Pressable
-                  onPress={() => setCompletedCollapsed(!completedCollapsed)}
-                  className="flex-row items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200"
-                >
-                  <View className="flex-1">
-                    <View className="flex-row items-center">
-                      <CheckCircle size={16} color="#16a34a" />
-                      <Text
-                        className="text-base font-semibold text-gray-900 ml-2"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                      >
-                        {t('today.completed.title')}
-                      </Text>
-                      <Text className="text-sm text-gray-500 ml-2">
-                        {completedActions.length}
-                      </Text>
-                    </View>
-                    <Text
-                      className="text-sm text-gray-500 mt-1"
-                      numberOfLines={1}
-                      style={{ fontFamily: 'Pretendard-Regular' }}
-                    >
-                      {t('today.completed.hint')}
-                    </Text>
-                  </View>
-                  {completedCollapsed ? (
-                    <ChevronRight size={20} color="#16a34a" />
-                  ) : (
-                    <ChevronDown size={20} color="#16a34a" />
-                  )}
-                </Pressable>
-
-                {/* Completed Items */}
-                {!completedCollapsed && (
-                  <View className="mt-2 space-y-2">
-                    {completedActions.map((action) => (
-                      <View
-                        key={action.id}
-                        className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200 opacity-60"
-                      >
-                        <View className="flex-1">
-                          <Text
-                            className="text-base text-gray-900"
-                            numberOfLines={1}
-                          >
-                            {action.title}
-                          </Text>
-                          <Text
-                            className="text-xs text-gray-400 mt-1"
-                            numberOfLines={1}
-                          >
-                            {action.sub_goal.title}
-                          </Text>
-                        </View>
-                        <View className="flex-row items-center bg-green-50 px-2 py-1 rounded-lg border border-green-200">
-                          <CheckCircle size={14} color="#16a34a" />
-                          <Text className="text-xs text-green-600 ml-1">
-                            {t('today.completed.badge')}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </Animated.View>
-            )}
-          </>
-        )}
-
-        {/* Bottom spacing */}
-        <View className="h-8" />
-      </ScrollView>
+          {/* Bottom spacing */}
+          <View className="h-8" />
+        </ScrollView>
       )}
 
       {/* Action Type Selector Modal */}
