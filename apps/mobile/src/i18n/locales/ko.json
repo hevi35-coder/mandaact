@@ -243,7 +243,8 @@
         "goalType": "목표 유형",
         "customSituation": "현재 상황을 간단히 적어주세요",
         "customPriority": "가장 중요한 우선순위",
-        "customObstacle": "지속을 방해하는 가장 큰 요인"
+        "customObstacle": "지속을 방해하는 가장 큰 요인",
+        "detailedContext": "나의 구체적인 상황 (코칭에 반영)"
       },
       "options": {
         "time": {
@@ -322,7 +323,8 @@
       "placeholders": {
         "customSituation": "예: 이직 준비 중",
         "customPriority": "예: 건강, 재정, 관계",
-        "customObstacle": "예: 일정이 들쭉날쭉함"
+        "customObstacle": "예: 일정이 들쭉날쭉함",
+        "detailedContext": "예: 육아와 병행 중인 이직 준비생입니다. 밤 10시 이후에만 집중할 수 있어요. AI가 이 설정을 꼭 반영하게 해주세요."
       },
       "validation": "필수 질문에 답해주시면 더 잘 맞춰드릴게요.",
       "cta": "계속하기",
@@ -363,7 +365,8 @@
       "validationMin": "최소 {{count}}개의 서브 목표가 필요해요.",
       "summary": "서브 목표 저장됨.",
       "prompt": "다음: 서브 목표 작성",
-      "aiSuggest": "AI 추천 받기"
+      "aiSuggest": "AI 추천 받기",
+      "loadingText": "AI 코치가 목표를 분석 중입니다..."
     },
     "step4": {
       "title": "실천 항목 초안",
@@ -404,7 +407,8 @@
       "summary": "실천 항목 저장됨.",
       "prompt": "다음: 실천 항목 초안",
       "pending": "4단계는 다음에 이어집니다.",
-      "aiGenerate": "AI로 실천 생성"
+      "aiGenerate": "AI로 실천 생성",
+      "loadingText": "최적의 행동 플랜을 설계 중입니다..."
     },
     "step5": {
       "title": "현실성 점검",
@@ -419,7 +423,8 @@
       "prompt": "다음: 루틴 설정",
       "checking": "AI가 현실성을 점검하고 있어요...",
       "suggestionsTitle": "AI 추천 제안",
-      "runCheck": "현실성 점검하기"
+      "runCheck": "현실성 점검하기",
+      "loadingText": "AI가 계획의 현실성을 점검 중입니다..."
     },
     "step6": {
       "title": "루틴 설정",
@@ -467,7 +472,17 @@
       "autoSet": "기본값으로 모두 채우기",
       "summary": "코칭 저장 완료",
       "prompt": "다음: 최종 검토",
-      "completed": "세션 완료"
+      "completed": "세션 완료",
+      "loadingText": "설정을 적용 중입니다..."
+    },
+    "chat": {
+      "placeholder": "코치에게 말을 걸어보세요...",
+      "loading": "만다 코치가 분석 중...",
+      "mandalartDraft": "만다라트 초안",
+      "aiPowered": "POWERED BY AI (Perplexity)",
+      "error": "죄송합니다. 연동 중 오류가 발생했습니다. 다시 말씀해 주시겠어요?",
+      "greeting": "안녕하세요! 당신의 성장을 돕는 만다 코치입니다. 어떤 목표를 가슴에 품고 오셨나요? 핵심 목표를 한 문장으로 말씀해 주세요.",
+      "inputHint": "대화를 시작하세요..."
     }
   },
   "today": {

@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, Pressable, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useIsFocused } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Header } from '../components'
 import { Button } from '../components/ui'
 import { useAuthStore } from '../store/authStore'
-import { useCoachingStore } from '../store/coachingStore'
+import { useCoachingStore, PersonaType } from '../store/coachingStore'
 import { useCoachingAccessStore } from '../store/coachingAccessStore'
 import { useSubscriptionContext } from '../context'
 import { useRewardedAd } from '../hooks/useRewardedAd'
@@ -22,7 +22,7 @@ export default function CoachingGateScreen() {
   const navigation = useNavigation<NavigationProp>()
   const toast = useToast()
   const { user } = useAuthStore()
-  const { status } = useCoachingStore()
+  const { status, startSession } = useCoachingStore()
   const { isPremium, canCreateMandalart } = useSubscriptionContext()
   const {
     ensureCurrentWeek,
@@ -32,8 +32,11 @@ export default function CoachingGateScreen() {
     lifetimeSessions,
   } = useCoachingAccessStore()
   const { data: mandalarts = [], isLoading: mandalartsLoading } = useMandalarts(user?.id)
+  const isFocused = useIsFocused()
   const [gateMode, setGateMode] = useState<GateMode>('loading')
+  const [selectedPersona, setSelectedPersona] = useState<PersonaType>('working_professional')
   const autoStartRef = useRef(false)
+  const navigationAttemptedRef = useRef(false)
 
   const canStartWithAd = weeklySessions >= 1 && weeklyAdUnlocks < 1 && weeklySessions < 2
   const weeklyLimitReached = weeklySessions >= 2 || (weeklySessions >= 1 && weeklyAdUnlocks >= 1)
@@ -44,49 +47,54 @@ export default function CoachingGateScreen() {
     ensureCurrentWeek()
   }, [ensureCurrentWeek])
 
+  // Consolidated redirection logic
   useEffect(() => {
-    if (status && status !== 'completed') {
-      navigation.replace('CoachingFlow')
-    }
-  }, [navigation, status])
+    if (!isFocused || navigationAttemptedRef.current) return
 
-  useEffect(() => {
+    // 1. Existing active session
+    if (status && status !== 'completed') {
+      navigationAttemptedRef.current = true
+      navigation.replace('ConversationalCoaching')
+      return
+    }
+
     if (mandalartsLoading) {
       setGateMode('loading')
       return
     }
 
+    // 2. Premium users auto-start
     if (isPremium) {
-      navigation.replace('CoachingFlow')
+      navigationAttemptedRef.current = true
+      navigation.replace('ConversationalCoaching')
       return
     }
 
+    // 3. New mandalart check
     if (!canCreateMandalart(mandalarts.length)) {
+      navigationAttemptedRef.current = true
       navigation.replace('CoachingSlotGate')
       return
     }
 
+    // 4. Determine Gate Mode or Auto-start Free
     if (weeklyLimitReached) {
       setGateMode('limit')
-      return
-    }
-
-    if (canStartWithAd) {
+    } else if (canStartWithAd) {
       setGateMode('ad')
-      return
-    }
-
-    if (hasFreeSession && isFirstSession) {
+    } else if (hasFreeSession && isFirstSession) {
       setGateMode('welcome')
-      return
-    }
-
-    if (hasFreeSession && !autoStartRef.current) {
-      autoStartRef.current = true
-      registerSessionStart('free')
-      navigation.replace('CoachingFlow')
+    } else if (hasFreeSession) {
+      if (!autoStartRef.current) {
+        autoStartRef.current = true
+        navigationAttemptedRef.current = true
+        registerSessionStart('free')
+        navigation.replace('ConversationalCoaching')
+      }
     }
   }, [
+    isFocused,
+    status,
     mandalartsLoading,
     isPremium,
     mandalarts.length,
@@ -99,10 +107,12 @@ export default function CoachingGateScreen() {
     navigation,
   ])
 
-  const handleStartFree = useCallback(() => {
-    registerSessionStart('free')
-    navigation.replace('CoachingFlow')
-  }, [navigation, registerSessionStart])
+  const handleStartFree = useCallback(async () => {
+    if (!user?.id) return
+    await registerSessionStart('free')
+    await startSession(user.id, selectedPersona)
+    navigation.replace('ConversationalCoaching')
+  }, [navigation, registerSessionStart, startSession, user?.id, selectedPersona])
 
   const handleUpgrade = useCallback(() => {
     navigation.navigate('Subscription')
@@ -110,9 +120,11 @@ export default function CoachingGateScreen() {
 
   const { isLoading: adLoading, show: showAd } = useRewardedAd({
     adType: 'REWARDED_COACHING_SESSION',
-    onRewardEarned: () => {
-      registerSessionStart('ad')
-      navigation.replace('CoachingFlow')
+    onRewardEarned: async () => {
+      if (!user?.id) return
+      await registerSessionStart('ad')
+      await startSession(user.id, selectedPersona)
+      navigation.replace('ConversationalCoaching')
     },
   })
 
@@ -200,17 +212,48 @@ export default function CoachingGateScreen() {
           </Text>
         </View>
 
-        <View className="bg-white rounded-2xl p-5 border border-gray-100 mb-6">
-          <Text className="text-sm text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>
-            {t('coaching.gate.summaryTitle')}
-          </Text>
-          <Text className="text-lg text-gray-900 mt-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-            {t('coaching.gate.summaryValue', { used: weeklySessions, total: 2 })}
-          </Text>
-          <Text className="text-sm text-gray-500 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
-            {t('coaching.gate.summaryHint')}
-          </Text>
-        </View>
+        {gateMode === 'welcome' && (
+          <View className="space-y-3 mb-6">
+            <Text className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'Pretendard-Medium' }}>
+              {t('coaching.step1.title')}
+            </Text>
+            {(['working_professional', 'student', 'freelancer', 'custom'] as PersonaType[]).map((key) => (
+              <Pressable
+                key={key}
+                onPress={() => setSelectedPersona(key)}
+                className={`px-4 py-4 rounded-2xl border ${selectedPersona === key ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'}`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text
+                    className={`text-base ${selectedPersona === key ? 'text-gray-900' : 'text-gray-600'}`}
+                    style={{ fontFamily: selectedPersona === key ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
+                  >
+                    {t(`coaching.step1.persona.${key}`)}
+                  </Text>
+                  {selectedPersona === key && (
+                    <View className="w-5 h-5 rounded-full bg-primary items-center justify-center">
+                      <View className="w-2 h-2 rounded-full bg-white" />
+                    </View>
+                  )}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {gateMode !== 'welcome' && (
+          <View className="bg-white rounded-2xl p-5 border border-gray-100 mb-6">
+            <Text className="text-sm text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>
+              {t('coaching.gate.summaryTitle')}
+            </Text>
+            <Text className="text-lg text-gray-900 mt-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>
+              {t('coaching.gate.summaryValue', { used: weeklySessions, total: 2 })}
+            </Text>
+            <Text className="text-sm text-gray-500 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
+              {t('coaching.gate.summaryHint')}
+            </Text>
+          </View>
+        )}
 
         <View className="mt-auto">
           <Button

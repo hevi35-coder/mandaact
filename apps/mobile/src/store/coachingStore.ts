@@ -21,6 +21,20 @@ interface CoachingContext {
   priorityArea?: string
   coreGoal?: string
   subGoals?: string[]
+  detailedContext?: string
+}
+
+export interface MandalartAction {
+  sub_goal: string
+  content: string
+  type: 'habit' | 'task'
+}
+
+export interface MandalartDraft {
+  center_goal: string
+  sub_goals: string[]
+  actions: MandalartAction[]
+  emergency_action?: string // The 'Safety Net' chosen via AI coaching
 }
 
 interface CoachingState {
@@ -34,6 +48,9 @@ interface CoachingState {
   context: CoachingContext
   summary: CoachingSummary | null
   lastResumedAt: string | null
+  chatMessages: { role: 'user' | 'assistant' | 'system', content: string }[]
+  mandalartDraft: MandalartDraft
+  slotsFilled: string[]
   setCurrentStep: (step: StepIndex) => void
   updateStepState: (step: StepIndex, state: StepState) => void
   setContext: (payload: Partial<CoachingContext>) => void
@@ -46,6 +63,9 @@ interface CoachingState {
   pauseSession: () => void
   completeSession: () => void
   resetSession: () => void
+  addChatMessage: (role: 'user' | 'assistant' | 'system', content: string) => void
+  updateMandalartDraft: (draft: Partial<MandalartDraft>) => void
+  setSlotsFilled: (slots: string[]) => void
 }
 
 const DEFAULT_STEP_STATES: Record<StepIndex, StepState> = {
@@ -71,6 +91,14 @@ export const useCoachingStore = create<CoachingState>()(
       context: { persona: null },
       summary: null,
       lastResumedAt: null,
+      chatMessages: [],
+      mandalartDraft: {
+        center_goal: '',
+        sub_goals: Array(8).fill(''),
+        actions: [],
+        emergency_action: '',
+      },
+      slotsFilled: [],
 
       startSession: async (user_id: string, persona: PersonaType) => {
         try {
@@ -94,6 +122,14 @@ export const useCoachingStore = create<CoachingState>()(
             sessionId: data.id,
             answersByStep: {},
             lastResumedAt: new Date().toISOString(),
+            chatMessages: [],
+            mandalartDraft: {
+              center_goal: '',
+              sub_goals: Array(8).fill(''),
+              actions: [],
+              emergency_action: '',
+            },
+            slotsFilled: [],
           })
           return data.id
         } catch (error) {
@@ -151,6 +187,14 @@ export const useCoachingStore = create<CoachingState>()(
             personaType: session.persona_type as PersonaType,
             answersByStep: answersObj,
             lastResumedAt: new Date().toISOString(),
+            chatMessages: answersObj['chat_history'] || [],
+            mandalartDraft: answersObj['mandalart_draft'] || {
+              center_goal: '',
+              sub_goals: Array(8).fill(''),
+              actions: [],
+              emergency_action: '',
+            },
+            slotsFilled: answersObj['slots_filled'] || [],
           })
         } catch (error) {
           console.error('Failed to load coaching session', error)
@@ -176,7 +220,6 @@ export const useCoachingStore = create<CoachingState>()(
               }, { onConflict: 'session_id, step_key' })
 
             // Update current step in session
-            // Extract step number from "stepX"
             const stepNum = parseInt(step_key.replace('step', ''))
             if (!isNaN(stepNum)) {
               await supabase
@@ -229,6 +272,43 @@ export const useCoachingStore = create<CoachingState>()(
           context: { persona: null },
           summary: null,
           lastResumedAt: null,
+          chatMessages: [],
+          mandalartDraft: {
+            center_goal: '',
+            sub_goals: Array(8).fill(''),
+            actions: [],
+            emergency_action: '',
+          },
+          slotsFilled: [],
+        })
+      },
+
+      addChatMessage: (role, content) => {
+        set((state) => {
+          const newMessages = [...state.chatMessages, { role, content }]
+          if (state.sessionId) {
+            get().saveAnswer('chat_history', newMessages)
+          }
+          return { chatMessages: newMessages }
+        })
+      },
+
+      updateMandalartDraft: (draft) => {
+        set((state) => {
+          const newDraft = { ...state.mandalartDraft, ...draft }
+          if (state.sessionId) {
+            get().saveAnswer('mandalart_draft', newDraft)
+          }
+          return { mandalartDraft: newDraft }
+        })
+      },
+
+      setSlotsFilled: (slots) => {
+        set((state) => {
+          if (state.sessionId) {
+            get().saveAnswer('slots_filled', slots)
+          }
+          return { slotsFilled: slots }
         })
       },
     }),

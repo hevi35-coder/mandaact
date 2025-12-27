@@ -2,8 +2,8 @@
 
 > 문서 인덱스: `docs/README.md`
 
-**최종 업데이트**: 2025-12-21 - 마케팅 Phase 11 (커뮤니티/블로그) 준비 완료 반영
-**현재 상태**: Phase 10.3 iOS 출시 완료 ✅ | **Phase 11 마케팅 런칭 준비 완료 (앱 심사 대기)** ⏸️
+**최종 업데이트**: 2025-12-27 - **Phase 12: 대화형 AI 컴패니언 (Conversational First) 전환 중**
+**현재 상태**: Phase 10.3 iOS 출시 완료 ✅ | **Phase 12: 대화형 코칭 전면 재건축** 🔄
 
 ---
 
@@ -67,7 +67,10 @@
   - ✅ `pnpm build:web` 검증
 - ✅ 빌드 아티팩트 업로드 (7일 보관)
 - ✅ README에 빌드 상태 배지 추가
-- [ ] PR 체크 설정 (main 브랜치 보호) - GitHub 설정에서 수동 설정 필요
+- **Phase 12 (Current)**: Conversational AI Evolution (Cleanup & Strategy) ✅ **IN PROGRESS**
+  - AI 코칭 헌법(Constitutional Rules) 확립
+  - 기존 7단계 Wizard 방식 폐기 및 '통합 대화형' 인터페이스 설계
+  - 인프라(DB/비용 로깅) 보존 및 UI/Brain 전면 재건축 전략 수립
 
 ---
 

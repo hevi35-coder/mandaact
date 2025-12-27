@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { NavigationContainer } from '@react-navigation/native'
+import { navigationRef } from './src/navigation/navigationRef'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import * as Notifications from 'expo-notifications'
 import * as Font from 'expo-font'
@@ -164,7 +166,9 @@ export default function App() {
               <ToastProvider>
                 <SubscriptionProvider>
                   <StatusBar style="dark" />
-                  <AppContent />
+                  <NavigationContainer ref={navigationRef}>
+                    <AppContent />
+                  </NavigationContainer>
                 </SubscriptionProvider>
               </ToastProvider>
             </PersistQueryClientProvider>
