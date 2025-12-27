@@ -371,6 +371,7 @@ export default function CoachingFlowScreen() {
       goalStyle: step1Values.goalStyle || '',
       timeframe: step1Values.timeframe || '',
       obstacle: step1Values.customObstacle || '',
+      detailedContext: step1Values.detailedContext || '',
     })
     updateStepState(1, 'completed')
     updateStepState(2, 'in_progress')
@@ -406,6 +407,7 @@ export default function CoachingFlowScreen() {
         availableTime,
         energyPeak: step1Values.energyPeak || '',
         priorityArea: step1Values.priorityArea || '',
+        detailedContext: ruleInputs?.detailedContext,
       }, sessionId)
 
       const subGoalArray = suggestions.map((sg: string, idx: number) => ({
@@ -455,6 +457,7 @@ export default function CoachingFlowScreen() {
         subGoals: subGoals.filter(s => s.trim()),
         persona: personaKey,
         availableTime,
+        detailedContext: ruleInputs?.detailedContext,
       }, sessionId)
 
       const drafts = (generated as ActionVariantService[]).map((gen) => ({
@@ -506,15 +509,16 @@ export default function CoachingFlowScreen() {
     try {
       const ruleInputs = answersByStep['rule_inputs'] as Record<string, string> | undefined
       const availableTime = ruleInputs?.time || '30'
-      const result = await coachingService.runRealityCheck({
-        coreGoal: coreGoal.trim(),
-        subGoals: subGoals.filter(g => g.trim()),
+      const feedback = await coachingService.runRealityCheck({
+        coreGoal: coreGoal,
+        subGoals: subGoals.filter((s) => s.trim()),
         actions: actionDrafts,
         availableTime,
-        energyPeak: step1Values.energyPeak || '',
+        energyPeak: ruleInputs?.energy || '',
+        detailedContext: ruleInputs?.detailedContext,
       }, sessionId)
-      setRealityFeedback(result.overall_feedback)
-      setRealityCorrections(result.corrections)
+      setRealityFeedback(feedback.overall_feedback)
+      setRealityCorrections(feedback.corrections)
     } catch (error) {
       logger.error('Failed to run reality check', error)
     } finally {
@@ -1025,6 +1029,24 @@ export default function CoachingFlowScreen() {
                 </View>
               </>
             )}
+          </View>
+        )}
+        {personaValue && (
+          <View className="mt-8 border-t border-gray-100 pt-6">
+            <Input
+              label={t('coaching.step1.questions.detailedContext')}
+              value={step1Values.detailedContext || ''}
+              onChangeText={(value) => updateStep1Field('detailedContext', value)}
+              placeholder={t('coaching.step1.placeholders.detailedContext')}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              className="min-h-[120px]"
+              style={{ textAlignVertical: 'top' }}
+            />
+            <Text className="text-[10px] text-gray-400 mt-1" style={{ fontFamily: 'Pretendard-Regular' }}>
+              * 구체적인 상황(예: 육아, 이직, 시험 등)을 적어주시면 AI가 이를 최우선으로 반영합니다.
+            </Text>
           </View>
         )}
 

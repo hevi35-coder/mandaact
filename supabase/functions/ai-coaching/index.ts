@@ -141,6 +141,7 @@ async function suggestSubGoals(
     availableTime: string
     energyPeak: string
     priorityArea: string
+    detailedContext?: string
   },
   sessionId?: string,
   userId?: string,
@@ -162,6 +163,7 @@ async function suggestSubGoals(
 }`
 
   const userPrompt = `페르소나: ${payload.persona}
+상세 정황(최우선 반영): ${payload.detailedContext || '없음'}
 핵심 목표: ${payload.coreGoal}
 확보 가능 시간: ${payload.availableTime}분
 에너지 피크: ${payload.energyPeak}
@@ -175,6 +177,7 @@ async function generateActions(
     subGoals: string[]
     persona: string
     availableTime: string
+    detailedContext?: string
   },
   sessionId?: string,
   userId?: string,
@@ -209,6 +212,7 @@ async function generateActions(
 
   const userPrompt = `서브 목표 목록: ${payload.subGoals.join(', ')}
 페르소나: ${payload.persona}
+상세 정황: ${payload.detailedContext || '없음'}
 확보 가능 시간: ${payload.availableTime}분`
 
   return await callPerplexity(systemPrompt, userPrompt, sessionId, userId, supabase)
@@ -221,6 +225,7 @@ async function realityCheck(
     actions: any[]
     availableTime: string
     energyPeak: string
+    detailedContext?: string
   },
   sessionId?: string,
   userId?: string,
@@ -252,6 +257,7 @@ async function realityCheck(
 
   const userPrompt = `확보 가능 시간: ${payload.availableTime}분
 에너지 피크: ${payload.energyPeak}
+상세 정황: ${payload.detailedContext || '없음'}
 핵심 목표: ${payload.coreGoal}
 계획 상세: ${JSON.stringify(payload.actions)}`
 

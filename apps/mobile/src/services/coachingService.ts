@@ -7,12 +7,14 @@ export interface AISuggestSubGoalsParams {
     availableTime: string
     energyPeak: string
     priorityArea: string
+    detailedContext?: string
 }
 
 export interface AIGenerateActionsParams {
     subGoals: string[]
     persona: string
     availableTime: string
+    detailedContext?: string
 }
 
 export interface AIRealityCheckParams {
@@ -21,6 +23,7 @@ export interface AIRealityCheckParams {
     actions: unknown[]
     availableTime: string
     energyPeak: string
+    detailedContext?: string
 }
 
 export interface ActionVariant {

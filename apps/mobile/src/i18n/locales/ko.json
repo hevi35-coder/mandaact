@@ -243,7 +243,8 @@
         "goalType": "목표 유형",
         "customSituation": "현재 상황을 간단히 적어주세요",
         "customPriority": "가장 중요한 우선순위",
-        "customObstacle": "지속을 방해하는 가장 큰 요인"
+        "customObstacle": "지속을 방해하는 가장 큰 요인",
+        "detailedContext": "나의 구체적인 상황 (코칭에 반영)"
       },
       "options": {
         "time": {
@@ -322,7 +323,8 @@
       "placeholders": {
         "customSituation": "예: 이직 준비 중",
         "customPriority": "예: 건강, 재정, 관계",
-        "customObstacle": "예: 일정이 들쭉날쭉함"
+        "customObstacle": "예: 일정이 들쭉날쭉함",
+        "detailedContext": "예: 육아와 병행 중인 이직 준비생입니다. 밤 10시 이후에만 집중할 수 있어요. AI가 이 설정을 꼭 반영하게 해주세요."
       },
       "validation": "필수 질문에 답해주시면 더 잘 맞춰드릴게요.",
       "cta": "계속하기",
