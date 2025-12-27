@@ -363,7 +363,8 @@
       "validationMin": "최소 {{count}}개의 서브 목표가 필요해요.",
       "summary": "서브 목표 저장됨.",
       "prompt": "다음: 서브 목표 작성",
-      "aiSuggest": "AI 추천 받기"
+      "aiSuggest": "AI 추천 받기",
+      "loadingText": "AI 코치가 목표를 분석 중입니다..."
     },
     "step4": {
       "title": "실천 항목 초안",
@@ -404,7 +405,8 @@
       "summary": "실천 항목 저장됨.",
       "prompt": "다음: 실천 항목 초안",
       "pending": "4단계는 다음에 이어집니다.",
-      "aiGenerate": "AI로 실천 생성"
+      "aiGenerate": "AI로 실천 생성",
+      "loadingText": "최적의 행동 플랜을 설계 중입니다..."
     },
     "step5": {
       "title": "현실성 점검",
@@ -419,7 +421,8 @@
       "prompt": "다음: 루틴 설정",
       "checking": "AI가 현실성을 점검하고 있어요...",
       "suggestionsTitle": "AI 추천 제안",
-      "runCheck": "현실성 점검하기"
+      "runCheck": "현실성 점검하기",
+      "loadingText": "AI가 계획의 현실성을 점검 중입니다..."
     },
     "step6": {
       "title": "루틴 설정",
@@ -467,7 +470,8 @@
       "autoSet": "기본값으로 모두 채우기",
       "summary": "코칭 저장 완료",
       "prompt": "다음: 최종 검토",
-      "completed": "세션 완료"
+      "completed": "세션 완료",
+      "loadingText": "설정을 적용 중입니다..."
     }
   },
   "today": {

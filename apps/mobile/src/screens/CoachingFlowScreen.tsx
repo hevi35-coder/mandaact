@@ -1080,9 +1080,18 @@ export default function CoachingFlowScreen() {
 
   const renderStep3 = () => (
     <>
-      <Text className="text-xl text-gray-900 mb-2" style={{ fontFamily: 'Pretendard-Bold' }}>
-        {t('coaching.step3.title')}
-      </Text>
+      <View className="flex-row items-center justify-between mb-4">
+        <Text className="text-xl text-gray-900" style={{ fontFamily: 'Pretendard-Bold' }}>
+          {t('coaching.step3.title')}
+        </Text>
+        {subGoals.some(g => g.trim()) && (
+          <View className="bg-gray-100 px-2 py-1 rounded-md">
+            <Text className="text-[10px] text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>
+              Powered by AI (Perplexity)
+            </Text>
+          </View>
+        )}
+      </View>
       <Text className="text-sm text-gray-500 mb-2" style={{ fontFamily: 'Pretendard-Regular' }}>
         {t('coaching.step3.subtitle')}
       </Text>
@@ -1124,6 +1133,7 @@ export default function CoachingFlowScreen() {
           variant="secondary"
           onPress={handleAISuggestSubGoals}
           loading={isSuggestingSubGoals}
+          loadingText={t('coaching.step3.loadingText')}
         >
           {t('coaching.step3.aiSuggest')}
         </Button>
@@ -1172,6 +1182,7 @@ export default function CoachingFlowScreen() {
           variant="secondary"
           onPress={handleAIGenerateActions}
           loading={isGeneratingActions}
+          loadingText={t('coaching.step4.loadingText')}
         >
           {t('coaching.step4.aiGenerate')}
         </Button>
@@ -1310,9 +1321,18 @@ export default function CoachingFlowScreen() {
 
     return (
       <>
-        <Text className="text-xl text-gray-900 mb-2" style={{ fontFamily: 'Pretendard-Bold' }}>
-          {t('coaching.step5.title')}
-        </Text>
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-xl text-gray-900" style={{ fontFamily: 'Pretendard-Bold' }}>
+            {t('coaching.step5.title')}
+          </Text>
+          {(realityFeedback || realityCorrections.length > 0) && (
+            <View className="bg-gray-100 px-2 py-1 rounded-md">
+              <Text className="text-[10px] text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>
+                Powered by AI (Perplexity)
+              </Text>
+            </View>
+          )}
+        </View>
         <Text className="text-sm text-gray-500 mb-4" style={{ fontFamily: 'Pretendard-Regular' }}>
           {t('coaching.step5.subtitle')}
         </Text>
@@ -1397,7 +1417,7 @@ export default function CoachingFlowScreen() {
 
             {!realityFeedback && !isCheckingReality && !step5Applied && !step5Rejected && (
               <View className="mt-4">
-                <Button variant="secondary" onPress={handleRunRealityCheck} loading={isCheckingReality}>
+                <Button variant="secondary" onPress={handleRunRealityCheck} loading={isCheckingReality} loadingText={t('coaching.step5.loadingText')}>
                   {t('coaching.step5.runCheck')}
                 </Button>
               </View>
@@ -1628,6 +1648,7 @@ export default function CoachingFlowScreen() {
             variant="outline"
             size="sm"
             className="bg-white border-orange-200"
+            loadingText={t('coaching.step7.loadingText')}
           >
             <Text className="text-orange-800 text-xs">{t('coaching.step7.autoSet')}</Text>
           </Button>

@@ -11,8 +11,10 @@ interface ButtonProps {
   onPress?: () => void
   disabled?: boolean
   loading?: boolean
+  loadingText?: string
   icon?: React.ReactNode
   className?: string
+  textStyle?: object
 }
 
 const variantStyles = {
@@ -47,8 +49,10 @@ export function Button({
   onPress,
   disabled = false,
   loading = false,
+  loadingText,
   icon,
   className = '',
+  textStyle = {},
 }: ButtonProps) {
   const variantStyle = variantStyles[variant]
   const sizeStyle = sizeStyles[size]
@@ -60,15 +64,23 @@ export function Button({
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'default' ? '#ffffff' : '#374151'}
-        />
+        <View className="flex-row items-center">
+          <ActivityIndicator
+            size="small"
+            color={variant === 'default' ? '#ffffff' : '#374151'}
+            className="mr-2"
+          />
+          {loadingText && (
+            <Text className={variantStyle.text} style={textStyle}>
+              {loadingText}
+            </Text>
+          )}
+        </View>
       ) : (
         <>
           {icon && <View className="mr-2">{icon}</View>}
           {typeof children === 'string' ? (
-            <Text className={variantStyle.text}>{children}</Text>
+            <Text className={variantStyle.text} style={textStyle}>{children}</Text>
           ) : (
             children
           )}
