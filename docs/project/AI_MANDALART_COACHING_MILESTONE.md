@@ -2,10 +2,22 @@
 
 > Document purpose: This file is the living milestone for the AI Mandalart Coaching re-review and redesign. It captures decisions, current spec, and future updates. Use this for implementation tracking and progress checks.
 
-## 1) Purpose
-- Reintroduce a conversational AI coaching service for building Mandalart goals over multiple days.
-- Provide guidance to avoid unrealistic goals and help users align actions with real-life constraints.
-- Support warm, encouraging coaching tone while maintaining measurable, realistic action plans.
+## 1.1) Constitutional Rules for AI Coaching
+To ensure a transformative experience, the AI must adhere to these "Golden Rules":
+
+1.  **The "Objective Provocateur"**: Never accept a goal at face value. Search for contradictions and "Socially Desirable" lies.
+2.  **System-First Architecture**: Designing the "Safety Net" (Emergency Mode) is as important as the Mandalart itself.
+3.  **Mathematical Logic Enforcement**: Perform feasibility math on every numeric claim (e.g., Revenue = Customers * Rate - Churn).
+4.  **Linguistic Filtering (Noun-to-Verb)**: Reject nouns. Reject slogans. Every action must start with a specific verb and numeric metric.
+5.  **Small-Step Interrogation**: If a task looks too big (>4 hours), force the user to define the first 30-minute micro-action.
+6.  **Progressive Interaction (One by One)**: Maintain a strict 1-input-1-response rhythm to minimize cognitive load.
+7.  **Habit vs. Task Separation**: Explicitly distinguish between daily repetitions and one-off milestones for realistic scheduling.
+
+## 1.2) Reflection: Why the current approach feels like a "Trap"
+- **Forced Linear Path**: Users are forced through steps (1 to 7) without the ability to jump around or skip.
+- **Multiple Choice Fatigue**: Asking 5-6 rigid questions before even discussing the goal creates cognitive load and feels like a survey.
+- **Validation Blockers**: Requiring 8 sub-goals and 24 actions to be "perfectly configured" before saving creates a high barrier to entry.
+- **Transactional AI**: AI is triggered by buttons (Generate) rather than being a continuous participant in the thought process.
 
 ## 1.1) Terminology
 - **Session**: one full 7-day coaching flow.
@@ -39,25 +51,17 @@
   - Custom input
 - Note: user can change later. Entry is the start of Step 1.
 
-### 5.2 Coaching Flow (Fixed 7-Step)
-- Step 1: Situation check (time, energy, schedule constraints)
-- Step 2: Core goal confirmation
-- Step 3: 8 sub-goals draft
-- Step 4: Action items draft (2-3 per sub-goal)
-- Step 5: Reality check and corrections
-- Step 6: Routine scheduling and minimum viable plan
-- Step 7: Final review and save
+### 5.2 Coaching Flow (Dynamic Discovery)
+Instead of a fixed 7-step wizard, we move to a **Chat-First Discovery**:
+1.  **Opening Dialogue**: "Tell me about your goal and your typical day."
+2.  **Context Extraction**: AI parses name, persona, available time, and energy peak from the chat.
+3.  **Incremental Build**: As the user agrees on goals, the Mandalart visualises them in a side-drawer or mini-preview.
+4.  **No Hard Stops**: "Save as Draft" is always available. 8 sub-goals are *recommended* but not mandatory to exit.
 
-### 5.3 Screen Flow (Wire-Level Summary)
-- Entry
-- Step 1 Persona selection + situation check
-- Step 2 core goal confirmation
-- Step 3 sub-goals (8)
-- Step 4 action drafts
-- Step 5 reality check
-- Step 6 routine setup
-- Step 7 final review and save
-- Progress card for resume on home
+### 5.3 Screen Flow (Unified View)
+- **Top**: Mini-Mandalart progress visualizer.
+- **Center**: Conversational Chat Interface.
+- **Bottom**: Smart Suggestion Chips (e.g., "I'm a student", "Work is my priority", "Let's stick to 4 sub-goals").
 
 ### 5.4 Coaching Pipeline (End-to-End)
 1) Collect answers (Question sets)
@@ -69,47 +73,17 @@
 
 ## 6) Inputs & Questions
 
-### 6.1 Question Sets (Persona-Based)
+### 6.1 Context Extraction (Dialog Parsing)
+Instead of fixed question sets, we define **Information Slots** the AI needs to fill:
+- **Mandatory**: Core Goal, Persona (Working/Student/etc.).
+- **Dynamic**: Available Time, Energy Peak, Priority Area, Potential Obstacles.
 
-#### 6.1.1 Working Professional
-Step 1
-1) Daily available time: 10 / 30 / 60 / 90 mins
-2) Energy peak: morning / lunch / evening
-3) Priority area: work / health / learning / relationships / life / other
+The AI will ask about these naturally if not provided in the opening message.
 
-Step 2
-4) After work follow-through difficulty: yes / neutral / no
-5) This month goal style: maintain / balanced / challenge
-
-#### 6.1.2 Student
-Step 1
-1) Main schedule type: classes / exams / projects / other
-2) Daily available time: 30 / 60 / 90 / 120 mins
-3) Priority area: grades / career / habits / health / other
-
-Step 2
-4) Busy period follow-through difficulty: yes / neutral / no
-5) Timeframe: short (1-4 weeks) / mid / long (2-3 months)
-
-#### 6.1.3 Freelancer
-Step 1
-1) Schedule variability: low / medium / high
-2) Weekly working time: 20-30 / 30-40 / 40-50 / 50+ hrs
-3) Priority area: income / delivery / health / learning / other
-
-Step 2
-4) Plan stability under schedule changes: yes / neutral / no
-5) Goal type: outcome / mixed / routine
-
-#### 6.1.4 Custom Input
-Step 1
-1) Describe your current situation (free text)
-2) Daily available time: 10 / 30 / 60 / 90 / 120+ mins
-3) Priority area (free text)
-
-Step 2
-4) Biggest obstacle to consistency (free text)
-5) Goal style: maintain / balanced / challenge
+### 6.2 Validation Policy (Simplified)
+- **Minimum for Save**: 1 Core Goal + 1 Sub-goal.
+- **Recommended**: 8 Sub-goals + 3 Actions each.
+- **Policy**: Never block a user from saving a "Work in Progress" plan.
 
 ### 6.2 Input Variable Mapping (Questions -> Rules)
 - Available time -> Action duration rules, daily action cap, capacity corrections
@@ -913,5 +887,46 @@ Sample (EN): "I’ve summarized your core goal, 8 areas, and active actions. Rea
 - coaching_ad_gate_shown: when ad gate modal is displayed.
 - coaching_ad_watched: after rewarded ad completes.
 
+
+## 17) Constitutional Rules for Conversational AI (The Benchmarks)
+
+Based on the [AI Coaching Benchmarking Analysis], the AI must adhere to these "Golden Rules" to ensure a transformative experience:
+
+### 17.1) The "Objective Provocateur" Principle
+- **Mandate**: Never accept a goal at face value. Search for contradictions and "Socially Desirable" lies.
+- **Trigger**: IF [Goal] is purely professional AND [Value] is personal -> THEN Challenge the user's priority.
+
+### 17.2) System-First Architecture
+- **Mandate**: Designing the "Safety Net" (Emergency Mode) is as important as the Mandalart itself.
+- **Rule**: Ask "How did you fail last time?" and "What is your Emergency Mode for a bad day?" before drafting the 64 items.
+
+### 17.3) Mathematical Logic Enforcement
+- **Mandate**: Perform feasibility math on every numeric claim.
+- **Example**: If Goal = $1,000/mo and Time = 5hrs/week, AI must calculate the hourly rate and check if it's realistic for a beginner.
+
+### 17.4) Linguistic Filtering (Noun-to-Verb)
+- **Mandate**: Reject nouns. Reject slogans.
+- **Rule**: Every item in the 64-grid MUST start with a specific verb and include a quantitative metric (e.g., "Write 10 lines of code daily").
+
+### 17.5) The "One by One" Interaction Rhythm
+- **Mandate**: Minimize cognitive load by asking exactly one targeted question per turn.
+- **Rule**: Never combine "Goal Setting" with "Situation Check" in the same turn.
+
 ---
-Last updated: 2025-12-24
+
+## 18) Technical Transformation Strategy (Clean Rebuild)
+
+To move from the "Fixed 7nd-Step" model to this "Conversational-First" model, we will perform a **"Clean Rebuild of the UI & Brain Layer"** rather than a destructive Git revert.
+
+### Why not Git Revert?
+- **Infra Preservation**: We keep the Supabase migrations, cost logging tables, and environment variable setups.
+- **Knowledge Retention**: We keep the `callPerplexity` logic and error handling that took time to stabilize.
+- **Service Reuse**: The backend connectivity is already solid; we just need to change the *prompt* and the *endpoint structure*.
+
+### Migration Path:
+1. **[BRAIN]**: Consolidate `supabase/functions/ai-coaching` into a single, unified `chat` endpoint that manages the State Machine.
+2. **[UI]**: Create `ConversationalCoachingScreen.tsx` as a fresh start, eventually replacing the old `CoachingFlowScreen.tsx`.
+3. **[STORAGE]**: Update `coachingStore.ts` to support dynamic "Slot Filling" instead of "Step-based" storage.
+
+---
+Last updated: 2025-12-27

@@ -1,20 +1,17 @@
 import React from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useNavigation } from '@react-navigation/native'
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { navigationRef } from '../navigation/navigationRef'
 import { Settings, ChevronLeft } from 'lucide-react-native'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { LinearGradient } from 'expo-linear-gradient'
-import type { RootStackParamList } from '../navigation/RootNavigator'
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 interface HeaderProps {
   showSettings?: boolean
   showBackButton?: boolean
   title?: string
   rightElement?: React.ReactNode
+  navigation?: any
 }
 
 /**
@@ -57,20 +54,14 @@ function BrandLogo() {
   )
 }
 
-/**
- * Shared header component for all screens
- * - Left: Brand logo (MandaAct with gradient) or Back button with title
- * - Right: Settings button (optional)
- * - Height: h-16 (64px) for better touch targets
- * - Padding: px-5 (20px) for more breathing room
- */
 export default function Header({
   showSettings = true,
   showBackButton = false,
   title,
   rightElement,
+  navigation: propNavigation,
 }: HeaderProps) {
-  const navigation = useNavigation<NavigationProp>()
+  const navigation = propNavigation || navigationRef
   const insets = useSafeAreaInsets()
 
   return (

@@ -46,6 +46,7 @@ import SubscriptionScreen from '../screens/SubscriptionScreen'
 import CoachingFlowScreen from '../screens/CoachingFlowScreen'
 import CoachingGateScreen from '../screens/CoachingGateScreen'
 import CoachingSlotGateScreen from '../screens/CoachingSlotGateScreen'
+import ConversationalCoachingScreen from '../screens/ConversationalCoachingScreen'
 
 export type RootStackParamList = {
   Main: undefined
@@ -58,6 +59,7 @@ export type RootStackParamList = {
   CoachingGate: undefined
   CoachingSlotGate: undefined
   CoachingFlow: undefined
+  ConversationalCoaching: undefined
 }
 
 export type MainTabParamList = {
@@ -195,76 +197,81 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          <>
-            <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-              name="CreateMandalart"
-              component={MandalartCreateScreen}
-              options={{
-                // iPad: fullScreenModal for better 9x9 grid experience
-                // Phone: regular modal
-                presentation: isTablet ? 'fullScreenModal' : 'modal',
-                animation: 'slide_from_bottom',
-              }}
-            />
-            <Stack.Screen
-              name="MandalartDetail"
-              component={MandalartDetailScreen}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="Settings"
-              component={SettingsScreen}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="Tutorial"
-              component={TutorialScreen}
-              options={{
-                presentation: 'fullScreenModal',
-                animation: 'slide_from_bottom',
-              }}
-            />
-            <Stack.Screen
-              name="Subscription"
-              component={SubscriptionScreen}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="CoachingGate"
-              component={CoachingGateScreen}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="CoachingSlotGate"
-              component={CoachingSlotGateScreen}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="CoachingFlow"
-              component={CoachingFlowScreen}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-          </>
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {user ? (
+        <>
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen
+            name="CreateMandalart"
+            component={MandalartCreateScreen}
+            options={{
+              // iPad: fullScreenModal for better 9x9 grid experience
+              // Phone: regular modal
+              presentation: isTablet ? 'fullScreenModal' : 'modal',
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="MandalartDetail"
+            component={MandalartDetailScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="Tutorial"
+            component={TutorialScreen}
+            options={{
+              presentation: 'fullScreenModal',
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="Subscription"
+            component={SubscriptionScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="CoachingGate"
+            component={CoachingGateScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="CoachingSlotGate"
+            component={CoachingSlotGateScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="CoachingFlow"
+            component={CoachingFlowScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="ConversationalCoaching"
+            component={ConversationalCoachingScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+        </>
+      ) : (
+        <Stack.Screen name="Login" component={LoginScreen} />
+      )}
+    </Stack.Navigator>
   )
 }

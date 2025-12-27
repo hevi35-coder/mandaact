@@ -382,15 +382,16 @@ CREATE TABLE check_history (
 #### F6.2 목표 진단 리포트 ✅
 **구현 내용**:
 - **SMART 기준 분석**: 만다라트 구조 진단
-  - Specific (구체성)
-  - Measurable (측정 가능성)
-  - Achievable (달성 가능성)
-  - Relevant (관련성)
-  - Time-bound (기한 설정)
 - **개선 제안**: AI 기반 구체적 피드백
 - **Edge Function**: `generate-goal-diagnosis`
 
-**참고**: 대화형 AI 코치는 제거됨 (Phase 7에서 재고려)
+### Phase 8: Conversational Coaching (v2.0) ⏳ **PLANNING**
+**목표**: 단순 리포트를 넘어 사용자와 대화하며 목표를 함께 수립하는 'AI 코칭 컴패니언'
+**주요 기능**:
+- **Chat-First Discovery**: 고정된 7단계 폼 대신 자연스러운 대화로 정보(Slot) 추출
+- **Constitutional Rules 적용**: 냉정한 현실 검증, 수학적 논리 체크, 동사 중심 행동 강제
+- **실시간 만다라트 시각화**: 대화 내용이 실시간으로 만다라트 그리드에 반영
+- **Emergency Mode 설계**: 컨디션 변동성을 고려한 '비상 계획' 수립 지원
 
 ---
 
@@ -646,27 +647,12 @@ interface CoachingContext {
 }
 ```
 
-**System Prompt**:
-```
-You are MandaAct Coach, a supportive AI helping users achieve their Mandalart goals.
-
-User's Goals:
-- Main: {center_goal}
-- Focus Areas: {sub_goals}
-
-Recent Performance:
-- This week: {check_rate}% completion
-- Struggling with: {low_performance_areas}
-
-Your Role:
-1. Empathize with challenges
-2. Ask questions to understand root causes
-3. Suggest small, actionable improvements
-4. Celebrate wins, no matter how small
-
-Tone: Warm, encouraging, non-judgmental
-Format: 2-3 short paragraphs per response
-```
+**System Prompt Optimization**:
+AI는 다음의 **헌법(Constitutional Rules)**을 준수해야 함:
+1. **냉정한 도발**: 사용자의 자기기만과 추상적 목표를 지적함
+2. **수학적 검증**: 시간/비용/수익의 논리적 타당성을 계산함
+3. **동사 중심**: 모든 실행 항목을 '동사+숫자' 조합으로 강제함
+4. **시스템 중심**: 실패 방지를 위한 '비상 모드'를 반드시 설계함
 
 **Conversation Flow Management**:
 - Session timeout: 30 minutes

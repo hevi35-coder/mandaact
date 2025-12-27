@@ -474,6 +474,15 @@
       "prompt": "다음: 최종 검토",
       "completed": "세션 완료",
       "loadingText": "설정을 적용 중입니다..."
+    },
+    "chat": {
+      "placeholder": "코치에게 말을 걸어보세요...",
+      "loading": "만다 코치가 분석 중...",
+      "mandalartDraft": "만다라트 초안",
+      "aiPowered": "POWERED BY AI (Perplexity)",
+      "error": "죄송합니다. 연동 중 오류가 발생했습니다. 다시 말씀해 주시겠어요?",
+      "greeting": "안녕하세요! 당신의 성장을 돕는 만다 코치입니다. 어떤 목표를 가슴에 품고 오셨나요? 핵심 목표를 한 문장으로 말씀해 주세요.",
+      "inputHint": "대화를 시작하세요..."
     }
   },
   "today": {

@@ -111,7 +111,7 @@ export default function HomeScreen() {
     if (status === 'paused') {
       resumeSession()
     }
-    navigation.navigate('CoachingFlow')
+    navigation.navigate('ConversationalCoaching')
   }, [navigation, resumeSession, status])
 
   return (
@@ -153,12 +153,9 @@ export default function HomeScreen() {
                   {t('home.coachingResume.title')}
                 </Text>
                 <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>
-                  {t(status === 'paused' ? 'home.coachingResume.status.paused' : 'home.coachingResume.status.active')}
+                  {t('home.coachingResume.status.active')}
                 </Text>
               </View>
-              <Text className="text-sm text-gray-500 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
-                {t('home.coachingResume.step', { step: currentStep })}
-              </Text>
               {summary?.shortSummary ? (
                 <Text className="text-sm text-gray-600 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
                   {summary.shortSummary}
