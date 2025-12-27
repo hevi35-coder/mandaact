@@ -53,25 +53,34 @@ export function MethodSelector({ onSelectMethod }: MethodSelectorProps) {
                 <Pressable
                     key={method.id}
                     onPress={() => onSelectMethod(method.id)}
-                    className="bg-white rounded-2xl p-5 mb-4 border border-gray-100 flex-row items-center active:bg-gray-50"
+                    className={`bg-white rounded-2xl p-5 mb-4 border ${method.id === 'coaching' ? 'border-primary/20' : 'border-gray-100'} flex-row items-center active:bg-gray-50`}
                     style={{
-                        shadowColor: '#000',
+                        shadowColor: method.id === 'coaching' ? '#2563eb' : '#000',
                         shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.06,
+                        shadowOpacity: method.id === 'coaching' ? 0.08 : 0.06,
                         shadowRadius: 12,
                         elevation: 3,
                     }}
                 >
-                    <View className="w-14 h-14 rounded-2xl bg-gray-100 items-center justify-center mr-4">
-                        <method.icon size={26} color="#6b7280" />
+                    <View className={`w-14 h-14 rounded-2xl ${method.id === 'coaching' ? 'bg-primary/10' : 'bg-gray-100'} items-center justify-center mr-4`}>
+                        <method.icon size={26} color={method.id === 'coaching' ? '#2563eb' : '#6b7280'} />
                     </View>
                     <View className="flex-1">
-                        <Text
-                            className="text-base text-gray-900"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
-                        >
-                            {t(method.titleKey)}
-                        </Text>
+                        <View className="flex-row items-center">
+                            <Text
+                                className="text-base text-gray-900"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                            >
+                                {t(method.titleKey)}
+                            </Text>
+                            {method.id === 'coaching' && (
+                                <View className="ml-2 px-1.5 py-0.5 bg-blue-500 rounded-md">
+                                    <Text className="text-[10px] text-white" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                        NEW
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
                         <Text
                             className="text-sm text-gray-500 mt-1"
                             style={{ fontFamily: 'Pretendard-Regular' }}

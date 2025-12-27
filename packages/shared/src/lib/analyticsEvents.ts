@@ -10,7 +10,7 @@
 
 export interface MandalartCreatedData {
     mandalart_id: string
-    input_method: 'image' | 'text' | 'manual'
+    input_method: 'image' | 'text' | 'manual' | 'coaching'
     sub_goals_count: number
     actions_count: number
     is_first?: boolean
@@ -110,11 +110,11 @@ export interface PremiumStateChangedData {
     from: 'free' | 'premium' | 'loading'
     to: 'free' | 'premium'
     reason:
-        | 'rc_entitlement'
-        | 'rc_active_subscription_fallback'
-        | 'supabase_fallback'
-        | 'restore_manual'
-        | 'restore_auto'
+    | 'rc_entitlement'
+    | 'rc_active_subscription_fallback'
+    | 'supabase_fallback'
+    | 'restore_manual'
+    | 'restore_auto'
     plan?: 'monthly' | 'yearly' | null
     is_sandbox?: boolean
 }

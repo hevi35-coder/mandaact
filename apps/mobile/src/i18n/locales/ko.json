@@ -362,7 +362,8 @@
       "validation": "아직 {{count}}개 비어 있어요.",
       "validationMin": "최소 {{count}}개의 서브 목표가 필요해요.",
       "summary": "서브 목표 저장됨.",
-      "prompt": "다음: 서브 목표 작성"
+      "prompt": "다음: 서브 목표 작성",
+      "aiSuggest": "AI 추천 받기"
     },
     "step4": {
       "title": "실천 항목 초안",
@@ -402,7 +403,8 @@
       "subGoalFallback": "{{index}}번째 서브 목표",
       "summary": "실천 항목 저장됨.",
       "prompt": "다음: 실천 항목 초안",
-      "pending": "4단계는 다음에 이어집니다."
+      "pending": "4단계는 다음에 이어집니다.",
+      "aiGenerate": "AI로 실천 생성"
     },
     "step5": {
       "title": "현실성 점검",
@@ -412,9 +414,12 @@
       "suggestionSuffix": "10분",
       "apply": "제안 적용하기",
       "reject": "원본 유지",
-      "rejectNote": "괜찮아요. 원래 문구로 유지하고, 나중에 수정할 수 있어요.",
+      "rejectNote": "괜찮아요. 원래 문구로 유지하고, 나중에 수정할 수 있으면 좋겠어요.",
       "summary": "현실성 점검 저장됨.",
-      "prompt": "다음: 루틴 설정"
+      "prompt": "다음: 루틴 설정",
+      "checking": "AI가 현실성을 점검하고 있어요...",
+      "suggestionsTitle": "AI 추천 제안",
+      "runCheck": "현실성 점검하기"
     },
     "step6": {
       "title": "루틴 설정",
@@ -442,9 +447,10 @@
     },
     "step7": {
       "title": "최종 검토",
-      "subtitle": "저장 전에 한 번 더 확인해요.",
+      "subtitle": "저장 전에 각 실천 항목의 세부 설정을 확인해주세요.",
       "coreGoal": "핵심 목표",
       "subGoals": "서브 목표",
+      "actions": "실천 항목 목록",
       "activeActions": "활성 실천",
       "noActions": "아직 실천 항목이 없어요.",
       "editAction": "타입 편집",
@@ -455,12 +461,20 @@
       "routine": "루틴",
       "cta": "저장하기",
       "validation": "필수 항목을 먼저 완료해주세요.",
+      "unconfiguredWarning": "아직 설정되지 않은 실천 항목이 {{count}}개 있습니다.",
+      "unconfiguredTitle": "미설정 항목 {{count}}개",
+      "unconfiguredDesc": "모든 실천 항목에 대해 타입(루틴/미션 등) 설정을 완료해야 저장할 수 있습니다. 아래 버튼으로 기본 설정을 한 번에 적용할 수 있어요.",
+      "autoSet": "기본값으로 모두 채우기",
       "summary": "코칭 저장 완료",
       "prompt": "다음: 최종 검토",
       "completed": "세션 완료"
     }
   },
   "today": {
+    "minimumMode": {
+      "title": "최소 실천",
+      "subtitle": "에너지가 부족할 때 '최소' 버전만 모아봐요"
+    },
     "title": "투데이",
     "subtitle": "오늘의 실천",
     "achievementRate": "오늘의 달성율",
@@ -532,10 +546,6 @@
       "title": "달성 완료",
       "hint": "이번 기간 목표를 달성한 항목",
       "badge": "완료"
-    },
-    "minimumMode": {
-      "title": "최소모드",
-      "subtitle": "오늘만 최소 실천을 보여줘요"
     }
   },
   "actionType": {
@@ -615,13 +625,21 @@
   },
   "mandalart": {
     "plan": {
-      "title": "플랜",
-      "subtitle": "오늘의 활성/최소 실천을 선택하세요.",
-      "active": "활성",
+      "title": "실천 플랜 설정",
+      "subtitle": "상황에 맞춰 실천 수준을 조절해보세요.",
+      "globalModeTitle": "전체 플랜 모드",
+      "globalModeDesc": "AI 코칭으로 생성된 플랜 모드를 선택합니다. 투데이 화면에도 반영됩니다.",
+      "modes": {
+        "base": "기본 실천 (Base)",
+        "minimum": "최소 실천 (Min)",
+        "challenge": "도전 실천 (Challenge)"
+      },
+      "manualSelectionTitle": "개별 실천 활성화",
+      "active": "기본",
       "minimum": "최소",
-      "empty": "아직 서브 목표가 없어요.",
-      "noActions": "실천 항목이 없어요.",
-      "subGoalFallback": "제목 없는 서브 목표"
+      "empty": "만다라트 정보를 불러올 수 없습니다.",
+      "noActions": "선택할 수 있는 실천 항목이 없습니다.",
+      "subGoalFallback": "서브 목표"
     },
     "cell": {
       "subGoalLabel": "세부 {{position}}",
@@ -1307,7 +1325,6 @@
     "weekly": "주간 리포트",
     "diagnosis": "목표 진단",
     "generate": "리포트 생성",
-    "generating": "생성 중...",
     "practiceReport": "실천 리포트",
     "practiceReportSubtitle": "최근 7일간 실천 데이터 분석 및 개선 제안",
     "goalDiagnosis": "목표 진단",
@@ -1353,7 +1370,6 @@
     "lastUpdated": "최근 업데이트",
     "lastUpdatedWithValue": "최근 업데이트: {{date}}",
     "generateReport": "리포트 생성하기",
-    "generating": "생성 중...",
     "toast": {
       "generated": "리포트 생성 완료"
     },
@@ -1367,13 +1383,6 @@
       "emptyContent": "리포트 내용이 비어있습니다. 다시 생성해주세요.",
       "aiError": "AI 서비스가 일시적으로 이용 불가합니다. 잠시 후 다시 시도해주세요."
     }
-  },
-  "errors": {
-    "generic": "오류가 발생했습니다",
-    "network": "네트워크 연결을 확인해주세요",
-    "unauthorized": "로그인이 필요합니다",
-    "notFound": "찾을 수 없습니다",
-    "serverError": "서버 오류가 발생했습니다"
   },
   "errorBoundary": {
     "title": "문제가 발생했습니다",

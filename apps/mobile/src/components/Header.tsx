@@ -14,6 +14,7 @@ interface HeaderProps {
   showSettings?: boolean
   showBackButton?: boolean
   title?: string
+  rightElement?: React.ReactNode
 }
 
 /**
@@ -63,7 +64,12 @@ function BrandLogo() {
  * - Height: h-16 (64px) for better touch targets
  * - Padding: px-5 (20px) for more breathing room
  */
-export default function Header({ showSettings = true, showBackButton = false, title }: HeaderProps) {
+export default function Header({
+  showSettings = true,
+  showBackButton = false,
+  title,
+  rightElement,
+}: HeaderProps) {
   const navigation = useNavigation<NavigationProp>()
   const insets = useSafeAreaInsets()
 
@@ -90,29 +96,37 @@ export default function Header({ showSettings = true, showBackButton = false, ti
             >
               <ChevronLeft size={28} color="#4b5563" />
             </Pressable>
-            {title && (
-              <Text
-                className="text-xl text-gray-900 ml-1"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                {title}
-              </Text>
-            )}
+            {/* title removed here, moved to absolute center below */}
           </View>
         ) : (
           <BrandLogo />
         )}
 
-        {/* Settings Button */}
-        {showSettings && !showBackButton && (
-          <Pressable
-            onPress={() => navigation.navigate('Settings')}
-            className="p-2.5 rounded-full active:bg-gray-100"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Settings size={24} color="#4b5563" />
-          </Pressable>
+        {/* Center: Title (if back button) */}
+        {showBackButton && title && (
+          <View className="absolute left-0 right-0 items-center pointer-events-none">
+            <Text
+              className="text-lg text-gray-900"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              {title}
+            </Text>
+          </View>
         )}
+
+        {/* Right Element or Settings Button */}
+        <View className="flex-row items-center">
+          {rightElement}
+          {showSettings && !showBackButton && (
+            <Pressable
+              onPress={() => navigation.navigate('Settings')}
+              className="p-2.5 rounded-full active:bg-gray-100"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Settings size={24} color="#4b5563" />
+            </Pressable>
+          )}
+        </View>
 
         {/* Empty space for alignment when back button is shown */}
         {showBackButton && <View className="w-10" />}

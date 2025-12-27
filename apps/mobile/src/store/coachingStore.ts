@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { supabase } from '../lib/supabase'
 
 export type PersonaType = 'working_professional' | 'student' | 'freelancer' | 'custom'
 export type StepState = 'not_started' | 'in_progress' | 'completed'
@@ -29,19 +30,20 @@ interface CoachingState {
   status: SessionStatus | null
   currentStep: StepIndex
   stepStates: Record<StepIndex, StepState>
-  answersByStep: Record<string, Record<string, unknown>>
+  answersByStep: Record<string, unknown>
   context: CoachingContext
   summary: CoachingSummary | null
   lastResumedAt: string | null
-  startSession: (params: { sessionId: string; personaType: PersonaType; timezone?: string }) => void
   setCurrentStep: (step: StepIndex) => void
   updateStepState: (step: StepIndex, state: StepState) => void
-  setPersonaType: (personaType: PersonaType) => void
   setContext: (payload: Partial<CoachingContext>) => void
-  saveAnswer: (stepKey: string, payload: Record<string, unknown>) => void
   setSummary: (shortSummary: string, nextPromptPreview: string) => void
-  pauseSession: () => void
+  startSession: (user_id: string, persona: PersonaType) => Promise<string | null>
+  loadSession: (session_id: string) => Promise<void>
   resumeSession: () => void
+  saveAnswer: (step_key: string, answer: unknown) => Promise<void>
+  setPersonaType: (type: PersonaType | null) => void
+  pauseSession: () => void
   completeSession: () => void
   resetSession: () => void
 }
@@ -70,19 +72,34 @@ export const useCoachingStore = create<CoachingState>()(
       summary: null,
       lastResumedAt: null,
 
-      startSession: ({ sessionId, personaType, timezone }) => {
-        set({
-          sessionId,
-          personaType,
-          timezone: timezone ?? null,
-          status: 'active',
-          currentStep: 1,
-          stepStates: { ...DEFAULT_STEP_STATES, 1: 'in_progress' },
-          answersByStep: {},
-          context: { persona: personaType },
-          summary: null,
-          lastResumedAt: new Date().toISOString(),
-        })
+      startSession: async (user_id: string, persona: PersonaType) => {
+        try {
+          const { data, error } = await supabase
+            .from('coaching_sessions')
+            .insert({
+              user_id,
+              persona_type: persona,
+              status: 'active',
+              current_step: 1,
+            })
+            .select()
+            .single()
+
+          if (error) throw error
+
+          set({
+            status: 'active',
+            currentStep: 1,
+            personaType: persona,
+            sessionId: data.id,
+            answersByStep: {},
+            lastResumedAt: new Date().toISOString(),
+          })
+          return data.id
+        } catch (error) {
+          console.error('Failed to start coaching session', error)
+          return null
+        }
       },
 
       setCurrentStep: (step) => {
@@ -95,8 +112,8 @@ export const useCoachingStore = create<CoachingState>()(
         }))
       },
 
-      setPersonaType: (personaType) => {
-        set({ personaType })
+      setPersonaType: (type) => {
+        set({ personaType: type })
       },
 
       setContext: (payload) => {
@@ -105,11 +122,77 @@ export const useCoachingStore = create<CoachingState>()(
         }))
       },
 
-      saveAnswer: (stepKey, payload) => {
-        set((current) => ({
+      loadSession: async (session_id: string) => {
+        try {
+          const { data: session, error: sessionError } = await supabase
+            .from('coaching_sessions')
+            .select('*')
+            .eq('id', session_id)
+            .single()
+
+          if (sessionError) throw sessionError
+
+          const { data: answers, error: answersError } = await supabase
+            .from('coaching_answers')
+            .select('step_key, answer_json')
+            .eq('session_id', session_id)
+
+          if (answersError) throw answersError
+
+          const answersObj: Record<string, any> = {}
+          answers.forEach((a: any) => {
+            answersObj[a.step_key] = a.answer_json
+          })
+
+          set({
+            status: 'active',
+            sessionId: session_id,
+            currentStep: session.current_step as StepIndex,
+            personaType: session.persona_type as PersonaType,
+            answersByStep: answersObj,
+            lastResumedAt: new Date().toISOString(),
+          })
+        } catch (error) {
+          console.error('Failed to load coaching session', error)
+        }
+      },
+
+      resumeSession: () => {
+        const { sessionId } = get()
+        if (!sessionId) return
+        set({ status: 'active', lastResumedAt: new Date().toISOString() })
+      },
+
+      saveAnswer: async (step_key: string, answer: unknown) => {
+        const { sessionId } = get()
+        if (sessionId) {
+          try {
+            await supabase
+              .from('coaching_answers')
+              .upsert({
+                session_id: sessionId,
+                step_key: step_key,
+                answer_json: answer,
+              }, { onConflict: 'session_id, step_key' })
+
+            // Update current step in session
+            // Extract step number from "stepX"
+            const stepNum = parseInt(step_key.replace('step', ''))
+            if (!isNaN(stepNum)) {
+              await supabase
+                .from('coaching_sessions')
+                .update({ current_step: stepNum })
+                .eq('id', sessionId)
+            }
+          } catch (error) {
+            console.error('Failed to save answer to DB', error)
+          }
+        }
+
+        set((state) => ({
           answersByStep: {
-            ...current.answersByStep,
-            [stepKey]: payload,
+            ...state.answersByStep,
+            [step_key]: answer,
           },
         }))
       },
@@ -128,12 +211,6 @@ export const useCoachingStore = create<CoachingState>()(
         const { status } = get()
         if (status === 'completed') return
         set({ status: 'paused', lastResumedAt: new Date().toISOString() })
-      },
-
-      resumeSession: () => {
-        const { status } = get()
-        if (status === 'completed') return
-        set({ status: 'active', lastResumedAt: new Date().toISOString() })
       },
 
       completeSession: () => {
