@@ -15,6 +15,7 @@ interface PlanState {
   }) => void
   toggleActiveAction: (subGoalId: string, actionId: string) => void
   toggleMinimumAction: (subGoalId: string, actionId: string) => void
+  reset: () => void
 }
 
 export const usePlanStore = create<PlanState>()(
@@ -61,6 +62,10 @@ export const usePlanStore = create<PlanState>()(
             [subGoalId]: current === actionId ? '' : actionId,
           },
         }))
+      },
+
+      reset: () => {
+        set({ activeBySubGoal: {}, minimumBySubGoal: {} })
       },
     }),
     {

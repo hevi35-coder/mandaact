@@ -67,10 +67,12 @@
   - ✅ `pnpm build:web` 검증
 - ✅ 빌드 아티팩트 업로드 (7일 보관)
 - ✅ README에 빌드 상태 배지 추가
-- **Phase 12 (Current)**: Conversational AI Evolution (Cleanup & Strategy) ✅ **IN PROGRESS**
-  - AI 코칭 헌법(Constitutional Rules) 확립
-  - 기존 7단계 Wizard 방식 폐기 및 '통합 대화형' 인터페이스 설계
-  - 인프라(DB/비용 로깅) 보존 및 UI/Brain 전면 재건축 전략 수립
+- **Phase 12 (Current)**: Conversational AI Evolution (Moat Strategy) 🔄 **진행 중**
+  - AI 코칭 헌법(Constitutional Rules) v4.0 확립 및 '공격적 도발' 로직 구현 ✅
+  - '안전망(Safety Net)' 투데이 리스트 기반 통합 ✅
+  - **Moat Phase 1**: 스트릭 실패 등 특정 조건 발생 시 AI가 먼저 개입하는 '능동적 코칭' (Planned)
+  - **Moat Phase 2**: 장기 누적 실천 데이터를 활용한 '초개인화 기억력' (Planned)
+  - **수익화 연동**: 프리미엄 유저 전용 고도화 코칭(Challenger/Scientist) 기능 (Planned)
 
 ---
 

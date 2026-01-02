@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { coachingService } from '../services/coachingService'
 import { supabase } from '../lib/supabase'
 
 export type PersonaType = 'working_professional' | 'student' | 'freelancer' | 'custom'
 export type StepState = 'not_started' | 'in_progress' | 'completed'
 export type SessionStatus = 'active' | 'paused' | 'completed'
-export type StepIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7
+export type StepIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
 
 interface CoachingSummary {
   shortSummary: string
@@ -16,8 +17,6 @@ interface CoachingSummary {
 
 interface CoachingContext {
   persona: PersonaType | null
-  availableTime?: string
-  energyPeak?: string
   priorityArea?: string
   coreGoal?: string
   subGoals?: string[]
@@ -51,6 +50,8 @@ interface CoachingState {
   chatMessages: { role: 'user' | 'assistant' | 'system', content: string }[]
   mandalartDraft: MandalartDraft
   slotsFilled: string[]
+  consentAgreed: boolean
+  setConsentAgreed: (agreed: boolean) => void
   setCurrentStep: (step: StepIndex) => void
   updateStepState: (step: StepIndex, state: StepState) => void
   setContext: (payload: Partial<CoachingContext>) => void
@@ -66,7 +67,10 @@ interface CoachingState {
   addChatMessage: (role: 'user' | 'assistant' | 'system', content: string) => void
   updateMandalartDraft: (draft: Partial<MandalartDraft>) => void
   setSlotsFilled: (slots: string[]) => void
+  commitCoachingResult: (user_id: string) => Promise<string | null>
+  syncStepFromServer: (step: number, draft: Partial<MandalartDraft>) => void
 }
+
 
 const DEFAULT_STEP_STATES: Record<StepIndex, StepState> = {
   1: 'not_started',
@@ -76,6 +80,11 @@ const DEFAULT_STEP_STATES: Record<StepIndex, StepState> = {
   5: 'not_started',
   6: 'not_started',
   7: 'not_started',
+  8: 'not_started',
+  9: 'not_started',
+  10: 'not_started',
+  11: 'not_started',
+  12: 'not_started',
 }
 
 export const useCoachingStore = create<CoachingState>()(
@@ -99,6 +108,9 @@ export const useCoachingStore = create<CoachingState>()(
         emergency_action: '',
       },
       slotsFilled: [],
+      consentAgreed: false,
+
+      setConsentAgreed: (agreed) => set({ consentAgreed: agreed }),
 
       startSession: async (user_id: string, persona: PersonaType) => {
         try {
@@ -187,13 +199,15 @@ export const useCoachingStore = create<CoachingState>()(
             personaType: session.persona_type as PersonaType,
             answersByStep: answersObj,
             lastResumedAt: new Date().toISOString(),
-            chatMessages: answersObj['chat_history'] || [],
-            mandalartDraft: answersObj['mandalart_draft'] || {
+
+            chatMessages: session.metadata?.chat_history || [],
+            mandalartDraft: session.metadata?.draft || {
               center_goal: '',
               sub_goals: Array(8).fill(''),
               actions: [],
               emergency_action: '',
             },
+
             slotsFilled: answersObj['slots_filled'] || [],
           })
         } catch (error) {
@@ -311,6 +325,69 @@ export const useCoachingStore = create<CoachingState>()(
           return { slotsFilled: slots }
         })
       },
+
+      commitCoachingResult: async (user_id: string) => {
+        const { mandalartDraft, sessionId } = get()
+        if (!mandalartDraft.center_goal) {
+          throw new Error('Core goal is missing')
+        }
+
+        try {
+          // Use the high-resilience Server-Side commit logic
+          const result = await coachingService.commitMandalart(mandalartDraft, sessionId)
+
+          if (!result.success) {
+            throw new Error(result.error || 'Server-side commit failed')
+          }
+
+          // Update local status
+          set({ status: 'completed' })
+
+          return result.mandalartId || null
+        } catch (error) {
+          console.error('Final commit error:', error)
+          return null
+        }
+      },
+
+      syncStepFromServer: (step, draft) => {
+        set((current) => {
+          const newDraft = { ...current.mandalartDraft }
+
+          if (draft.center_goal) newDraft.center_goal = draft.center_goal
+
+          if (draft.sub_goals && Array.isArray(draft.sub_goals)) {
+            // Keep existing ones, only update if the new one has a value
+            newDraft.sub_goals = current.mandalartDraft.sub_goals.map((sg, i) =>
+              (draft.sub_goals && draft.sub_goals[i]) ? draft.sub_goals[i] : sg
+            )
+          }
+
+          if (draft.actions && Array.isArray(draft.actions)) {
+            // Logic: Remove old actions for the sub-goals included in this update, then add new ones
+            // Normalized schema support: handle both 'title' and 'content' fields
+            const normalizedActions = draft.actions.map(a => ({
+              ...a,
+              sub_goal: a.sub_goal || (a as any).title || '',
+              content: a.content || (a as any).title || '',
+              type: ((a as any).type === 'habit' || (a as any).type === 'routine') ? 'habit' : 'task'
+            })) as MandalartAction[]
+            const updatedSgNames = new Set(normalizedActions.map(a => a.sub_goal))
+            const filteredActions = current.mandalartDraft.actions.filter(a => !updatedSgNames.has(a.sub_goal))
+            newDraft.actions = [...filteredActions, ...normalizedActions]
+          }
+
+          if (draft.emergency_action) {
+            newDraft.emergency_action = draft.emergency_action
+          }
+
+          return {
+            currentStep: step as StepIndex,
+            mandalartDraft: newDraft,
+          }
+        })
+      },
+
     }),
     {
       name: 'mandaact-coaching-session',

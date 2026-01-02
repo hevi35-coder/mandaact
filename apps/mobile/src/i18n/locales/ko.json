@@ -70,6 +70,13 @@
   "home": {
     "title": "홈",
     "subtitle": "성장 대시보드",
+    "coachingBanner": {
+      "startTitle": "AI 코칭으로 목표 찾기",
+      "startBody": "가슴 뛰는 목표를 실현 가능한 계획으로 바꿔드려요.",
+      "startCta": "코칭 시작하기",
+      "resumeTitle": "코칭 이어하기",
+      "resumeCta": "대화 계속하기"
+    },
     "level": "레벨",
     "totalXP": "총 XP",
     "toNextLevel": "레벨 {{level}}까지",
@@ -202,6 +209,12 @@
         "primary": "무제한 이용",
         "secondary": "뒤로 가기",
         "footer": "주간 한도는 매주 월요일 초기화돼요."
+      },
+      "consent": {
+        "title": "AI 코칭 데이터 활용 동의 (필수)",
+        "body": "Manda 코치는 개인화된 코칭과 대화 맥락 유지를 위해 사용자의 목표 및 대화 데이터를 Perplexity AI(미국)로 전송하고 활용합니다. 수집된 대화 데이터는 설정에서 언제든 직접 삭제할 수 있습니다. 동의하시나요?",
+        "agree": "네, 동의하고 시작하기",
+        "disagree": "나중에 하기"
       }
     },
     "slotGate": {
@@ -481,8 +494,23 @@
       "mandalartDraft": "만다라트 초안",
       "aiPowered": "POWERED BY AI (Perplexity)",
       "error": "죄송합니다. 연동 중 오류가 발생했습니다. 다시 말씀해 주시겠어요?",
-      "greeting": "안녕하세요! 당신의 성장을 돕는 만다 코치입니다. 어떤 목표를 가슴에 품고 오셨나요? 핵심 목표를 한 문장으로 말씀해 주세요.",
-      "inputHint": "대화를 시작하세요..."
+      "greeting": "안녕하세요! 만다 코치입니다. 함께 의미 있는 대화를 나눠볼까요?\n\n먼저 여쭤볼게요 — 혹시 만다라트라는 도구를 들어보신 적 있나요, 아니면 오늘 처음이신가요?",
+      "inputHint": "대화를 시작하세요...",
+      "createMandalart": "만다라트 만들기",
+      "stages": {
+        "onboarding": "준비하기",
+        "lifestyle": "라이프스타일 탐색",
+        "core_goal": "핵심 목표 설정",
+        "sub_goals": "8가지 분야 & 실천 계획",
+        "actions": "계획 세부 조정",
+        "resilience": "회복 탄력성 강화",
+        "finishing": "마무리 중"
+      },
+      "hints": {
+        "onboarding": "만다라트 경험을 확인 중...",
+        "lifestyle": "당신의 라이프스타일을 탐색 중...",
+        "goal": "핵심 목표를 설정해주세요"
+      }
     }
   },
   "today": {
@@ -1000,13 +1028,20 @@
       "deleteError": "계정 삭제에 실패했습니다. 다시 시도해주세요."
     },
     "app": {
-      "title": "앱",
-      "language": "언어",
-      "timezone": "시간대",
-      "notifications": "알림",
-      "tutorial": "사용 가이드",
-      "version": "버전"
+      "title": "앱 설정",
+      "language": "언어 설정",
+      "timezone": "시간대 설정",
+      "notifications": "알림 설정"
     },
+    "privacy": {
+      "title": "개인정보 및 AI 데이터",
+      "deleteCoachingData": "AI 코칭 데이터 삭제",
+      "deleteConfirm": "AI 코치와 나눈 모든 대화 기록과 중간 드래프트가 삭제됩니다. (완성된 만다라트는 유지됩니다.) 이 작업은 되돌릴 수 없습니다.",
+      "deleteButton": "데이터 완전 삭제",
+      "deleteSuccess": "AI 코칭 데이터가 삭제되었습니다."
+    },
+    "tutorial": "사용 가이드",
+    "version": "버전",
     "support": {
       "title": "지원",
       "feedback": "피드백 보내기",

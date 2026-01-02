@@ -4,26 +4,24 @@ import { logger } from '../lib/logger'
 export interface AISuggestSubGoalsParams {
     persona: string
     coreGoal: string
-    availableTime: string
-    energyPeak: string
     priorityArea: string
     detailedContext?: string
+    language?: string
 }
 
 export interface AIGenerateActionsParams {
     subGoals: string[]
     persona: string
-    availableTime: string
     detailedContext?: string
+    language?: string
 }
 
 export interface AIRealityCheckParams {
     coreGoal: string
     subGoals: string[]
     actions: unknown[]
-    availableTime: string
-    energyPeak: string
     detailedContext?: string
+    language?: string
 }
 
 export interface ChatMessage {
@@ -34,7 +32,11 @@ export interface ChatMessage {
 export interface AIChatParams {
     messages: ChatMessage[]
     currentDraft?: any
+    language?: string
+    slotsFilled?: string[]
+    step?: number // v11.0 Siloed Step
 }
+
 
 export interface ChatResponse {
     message: string
@@ -43,9 +45,16 @@ export interface ChatResponse {
         sub_goals: string[]
         actions: { sub_goal: string; content: string; type: 'habit' | 'task' }[]
         emergency_action?: string
+        resilience_strategy?: string
     }
     slots_filled: string[]
+    completed_phases?: string[]
+    current_phase?: string // Server-determined current phase (legacy)
+    current_step?: number // v11.0 Siloed Step
+    phase_progress?: number // 0-5 phase progress indicator (legacy)
     next_step_recommendation: string
+    next_step_ready?: boolean
+
     version?: string
     server_time?: string
     error?: string
@@ -53,9 +62,7 @@ export interface ChatResponse {
 
 export interface ActionVariant {
     sub_goal: string
-    base: string
-    minimum: string
-    challenge: string
+    content: string
 }
 
 export interface RealityCorrection {
@@ -127,6 +134,10 @@ class CoachingService {
 
     async chat(params: AIChatParams, sessionId?: string | null): Promise<ChatResponse> {
         return await this.invokeFunction('chat', params, sessionId)
+    }
+
+    async commitMandalart(mandalart_draft: any, sessionId?: string | null): Promise<{ success: boolean; mandalartId?: string; error?: string }> {
+        return await this.invokeFunction('commit_mandalart', { mandalart_draft }, sessionId)
     }
 }
 

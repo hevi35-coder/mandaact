@@ -12,7 +12,7 @@ import {
 } from '../_shared/errorResponse.ts'
 
 interface CoachingRequest {
-  action: 'suggest_sub_goals' | 'generate_actions' | 'reality_check' | 'chat'
+  action: 'suggest_sub_goals' | 'generate_actions' | 'reality_check' | 'chat' | 'ping' | 'commit_mandalart' | 'COMMIT_MANDALART' | 'final_commit'
   sessionId?: string
   payload: any
 }
@@ -50,7 +50,7 @@ serve(async (req) => {
         success: false,
         error: 'Unauthorized access',
         details: authError?.message,
-        version: 'v4.0-advancement'
+        version: 'v11.0-siloed-architecture'
       }), { status: 200, headers: INLINED_CORS_HEADERS })
     }
 
@@ -87,28 +87,34 @@ serve(async (req) => {
         case 'chat':
           result = await handleChat(payload, sessionId, user.id, supabase)
           break
+        case 'commit_mandalart':
+        case 'COMMIT_MANDALART':
+        case 'final_commit':
+          result = await commitMandalart(payload, sessionId, user.id, supabase)
+          break
         default:
-          throw new Error(`Unsupported action: ${action}`)
+          throw new Error(`Unsupported action: ${action} (Length: ${action?.length})`)
       }
 
       // If the result itself contains an error field (from callPerplexity's catch)
       // we still return 200 but the client handles the error
       return new Response(JSON.stringify({
         ...result,
-        version: 'v4.0-advancement',
+        version: 'v11.0-siloed-architecture',
         server_time: timestamp,
         uptime: true
       }), { status: 200, headers: INLINED_CORS_HEADERS })
 
     } catch (innerError) {
       console.error(`[LOGIC_ERROR] ${action}:`, innerError)
-      // Return 200 but with error info in the body
-      return new Response(JSON.stringify({
+      // Log more context for logic errors to identify why a non-2xx might happen if it does
+      const responseBody = {
         success: false,
-        error: `[LOGIC_ERROR_v4.0] ${innerError.message || innerError}`,
+        error: `[LOGIC_ERROR_v4.1] ${innerError.message || innerError}`,
         action,
-        version: 'v4.0-advancement'
-      }), { status: 200, headers: INLINED_CORS_HEADERS })
+        version: 'v11.0-siloed-architecture'
+      }
+      return new Response(JSON.stringify(responseBody), { status: 200, headers: INLINED_CORS_HEADERS })
     }
   } catch (error) {
     console.error('[CRITICAL_FAILURE]', error)
@@ -116,7 +122,7 @@ serve(async (req) => {
       success: false,
       error: `[CRITICAL_FAILURE_v4.0] ${error.message || 'Critical edge function crash'}`,
       global: true,
-      version: 'v4.0-advancement'
+      version: 'v11.0-siloed-architecture'
     }), {
       status: 200,
       headers: INLINED_CORS_HEADERS
@@ -153,9 +159,9 @@ async function callPerplexity(
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.6,
-      max_tokens: 1024,
-      top_p: 1
+      temperature: 0.5,
+      max_tokens: 4000,
+      top_p: 0.9
     }),
   })
 
@@ -170,13 +176,40 @@ async function callPerplexity(
   let content = data.choices?.[0]?.message?.content
   if (!content) throw new Error('No content in AI response')
 
-  // Clean markdown code blocks if present
-  content = content.trim()
-  if (content.startsWith('```json')) {
-    content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-  } else if (content.startsWith('```')) {
-    content = content.replace(/^```\s*/, '').replace(/\s*```$/, '')
+  // Clean citations like [1], [1][2], [1, 2], (1), etc.
+  content = content.replace(/\[\d+(?:,\s*\d+)*\]/g, '')
+  content = content.replace(/\s*\[\s*\]\s*/g, ' ') // Clean empty brackets if any
+
+  console.log(`[Clean Content Snippet] ${content.substring(0, 100)}...`)
+
+  // Step 1: Pre-parsing extraction (Find the largest JSON block)
+  const startIdx = content.indexOf('{')
+  const endIdx = content.lastIndexOf('}')
+  let jsonStr = ''
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    jsonStr = content.substring(startIdx, endIdx + 1)
+  } else {
+    // Regex fallback
+    const match = content.match(/\{[\s\S]*\}/)
+    jsonStr = match ? match[0] : content.trim()
   }
+
+  // Step 2: Clean common LLM JSON syntax errors (unescaped newlines inside strings)
+  const cleanJson = (str: string) => {
+    try {
+      // Very basic cleaning for unescaped newlines in JSON values
+      // This is risky but often necessary for LLMs that forget to escape \n
+      return str.replace(/:\s*"([\s\S]*?)"/g, (match, p1) => {
+        const escaped = p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+        return `: "${escaped}"`
+      })
+    } catch (e) {
+      return str
+    }
+  }
+
+  const sanitizedJsonStr = cleanJson(jsonStr)
 
   const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 }
   console.log(`[Usage] Tokens: ${usage.prompt_tokens} in, ${usage.completion_tokens} out`)
@@ -197,55 +230,236 @@ async function callPerplexity(
     }
   }
 
+  // Step 3: Try parsing multiple ways
+  let finalResult;
   try {
-    return JSON.parse(content)
+    finalResult = JSON.parse(sanitizedJsonStr);
   } catch (e) {
-    console.error(`[JSON Parse Error] Failed to parse content: ${content.substring(0, 100)}...`)
-    // If it's not JSON, return it as a message anyway for chat resilience
-    // But handleChat expects a structured response, so we might need a fallback
-    return {
-      message: content,
-      updated_draft: null,
-      slots_filled: [],
-      next_step_recommendation: ""
+    try {
+      finalResult = JSON.parse(jsonStr);
+    } catch (e2) {
+      const messageMatch = content.match(/"message":\s*"([\s\S]*?)"/);
+      finalResult = {
+        message: messageMatch ? messageMatch[1].replace(/\\n/g, '\n') : content,
+        updated_draft: null,
+        slots_filled: [],
+        next_step_recommendation: ""
+      };
     }
   }
+
+  // --- JARGON STRIPPER (v7.5) ---
+  if (finalResult && finalResult.message) {
+    const jargonPatterns = [
+      /이를 반영해 updated_draft에 .*/g,
+      /updated_draft가 업데이트되었습니다.*/g,
+      /I have updated the draft.*/g,
+      /JSON 형식으로 .*/g,
+      /slots_filled .*/g,
+      /데이터를 동기화했습니다.*/g,
+      /SMART 목표/g,
+      /현재 Step \d+.*?입니다\.?/g,
+      /단계에 있습니다\.?/g,
+      /\[.*?\]/g,
+      /center_goal/gi,
+      /sub_goals?/gi,
+      /updated_draft/gi,
+      /slots_filled/gi,
+      /next_step_ready/gi,
+      /summary_data/gi
+    ];
+    jargonPatterns.forEach(regex => {
+      finalResult.message = finalResult.message.replace(regex, '');
+    });
+    finalResult.message = finalResult.message.trim();
+  }
+  return finalResult;
 }
+
+// --- Unified Prompt Constants ---
+
+// --- 7-STEP PROMPT COLLECTION (v11.0) ---
+
+const GET_STEP_PROMPT = (step: number, isEn: boolean) => {
+  const language = isEn ? 'English' : 'Korean';
+
+  const commonRules = `
+  1. **Format**: RAW JSON ONLY. NEVER use markdown code blocks (e.g. \` \` \`json).
+  2. **Tone**: Warm & Provocateur Coach.
+  3. **Rules**: 
+     - **POLITE LANGUAGE (CRITICAL)**: Use polite Korean (존댓말, ~해요/~예요 style). NEVER use informal language (반말).
+     - NO preambles like "Here is the response" or "Step 11...".
+     - NO technical jargon or code field names (e.g., NEVER say "center_goal", "updated_draft", "session", "JSON").
+     - Use human terms: "핵심 목표" instead of center_goal, "세부 목표" instead of sub_goal.
+     - NO summary labels (Part 1, Step 1).
+  4. **Output Schema**:
+     {
+       "message": "User-facing response (Keep it concise, NO boilerplate)",
+       "updated_draft": {
+         "center_goal": "string (only if changed)",
+         "sub_goals": ["Goal 1", "Goal 2", ...],
+         "actions": [
+           {"sub_goal": "STRICT_MATCH_TITLE", "content": "Action detail", "type": "task|habit"}
+         ],
+         "emergency_action": "string (Step 11+)"
+       },
+       "next_step_ready": boolean,
+       "summary_data": { ... }
+     }
+  `;
+
+  const prompts: Record<number, string> = {
+    1: isEn ?
+      `### Step 1: Greeting & Lifestyle
+       1. Explain Mandalart briefly (Core Goal -> 8 Sub-goals -> Action Items).
+       2. **[SPLIT]**
+       3. Ask ONE question about their daily energy/schedule/pain points.
+       4. **Exit Condition**: If user shared enough context, set "next_step_ready": true AND "summary_data": {"lifestyle_summary": "User summary..."}.`
+      :
+      `### Step 1: 인사 및 라이프스타일 발견
+       1. 만다라트를 짧게 설명(핵심목표 -> 8개 세부목표 -> 실천항목)하고 안심시키세요.
+       2. **[SPLIT]**
+       3. **질문**: 현재 하루 일과나 에너지가 어떤지 물어보세요.
+       4. **종료 조건**: 유저가 충분히 답했다면 "next_step_ready": true 설정하고, "summary_data": {"lifestyle_summary": "요약된 정보..."}를 반환하세요.`,
+
+    2: isEn ?
+      `### Step 2: Core Goal Definition
+       1. Based on [User Context], help define a "Heart-beating" Core Goal.
+       2. **[SPLIT]**
+       3. Challenge them: "Is this for YOU or others?"
+       4. **Exit Condition**: Goal confirmed. Update "updated_draft" and set "next_step_ready": true.`
+      :
+      `### Step 2: 핵심 목표 설정
+       1. [User Context]를 바탕으로 가슴 뛰는 핵심 목표를 찾도록 도우세요.
+       2. **[SPLIT]**
+       3. 질문: "진짜 본인을 위한 목표인가요?"
+       4. **종료 조건**: 유저가 **동의(예: "그래", "맞아", "준비됐어", "진심이야", "응", "고정해줘" 등)**하거나 목표가 확정되면, **반드시 "next_step_ready": true**를 설정하고, "updated_draft"에 center_goal을 넣으며, "summary_data": {"core_goal_summary": {"goal": "핵심 목표명", "motivation": "핵심 동기/이유"}}를 반환하여 다음 단계로 넘어가세요.
+       5. **주의**: 유저가 긍정적인 답변을 했다면 절대로 질문을 반복하지 마세요. 즉시 다음 단계(세부목표 설정)로 넘어가야 합니다.
+          (참고: 유저에게 요약해줄 땐 '동력' 대신 '핵심 동기' 또는 '이유'라는 표현을 쓰세요.)`,
+
+    // Steps 3-10: Sub-goals 1-8 (Dynamic)
+    ...Array.from({ length: 8 }, (_, i) => {
+      const stepNum = i + 3; // 3 to 10
+      const subGoalNum = i + 1; // 1 to 8
+      const isLast = subGoalNum === 8;
+
+      return {
+        [stepNum]: isEn ?
+          `### Step ${stepNum}: Sub-goal ${subGoalNum} (Deep Dive)
+           1. Propose direction for Sub-goal ${subGoalNum} based on Core Goal.
+           2. Define 8 Concrete Action Items immediately.
+           3. ${isLast ? "This is the LAST sub-goal. Mention moving to 'Emergency/Review' next." : `Mention moving to Sub-goal ${subGoalNum + 1} next.`}
+           4. **Exit Condition**: Sub-goal ${subGoalNum} + 8 Action Items saved in "updated_draft". Set "summary_data": {"new_sector": "Sub-goal Name"}.`
+          :
+          `### Step ${stepNum}: 세부목표 ${subGoalNum} (딥다이브)
+            1. 핵심 목표에 맞는 ${subGoalNum}번째 세부목표(Sub-goal)를 제안하세요.
+            2. **가독성 & 말풍선 분리 (필수)**:
+               - 답변은 반드시 **[SPLIT]** 태그로 구분하여 3개로 나누세요.
+               - (1) 세부목표 제안 및 이유설명 **[SPLIT]**
+               - (2) 8개의 실천항목 (형식: '- 제목 : 상세내용 (목표 : 시간)', 각 항목 뒤 줄바꿈 필수) **[SPLIT]**
+               - **주의**: '실천항목 1:' 처럼 번호를 붙이지 말고 바로 제목부터 쓰세요. **반드시 콜론(:)을 사용하세요.**
+               - (3) ${isLast ? "마지막 세부목표임을 알리고, '현실성 점검(비상 모드)'으로 넘어갈지 묻는 질문" : "다음 세부목표로 넘어갈지 묻는 질문"}
+            3. **주의**: 세부목표는 8개가 끝입니다. ${isLast ? "**절대 '세부목표 9'를 언급하지 마세요.** 다음은 '비상 모드'입니다." : ""}
+            4. **종료 조건**: 유저가 **동의(예: "좋아", "진행해")**하거나 내용을 확정하면, **즉시** "updated_draft"에 해당 세부목표와 실천항목을 포함시키고, "next_step_ready": true와 "summary_data"를 반환하세요.`
+      };
+    }).reduce((acc, curr) => ({ ...acc, ...curr }), {}),
+
+    11: isEn ?
+      `### Step 11: Review & Emergency Mode
+       1. Provide a clear summary of the FULL draft.
+          - Formatting:
+            - **Core Goal: [Goal]**
+            - **Sub-goal [N]: [Title]**
+            - List action items as ' - Action Item' under each sub-goal.
+            - Use single line breaks between sub-goal sections.
+       2. **[SPLIT]**
+       3. Ask to pick "Emergency Actions" for bad days (Safety Net).
+       4. **Exit Condition**: Emergency actions selected.`
+      :
+      `### Step 11: 현실성 점검 및 비상 모드
+       1. 지금까지 완성된 전체 계획(세부목표 1~8)을 요약합니다.
+          - **포맷팅**:
+            - **핵심목표: [목표명]**
+            - **세부목표 [번호]: [제목]**
+            - 실천항목: '- 제목 : 상세설명 (목표 : 시간)'
+          - **준수사항**: 모든 실천항목(64개)을 빠짐없이 나열하고, 세부목표 섹션 사이는 한 줄만 띕니다. '실천항목 1' 등의 번호는 절대 생략하세요.
+       2. **[SPLIT]**
+       3. **비상 모드 질문 & 추천**: 
+          - 컨디션이 최악일 때도 할 수 있는 '최소 행동(1~2개)'을 골라달라고 하세요.
+          - 계획에서 부담 없는 **'루틴'**을 찾아 예시로 추천하세요. (예: "매일 10분 독서" 등)
+          - "Step 11", "비상 모드 단계입니다" 같은 말은 절대 하지 마세요.
+       4. **종료 및 전환**: 유저가 선택을 마치면, 선택한 항목을 'emergency_action'에 저장하고 차분하게 다음을 안내하세요.
+          - **톤앤매너**: 과한 호응(퍼펙트!, 🔥 등)을 피하고, 진중한 코치로서 전체 여정의 마무리를 축하하세요.
+          - **안내**: "이제 모든 조각이 맞춰졌습니다. 마지막으로 완성된 전체 만다라트를 한눈에 살펴보고, 최종 확정하는 단계로 넘어갈까요?"와 같이 다음 단계(전체 리뷰)의 목적을 명확히 설명하세요.
+          - "Step 12" 같은 시스템 용어는 절대 사용 금지.`,
+
+    12: isEn ?
+      `### Step 12: Final Confirmation
+       1. Present the FULL Mandalart Plan.
+       2. **Formatting Rule**:
+          - Use **DOUBLE LINE BREAKS** between Sub-goals.
+          - Use **SINGLE LINE BREAKS** between Action Items.
+          - Format: **Sub-goal Name** (New Line) - Action...
+       3. **[SPLIT]**
+       4. Ask for final confirmation.`
+      :
+      `### Step 12: 최종 확정
+       1. 지금까지의 모든 노력이 집약된 **전체 만다라트 계획**을 한눈에 보여주어 성취감을 느끼게 하세요.
+       2. **포맷팅 규칙 (가독성 필수)**:
+          - **세부목표 [번호]: [제목]** 형식으로 쓰고, 세부목표 사이는 **반드시 두 줄 공백**으로 띄우세요.
+          - 세부목표 아래 8개 실천항목은 '- 제목 : 상세설명' 형식으로 한 줄씩 붙여 쓰세요. (콜론 사용 필수)
+          - 예시:
+            **세부목표 1: 건강**
+            - 실천항목 1
+            - 실천항목 2
+
+            **세부목표 2: 커리어**
+       3. **[SPLIT]**
+       4. 이 만다라트가 유저의 삶에 가져올 변화를 언급하며, 마지막으로 수정할 곳은 없는지 혹은 이대로 확정(Launch)할지 물으세요. 
+       5. **존댓말 준수**: "쏜다", "준비됐어" 같은 표현 대신 "넘어갈까요?", "준비되셨나요?" 등을 사용하세요.
+       6. **종료 조건**: 유저가 **확정(Launch/저장/좋아 등)** 의사를 밝히면 즉시 "next_step_ready": true를 반환하여 자동 저장을 유도하세요. "Step 12" 같은 기술 용어는 절대 사용 금지.`,
+  };
+
+  return `${commonRules}\n\n${prompts[step] || prompts[1]}`;
+
+};
+
+// Legacy wrapper for non-chat actions (suggestSubGoals, generateActions, realityCheck)
+const GET_CORE_PROMPT = (isEn: boolean) => {
+  return isEn
+    ? `You are a Strategic Warm Provocateur Coach. Respond in English. Be concise (1-2 sentences). No citations.`
+    : `당신은 만다라트 전문 전략 코치입니다. 반드시 정중한 존댓말(~해요 style)로 응답하세요. 반말을 절대 사용하지 마세요. 간결하게 (1-2문장). 인용 금지.`;
+};
 
 async function suggestSubGoals(
   payload: {
     persona: string
     coreGoal: string
-    availableTime: string
-    energyPeak: string
     priorityArea: string
     detailedContext?: string
+    language?: string
   },
   sessionId?: string,
   userId?: string,
   supabase?: any
 ) {
-  const systemPrompt = `당신은 세계적인 동기부여 전문가이자 만다라트 목표 설정 전문가인 '만다 코치'입니다.
-사용자의 페르소나와 핵심 목표를 심층 분석하여, 단순한 나열이 아닌 삶의 균형과 성장을 모두 잡을 수 있는 8개의 서브 목표(Sub-goals)를 제안해주세요.
+  const isEn = payload.language && payload.language.startsWith('en');
+  const corePrompt = GET_CORE_PROMPT(isEn);
 
-코칭 원칙:
-1. 따뜻하면서도 분석적인 어조를 유지하세요.
-2. 각 서브 목표는 상호 보완적이어야 합니다.
-3. 사용자의 우선순위 영역(priorityArea)을 중심으로 2-3개를 배치하고, 나머지는 이를 지탱할 수 있는 환경(건강, 습관, 재정 등)으로 구성하세요.
-4. "직장인"이라면 커리어 성장과 번아웃 방지의 균형을, "학생"이라면 학업 성취와 자아 발견의 균형을 강조하세요.
-5. 한국어로 응답하세요.
+  const systemPrompt = `${corePrompt}
 
-응답 형식 (JSON):
+### Task Specifics:
+Suggest 8 sub-goals based on the user's core goal and context. Ensure a balance between growth and sustainability.
+
+### Output Format (JSON):
 {
-  "sub_goals": ["목표1", "목표2", ..., "목표8"]
-}`
+  "sub_goals": ["Goal 1", "Goal 2", ..., "Goal 8"]
+}`;
 
-  const userPrompt = `페르소나: ${payload.persona}
-상세 정황(최우선 반영): ${payload.detailedContext || '없음'}
-핵심 목표: ${payload.coreGoal}
-확보 가능 시간: ${payload.availableTime}분
-에너지 피크: ${payload.energyPeak}
-우선순위 영역: ${payload.priorityArea}`
+  const userPrompt = `Core Goal: ${payload.coreGoal}
+Persona: ${payload.persona}
+Detailed Context: ${payload.detailedContext || 'None'}
+Priority Area: ${payload.priorityArea}`;
 
   return await callPerplexity(systemPrompt, userPrompt, sessionId, userId, supabase)
 }
@@ -254,44 +468,35 @@ async function generateActions(
   payload: {
     subGoals: string[]
     persona: string
-    availableTime: string
     detailedContext?: string
+    language?: string
   },
   sessionId?: string,
   userId?: string,
   supabase?: any
 ) {
-  const systemPrompt = `당신은 목표를 실제 행동으로 잘게 쪼개는 '행동 설계 전문가'입니다.
-각 서브 목표에 대해 사용자가 어떤 컨디션에서도 지속할 수 있도록 3단계 실천 레이어를 설계해주세요.
+  const isEn = payload.language && payload.language.startsWith('en');
+  const corePrompt = GET_CORE_PROMPT(isEn);
 
-행동 설계 가이드:
-- base: 사용자의 일상(약 ${payload.availableTime}분)에 가장 적합한 핵심 행동.
-- minimum: '최악의 날'에도 2분이면 할 수 있는 초소형 습관 (습관의 끈을 놓지 않는 것이 목적).
-- challenge: 주말이나 에너지가 넘치는 날(40-60분) 시도할 큰 도약.
+  const systemPrompt = `${corePrompt}
 
-규칙:
-1. 한국어로 응답하세요.
-2. 모든 행동은 즉시 실행 가능한 '동사'로 끝나야 합니다 (예: "책 10페이지 읽기").
-3. 사용자의 페르소나(${payload.persona})가 공감할 수 있는 구체적인 상황을 반영하세요.
-4. 난이도 조절 시 사용자의 '확보 가능 시간'을 엄격히 준수하세요.
+### Task Specifics:
+For each sub-goal, design 1 clear, actionable plan that fits the user's lifestyle context.
 
-응답 형식 (JSON):
+### Output Format (JSON):
 {
   "actions": [
     {
-      "sub_goal": "서브목표명",
-      "base": "실천내용",
-      "minimum": "실천내용",
-      "challenge": "실천내용"
+      "sub_goal": "Goal Name",
+      "content": "Action Content (Verb + Number)"
     },
     ...
   ]
-}`
+}`;
 
-  const userPrompt = `서브 목표 목록: ${payload.subGoals.join(', ')}
-페르소나: ${payload.persona}
-상세 정황: ${payload.detailedContext || '없음'}
-확보 가능 시간: ${payload.availableTime}분`
+  const userPrompt = `Sub-goals: ${payload.subGoals.join(', ')}
+Persona: ${payload.persona}
+Detailed Context: ${payload.detailedContext || 'None'}`;
 
   return await callPerplexity(systemPrompt, userPrompt, sessionId, userId, supabase)
 }
@@ -301,101 +506,284 @@ async function realityCheck(
     coreGoal: string
     subGoals: string[]
     actions: any[]
-    availableTime: string
-    energyPeak: string
     detailedContext?: string
+    language?: string
   },
   sessionId?: string,
   userId?: string,
   supabase?: any
 ) {
-  const systemPrompt = `당신은 목표의 성공 가능성을 냉철하게 진단하고 따뜻하게 보완해주는 '성공 전략가'입니다.
+  const isEn = payload.language && payload.language.startsWith('en');
+  const corePrompt = GET_CORE_PROMPT(isEn);
 
-사용자의 계획을 다음 3대 지표로 평가하세요:
-1. 시간 압박: 하루 총 필요 시간이 ${payload.availableTime}분을 확실히 넘지 않는가?
-2. 실행 명확성: 추상적인 표현 없이 숫자로 측정 가능한가?
-3. 에너지 효율: 사용자의 에너지 피크(${payload.energyPeak})에 가장 의지력이 필요한 일이 배치되었는가?
+  const systemPrompt = `${corePrompt}
 
-규칙:
-1. 한국어로 응답하세요.
-2. 비판만 하지 말고, 구체적인 '대안 문구'를 반드시 제시하세요.
-3. 전체 피드백은 사용자가 동기부여를 얻을 수 있도록 코치답게 작성하세요.
+### Task Specifics:
+Diagnose the plan based on its feasibility and actionability within the user's context.
 
-응답 형식 (JSON):
+### Output Format (JSON):
 {
   "corrections": [
     {
-      "original": "기존 실천 내용",
-      "suggested": "수정된 실천 내용",
-      "reason": "수정 이유 (한국어)"
+      "original": "Original action",
+      "suggested": "Improved action",
+      "reason": "Reason for correction (in ${isEn ? 'English' : 'Korean'})"
     }
   ],
-  "overall_feedback": "성공 가능성 진단 및 격려 메시지 (한국어)"
-}`
+  "overall_feedback": "Diagnosis and encouragement (in ${isEn ? 'English' : 'Korean'})"
+}`;
 
-  const userPrompt = `확보 가능 시간: ${payload.availableTime}분
-에너지 피크: ${payload.energyPeak}
-상세 정황: ${payload.detailedContext || '없음'}
-핵심 목표: ${payload.coreGoal}
-계획 상세: ${JSON.stringify(payload.actions)}`
+  const userPrompt = `Context: ${payload.detailedContext || 'None'}
+Core Goal: ${payload.coreGoal}
+Plan Details: ${JSON.stringify(payload.actions)}`;
 
   return await callPerplexity(systemPrompt, userPrompt, sessionId, userId, supabase)
 }
+
+// --- 7-STEP SILOED ARCHITECTURE (v11.0) ---
+
+// Helper: Get AI Context for specific step based on previous artifacts
+const getStepContext = (step: number, metadata: any, currentDraft: any) => {
+  const lifestyle = metadata?.lifestyle_summary || {};
+  const coreGoal = metadata?.core_goal_summary || {};
+  const completedSectors = metadata?.completed_sectors || [];
+
+  switch (step) {
+    case 1: // Greeting & Lifestyle
+      return `Target: New User. Context: None. Goal: Extract Lifestyle Summary.`;
+
+    case 2: // Core Goal
+      return `Target: Core Goal (핵심목표). 
+      User Lifestyle: ${JSON.stringify(lifestyle)}. 
+      Current Draft Goal: "${currentDraft.center_goal || ''}"`;
+
+    default:
+      // Steps 3-10: Sub-goals 1-8
+      if (step >= 3 && step <= 10) {
+        const subGoalIndex = step - 3; // 0 to 7
+        const prevSectors = completedSectors.slice(0, subGoalIndex);
+        return `Target: Sub-goal ${subGoalIndex + 1} (세부목표 ${subGoalIndex + 1}) + 8 Action Items (실천항목).
+        Core Goal: "${coreGoal.goal}".
+        Motivation: "${coreGoal.motivation}".
+        Previous Sub-goals: ${JSON.stringify(prevSectors)}.
+        User Lifestyle: ${JSON.stringify(lifestyle)}.`;
+      }
+
+      // Step 11: Review & Emergency
+      if (step === 11) {
+        return `Target: Safety Net (비상 모드).
+        Full Draft: ${JSON.stringify(currentDraft)}.
+        User Lifestyle: ${JSON.stringify(lifestyle)}.
+        Goal: Identify 1-2 minimum actions for bad days.`;
+      }
+
+      // Step 12: Finalize
+      if (step === 12) {
+        return `Target: Final Confirmation.
+        Full Draft: ${JSON.stringify(currentDraft)}.
+        Ready to generate?`;
+      }
+
+      return `Context: General Chat. Draft: ${JSON.stringify(currentDraft)}`;
+  }
+};
+
+
 async function handleChat(
-  payload: {
-    messages: { role: 'user' | 'assistant' | 'system', content: string }[]
-    currentDraft?: any
-  },
+  payload: any,
   sessionId?: string,
-  sessionId_legacy?: string, // Handle both for safety
   userId?: string,
   supabase?: any
 ) {
-  const systemPrompt = `당신은 사용자의 삶을 근본적으로 변화시키는 '만다라트 AI 코치'입니다.
-당신은 단순히 칸을 채워주는 보조자가 아니라, 사용자의 잠재력을 끌어내고 계획의 허점을 파고드는 **'집요한 전략가'**이자 **'진심 어린 파트너'**입니다.
+  const { messages, language, step = 1 } = payload;
+  const currentDraft = payload.currentDraft || payload.mandalart_draft || {};
+  const isEn = language && language.startsWith('en');
 
-### 헌법 (Constitutional Rules):
-1. **냉정한 도발 (Objective Provocateur)**:
-   - 사용자가 모호한 목표나 '남들이 보기에 좋은 목표'를 말하면 즉시 질문을 던져 본질을 파고듭니다.
-   - 예: "가족이 소중하다면서 왜 야근이 필수인 1인 기업 목표를 세우나요? 둘 중 하나는 거짓말입니다."
-2. **시스템 우선 설계 (Safety Net First - Emergency Mode)**:
-   - 모든 대화의 종착지 중 하나는 '비상 계획(Safety Net)'입니다.
-   - **중요**: 실천 항목(Actions)이 제안된 이후에, 반드시 "제안된 항목 중 최악의 컨디션에서도 절대 포기하지 않을 단 하나"를 고르도록 유도하세요.
-   - 이는 반드시 기존에 리스트업된 실천 항목 중에서 선택되어야 합니다. (투데이 리스트와의 정합성 때문)
-3. **수학적 현실 검증 (Math Check)**:
-   - 사용자가 제시한 목표에 숫자(매출, 시간, 확률 등)가 있다면 즉시 계산해보고 타당성을 검증합니다.
-   - 예: "주 5시간 투자로 월 100만원 수익? 시간당 5만원의 가치를 지금 바로 창출할 수 있나요?"
-4. **언어적 강제 (Noun-to-Verb)**:
-   - '명사'나 '구호' 입력을 절대 허용하지 않습니다.
-   - 모든 실행 항목은 반드시 **[구체적 동사] + [측정 가능한 숫자/기준]**으로 구성되어야 합니다.
-   - 예: "건강" (X) -> "밤 12시 전 취침하기" (O), "독서" (X) -> "매일 10페이지 읽기" (O)
-5. **점진적 interaction (One by One)**:
-   - 한 번에 하나씩만 질문하세요. 사용자가 압도당하지 않게 대화의 리듬을 조절합니다.
-6. **마이크로 액션 브릿지 (Micro-Action)**:
-   - 대화 중간중간, 혹은 마지막에 "지금 당장 30분 안에 할 수 있는 첫 번째 행동"이 무엇인지 확약받습니다.
+  // 1. Load Session Metadata (Artifacts)
 
-### 대화 가이드:
-- 당신은 따뜻하지만 타협하지 않습니다.
-- 사용자의 답변에서 '불안'이나 '자기기만'이 느껴지면 부드럽게 지적하세요.
-- 모든 답변은 한국어로 하며, 전문적이고 신뢰감 있는 톤을 유지하세요.
+  let sessionMetadata = {};
+  if (sessionId && supabase) {
+    const { data } = await supabase.from('coaching_sessions').select('metadata').eq('id', sessionId).single();
+    sessionMetadata = data?.metadata || {};
+  }
 
-### 응답 형식 (반드시 JSON 형식을 지키세요):
-{
-  "message": "사용자에게 전달할 코칭 메시지",
-  "updated_draft": {
-    "center_goal": "현재까지 확정된 핵심 목표",
-    "sub_goals": ["확정된 서브목표 1", "2", ...],
-    "actions": [
-      { "sub_goal": "대상 서브목표", "content": "확정된 행동 지침", "type": "habit|task" }
-    ],
-    "emergency_action": "선택된 비상 계획 항목 내용 (반드시 actions 중 하나여야 함)"
-  },
-  "slots_filled": ["core_goal", "sub_goals", "actions", "emergency_mode"],
-  "next_step_recommendation": "다음으로 논의해야 할 주제"
-}`
+  // 2. Prepare Context & Prompt
+  const stepContext = getStepContext(step, sessionMetadata, currentDraft);
+  const systemPrompt = GET_STEP_PROMPT(step, isEn);
 
-  const userPrompt = `현재 만다라트 초안: ${JSON.stringify(payload.currentDraft || {})}
-최근 대화 이력: ${JSON.stringify(payload.messages)}`
 
-  return await callPerplexity(systemPrompt, userPrompt, sessionId, userId, supabase)
+  const userPrompt = `
+  [STEP: ${step}/12]
+  [CONTEXT]: ${stepContext}
+  [HISTORY]: ${JSON.stringify(messages.slice(-6))}
+  [INSTRUCTION]: If the user is agreeing, confirming, or saying "yes/okay/그래/맞아", you MUST set "next_step_ready": true and move to the next step. Do not keep the user in the same step. Follow the system prompt strictly. Return RAW JSON only.
+  `;
+
+  // 3. Call AI
+  const aiResponse = await callPerplexity(systemPrompt, userPrompt, sessionId, userId, supabase);
+
+  // 3.5. Smart Intent Fallback (v12.0)
+  // Sometimes AI confirms verbally but forgets the technical "next_step_ready": true flag.
+  let isReady = aiResponse?.next_step_ready === true || String(aiResponse?.next_step_ready).toLowerCase() === 'true';
+
+  if (!isReady && aiResponse?.message) {
+    const msg = aiResponse.message;
+    const transitionKeywords = [
+      '다음 단계로', '다음으로', '확정되었습니다', '최종 확정', '저장하겠습니다',
+      '세부 목표로', '세부 목표를', '직행!', '준비되셨나요?', '넘어갈까요?'
+    ];
+    // If message contains transition intent AND doesn't end with a question mark (to avoid asking instead of moving)
+    // Actually, even if it asks "Shall we move?", if it's the end of Step 2, we should probably allow it
+    if (transitionKeywords.some(k => msg.includes(k)) && step < 12) {
+      console.log(`[Failsafe] Detected transition intent in message. Forcing next_step_ready: true`);
+      isReady = true;
+    }
+  }
+
+  const nextStepRaw = (isReady) ? step + 1 : step;
+  const nextStep = Math.min(nextStepRaw, 12);
+
+  // 4. Update Metadata if summary is provided OR next step is ready
+  if ((aiResponse?.summary_data || aiResponse?.next_step_ready) && sessionId && supabase) {
+    const newMetadata = { ...sessionMetadata, ...(aiResponse.summary_data || {}) };
+
+    // Special handling for completed sectors array
+    if (aiResponse.summary_data?.new_sector) {
+      const sectors = newMetadata.completed_sectors || [];
+      if (!sectors.includes(aiResponse.summary_data.new_sector)) {
+        sectors.push(aiResponse.summary_data.new_sector);
+      }
+      newMetadata.completed_sectors = sectors;
+    }
+
+    await supabase.from('coaching_sessions').update({
+      metadata: newMetadata,
+      current_step: nextStep
+    }).eq('id', sessionId);
+  }
+
+  return {
+    ...aiResponse,
+    current_step: nextStep,
+    move_to_next: isReady || false
+  };
+
+}
+
+
+
+async function commitMandalart(
+  payload: any,
+  sessionId?: string,
+  userId?: string,
+  supabase?: any
+) {
+  if (!userId || !supabase) throw new Error('Auth context required');
+  const { mandalart_draft } = payload;
+  if (!mandalart_draft?.center_goal) throw new Error('Invalid mandalart draft');
+
+  console.log(`[COMMIT] Starting for User: ${userId}`);
+
+  // 1. Dynamic Column Detection for 'mandalarts' table
+  // We probe the schema by doing a dummy query or using a safe insert
+  // For resilience, we define the "Minimum Viable" set and then "Bonus" columns
+
+  const mandalartPayload: any = {
+    user_id: userId,
+    center_goal: mandalart_draft.center_goal,
+    title: mandalart_draft.center_goal,
+    input_method: 'manual',
+    raw_ocr_data: mandalart_draft, // Save the FULL JSON here as backup!
+  };
+
+  // Optional: Try adding emergency_action if we think it might exist
+  // We'll use a safer approach: Try inserting with it, if fails, retry without it.
+  if (mandalart_draft.emergency_action) {
+    mandalartPayload.emergency_action = mandalart_draft.emergency_action;
+  }
+
+  try {
+    // 2. Insert Mandalart
+    let { data: mandalart, error: mError } = await supabase
+      .from('mandalarts')
+      .insert(mandalartPayload)
+      .select('id')
+      .single();
+
+    if (mError && mError.code === 'PGRST204') {
+      console.log('[COMMIT] emergency_action missing, retrying minimal...');
+      delete mandalartPayload.emergency_action;
+      const { data: retryData, error: retryError } = await supabase
+        .from('mandalarts')
+        .insert(mandalartPayload)
+        .select('id')
+        .single();
+
+      if (retryError) throw retryError;
+      mandalart = retryData;
+    } else if (mError) {
+      throw mError;
+    }
+
+    const mandalartId = mandalart.id;
+
+    // 3. Insert Sub-goals and Actions in batches/loops
+    // This is safer to do sequentially or in small chunks for RLS and reliability
+    for (let i = 0; i < mandalart_draft.sub_goals.length; i++) {
+      const sgTitle = mandalart_draft.sub_goals[i];
+      if (!sgTitle) continue;
+
+      const { data: subGoal, error: sgError } = await supabase
+        .from('sub_goals')
+        .insert({
+          mandalart_id: mandalartId,
+          position: i + 1,
+          title: sgTitle,
+        })
+        .select('id')
+        .single();
+
+      if (sgError) {
+        console.warn(`[COMMIT] SubGoal ${i + 1} failed:`, sgError);
+        continue;
+      }
+
+      const actionsToInsert = mandalart_draft.actions
+        .filter((a: any) => {
+          if (!a || (!a.sub_goal && !a.title)) return false;
+          // Robust matching: trim and case-insensitive
+          const actionSgName = (a.sub_goal || '').trim().toLowerCase();
+          const targetSgName = (sgTitle || '').trim().toLowerCase();
+          return actionSgName === targetSgName || targetSgName.includes(actionSgName) || actionSgName.includes(targetSgName);
+        })
+        .map((a: any, index: number) => ({
+          sub_goal_id: subGoal.id,
+          position: index + 1,
+          title: (a.content || a.title || '').trim(), // Support both content and title fields
+          type: (a.type === 'habit' || a.type === 'routine') ? 'routine' : 'mission', // Map to DB types if needed
+          is_completed: false
+        }));
+
+      if (actionsToInsert.length > 0) {
+        const { error: aError } = await supabase
+          .from('actions')
+          .insert(actionsToInsert);
+
+        if (aError) console.warn(`[COMMIT] Actions for SubGoal ${i + 1} failed:`, aError);
+      }
+    }
+
+    // 4. Update Session Status
+    if (sessionId) {
+      await supabase
+        .from('coaching_sessions')
+        .update({ status: 'completed' })
+        .eq('id', sessionId);
+    }
+
+    return { success: true, mandalartId };
+  } catch (error) {
+    console.error('[COMMIT] Critical Failure:', error);
+    return { success: false, error: error.message };
+  }
 }

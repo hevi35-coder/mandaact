@@ -32,6 +32,27 @@ Successfully transition from the fixed `CoachingFlowScreen.tsx` (7 steps) to a `
 - [x] **Feature**: Save logic that allows "Work in Progress" states. (Zustand persist + coaching_answers table)
 - [x] **Final**: The "Micro-Action Bridge" (Commitment to one 30-min task today). (Enforced via System Prompt v4.0)
 
+### Phase 11 — Final Review & Commit (Current Goal)
+**Goal**: Finalize the coaching outcome and persist to the main Mandalart database.
+- [ ] **UI**: Implement the "Final Review" summary screen in the chat loop.
+- [ ] **Logic**: Bridge the `mandalartDraft` to `mandalarts`, `sub_goals`, and `actions` tables.
+- [ ] **Logic**: Integrity check (Ensure all 8 slots are filled or explicitly skipped).
+
+### Phase 12 — Event-triggered Coaching (Moat Phase 1)
+**Goal**: Passive AI presence becoming active on specific triggers.
+- [ ] **Feature**: Streak-fail recovery (AI asks "What happened?" and suggests the Safety Net).
+- [ ] **Feature**: Low-progress nudge (AI identifies sluggish sub-goals and offers refinement).
+
+### Phase 13 — Semantic Memory & Personalization (Moat Phase 2)
+**Goal**: Deep personalization based on long-term data.
+- [ ] **Feature**: Cross-session memory (AI references past successes/failures).
+- [ ] **Feature**: Persona-Context synergy (Adjusting goals based on Energy Peak and Obstacles).
+
+### Phase 14 — Monetization & Premium Integration
+**Goal**: Link advanced coaching functionality to RevenueCat.
+- [ ] **Feature**: "Premium Coach" toggle with ad-free, unlimited sessions and deep analytics.
+- [ ] **Feature**: Advanced "Provocateur" modes (Challenger/Scientist) as premium perks.
+
 ## 4) Historical Progress (Legacy Flow)
 
 ### Phase 0–6 (Complete)

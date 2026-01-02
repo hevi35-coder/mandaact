@@ -46,6 +46,7 @@ import { AdsConsent, AdsConsentPrivacyOptionsRequirementStatus } from 'react-nat
 import { Header } from '../components'
 import { Toggle } from '../components/ui/Toggle'
 import { useAuthStore } from '../store/authStore'
+import { useCoachingStore } from '../store/coachingStore'
 import { useSubscriptionContext } from '../context'
 import { useAdFree, useRewardedAd } from '../hooks'
 import { useToast } from '../components/Toast'
@@ -115,6 +116,7 @@ export default function SettingsScreen() {
   } = useNotifications()
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [isDeletingCoachingData, setIsDeletingCoachingData] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [selectedHour, setSelectedHour] = useState(reminderTime.hour)
   const [selectedMinute, setSelectedMinute] = useState(reminderTime.minute)
@@ -137,6 +139,7 @@ export default function SettingsScreen() {
   // Ad-free focus mode
   const toast = useToast()
   const { isAdFree, remainingTimeFormatted, isLoading: isAdFreeLoading, activate } = useAdFree()
+  const { resetSession } = useCoachingStore()
   const [isActivatingFocus, setIsActivatingFocus] = useState(false)
 
   const { isLoading: isAdLoading, show: showAd } = useRewardedAd({
@@ -242,6 +245,41 @@ export default function SettingsScreen() {
       ]
     )
   }, [signOut, t])
+
+  const handleDeleteCoachingData = useCallback(() => {
+    if (!user?.id) return
+
+    Alert.alert(
+      t('settings.privacy.deleteCoachingData'),
+      t('settings.privacy.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.privacy.deleteButton'),
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingCoachingData(true)
+            try {
+              const { error } = await supabase
+                .from('coaching_sessions')
+                .delete()
+                .eq('user_id', user.id)
+
+              if (error) throw error
+
+              resetSession()
+              toast.success(t('common.success'), t('settings.privacy.deleteSuccess'))
+            } catch (error) {
+              console.error('[SettingsScreen] Delete coaching error:', error)
+              toast.error(t('common.error'), t('common.tryAgain'))
+            } finally {
+              setIsDeletingCoachingData(false)
+            }
+          },
+        },
+      ]
+    )
+  }, [user?.id, resetSession, t, toast])
 
   const handleOpenNicknameModal = useCallback(() => {
     setNicknameInput(nickname)
@@ -752,6 +790,46 @@ export default function SettingsScreen() {
             </>
           )}
 
+          {/* Privacy & AI Data Section */}
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.privacy.title')}
+          </Text>
+          <Animated.View
+            entering={FadeInUp.delay(185).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            <Pressable
+              onPress={handleDeleteCoachingData}
+              disabled={isDeletingCoachingData}
+              className="flex-row items-center px-5 py-4"
+            >
+              <Trash2 size={22} color="#ef4444" />
+              <View className="flex-1 ml-3">
+                <Text
+                  className="text-base text-red-500"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {t('settings.privacy.deleteCoachingData')}
+                </Text>
+              </View>
+              {isDeletingCoachingData ? (
+                <ActivityIndicator size="small" color="#ef4444" />
+              ) : (
+                <ChevronRight size={18} color="#9ca3af" />
+              )}
+            </Pressable>
+          </Animated.View>
+
           {/* Notification Settings */}
           <Text
             className="text-sm text-gray-500 mb-2 ml-1"
@@ -1166,8 +1244,8 @@ export default function SettingsScreen() {
                       key={minute}
                       onPress={() => setSelectedMinute(minute)}
                       className={`py-2 px-6 ${selectedMinute === minute
-                          ? 'bg-primary/10 rounded-xl'
-                          : ''
+                        ? 'bg-primary/10 rounded-xl'
+                        : ''
                         }`}
                     >
                       <Text
@@ -1320,8 +1398,8 @@ export default function SettingsScreen() {
                   key={lang.code}
                   onPress={() => handleLanguageSelect(lang.code)}
                   className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${currentLang === lang.code
-                      ? 'bg-primary/10 border border-primary/30'
-                      : 'bg-gray-50 border border-gray-100'
+                    ? 'bg-primary/10 border border-primary/30'
+                    : 'bg-gray-50 border border-gray-100'
                     }`}
                 >
                   <Text
@@ -1391,8 +1469,8 @@ export default function SettingsScreen() {
                   onPress={() => handleTimezoneSelect(tz.value)}
                   disabled={isSavingTimezone}
                   className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${timezone === tz.value
-                      ? 'bg-primary/10 border border-primary/30'
-                      : 'bg-gray-50 border border-gray-100'
+                    ? 'bg-primary/10 border border-primary/30'
+                    : 'bg-gray-50 border border-gray-100'
                     } ${isSavingTimezone ? 'opacity-50' : ''}`}
                 >
                   <Clock

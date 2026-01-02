@@ -30,7 +30,7 @@ import type { RootStackParamList, MainTabParamList } from '../navigation/RootNav
 import { useCoachingStore } from '../store/coachingStore'
 
 // Sub-components
-import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal } from '../components/Home'
+import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal, CoachingBanner } from '../components/Home'
 import { BannerAd, XPBoostButton } from '../components/ads'
 
 type NavigationProp = CompositeNavigationProp<
@@ -146,31 +146,8 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {hasCoachingSession && (
-            <View className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-base text-gray-900" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                  {t('home.coachingResume.title')}
-                </Text>
-                <Text className="text-xs text-gray-500" style={{ fontFamily: 'Pretendard-Medium' }}>
-                  {t('home.coachingResume.status.active')}
-                </Text>
-              </View>
-              {summary?.shortSummary ? (
-                <Text className="text-sm text-gray-600 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
-                  {summary.shortSummary}
-                </Text>
-              ) : null}
-              <Pressable
-                onPress={handleResumeCoaching}
-                className="mt-3 bg-primary rounded-xl py-3 items-center"
-              >
-                <Text className="text-white text-sm" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                  {t('home.coachingResume.cta')}
-                </Text>
-              </Pressable>
-            </View>
-          )}
+          {/* AI Coaching Entry Point */}
+          <CoachingBanner />
 
           {/* iPad: 2-column layout for cards */}
           <View style={isTablet ? { flexDirection: 'row', gap: 20 } : undefined}>
