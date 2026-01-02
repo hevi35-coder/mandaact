@@ -11,6 +11,7 @@ export interface Mandalart {
   updated_at: string
   sub_goals?: SubGoal[]
   current_plan_mode?: 'base' | 'minimum' | 'challenge'
+  emergency_action?: string
 }
 
 export interface SubGoal {

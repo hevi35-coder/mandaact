@@ -70,6 +70,13 @@
   "home": {
     "title": "Home",
     "subtitle": "Growth Dashboard",
+    "coachingBanner": {
+      "startTitle": "Find Goals with AI Coaching",
+      "startBody": "Turn your aspirations into actionable plans with our AI coach.",
+      "startCta": "Start Coaching",
+      "resumeTitle": "Resume Coaching",
+      "resumeCta": "Continue Chat"
+    },
     "level": "Level",
     "totalXP": "Total XP",
     "toNextLevel": "To Level {{level}}",
@@ -204,6 +211,12 @@
         "primary": "Go Unlimited",
         "secondary": "Go Back",
         "footer": "Weekly limit resets every Monday."
+      },
+      "consent": {
+        "title": "AI Coaching Data Consent (Required)",
+        "body": "Manda Coach sends your goals and conversation data to Perplexity AI (USA) to provide personalized coaching and maintain context. You can delete all collected AI data at any time in Settings. Do you agree?",
+        "agree": "Yes, I agree & Start",
+        "disagree": "Later"
       }
     },
     "slotGate": {
@@ -460,6 +473,30 @@
       "summary": "Coaching session saved.",
       "prompt": "Next: final review.",
       "completed": "Session completed."
+    },
+    "chat": {
+      "placeholder": "Talk to your coach...",
+      "loading": "Manda Coach is analyzing...",
+      "mandalartDraft": "Mandalart Draft",
+      "aiPowered": "POWERED BY AI (Perplexity)",
+      "error": "Sorry, an error occurred. Could you say that again?",
+      "greeting": "Hello! I'm Manda Coach. Let's have a meaningful conversation together.\n\nFirst, let me ask — have you heard of Mandalart before, or is this your first time?",
+      "inputHint": "Start typing...",
+      "createMandalart": "Create Mandalart",
+      "stages": {
+        "onboarding": "Preparing",
+        "lifestyle": "Lifestyle Discovery",
+        "core_goal": "Setting Core Goal",
+        "sub_goals": "8 Pillars & Action Plans",
+        "actions": "Plan Fine-tuning",
+        "resilience": "Resilience Strategy",
+        "finishing": "Wrapping Up"
+      },
+      "hints": {
+        "onboarding": "Checking Mandalart experience...",
+        "lifestyle": "Discovering your lifestyle...",
+        "goal": "Set your core goal"
+      }
     }
   },
   "today": {
@@ -969,12 +1006,17 @@
       "deleteError": "Failed to delete account. Please try again."
     },
     "app": {
-      "title": "App",
-      "language": "Language",
-      "timezone": "Timezone",
-      "notifications": "Notifications",
-      "tutorial": "User Guide",
-      "version": "Version"
+      "title": "App Settings",
+      "language": "Language Settings",
+      "timezone": "Timezone Settings",
+      "notifications": "Notification Settings"
+    },
+    "privacy": {
+      "title": "Privacy & AI Data",
+      "deleteCoachingData": "Delete AI Coaching Data",
+      "deleteConfirm": "All chat history and drafts created with Manda Coach will be deleted. (Finalized Mandalarts will be preserved.) This action cannot be undone.",
+      "deleteButton": "Delete All Data",
+      "deleteSuccess": "AI coaching data deleted successfully."
     },
     "support": {
       "title": "Support",
@@ -1355,7 +1397,6 @@
     "lastUpdated": "Last updated",
     "lastUpdatedWithValue": "Last updated: {{date}}",
     "generateReport": "Generate Report",
-    "generating": "Generating...",
     "toast": {
       "generated": "Report generated"
     },
@@ -1369,13 +1410,6 @@
       "emptyContent": "Report content is empty. Please try generating again.",
       "aiError": "AI service temporarily unavailable. Please try again later."
     }
-  },
-  "errors": {
-    "generic": "An error occurred",
-    "network": "Please check your network connection",
-    "unauthorized": "Login required",
-    "notFound": "Not found",
-    "serverError": "Server error occurred"
   },
   "errorBoundary": {
     "title": "Something went wrong",

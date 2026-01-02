@@ -15,14 +15,14 @@ import type { RootStackParamList } from '../navigation/RootNavigator'
 import { useToast } from '../components/Toast'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
-type GateMode = 'welcome' | 'ad' | 'limit' | 'loading'
+type GateMode = 'welcome' | 'ad' | 'limit' | 'loading' | 'consent'
 
 export default function CoachingGateScreen() {
   const { t } = useTranslation()
   const navigation = useNavigation<NavigationProp>()
   const toast = useToast()
   const { user } = useAuthStore()
-  const { status, startSession } = useCoachingStore()
+  const { status, startSession, consentAgreed, setConsentAgreed } = useCoachingStore()
   const { isPremium, canCreateMandalart } = useSubscriptionContext()
   const {
     ensureCurrentWeek,
@@ -38,9 +38,10 @@ export default function CoachingGateScreen() {
   const autoStartRef = useRef(false)
   const navigationAttemptedRef = useRef(false)
 
-  const canStartWithAd = weeklySessions >= 1 && weeklyAdUnlocks < 1 && weeklySessions < 2
-  const weeklyLimitReached = weeklySessions >= 2 || (weeklySessions >= 1 && weeklyAdUnlocks >= 1)
-  const hasFreeSession = weeklySessions < 1
+  // Temporarily expanded limits for testing (10 free sessions + 10 ad unlocks = 20 total)
+  const canStartWithAd = weeklySessions >= 10 && weeklyAdUnlocks < 10 && weeklySessions < 20
+  const weeklyLimitReached = weeklySessions >= 20
+  const hasFreeSession = weeklySessions < 10
   const isFirstSession = lifetimeSessions === 0
 
   useEffect(() => {
@@ -91,6 +92,8 @@ export default function CoachingGateScreen() {
         registerSessionStart('free')
         navigation.replace('ConversationalCoaching')
       }
+    } else if (!consentAgreed) {
+      setGateMode('consent')
     }
   }, [
     isFocused,
@@ -105,6 +108,7 @@ export default function CoachingGateScreen() {
     isFirstSession,
     registerSessionStart,
     navigation,
+    consentAgreed,
   ])
 
   const handleStartFree = useCallback(async () => {
@@ -175,6 +179,22 @@ export default function CoachingGateScreen() {
       }
     }
 
+    if (gateMode === 'consent') {
+      return {
+        title: t('coaching.gate.consent.title'),
+        body: t('coaching.gate.consent.body'),
+        primaryLabel: t('coaching.gate.consent.agree'),
+        secondaryLabel: t('coaching.gate.consent.disagree'),
+        primaryAction: () => {
+          setConsentAgreed(true)
+          // After consent, the useEffect will re-evaluate and start the appropriate flow
+        },
+        secondaryAction: () => navigation.goBack(),
+        showSecondary: true,
+        footer: t('coaching.gate.footer'),
+      }
+    }
+
     return null
   }, [
     gateMode,
@@ -212,34 +232,7 @@ export default function CoachingGateScreen() {
           </Text>
         </View>
 
-        {gateMode === 'welcome' && (
-          <View className="space-y-3 mb-6">
-            <Text className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'Pretendard-Medium' }}>
-              {t('coaching.step1.title')}
-            </Text>
-            {(['working_professional', 'student', 'freelancer', 'custom'] as PersonaType[]).map((key) => (
-              <Pressable
-                key={key}
-                onPress={() => setSelectedPersona(key)}
-                className={`px-4 py-4 rounded-2xl border ${selectedPersona === key ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'}`}
-              >
-                <View className="flex-row items-center justify-between">
-                  <Text
-                    className={`text-base ${selectedPersona === key ? 'text-gray-900' : 'text-gray-600'}`}
-                    style={{ fontFamily: selectedPersona === key ? 'Pretendard-SemiBold' : 'Pretendard-Regular' }}
-                  >
-                    {t(`coaching.step1.persona.${key}`)}
-                  </Text>
-                  {selectedPersona === key && (
-                    <View className="w-5 h-5 rounded-full bg-primary items-center justify-center">
-                      <View className="w-2 h-2 rounded-full bg-white" />
-                    </View>
-                  )}
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        )}
+        {/* Persona selection hidden to allow AI-driven discovery in chat. Defaulting to 'working_professional' for now. */}
 
         {gateMode !== 'welcome' && (
           <View className="bg-white rounded-2xl p-5 border border-gray-100 mb-6">
@@ -247,7 +240,7 @@ export default function CoachingGateScreen() {
               {t('coaching.gate.summaryTitle')}
             </Text>
             <Text className="text-lg text-gray-900 mt-2" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-              {t('coaching.gate.summaryValue', { used: weeklySessions, total: 2 })}
+              {t('coaching.gate.summaryValue', { used: weeklySessions, total: 20 })}
             </Text>
             <Text className="text-sm text-gray-500 mt-2" style={{ fontFamily: 'Pretendard-Regular' }}>
               {t('coaching.gate.summaryHint')}

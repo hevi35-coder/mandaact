@@ -404,8 +404,6 @@ export default function CoachingFlowScreen() {
       const suggestions = await coachingService.suggestSubGoals({
         persona: personaKey,
         coreGoal: coreGoal.trim(),
-        availableTime,
-        energyPeak: step1Values.energyPeak || '',
         priorityArea: step1Values.priorityArea || '',
         detailedContext: ruleInputs?.detailedContext,
       }, sessionId)
@@ -456,16 +454,15 @@ export default function CoachingFlowScreen() {
       const generated = await coachingService.generateActions({
         subGoals: subGoals.filter(s => s.trim()),
         persona: personaKey,
-        availableTime,
         detailedContext: ruleInputs?.detailedContext,
       }, sessionId)
 
       const drafts = (generated as ActionVariantService[]).map((gen) => ({
         subGoal: gen.sub_goal,
         actions: {
-          base: gen.base,
-          minimum: gen.minimum,
-          challenge: gen.challenge,
+          base: gen.content,
+          minimum: gen.content,
+          challenge: gen.content,
         },
         activeVariant: 'base' as const,
         extras: [],
@@ -513,8 +510,6 @@ export default function CoachingFlowScreen() {
         coreGoal: coreGoal,
         subGoals: subGoals.filter((s) => s.trim()),
         actions: actionDrafts,
-        availableTime,
-        energyPeak: ruleInputs?.energy || '',
         detailedContext: ruleInputs?.detailedContext,
       }, sessionId)
       setRealityFeedback(feedback.overall_feedback)

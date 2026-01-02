@@ -13,7 +13,22 @@ To ensure a transformative experience, the AI must adhere to these "Golden Rules
 6.  **Progressive Interaction (One by One)**: Maintain a strict 1-input-1-response rhythm to minimize cognitive load.
 7.  **Habit vs. Task Separation**: Explicitly distinguish between daily repetitions and one-off milestones for realistic scheduling.
 
-## 1.2) Reflection: Why the current approach feels like a "Trap"
+## 1.3) AI Coaching Strategy: The Moat (차별화 전략)
+MandaAct AI 코치만이 가질 수 있는 독보적인 경쟁 우위입니다.
+
+1. **기억력 (The Ego)**: 일회성 세션이 아닌, 사용자의 장기적인 성공/실패 패턴을 기억합니다.
+2. **교차 검증 (The Mirror)**: 대화 내용과 실제 실천 데이터(XP, 스트릭)를 대조하여 피드백합니다.
+3. **능동적 개입 (The Push)**: 사용자가 말이 없어도 실천율 저하 시 먼저 상황을 묻고 대안을 제안합니다.
+4. **구조적 규율 (The Frame)**: 만다라트 그리드라는 강력한 프레임워크 내에서만 사고하도록 강제합니다.
+5. **적응형 페르소나 (Adaptive Mode)**: 사용자의 멘탈/데이터 상태에 따라 **가디언/사이언티스트/챌린저** 모드를 전환합니다.
+
+## 1.4) Evolution Roadmap: Step-by-Step Expansion
+1. **Phase 1 (Current)**: '안전망(Emergency Action)' 데이터 확보 및 저장.
+2. **Phase 2 (Moat Basis)**: 스트릭 실패 등 특정 조건(Event-triggered) 발생 시 AI 코치가 능동적으로 개입.
+3. **Phase 3 (Full Moat)**: 장기 누적 데이터를 기반으로 한 개인화된 통계 분석 및 전략적 조언 제공.
+4. **Phase 4 (Premium)**: 수익화 모델(Premium)과 연동하여 고도화된 능동 코칭 기능 제공.
+
+## 1.5) Reflection: Why the current approach feels like a "Trap"
 - **Forced Linear Path**: Users are forced through steps (1 to 7) without the ability to jump around or skip.
 - **Multiple Choice Fatigue**: Asking 5-6 rigid questions before even discussing the goal creates cognitive load and feels like a survey.
 - **Validation Blockers**: Requiring 8 sub-goals and 24 actions to be "perfectly configured" before saving creates a high barrier to entry.

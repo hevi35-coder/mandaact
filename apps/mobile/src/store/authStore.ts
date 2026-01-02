@@ -4,6 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 import { logger } from '../lib/logger'
+import { useCoachingStore } from './coachingStore'
+import { useCoachingAccessStore } from './coachingAccessStore'
+import { usePlanStore } from './planStore'
 
 interface AuthResult {
   user: User | null
@@ -66,6 +69,11 @@ export const useAuthStore = create<AuthState>()(
       signOut: async () => {
         set({ loading: true })
         try {
+          // Clear all user-dependent persisted stores
+          useCoachingStore.getState().resetSession()
+          useCoachingAccessStore.getState().reset()
+          usePlanStore.getState().reset()
+
           await supabase.auth.signOut()
           set({ user: null })
         } finally {
