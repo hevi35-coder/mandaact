@@ -495,7 +495,22 @@
       "hints": {
         "onboarding": "Checking Mandalart experience...",
         "lifestyle": "Discovering your lifestyle...",
-        "goal": "Set your core goal"
+        "goal": "Set your core goal",
+        "refiningGoal": "Refining your core goal...",
+        "subGoal": "Setting sub-goal {{index}}... ({{index}}/8)",
+        "resilience": "Building your safety net for tough days...",
+        "general": "Almost done with your Mandalart!"
+      },
+      "draft": "DRAFT",
+      "poweredBy": "Powered by",
+      "subGoalSetting": "Sub-goal {{index}} Setup",
+      "purpose": "Your Mandalart takes shape through conversation",
+      "completeMandalart": "Complete Mandalart",
+      "completeCta": "Tap to save your goals!",
+      "status": {
+        "subGoals": "sub-goals",
+        "actions": "actions",
+        "notSet": "Goal not set yet"
       }
     }
   },

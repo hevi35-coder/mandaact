@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { View, Text, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
 import { Header } from '../components'
@@ -10,12 +10,32 @@ import { logger } from '../lib/logger'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/RootNavigator'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 export default function ConversationalCoachingScreen({ navigation: propNavigation }: { navigation: any }) {
     const { t, i18n } = useTranslation()
     const navigation = useNavigation<NavigationProp>()
+    const insets = useSafeAreaInsets()
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false)
+
+    useEffect(() => {
+        const showSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            () => setKeyboardVisible(true)
+        )
+        const hideSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => setKeyboardVisible(false)
+        )
+
+        return () => {
+            showSubscription.remove()
+            hideSubscription.remove()
+        }
+    }, [])
+
     const { user } = useAuthStore()
     const {
         sessionId,
@@ -29,42 +49,6 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
         syncStepFromServer
     } = useCoachingStore()
 
-    // Stage labels mapping based on currentStep (v11.0 7-Step Silo)
-    const getCurrentStageLabel = useCallback(() => {
-        switch (currentStep) {
-            case 1:
-                return t('coaching.chat.stages.lifestyle', '라이프스타일 발견')
-            case 2:
-                return t('coaching.chat.stages.core_goal', '핵심 목표 설정')
-            case 11:
-                return t('coaching.chat.stages.resilience', '비상 대책 (Safety Net)')
-            case 12:
-                return t('coaching.chat.stages.finishing', '최종 점검')
-            default:
-                if (currentStep >= 3 && currentStep <= 10) {
-                    return `세부목표 ${currentStep - 2} 설정`
-                }
-                return t('coaching.chat.stages.onboarding', '준비하기')
-        }
-    }, [currentStep, t])
-
-
-    // Dynamic status text for the header subtitle (v9.6)
-    // Dynamic status text for the header subtitle (v11.0)
-    // Dynamic status text for the header subtitle (v11.1 12-Step Silo)
-    const getCurrentStatusSubtitle = useCallback(() => {
-        if (currentStep === 1) return t('coaching.chat.hints.lifestyle', '당신의 하루와 에너지를 들려주세요.')
-        if (currentStep === 2) return mandalartDraft.center_goal ? '핵심 목표를 다듬는 중...' : t('coaching.chat.hints.goal', '가슴 뛰는 목표를 찾는 중...')
-
-        // Steps 3-10: Sub-goals
-        if (currentStep >= 3 && currentStep <= 10) {
-            const subGoalIdx = currentStep - 2;
-            return `세부목표 ${subGoalIdx} 설정 중... (${subGoalIdx}/8)`
-        }
-
-        if (currentStep === 11) return t('coaching.chat.hints.resilience', '힘든 날을 위한 안전망(Safety Net)을 만드는 중...')
-        return t('coaching.chat.hints.general', '만다라트 완성을 앞두고 있어요!')
-    }, [currentStep, mandalartDraft, t])
 
 
     const [inputText, setInputText] = useState('')
@@ -271,64 +255,75 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                keyboardVerticalOffset={0}
             >
-                {/* Enhanced Draft & Progress Header */}
+                {/* Draft Summary Header - Option A (No sync issues) */}
                 <View style={{
                     backgroundColor: 'white',
                     paddingHorizontal: 16,
-                    paddingTop: 16,
-                    paddingBottom: 16,
+                    paddingVertical: 12,
                     borderBottomWidth: 1,
                     borderBottomColor: '#f3f4f6',
                 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    {/* Core Goal Row */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <View style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            backgroundColor: mandalartDraft.center_goal ? '#e0e7ff' : '#f3f4f6',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: 8
+                        }}>
+                            <Ionicons
+                                name={mandalartDraft.center_goal ? "disc-outline" : "help-circle-outline"}
+                                size={14}
+                                color={mandalartDraft.center_goal ? "#6366f1" : "#9ca3af"}
+                            />
+                        </View>
+                        <Text style={{
+                            fontSize: 15,
+                            color: mandalartDraft.center_goal ? '#111827' : '#6b7280',
+                            fontWeight: '700',
+                            fontFamily: 'Pretendard-Bold',
+                            flex: 1
+                        }} numberOfLines={1}>
+                            {mandalartDraft.center_goal || t('coaching.chat.status.notSet', '아직 목표가 설정되지 않았습니다')}
+                        </Text>
+                    </View>
+
+                    {/* Stats Row */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                                <Ionicons name="grid-outline" size={12} color="#10b981" style={{ marginRight: 4 }} />
+                                <Text style={{ fontSize: 13, color: '#059669', fontWeight: '700', fontFamily: 'Pretendard-Bold' }}>
+                                    {(mandalartDraft.sub_goals || []).filter(g => g && g.trim()).length}/8
+                                </Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="flash-outline" size={12} color="#6b7280" style={{ marginRight: 4 }} />
+                                <Text style={{ fontSize: 13, color: '#4b5563', fontWeight: '600', fontFamily: 'Pretendard-SemiBold' }}>
+                                    {(mandalartDraft.actions || []).length}
+                                </Text>
+                            </View>
+                        </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <View style={{
-                                backgroundColor: '#6366f1',
+                                backgroundColor: '#ede9fe',
                                 paddingHorizontal: 8,
-                                paddingVertical: 4,
+                                paddingVertical: 3,
                                 borderRadius: 6,
-                                marginRight: 8
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                borderWidth: 0.5,
+                                borderColor: '#ddd6fe'
                             }}>
-                                <Text style={{ fontSize: 10, color: 'white', fontWeight: 'bold' }}>DRAFT</Text>
+                                <Text style={{ fontSize: 9, color: '#7c3aed', fontWeight: '800', fontFamily: 'Pretendard-Bold' }}>{t('coaching.chat.draft', '초안')}</Text>
                             </View>
-                            <Text style={{
-                                fontSize: 13,
-                                color: '#1f2937',
-                                fontWeight: '700',
-                                fontFamily: 'Pretendard-Bold'
-                            }}>{getCurrentStageLabel()}</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 10, color: '#9ca3af', marginRight: 4 }}>Powered by</Text>
-                            <Text style={{ fontSize: 10, color: '#3b82f6', fontWeight: 'bold' }}>Perplexity AI</Text>
                         </View>
                     </View>
-
-                    <Text style={{ fontSize: 16, color: '#111827', marginBottom: 12, fontWeight: '600' }} numberOfLines={1}>
-                        {getCurrentStatusSubtitle()}
-                    </Text>
-
-
-                    <View style={{ height: 6, backgroundColor: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
-                        <View style={{
-                            height: '100%',
-                            backgroundColor: '#6366f1',
-                            width: `${Math.min(100, (currentStep / 12) * 100)}%`,
-                            borderRadius: 3
-                        }} />
-                    </View>
-
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-                        <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Pretendard-Regular' }}>
-                            {t('coaching.chat.purpose', '대화하며 나의 만다라트가 완성됩니다')}
-                        </Text>
-                        <Text style={{ fontSize: 10, color: '#6366f1', fontWeight: 'bold' }}>
-                            {Math.round((Math.min(currentStep, 12) / 12) * 100)}%
-                        </Text>
-                    </View>
-
                 </View>
 
                 <ScrollView
@@ -336,6 +331,7 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
                     style={{ flex: 1, paddingHorizontal: 16 }}
                     contentContainerStyle={{ paddingVertical: 20 }}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                     {chatMessages.map((msg, idx) => (
                         <MessageBubble key={idx} role={msg.role} content={msg.content} />
@@ -415,7 +411,7 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
                     backgroundColor: 'white',
                     paddingHorizontal: 16,
                     paddingTop: 12,
-                    paddingBottom: 32,
+                    paddingBottom: isKeyboardVisible ? 8 : Math.max(insets.bottom, 12),
                     borderTopWidth: 1,
                     borderTopColor: '#f3f4f6'
                 }}>
@@ -596,7 +592,7 @@ const MessageBubble = React.memo(({ role, content }: { role: 'user' | 'assistant
         }}>
             <View style={{
                 paddingHorizontal: 16,
-                paddingVertical: 10,
+                paddingVertical: 12,
                 borderRadius: 20,
                 borderTopLeftRadius: isAI ? 4 : 20,
                 borderTopRightRadius: isAI ? 20 : 4,
@@ -609,16 +605,7 @@ const MessageBubble = React.memo(({ role, content }: { role: 'user' | 'assistant
                 shadowRadius: 2,
                 elevation: 1
             }}>
-                <Text
-                    style={{
-                        fontSize: 15,
-                        lineHeight: 22,
-                        color: isAI ? '#1f2937' : 'white',
-                        fontFamily: 'Pretendard-Regular'
-                    }}
-                >
-                    {renderContent(content)}
-                </Text>
+                {renderContent(content)}
             </View>
         </View>
     )
