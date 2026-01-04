@@ -64,7 +64,8 @@ interface CoachingState {
   pauseSession: () => void
   completeSession: () => void
   resetSession: () => void
-  addChatMessage: (role: 'user' | 'assistant' | 'system', content: string) => void
+  addChatMessage: (role: 'user' | 'assistant' | 'system', content: string, force?: boolean) => void
+  addInitialGreeting: (greeting: string) => void
   updateMandalartDraft: (draft: Partial<MandalartDraft>) => void
   setSlotsFilled: (slots: string[]) => void
   commitCoachingResult: (user_id: string) => Promise<string | null>
@@ -150,6 +151,13 @@ export const useCoachingStore = create<CoachingState>()(
         }
       },
 
+      addInitialGreeting: (greeting: string) => {
+        const { chatMessages } = get()
+        if (chatMessages.length === 0) {
+          get().addChatMessage('assistant', greeting, true)
+        }
+      },
+
       setCurrentStep: (step) => {
         set({ currentStep: step })
       },
@@ -201,14 +209,14 @@ export const useCoachingStore = create<CoachingState>()(
             lastResumedAt: new Date().toISOString(),
 
             chatMessages: session.metadata?.chat_history || [],
-            mandalartDraft: session.metadata?.draft || {
+            mandalartDraft: (session.metadata?.draft || answersObj['mandalart_draft']) || {
               center_goal: '',
               sub_goals: Array(8).fill(''),
               actions: [],
               emergency_action: '',
             },
 
-            slotsFilled: answersObj['slots_filled'] || [],
+            slotsFilled: (answersObj['slots_filled'] || session.metadata?.completed_sectors) || [],
           })
         } catch (error) {
           console.error('Failed to load coaching session', error)
@@ -297,8 +305,14 @@ export const useCoachingStore = create<CoachingState>()(
         })
       },
 
-      addChatMessage: (role, content) => {
+      addChatMessage: (role, content, force = false) => {
         set((state) => {
+          // Prevent duplicates of the exact same message if added within a short window
+          const lastMsg = state.chatMessages[state.chatMessages.length - 1]
+          if (!force && lastMsg && lastMsg.role === role && lastMsg.content === content) {
+            return state
+          }
+
           const newMessages = [...state.chatMessages, { role, content }]
           if (state.sessionId) {
             get().saveAnswer('chat_history', newMessages)
@@ -352,40 +366,48 @@ export const useCoachingStore = create<CoachingState>()(
 
       syncStepFromServer: (step, draft) => {
         set((current) => {
-          const newDraft = { ...current.mandalartDraft }
+          // If the server sent a full-looking draft (v13.0), prioritize it to ensure sync
+          // But merge carefully to avoid flicker if some fields are missing
+          const newDraft = { ...current.mandalartDraft };
 
-          if (draft.center_goal) newDraft.center_goal = draft.center_goal
+          if (draft.center_goal !== undefined && draft.center_goal !== 'undefined') {
+            newDraft.center_goal = draft.center_goal;
+          }
 
-          if (draft.sub_goals && Array.isArray(draft.sub_goals)) {
-            // Keep existing ones, only update if the new one has a value
+          if (draft.sub_goals && Array.isArray(draft.sub_goals) && draft.sub_goals.length === 8) {
+            // Full array update
+            newDraft.sub_goals = [...draft.sub_goals];
+          } else if (draft.sub_goals && Array.isArray(draft.sub_goals)) {
+            // Partial array update
             newDraft.sub_goals = current.mandalartDraft.sub_goals.map((sg, i) =>
               (draft.sub_goals && draft.sub_goals[i]) ? draft.sub_goals[i] : sg
-            )
+            );
           }
 
           if (draft.actions && Array.isArray(draft.actions)) {
-            // Logic: Remove old actions for the sub-goals included in this update, then add new ones
-            // Normalized schema support: handle both 'title' and 'content' fields
-            const normalizedActions = draft.actions.map(a => ({
-              ...a,
-              sub_goal: a.sub_goal || (a as any).title || '',
+            // The server now sends the cumulative actions list. 
+            // We trust it but ensure normalization.
+            newDraft.actions = draft.actions.map(a => ({
+              sub_goal: a.sub_goal || '',
               content: a.content || (a as any).title || '',
-              type: ((a as any).type === 'habit' || (a as any).type === 'routine') ? 'habit' : 'task'
-            })) as MandalartAction[]
-            const updatedSgNames = new Set(normalizedActions.map(a => a.sub_goal))
-            const filteredActions = current.mandalartDraft.actions.filter(a => !updatedSgNames.has(a.sub_goal))
-            newDraft.actions = [...filteredActions, ...normalizedActions]
+              type: (a.type === 'habit' || (a as any).type === 'routine') ? 'habit' : 'task'
+            }));
           }
 
-          if (draft.emergency_action) {
-            newDraft.emergency_action = draft.emergency_action
+          if (draft.emergency_action !== undefined) {
+            newDraft.emergency_action = draft.emergency_action;
+          }
+
+          // v15.1: Persist to DB so CoachingHistoryScreen can access it
+          if (current.sessionId) {
+            get().saveAnswer('mandalart_draft', newDraft);
           }
 
           return {
             currentStep: step as StepIndex,
             mandalartDraft: newDraft,
-          }
-        })
+          };
+        });
       },
 
     }),
