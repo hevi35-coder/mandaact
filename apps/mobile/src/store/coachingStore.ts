@@ -409,7 +409,6 @@ export const useCoachingStore = create<CoachingState>()(
           };
         });
       },
-
     }),
     {
       name: 'mandaact-coaching-session',

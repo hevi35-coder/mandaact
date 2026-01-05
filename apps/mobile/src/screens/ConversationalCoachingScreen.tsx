@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { View, Text, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
 import { Header } from '../components'
@@ -10,12 +10,31 @@ import { logger } from '../lib/logger'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/RootNavigator'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 export default function ConversationalCoachingScreen({ navigation: propNavigation }: { navigation: any }) {
     const { t, i18n } = useTranslation()
     const navigation = useNavigation<NavigationProp>()
+    const insets = useSafeAreaInsets()
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false)
+
+    useEffect(() => {
+        const showSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            () => setKeyboardVisible(true)
+        )
+        const hideSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => setKeyboardVisible(false)
+        )
+
+        return () => {
+            showSubscription.remove()
+            hideSubscription.remove()
+        }
+    }, [])
     const { user } = useAuthStore()
     const {
         sessionId,
@@ -271,7 +290,7 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                keyboardVerticalOffset={0}
             >
                 {/* Enhanced Draft & Progress Header */}
                 <View style={{
@@ -301,8 +320,7 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
                             }}>{getCurrentStageLabel()}</Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 10, color: '#9ca3af', marginRight: 4 }}>Powered by</Text>
-                            <Text style={{ fontSize: 10, color: '#3b82f6', fontWeight: 'bold' }}>Perplexity AI</Text>
+                            <Text style={{ fontSize: 9, color: '#7c3aed', fontWeight: '800', fontFamily: 'Pretendard-Bold' }}>{t('coaching.chat.draft', '초안')}</Text>
                         </View>
                     </View>
 
@@ -336,6 +354,7 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
                     style={{ flex: 1, paddingHorizontal: 16 }}
                     contentContainerStyle={{ paddingVertical: 20 }}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                     {chatMessages.map((msg, idx) => (
                         <MessageBubble key={idx} role={msg.role} content={msg.content} />
@@ -415,7 +434,7 @@ export default function ConversationalCoachingScreen({ navigation: propNavigatio
                     backgroundColor: 'white',
                     paddingHorizontal: 16,
                     paddingTop: 12,
-                    paddingBottom: 32,
+                    paddingBottom: isKeyboardVisible ? 8 : Math.max(insets.bottom, 12),
                     borderTopWidth: 1,
                     borderTopColor: '#f3f4f6'
                 }}>
@@ -596,7 +615,7 @@ const MessageBubble = React.memo(({ role, content }: { role: 'user' | 'assistant
         }}>
             <View style={{
                 paddingHorizontal: 16,
-                paddingVertical: 10,
+                paddingVertical: 12,
                 borderRadius: 20,
                 borderTopLeftRadius: isAI ? 4 : 20,
                 borderTopRightRadius: isAI ? 20 : 4,
@@ -609,16 +628,7 @@ const MessageBubble = React.memo(({ role, content }: { role: 'user' | 'assistant
                 shadowRadius: 2,
                 elevation: 1
             }}>
-                <Text
-                    style={{
-                        fontSize: 15,
-                        lineHeight: 22,
-                        color: isAI ? '#1f2937' : 'white',
-                        fontFamily: 'Pretendard-Regular'
-                    }}
-                >
-                    {renderContent(content)}
-                </Text>
+                {renderContent(content)}
             </View>
         </View>
     )
