@@ -69,12 +69,11 @@ export default function DeleteMandalartModal({
       if (error) throw error
 
       toast.success(t('mandalart.delete.deactivated'))
-      onSuccess('deactivate')
       onClose()
+      onSuccess('deactivate')
     } catch (err) {
       console.error('Deactivate error:', err)
       toast.error(t('mandalart.delete.deactivateError'))
-    } finally {
       setIsProcessing(false)
       setProcessingAction(null)
     }
@@ -95,12 +94,11 @@ export default function DeleteMandalartModal({
       if (error) throw error
 
       toast.success(t('mandalart.delete.deleted'))
-      onSuccess('delete')
       onClose()
+      onSuccess('delete')
     } catch (err) {
       console.error('Delete error:', err)
       toast.error(t('mandalart.delete.deleteError'))
-    } finally {
       setIsProcessing(false)
       setProcessingAction(null)
     }

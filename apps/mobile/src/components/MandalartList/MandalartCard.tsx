@@ -39,13 +39,26 @@ export const MandalartCard = React.memo(({
                 {/* Header Row - 웹과 동일: 타이틀 + 토글 */}
                 <View className="flex-row items-start justify-between gap-4">
                     <View className="flex-1">
-                        <Text
-                            className="text-lg text-gray-900"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
-                            numberOfLines={1}
-                        >
-                            {mandalart.title}
-                        </Text>
+                        <View className="flex-row items-center gap-2">
+                            <Text
+                                className="text-lg text-gray-900 flex-shrink"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                                numberOfLines={1}
+                            >
+                                {mandalart.title}
+                            </Text>
+                            {/* v18.1: Draft badge */}
+                            {mandalart.status === 'draft' && (
+                                <View className="bg-amber-100 px-2 py-0.5 rounded-md">
+                                    <Text
+                                        className="text-amber-700 text-xs"
+                                        style={{ fontFamily: 'Pretendard-Medium' }}
+                                    >
+                                        {t('mandalart.draft', '초안')}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
                         <Text
                             className="text-base text-gray-500 mt-1"
                             style={{ fontFamily: 'Pretendard-Regular' }}

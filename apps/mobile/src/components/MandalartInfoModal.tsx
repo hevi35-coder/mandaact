@@ -8,12 +8,15 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native'
-import { X, Check } from 'lucide-react-native'
+import { X, Check, Lightbulb } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useToast } from './Toast'
 import type { Mandalart } from '@mandaact/shared'
+import { useQueryClient } from '@tanstack/react-query'
+import { mandalartKeys } from '../hooks/useMandalarts'
 
 interface MandalartInfoModalProps {
   visible: boolean
@@ -30,13 +33,12 @@ export default function MandalartInfoModal({
 }: MandalartInfoModalProps) {
   const { t } = useTranslation()
   const toast = useToast()
-  const [title, setTitle] = useState('')
+  const queryClient = useQueryClient()
   const [centerGoal, setCenterGoal] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (visible && mandalart) {
-      setTitle(mandalart.title)
       setCenterGoal(mandalart.center_goal)
     }
   }, [visible, mandalart])
@@ -44,10 +46,6 @@ export default function MandalartInfoModal({
   const handleSave = useCallback(async () => {
     if (!mandalart) return
 
-    if (title.trim() === '') {
-      toast.error(t('mandalart.create.validation.enterTitle'))
-      return
-    }
     if (centerGoal.trim() === '') {
       toast.error(t('mandalart.create.validation.enterCoreGoal'))
       return
@@ -58,12 +56,15 @@ export default function MandalartInfoModal({
       const { error } = await supabase
         .from('mandalarts')
         .update({
-          title: title.trim(),
+          title: centerGoal.trim(),
           center_goal: centerGoal.trim()
         })
         .eq('id', mandalart.id)
 
       if (error) throw error
+
+      // Invalidate queries to ensure UI is fresh
+      queryClient.invalidateQueries({ queryKey: mandalartKeys.all })
 
       toast.success(t('common.success'))
       onSuccess?.()
@@ -74,7 +75,7 @@ export default function MandalartInfoModal({
     } finally {
       setIsSaving(false)
     }
-  }, [mandalart, title, centerGoal, toast, onSuccess, onClose])
+  }, [mandalart, centerGoal, toast, onSuccess, onClose, queryClient, t])
 
   if (!mandalart) return null
 
@@ -132,25 +133,7 @@ export default function MandalartInfoModal({
             </View>
 
             {/* Content */}
-            <View className="p-4">
-              {/* Title Field */}
-              <View className="mb-4">
-                <Text
-                  className="text-sm text-gray-700 mb-2"
-                  style={{ fontFamily: 'Pretendard-Medium' }}
-                >
-                  {t('mandalart.modal.coreGoal.mandalartTitle')}
-                </Text>
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder={t('mandalart.modal.coreGoal.titlePlaceholder')}
-                  className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-base text-gray-900"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-
+            <ScrollView className="p-4" showsVerticalScrollIndicator={false}>
               {/* Center Goal Field */}
               <View className="mb-4">
                 <Text
@@ -172,9 +155,72 @@ export default function MandalartInfoModal({
                 />
               </View>
 
+              {/* Goal Writing Guide */}
+              <View className="bg-blue-50 rounded-xl p-4 mb-4">
+                <View className="flex-row items-center mb-3">
+                  <Lightbulb size={18} color="#3b82f6" />
+                  <Text
+                    className="text-lg font-bold text-blue-800 ml-2"
+                    style={{ fontFamily: 'Pretendard-Bold' }}
+                  >
+                    {t('mandalart.modal.coreGoal.guide.title')}
+                  </Text>
+                </View>
+
+                <View className="gap-y-5">
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip1_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip1_desc')}
+                    </Text>
+                  </View>
+
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip2_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip2_desc')}
+                    </Text>
+                  </View>
+
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip3_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip3_desc')}
+                    </Text>
+                  </View>
+
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip4_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip4_desc')}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
               {/* Bottom padding for safe area */}
-              <View className="h-4" />
-            </View>
+              <View className="h-8" />
+            </ScrollView>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

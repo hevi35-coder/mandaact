@@ -75,7 +75,8 @@
       "startBody": "가슴 뛰는 목표를 실현 가능한 계획으로 바꿔드려요.",
       "startCta": "코칭 시작하기",
       "resumeTitle": "코칭 이어하기",
-      "resumeCta": "대화 계속하기"
+      "resumeCta": "대화 계속하기",
+      "history": "이전 코칭 기록 보기"
     },
     "level": "레벨",
     "totalXP": "총 XP",
@@ -168,6 +169,13 @@
   },
   "coaching": {
     "title": "AI 코칭",
+    "history": {
+      "title": "이전 코칭 대화",
+      "empty": "완료된 코칭 대화가 없습니다.",
+      "deleteConfirmTitle": "기록 삭제",
+      "deleteConfirmMessage": "이 코칭 대화 기록을 삭제하시겠습니까?",
+      "deleteError": "기록 삭제 중 오류가 발생했습니다."
+    },
     "step": "{{step}}단계",
     "inProgress": "코칭 진행 중이에요. 함께 만들어봐요.",
     "resume": "재개",
@@ -184,6 +192,17 @@
       "realityApplied": "제안 적용",
       "realityKept": "원본 유지"
     },
+    "reset": "초기화",
+    "resetConfirmTitle": "코칭 초기화",
+    "resetConfirmMessage": "코칭을 처음부터 다시 시작하시겠습니까? 현재 진행 중인 대화와 초안이 삭제됩니다.",
+    "continue": "코칭 이어하기",
+    "finishNow": "이대로 완료하기",
+    "finishConfirmTitle": "현재 상태로 완료하기",
+    "finishConfirmMessage": "아직 비어있는 세부목표가 있어요. 나중에 직접 채울 수 있어요.",
+    "draftSaved": "✓ 초안이 저장되었어요",
+    "transitionReady": "다음 단계 준비 완료",
+    "continueChat": "더 이야기하기",
+    "proceedNext": "다음으로",
     "gate": {
       "title": "AI 코칭",
       "summaryTitle": "이번 주",
@@ -229,6 +248,10 @@
       "confirmDelete": "삭제",
       "deleteSuccess": "삭제 완료. 이제 AI 코칭을 시작할 수 있어요.",
       "deleteError": "삭제에 실패했어요. 다시 시도해주세요."
+    },
+    "finalize": {
+      "button": "만다라트 생성 및 시작",
+      "instruction": "버튼을 누르면 나의 목표 시스템이 생성됩니다!"
     },
     "step1": {
       "title": "현재 상황을 알려주세요",
@@ -499,7 +522,7 @@
       "createMandalart": "만다라트 만들기",
       "stages": {
         "onboarding": "준비하기",
-        "lifestyle": "라이프스타일 탐색",
+        "lifestyle": "라이프스타일 탐구",
         "core_goal": "핵심 목표 설정",
         "sub_goals": "8가지 분야 & 실천 계획",
         "actions": "계획 세부 조정",
@@ -682,6 +705,8 @@
     }
   },
   "mandalart": {
+    "draft": "초안",
+    "draftDescription": "코칭이 진행 중이에요",
     "plan": {
       "title": "실천 플랜 설정",
       "subtitle": "상황에 맞춰 실천 수준을 조절해보세요.",
@@ -724,12 +749,16 @@
       "coreGoal": "핵심 목표"
     },
     "modal": {
+      "preview": {
+        "title": "만다라트 미리보기"
+      },
       "subGoal": {
         "title": "세부 목표 {{position}}",
         "subGoalLabel": "세부 목표",
         "subGoalPlaceholder": "세부 목표를 입력하세요",
         "actionsLabel": "실천 항목 (8개)",
         "actionPlaceholder": "실천 항목 {{index}}",
+        "aiSuggest": "AI 실천 항목 추천",
         "typeSettings": "타입 설정",
         "selectType": "\"{{title}}\"의 타입을 선택하세요",
         "actionTypeLabel": "실천 항목 타입",
@@ -740,7 +769,19 @@
         "mandalartTitle": "만다라트 제목",
         "titlePlaceholder": "예: 건강한 삶, 자기계발",
         "coreGoalLabel": "핵심 목표",
-        "coreGoalPlaceholder": "이루고 싶은 핵심 목표를 입력하세요"
+        "coreGoalPlaceholder": "이루고 싶은 핵심 목표를 입력하세요",
+        "aiSuggest": "AI 세부목표 추천",
+        "guide": {
+          "title": "나를 설레게 하는 진짜 목표인가요?",
+          "tip1_title": "내 안의 목소리 듣기",
+          "tip1_desc": "남들의 시선이나 사회적인 요구가 아닌,\n내가 진심으로 바라는 모습인가요?",
+          "tip2_title": "이루었을 때의 감정",
+          "tip2_desc": "목표를 달성한 내 모습을 상상할 때\n가슴이 뛰고 즐거운지 느껴보세요.",
+          "tip3_title": "'왜'라고 물어보기",
+          "tip3_desc": "이 일을 왜 하고 싶은지 답이 명확할수록,\n어려움이 닥쳐도 끝까지 나아갈 힘이 생깁니다.",
+          "tip4_title": "조금 추상적이어도 괜찮아요",
+          "tip4_desc": "핵심 목표는 거대한 비전입니다. 구체적인\n방법은 나중에 세부 목표에서 채워보세요."
+        }
       },
       "routine": {
         "title": "루틴 설정",
@@ -870,13 +911,13 @@
         "action": "실천",
         "back": "뒤로",
         "saving": "저장 중...",
-        "titlePlaceholder": "만다라트 제목을 입력하세요",
+        "titlePlaceholder": "이루고 싶은 핵심 목표를 입력하세요",
         "backToOverview": "전체 보기로 돌아가기",
         "tapToEdit": "셀을 탭하여 수정하세요",
         "tapActionToEdit": "실천 항목을 탭하여 수정하세요"
       },
       "validation": {
-        "enterTitle": "제목을 입력해주세요.",
+        "enterTitle": "핵심 목표를 입력해주세요.",
         "enterCoreGoal": "핵심 목표를 입력해주세요."
       },
       "success": {

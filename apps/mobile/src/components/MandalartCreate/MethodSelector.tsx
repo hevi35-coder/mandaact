@@ -14,12 +14,13 @@ export function MethodSelector({ onSelectMethod }: MethodSelectorProps) {
     const { t } = useTranslation()
 
     const methods = [
-        {
-            id: 'coaching' as const,
-            icon: Sparkles,
-            titleKey: 'mandalart.create.aiCoaching.title',
-            descKey: 'mandalart.create.aiCoaching.description',
-        },
+        // AI Coaching PAUSED (2026-01-17) - See docs/AI_COACHING_PAUSE.md
+        // {
+        //     id: 'coaching' as const,
+        //     icon: Sparkles,
+        //     titleKey: 'mandalart.create.aiCoaching.title',
+        //     descKey: 'mandalart.create.aiCoaching.description',
+        // },
         {
             id: 'image' as const,
             icon: ImageIcon,

@@ -790,7 +790,9 @@ export default function SettingsScreen() {
             </>
           )}
 
-          {/* Privacy & AI Data Section */}
+          {/* Privacy & AI Data Section - AI Coaching PAUSED (2026-01-17) */}
+          {/* See docs/AI_COACHING_PAUSE.md */}
+          {/*
           <Text
             className="text-sm text-gray-500 mb-2 ml-1"
             style={{ fontFamily: 'Pretendard-SemiBold' }}
@@ -829,6 +831,7 @@ export default function SettingsScreen() {
               )}
             </Pressable>
           </Animated.View>
+          */}
 
           {/* Notification Settings */}
           <Text

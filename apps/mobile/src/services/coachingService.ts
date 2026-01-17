@@ -2,9 +2,9 @@ import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 
 export interface AISuggestSubGoalsParams {
-    persona: string
+    persona?: string
     coreGoal: string
-    priorityArea: string
+    priorityArea?: string
     detailedContext?: string
     language?: string
 }
@@ -122,6 +122,11 @@ class CoachingService {
         return result.actions || []
     }
 
+    async suggestActionsV2(params: { subGoal: string; coreGoal?: string; language?: string }, sessionId?: string | null): Promise<string[]> {
+        const result = await this.invokeFunction('suggest_actions_v2', params, sessionId)
+        return result.actions || []
+    }
+
     async runRealityCheck(
         params: AIRealityCheckParams,
         sessionId?: string | null
@@ -136,8 +141,25 @@ class CoachingService {
         return await this.invokeFunction('chat', params, sessionId)
     }
 
-    async commitMandalart(mandalart_draft: any, sessionId?: string | null): Promise<{ success: boolean; mandalartId?: string; error?: string }> {
+    async commitMandalart(mandalart_draft: any, sessionId?: string | null): Promise<{
+        success: boolean;
+        mandalartId?: string;
+        error?: string;
+        canRetry?: boolean;
+        draftSource?: string;
+        actionsInserted?: number;
+    }> {
         return await this.invokeFunction('commit_mandalart', { mandalart_draft }, sessionId)
+    }
+
+    // v18.2: Force step transition via button click
+    async forceNextStep(params: { currentStep: number }, sessionId?: string | null): Promise<{
+        success: boolean;
+        previous_step: number;
+        current_step: number;
+        message?: string;
+    }> {
+        return await this.invokeFunction('force_next_step', params, sessionId)
     }
 }
 

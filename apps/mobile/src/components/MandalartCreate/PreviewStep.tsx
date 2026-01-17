@@ -12,7 +12,17 @@ import {
     ScrollView,
     TextInput,
     useWindowDimensions,
+    StyleSheet, // Import StyleSheet for absoluteFillObject
 } from 'react-native'
+import Animated, {
+    FadeIn,
+    FadeOut,
+    withTiming,
+    useAnimatedStyle,
+    useSharedValue,
+    runOnJS,
+    Easing
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronLeft, Info, Check } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
@@ -49,6 +59,18 @@ export function PreviewStep({
     const [coreGoalModalOpen, setCoreGoalModalOpen] = useState(false)
     const [subGoalModalOpen, setSubGoalModalOpen] = useState(false)
     const [selectedSubGoalPosition, setSelectedSubGoalPosition] = useState<number | null>(null)
+    const [lastVisualTappedPos, setLastVisualTappedPos] = useState<number | null>(null)
+
+    // v20.4: Refined 3-Stage Animation State
+    const [animationStage, setAnimationStage] = useState<'idle' | 'expanding' | 'centering' | 'revealing'>('idle')
+    const [heroSubGoalTitle, setHeroSubGoalTitle] = useState<string>('')
+    const [heroSubGoalActionsCount, setHeroSubGoalActionsCount] = useState<number>(0)
+
+    // Shared Values for Stage 1 & 2
+    const heroX = useSharedValue(0)
+    const heroY = useSharedValue(0)
+    const heroScale = useSharedValue(1)
+    const heroOpacity = useSharedValue(0)
 
     /**
      * Convert visual grid position (0-8) to data position (1-8)
@@ -72,21 +94,76 @@ export function PreviewStep({
 
     // Handlers
     const handleCenterGoalPress = () => {
+        setLastVisualTappedPos(4)
         setCoreGoalModalOpen(true)
     }
 
     // Note: These handlers work with DATA positions (1-8), not visual positions
     const handleSubGoalPress = (dataPosition: number) => {
-        setExpandedSection(dataPosition)
-        // Scroll to top when expanding
+        // Find visual position for data position
+        const visualPos = [0, 1, 2, 3, 5, 6, 7, 8].find(v => visualToDataPosition(v) === dataPosition)
+        const subGoal = getSubGoalByDataPosition(dataPosition)
+
+        const vPos = visualPos ?? 4
+        setLastVisualTappedPos(vPos)
+        setHeroSubGoalTitle(subGoal?.title || '')
+        setHeroSubGoalActionsCount(subGoal?.actions?.filter(a => a.title?.trim()).length || 0)
+
+        // Calculate start position
+        const offset = cellSize + CELL_GAP // Estimated gap in PreviewStep
+        const mappings: Record<number, { x: number, y: number }> = {
+            0: { x: -offset, y: -offset },
+            1: { x: 0, y: -offset },
+            2: { x: offset, y: -offset },
+            3: { x: -offset, y: 0 },
+            4: { x: 0, y: 0 },
+            5: { x: offset, y: 0 },
+            6: { x: -offset, y: offset },
+            7: { x: 0, y: offset },
+            8: { x: offset, y: offset },
+        }
+        const source = mappings[vPos] || { x: 0, y: 0 }
+
+        // Initialize Shared Values
+        heroX.value = source.x
+        heroY.value = source.y
+        heroScale.value = 1
+        heroOpacity.value = 0
+
+        // v20.4: Concurrent Shrink & Reveal Strategy
+        // Phase A: Expanding (0ms - 300ms)
+        setAnimationStage('expanding')
+        heroOpacity.value = withTiming(1, { duration: 100 })
+        heroX.value = withTiming(0, { duration: 300 })
+        heroY.value = withTiming(0, { duration: 300 })
+        heroScale.value = withTiming(3.2, { duration: 300 })
+
+        // Phase B & C: Background Swap + Concurrent Reveal (Starts at 300ms)
         setTimeout(() => {
-            scrollRef.current?.scrollTo({ y: 0, animated: true })
-        }, 100)
+            // 1. Swap background context while Hero is fully covering the screen
+            setExpandedSection(dataPosition)
+            setAnimationStage('revealing') // Skip 'centering' literal stage, go to reveal logic
+
+            // 2. Shrink Hero while Actions unfold
+            heroScale.value = withTiming(1, { duration: 700 })
+        }, 300)
+
+        // Final: Cleanup
+        setTimeout(() => {
+            heroOpacity.value = withTiming(0, { duration: 250 }, () => {
+                runOnJS(setAnimationStage)('idle')
+                runOnJS(setHeroSubGoalTitle)('')
+                runOnJS(setHeroSubGoalActionsCount)(0)
+            })
+        }, 1000)
     }
 
-    const handleSubGoalEdit = (dataPosition: number) => {
+    const handleSubGoalEdit = (_dataPosition: number) => {
+        // v20.4: Animation test - Disabled modal inside expanded view
+        /*
         setSelectedSubGoalPosition(dataPosition)
         setSubGoalModalOpen(true)
+        */
     }
 
     const handleCoreGoalSave = (saveData: { title: string; centerGoal: string }) => {
@@ -117,17 +194,26 @@ export function PreviewStep({
         onUpdateData({ ...data, title: text })
     }
 
-    // Render cell for expanded section view
-    // sectionDataPos: data position of the sub-goal (1-8)
-    // cellVisualPos: visual grid position (0-8, where 4 is center)
-    const renderExpandedCell = (sectionDataPos: number, cellVisualPos: number) => {
-        const subGoal = getSubGoalByDataPosition(sectionDataPos)
+    // v20.4: Position-aware animation mapping (Refactored to top-level hook using SharedValues)
+    const heroAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { translateX: heroX.value },
+                { translateY: heroY.value },
+                { scale: heroScale.value },
+            ],
+            opacity: heroOpacity.value,
+        }
+    })
 
+    // Render cell for expanded section view (Stage 3 Reveal)
+    const renderExpandedCell = (sectionDataPos: number, cellVisualPos: number) => {
+        // Center cell (The focused sub-goal itself)
         if (cellVisualPos === 4) {
-            // Center: Sub-goal title (clickable to edit)
+            const subGoal = getSubGoalByDataPosition(sectionDataPos)
             return (
-                <Pressable
-                    onPress={() => handleSubGoalEdit(sectionDataPos)}
+                <View
+                    key="center-cell"
                     className="flex-1 items-center justify-center p-2"
                     style={{
                         backgroundColor: '#eff6ff', // bg-blue-50
@@ -159,43 +245,67 @@ export function PreviewStep({
                             {t('mandalart.create.preview.subGoal')}
                         </Text>
                     )}
-                </Pressable>
+                </View>
             )
         }
 
-        // Actions - convert visual position to data position
-        // Visual: 0 1 2 / 3 C 5 / 6 7 8 (C=center at 4)
-        // Data:   1 2 3 / 4 - 5 / 6 7 8
+        // Action cells - convert visual position to data position
         const actionDataPos = visualToDataPosition(cellVisualPos)
+        const subGoal = getSubGoalByDataPosition(sectionDataPos)
         const action = subGoal?.actions.find((a) => a.position === actionDataPos)
 
+        // Radial offset calculation for reveal
+        // Start from center (under sub-goal) and fly OUT to visual grid position
+        const offset = cellSize + CELL_GAP
+        const mappings: Record<number, { x: number, y: number }> = {
+            0: { x: -offset, y: -offset },
+            1: { x: 0, y: -offset },
+            2: { x: offset, y: -offset },
+            3: { x: -offset, y: 0 },
+            5: { x: offset, y: 0 },
+            6: { x: -offset, y: offset },
+            7: { x: 0, y: offset },
+            8: { x: offset, y: offset },
+        }
+        const targetPos = mappings[cellVisualPos] || { x: 0, y: 0 }
+        const radialOffset = { x: -targetPos.x, y: -targetPos.y }
+
         return (
-            <Pressable
-                onPress={() => handleSubGoalEdit(sectionDataPos)}
-                className="flex-1 items-center justify-center p-2 active:bg-gray-50"
-                style={{
-                    backgroundColor: '#ffffff',
-                    borderWidth: 0.5,
-                    borderColor: '#e5e7eb', // border-gray-200
-                }}
+            <Animated.View
+                key={cellVisualPos}
+                className="flex-1"
+                entering={FadeIn.duration(700).easing(Easing.out(Easing.back(1.5))).withInitialValues({
+                    transform: [{ translateX: radialOffset.x }, { translateY: radialOffset.y }, { scale: 0.01 }],
+                    opacity: 0
+                })}
             >
-                {action?.title ? (
-                    <Text
-                        className="text-center text-gray-800"
-                        style={{ fontSize: 12, fontFamily: 'Pretendard-Regular' }}
-                        numberOfLines={3}
-                    >
-                        {action.title}
-                    </Text>
-                ) : (
-                    <Text
-                        className="text-center text-gray-300"
-                        style={{ fontSize: 12, fontFamily: 'Pretendard-Regular' }}
-                    >
-                        -
-                    </Text>
-                )}
-            </Pressable>
+                <Pressable
+                    onPress={() => handleSubGoalEdit(sectionDataPos)}
+                    className="flex-1 items-center justify-center p-2 active:bg-gray-50"
+                    style={{
+                        backgroundColor: '#ffffff',
+                        borderWidth: 0.5,
+                        borderColor: '#e5e7eb', // border-gray-200
+                    }}
+                >
+                    {action?.title ? (
+                        <Text
+                            className="text-center text-gray-800"
+                            style={{ fontSize: 12, fontFamily: 'Pretendard-Regular' }}
+                            numberOfLines={3}
+                        >
+                            {action.title}
+                        </Text>
+                    ) : (
+                        <Text
+                            className="text-center text-gray-300"
+                            style={{ fontSize: 12, fontFamily: 'Pretendard-Regular' }}
+                        >
+                            -
+                        </Text>
+                    )}
+                </Pressable>
+            </Animated.View>
         )
     }
 
@@ -280,7 +390,6 @@ export function PreviewStep({
                             </Pressable>
                         )}
 
-                        {/* Grid Container */}
                         <View
                             className="bg-white rounded-2xl overflow-hidden border border-gray-200"
                             style={{
@@ -290,63 +399,102 @@ export function PreviewStep({
                                 shadowOpacity: 0.05,
                                 shadowRadius: 8,
                                 elevation: 2,
+                                position: 'relative'
                             }}
                         >
-                            {expandedSection === null ? (
-                                // Overview 3x3
-                                <View className="flex-1 flex-row flex-wrap">
-                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((pos) => {
-                                        // Center Goal
-                                        if (pos === 4) {
+
+                            <Animated.View
+                                key={expandedSection === null ? 'overview' : `expanded-${expandedSection}`}
+                                className="flex-1"
+                                entering={FadeIn.duration(200)}
+                                exiting={FadeOut.duration(200)}
+                            >
+                                {/* Transition Overlay (Stage 1 & 2) */}
+                                {animationStage !== 'idle' && (
+                                    <Animated.View
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: gridWidth,
+                                            height: gridWidth,
+                                            zIndex: 100,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                        pointerEvents="none"
+                                    >
+                                        <Animated.View
+                                            entering={FadeIn.duration(100)}
+                                            style={heroAnimatedStyle}
+                                        >
+                                            <SubGoalCell
+                                                title={heroSubGoalTitle}
+                                                size={cellSize}
+                                                position={visualToDataPosition(lastVisualTappedPos ?? 4)}
+                                                filledActions={heroSubGoalActionsCount}
+                                                variant="overview"
+                                                onPress={() => { }}
+                                            />
+                                        </Animated.View>
+                                    </Animated.View>
+                                )}
+                                {expandedSection === null ? (
+                                    // Overview 3x3
+                                    <View className="flex-1 flex-row flex-wrap">
+                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((pos) => {
+                                            // Center Goal
+                                            if (pos === 4) {
+                                                return (
+                                                    <View key={pos} style={{ width: '33.33%', height: '33.33%', padding: 2 }}>
+                                                        <CenterGoalCell
+                                                            centerGoal={data.center_goal}
+                                                            size={cellSize}
+                                                            onPress={handleCenterGoalPress}
+                                                            numberOfLines={3}
+                                                        />
+                                                    </View>
+                                                )
+                                            }
+
+                                            // Sub Goals - convert visual position to data position
+                                            const dataPos = visualToDataPosition(pos)
+                                            const subGoal = getSubGoalByDataPosition(dataPos)
+
                                             return (
                                                 <View key={pos} style={{ width: '33.33%', height: '33.33%', padding: 2 }}>
-                                                    <CenterGoalCell
-                                                        centerGoal={data.center_goal}
+                                                    <SubGoalCell
+                                                        title={subGoal?.title || ''}
                                                         size={cellSize}
-                                                        onPress={handleCenterGoalPress}
-                                                        numberOfLines={3}
+                                                        position={dataPos}
+                                                        filledActions={subGoal?.actions?.filter(a => a.title?.trim()).length || 0}
+                                                        onPress={() => handleSubGoalPress(dataPos)}
+                                                        variant="overview"
                                                     />
                                                 </View>
                                             )
-                                        }
-
-                                        // Sub Goals - convert visual position to data position
-                                        const dataPos = visualToDataPosition(pos)
-                                        const subGoal = getSubGoalByDataPosition(dataPos)
-
-                                        return (
-                                            <View key={pos} style={{ width: '33.33%', height: '33.33%', padding: 2 }}>
-                                                <SubGoalCell
-                                                    title={subGoal?.title || ''}
-                                                    size={cellSize}
-                                                    position={dataPos}
-                                                    filledActions={subGoal?.actions?.filter(a => a.title?.trim()).length || 0}
-                                                    onPress={() => handleSubGoalPress(dataPos)}
-                                                    variant="overview"
-                                                />
+                                        })}
+                                    </View>
+                                ) : (
+                                    // Expanded Sub-Goal View (3x3 actions)
+                                    <View className="flex-1 flex-row flex-wrap">
+                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((pos) => (
+                                            <View
+                                                key={pos}
+                                                style={{
+                                                    width: '33.33%',
+                                                    height: '33.33%',
+                                                    borderRightWidth: pos % 3 === 2 ? 0 : 1,
+                                                    borderBottomWidth: pos >= 6 ? 0 : 1,
+                                                    borderColor: '#f3f4f6', // gray-100
+                                                }}
+                                            >
+                                                {renderExpandedCell(expandedSection, pos)}
                                             </View>
-                                        )
-                                    })}
-                                </View>
-                            ) : (
-                                // Expanded Sub-Goal View (3x3 actions)
-                                <View className="flex-1 flex-row flex-wrap">
-                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((pos) => (
-                                        <View
-                                            key={pos}
-                                            style={{
-                                                width: '33.33%',
-                                                height: '33.33%',
-                                                borderRightWidth: pos % 3 === 2 ? 0 : 1,
-                                                borderBottomWidth: pos >= 6 ? 0 : 1,
-                                                borderColor: '#f3f4f6', // gray-100
-                                            }}
-                                        >
-                                            {renderExpandedCell(expandedSection, pos)}
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
+                                        ))}
+                                    </View>
+                                )}
+                            </Animated.View>
                         </View>
 
                         {/* Hint Text */}
@@ -390,7 +538,6 @@ export function PreviewStep({
             {/* Modals */}
             <CoreGoalModal
                 visible={coreGoalModalOpen}
-                initialTitle={data.title}
                 initialCenterGoal={data.center_goal}
                 onClose={() => setCoreGoalModalOpen(false)}
                 onSave={handleCoreGoalSave}
@@ -407,6 +554,7 @@ export function PreviewStep({
                         setSelectedSubGoalPosition(null)
                     }}
                     onSave={handleSubGoalSave}
+                    centerGoal={data.center_goal}
                 />
             )}
         </View>

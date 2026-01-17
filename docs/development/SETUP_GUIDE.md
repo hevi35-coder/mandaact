@@ -161,6 +161,7 @@ npm run dev
 ## Next Steps
 
 - Read **[DEVELOPMENT.md](./DEVELOPMENT.md)** for coding guidelines
+- Check **[SIMULATOR_SETUP_GUIDE.md](./SIMULATOR_SETUP_GUIDE.md)** for simulator/emulator setup
 - Check **[BUILD_GUIDE.md](./BUILD_GUIDE.md)** for mobile build instructions
 - See **[PRD](../project/PRD_mandaact.md)** for feature specifications
 - Review **[UI_GUIDELINES.md](../guidelines/UI_GUIDELINES.md)** for design patterns

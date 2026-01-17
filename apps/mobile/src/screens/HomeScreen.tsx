@@ -146,8 +146,9 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* AI Coaching Entry Point */}
-          <CoachingBanner />
+          {/* AI Coaching Entry Point - PAUSED (2026-01-17) */}
+          {/* Feature hidden for later development. See: AI_COACHING_PAUSE.md */}
+          {/* <CoachingBanner /> */}
 
           {/* iPad: 2-column layout for cards */}
           <View style={isTablet ? { flexDirection: 'row', gap: 20 } : undefined}>

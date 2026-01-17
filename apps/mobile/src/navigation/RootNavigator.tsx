@@ -47,6 +47,7 @@ import CoachingFlowScreen from '../screens/CoachingFlowScreen'
 import CoachingGateScreen from '../screens/CoachingGateScreen'
 import CoachingSlotGateScreen from '../screens/CoachingSlotGateScreen'
 import ConversationalCoachingScreen from '../screens/ConversationalCoachingScreen'
+import CoachingHistoryScreen from '../screens/CoachingHistoryScreen'
 
 export type RootStackParamList = {
   Main: undefined
@@ -60,6 +61,7 @@ export type RootStackParamList = {
   CoachingSlotGate: undefined
   CoachingFlow: undefined
   ConversationalCoaching: undefined
+  CoachingHistory: { sessionId: string }
 }
 
 export type MainTabParamList = {
@@ -264,6 +266,13 @@ export default function RootNavigator() {
           <Stack.Screen
             name="ConversationalCoaching"
             component={ConversationalCoachingScreen}
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="CoachingHistory"
+            component={CoachingHistoryScreen}
             options={{
               animation: 'slide_from_right',
             }}

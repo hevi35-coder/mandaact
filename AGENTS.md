@@ -20,6 +20,7 @@ This repo is a pnpm + Turbo monorepo. Keep changes minimal, scoped, and aligned 
 ## Must-Read Docs (Before Bigger Changes)
 - `docs/README.md` (docs index)
 - `docs/development/SETUP_GUIDE.md` (local setup)
+- `docs/development/SIMULATOR_SETUP_GUIDE.md` (iOS/Android simulator setup)
 - `docs/development/DEVELOPMENT.md` (coding rules)
 - `docs/development/BUILD_GUIDE.md` (build + troubleshooting)
 - `docs/development/DEPLOYMENT_GUIDE.md` (deploy flow: web/mobile)

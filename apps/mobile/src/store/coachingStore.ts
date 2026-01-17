@@ -25,13 +25,17 @@ interface CoachingContext {
 
 export interface MandalartAction {
   sub_goal: string
-  content: string
+  content: string      // For backwards compatibility (same as summary)
+  summary?: string     // Short label for grid/list display
+  detail?: string      // Full description for preview
   type: 'habit' | 'task'
 }
 
 export interface MandalartDraft {
   center_goal: string
+  center_goal_detail?: string      // Detailed version of center_goal
   sub_goals: string[]
+  sub_goals_detail?: string[]      // Detailed versions of sub_goals
   actions: MandalartAction[]
   emergency_action?: string // The 'Safety Net' chosen via AI coaching
 }
@@ -342,27 +346,65 @@ export const useCoachingStore = create<CoachingState>()(
 
       commitCoachingResult: async (user_id: string) => {
         const { mandalartDraft, sessionId } = get()
-        if (!mandalartDraft.center_goal) {
-          throw new Error('Core goal is missing')
+
+        // v17.0 SSoT: Server fetches draft from DB, but we still pass it as fallback
+        console.log('[COMMIT] Starting commit with SSoT pattern')
+        console.log('[COMMIT] SessionId:', sessionId)
+        console.log('[COMMIT] Local draft status:', {
+          hasGoal: !!mandalartDraft.center_goal,
+          subGoals: mandalartDraft.sub_goals?.filter(s => s).length,
+          actions: mandalartDraft.actions?.length
+        })
+
+        if (!sessionId) {
+          throw new Error('No active session')
+        }
+
+        const attemptCommit = async (retryCount = 0): Promise<string | null> => {
+          try {
+            // Server will prioritize DB draft over this payload
+            const result = await coachingService.commitMandalart(mandalartDraft, sessionId)
+
+            if (!result.success) {
+              // Check if retry is possible
+              if (result.canRetry && retryCount < 1) {
+                console.log(`[COMMIT] Retrying... (attempt ${retryCount + 2})`)
+                await new Promise(r => setTimeout(r, 1500))
+                return attemptCommit(retryCount + 1)
+              }
+              throw new Error(result.error || 'Server-side commit failed')
+            }
+
+            console.log('[COMMIT] Success:', {
+              mandalartId: result.mandalartId,
+              draftSource: result.draftSource,
+              actionsInserted: result.actionsInserted
+            })
+
+            set({ status: 'completed' })
+            return result.mandalartId || null
+          } catch (error: any) {
+            console.error(`[COMMIT] Attempt ${retryCount + 1} failed:`, error)
+
+            // Auto-retry once on network errors
+            if (retryCount < 1 && (error?.message?.includes('network') || error?.message?.includes('timeout'))) {
+              console.log('[COMMIT] Network error detected, retrying...')
+              await new Promise(r => setTimeout(r, 2000))
+              return attemptCommit(retryCount + 1)
+            }
+
+            throw error
+          }
         }
 
         try {
-          // Use the high-resilience Server-Side commit logic
-          const result = await coachingService.commitMandalart(mandalartDraft, sessionId)
-
-          if (!result.success) {
-            throw new Error(result.error || 'Server-side commit failed')
-          }
-
-          // Update local status
-          set({ status: 'completed' })
-
-          return result.mandalartId || null
+          return await attemptCommit()
         } catch (error) {
-          console.error('Final commit error:', error)
+          console.error('[COMMIT] Final commit error:', error)
           return null
         }
       },
+
 
       syncStepFromServer: (step, draft) => {
         set((current) => {
@@ -370,26 +412,37 @@ export const useCoachingStore = create<CoachingState>()(
           // But merge carefully to avoid flicker if some fields are missing
           const newDraft = { ...current.mandalartDraft };
 
+          // v18.0: Handle dual-text center_goal format
           if (draft.center_goal !== undefined && draft.center_goal !== 'undefined') {
             newDraft.center_goal = draft.center_goal;
           }
-
-          if (draft.sub_goals && Array.isArray(draft.sub_goals) && draft.sub_goals.length === 8) {
-            // Full array update
-            newDraft.sub_goals = [...draft.sub_goals];
-          } else if (draft.sub_goals && Array.isArray(draft.sub_goals)) {
-            // Partial array update
-            newDraft.sub_goals = current.mandalartDraft.sub_goals.map((sg, i) =>
-              (draft.sub_goals && draft.sub_goals[i]) ? draft.sub_goals[i] : sg
-            );
+          if ((draft as any).center_goal_detail !== undefined) {
+            newDraft.center_goal_detail = (draft as any).center_goal_detail;
           }
 
+          // v18.0: Handle dual-text sub_goals format
+          if (draft.sub_goals && Array.isArray(draft.sub_goals)) {
+            if (draft.sub_goals.length === 8) {
+              newDraft.sub_goals = [...draft.sub_goals];
+            } else {
+              newDraft.sub_goals = current.mandalartDraft.sub_goals.map((sg, i) =>
+                (draft.sub_goals && draft.sub_goals[i]) ? draft.sub_goals[i] : sg
+              );
+            }
+          }
+          if ((draft as any).sub_goals_detail && Array.isArray((draft as any).sub_goals_detail)) {
+            newDraft.sub_goals_detail = [...(draft as any).sub_goals_detail];
+          }
+
+          // v18.0: Handle dual-text actions format
           if (draft.actions && Array.isArray(draft.actions)) {
             // The server now sends the cumulative actions list. 
             // We trust it but ensure normalization.
             newDraft.actions = draft.actions.map(a => ({
               sub_goal: a.sub_goal || '',
-              content: a.content || (a as any).title || '',
+              content: a.content || (a as any).summary || (a as any).title || '',
+              summary: (a as any).summary || a.content || (a as any).title || '',
+              detail: (a as any).detail || a.content || (a as any).title || '',
               type: (a.type === 'habit' || (a as any).type === 'routine') ? 'habit' : 'task'
             }));
           }
