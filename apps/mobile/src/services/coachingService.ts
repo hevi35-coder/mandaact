@@ -112,7 +112,7 @@ class CoachingService {
         }
     }
 
-    async suggestSubGoals(params: AISuggestSubGoalsParams, sessionId?: string | null): Promise<string[]> {
+    async suggestSubGoals(params: AISuggestSubGoalsParams, sessionId?: string | null): Promise<{ title: string; reason: string }[]> {
         const result = await this.invokeFunction('suggest_sub_goals', params, sessionId)
         return result.sub_goals || []
     }
@@ -160,6 +160,11 @@ class CoachingService {
         message?: string;
     }> {
         return await this.invokeFunction('force_next_step', params, sessionId)
+    }
+
+    async summarizeToKeyword(text: string, language?: string, sessionId?: string | null): Promise<{ keyword: string; description: string }> {
+        const result = await this.invokeFunction('summarize_to_keyword', { text, language }, sessionId)
+        return result
     }
 }
 

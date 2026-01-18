@@ -76,3 +76,14 @@ export const stripJargon = (message: string): string => {
     });
     return result.trim();
 };
+/**
+ * Clean up keyword - remove hanging punctuation and broken parentheses
+ */
+export const cleanKeyword = (keyword: string): string => {
+    if (!keyword) return '';
+    return keyword
+        .replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]+$/, '') // Remove trailing symbols/punctuation
+        .replace(/\s*[(\[{]$/, '') // Remove trailing open brackets/braces
+        .replace(/\s*[(\[{][^)\]}]*$/, '') // Remove hanging open brackets that aren't closed
+        .trim();
+};

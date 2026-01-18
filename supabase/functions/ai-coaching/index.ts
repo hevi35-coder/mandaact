@@ -14,7 +14,7 @@ import {
 // v20.2: Import separated modules
 import { getCommonRules } from './prompts/common.ts'
 import { getStepPrompts, getSubGoalPrompt } from './prompts/step-prompts.ts'
-import { sanitize, cleanMessage, cleanJson, stripJargon, JARGON_PATTERNS } from './utils/sanitize.ts'
+import { sanitize, cleanMessage, cleanJson, stripJargon, JARGON_PATTERNS, cleanKeyword } from './utils/sanitize.ts'
 import { getStepLabel, getNextStepInfo } from './utils/step-labels.ts'
 
 
@@ -84,6 +84,9 @@ serve(async (req) => {
           break
         case 'suggest_sub_goals':
           result = await suggestSubGoals(payload, sessionId, user.id, supabase)
+          break
+        case 'summarize_to_keyword':
+          result = await summarizeToKeyword(payload, sessionId, user.id, supabase)
           break
         case 'generate_actions':
           result = await generateActions(payload, sessionId, user.id, supabase)
@@ -230,17 +233,14 @@ async function callPerplexity(
   // Log cost
   if (supabase && userId) {
     const cost = (usage.prompt_tokens + usage.completion_tokens) * 0.0002 / 1000
-    try {
-      await supabase.from('coaching_costs').insert({
-        session_id: sessionId,
-        user_id: userId,
-        tokens_in: usage.prompt_tokens,
-        tokens_out: usage.completion_tokens,
-        cost_usd: cost
-      })
-    } catch (e) {
-      console.warn('[Cost Logging Failed]', e.message)
-    }
+    // v20.5: Do NOT await costing to avoid blocking the main result
+    supabase.from('coaching_costs').insert({
+      session_id: sessionId,
+      user_id: userId,
+      tokens_in: usage.prompt_tokens,
+      tokens_out: usage.completion_tokens,
+      cost_usd: cost
+    }).then(() => { }).catch(e => console.warn('[Cost Logging Failed]', e.message))
   }
 
   // Step 3: Try parsing multiple ways
@@ -709,29 +709,111 @@ async function suggestSubGoals(
   userId?: string,
   supabase?: any
 ) {
-  const isEn = payload.language && payload.language.startsWith('en');
-  const corePrompt = GET_CORE_PROMPT(isEn);
+  const isEn = !!(payload.language && payload.language.startsWith('en'));
+  const systemPrompt = `
+### IDENTITY: You are a Strategic Mandalart Consultant specializing in creating punchy, meaningful labels.
+### TASK: Suggest exactly 3 strategic sub-goals (pillars) for the user's Core Goal.
+### RULES:
+1. OUTPUT: PURE JSON ONLY.
+2. FORMAT: { "sub_goals": [ { "keyword": "SHORT_LABEL", "description": "FULL_SENTENCE" }, ... ] }
+3. KEYWORD (CRITICAL): 
+   - MAX 10 characters (strictly enforced).
+   - MUST be a clean, standalone noun or phrase.
+   - ABSOLUTELY NO hanging punctuation (e.g., avoid "(", ",", "-", "의" at the end).
+   - If a word doesn't fit, find a SHORTER synonym or abbreviation.
+   - Bad: "앱스토어 최적화(A", "유료 광고 캠페("
+   - Good: "ASO 최적화", "유료 광고", "마케팅 전략", "체력 증진"
+4. DESCRIPTION: A full, professional sentence explaining the strategy.
+5. COUNT: Exactly 3.
+6. QUALITY: Provide distinct, high-quality strategic directions.
 
-  const systemPrompt = `${corePrompt}
+### EXAMPLES (Korean):
+{
+  "sub_goals": [
+    { "keyword": "ASO 전략", "description": "앱 스토어 최적화(ASO)를 통해 전환율을 높이고 검색 순위를 상위권으로 끌어올립니다." },
+    { "keyword": "SNS 마케팅", "description": "인스타그램과 틱톡을 활용해 초기 유저들의 참여를 유도하고 브랜드 인지도를 높입니다." },
+    { "keyword": "유료 광고", "description": "Meta 및 Google 검색 광고를 집행하여 타겟팅된 신규 가입자를 효율적으로 확보합니다." }
+  ]
+}
 
-### Task Specifics:
-Suggest exactly 8 sub-goals based on the user's core goal and context. Ensure a balance between growth and sustainability. 
-The sub-goals should be concise (2-4 words).
+LANGUAGE: ${isEn ? 'English' : 'Korean (Polite)'}`;
 
-### Output Format(JSON):
-  {
-    "sub_goals": ["Goal 1", "Goal 2", ..., "Goal 8"]
-  } `;
+  const userPrompt = `CORE GOAL: ${payload.coreGoal}
+(Generate 3 strategic pillars with CLEAN, word-based keywords following the rules above.)`;
 
-  const userPrompt = `Core Goal: ${payload.coreGoal}
-  Persona: ${payload.persona || 'General User'}
-Detailed Context: ${payload.detailedContext || 'None'}
-Priority Area: ${payload.priorityArea || 'General'} `;
-
-  return await callPerplexity([
+  const result = await callPerplexity([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt }
-  ], sessionId, userId, supabase)
+  ], sessionId, userId, supabase);
+
+  // Post-processing: Clean up keywords in suggestions
+  if (result && Array.isArray(result.sub_goals)) {
+    result.sub_goals = result.sub_goals.map((item: any) => {
+      if (item.keyword) {
+        item.keyword = cleanKeyword(item.keyword);
+        // Strict length enforcement
+        if (item.keyword.length > 10) {
+          item.keyword = item.keyword.substring(0, 10).trim();
+        }
+      }
+      return item;
+    });
+  }
+
+  return result;
+}
+
+async function summarizeToKeyword(
+  payload: {
+    text: string
+    language?: string
+  },
+  sessionId?: string,
+  userId?: string,
+  supabase?: any
+) {
+  const isEn = !!(payload.language && payload.language.startsWith('en'));
+  const systemPrompt = `
+### IDENTITY: You are an expert at information condensation and strategic labeling for Mandalarts.
+### TASK: Summarize the input text into ONE punchy, clear keyword or short phrase for a Mandalart grid cell.
+### RULES:
+1. OUTPUT: PURE JSON ONLY. { "keyword": "...", "description": "..." }
+2. KEYWORD (STRICLY ENFORCED): 
+   - MAX 10 characters (including spaces). 
+   - MUST be a Noun or Noun Phrase that captures the CORE ESSENCE.
+   - ABSOLUTELY NO trailing punctuation, parentheses, or ellipses.
+   - DO NOT just cut the text. REWRITE it into a complete, standalone label.
+   - Bad: "Analyze the", "경쟁사 시장을 분", "앱스토어 최적화(", "마케팅 전략..."
+   - Good: "Market Study", "시장 분석", "ASO 최적화", "체력 증진", "SNS 유입"
+3. DESCRIPTION: Keep the original input text for context.
+4. LANGUAGE: ${isEn ? 'English' : 'Korean'}
+
+### EXAMPLES:
+Input: "Analyze the competitor market to identify unique selling points."
+Output: { "keyword": "Market Study", "description": "Analyze the competitor market to identify unique selling points." }
+
+Input: "앱 스토어 검색 최적화(ASO)를 통해 전환율을 10% 증대시키기 위해 노력합니다."
+Output: { "keyword": "ASO 최적화", "description": "앱 스토어 검색 최적화(ASO)를 통해 전환율을 10% 증대시키기 위해 노력합니다." }
+
+LANGUAGE: ${isEn ? 'English' : 'Korean'}`;
+
+  const userPrompt = `Summarize and Extract Keyword from: "${payload.text}"`;
+
+  const result = await callPerplexity([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ], sessionId, userId, supabase);
+
+  // Post-processing: Clean up keywords in suggestions
+  if (result && result.keyword) {
+    result.keyword = cleanKeyword(result.keyword);
+    // Safety: ensure it doesn't exceed 10 chars
+    if (result.keyword.length > 10) {
+      result.keyword = result.keyword.substring(0, 10).trim();
+    }
+  }
+
+  return result;
 }
 
 async function generateActions(

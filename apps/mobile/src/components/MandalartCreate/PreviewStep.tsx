@@ -24,7 +24,7 @@ import Animated, {
     Easing
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChevronLeft, Info, Check } from 'lucide-react-native'
+import { ChevronLeft, Info, Check, RotateCw, Target, Lightbulb } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
@@ -34,8 +34,8 @@ import type { PreviewStepProps } from './types'
 
 // Grid layout constants
 const CONTAINER_PADDING = 16
-const CARD_PADDING = 16
-const CELL_GAP = 8
+const CARD_PADDING = 12 // Match MandalartDetailScreen
+const CELL_GAP = 8     // Match MandalartDetailScreen
 
 export function PreviewStep({
     data,
@@ -206,46 +206,54 @@ export function PreviewStep({
         }
     })
 
+    // Render cell for overview grid (3x3 main grid)
+    const renderOverviewCell = (visualPos: number) => {
+        // Center Goal
+        if (visualPos === 4) {
+            return (
+                <View key={visualPos} style={{ width: cellSize, height: cellSize }}>
+                    <CenterGoalCell
+                        centerGoal={data.center_goal}
+                        size={cellSize}
+                        onPress={handleCenterGoalPress}
+                        numberOfLines={4}
+                    />
+                </View>
+            )
+        }
+
+        // Sub Goals - convert visual position to data position
+        const dataPos = visualToDataPosition(visualPos)
+        const subGoal = getSubGoalByDataPosition(dataPos)
+
+        return (
+            <View key={visualPos} style={{ width: cellSize, height: cellSize }}>
+                <SubGoalCell
+                    title={subGoal?.title || ''}
+                    size={cellSize}
+                    position={dataPos}
+                    filledActions={subGoal?.actions?.filter(a => a.title?.trim()).length || 0}
+                    onPress={() => handleSubGoalPress(dataPos)}
+                    variant="overview"
+                />
+            </View>
+        )
+    }
+
     // Render cell for expanded section view (Stage 3 Reveal)
     const renderExpandedCell = (sectionDataPos: number, cellVisualPos: number) => {
         // Center cell (The focused sub-goal itself)
         if (cellVisualPos === 4) {
             const subGoal = getSubGoalByDataPosition(sectionDataPos)
             return (
-                <View
+                <SubGoalCell
                     key="center-cell"
-                    className="flex-1 items-center justify-center p-2"
-                    style={{
-                        backgroundColor: '#eff6ff', // bg-blue-50
-                        borderWidth: 1,
-                        borderColor: '#bfdbfe', // border-blue-200
-                    }}
-                >
-                    {subGoal?.title ? (
-                        <Text
-                            className="text-center"
-                            style={{
-                                fontSize: 14,
-                                fontFamily: 'Pretendard-SemiBold',
-                                color: '#1f2937',
-                            }}
-                            numberOfLines={3}
-                        >
-                            {subGoal.title}
-                        </Text>
-                    ) : (
-                        <Text
-                            className="text-center"
-                            style={{
-                                fontSize: 12,
-                                fontFamily: 'Pretendard-Regular',
-                                color: '#9ca3af',
-                            }}
-                        >
-                            {t('mandalart.create.preview.subGoal')}
-                        </Text>
-                    )}
-                </View>
+                    title={subGoal?.title || ''}
+                    size={cellSize}
+                    onPress={() => handleSubGoalEdit(sectionDataPos)}
+                    variant="center"
+                    numberOfLines={3}
+                />
             )
         }
 
@@ -281,18 +289,17 @@ export function PreviewStep({
             >
                 <Pressable
                     onPress={() => handleSubGoalEdit(sectionDataPos)}
-                    className="flex-1 items-center justify-center p-2 active:bg-gray-50"
+                    className="items-center justify-center p-1.5 rounded-xl bg-white border border-gray-200 active:bg-gray-50"
                     style={{
-                        backgroundColor: '#ffffff',
-                        borderWidth: 0.5,
-                        borderColor: '#e5e7eb', // border-gray-200
+                        width: cellSize,
+                        height: cellSize,
                     }}
                 >
                     {action?.title ? (
                         <Text
                             className="text-center text-gray-800"
                             style={{ fontSize: 12, fontFamily: 'Pretendard-Regular' }}
-                            numberOfLines={3}
+                            numberOfLines={4}
                         >
                             {action.title}
                         </Text>
@@ -326,7 +333,13 @@ export function PreviewStep({
                 <View className="flex-row items-center justify-between px-5 h-16">
                     <View className="flex-row items-center flex-1">
                         <Pressable
-                            onPress={onBack}
+                            onPress={() => {
+                                if (expandedSection !== null) {
+                                    setExpandedSection(null)
+                                } else {
+                                    onBack()
+                                }
+                            }}
                             className="p-2 -ml-2 rounded-full active:bg-gray-100"
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
@@ -375,33 +388,59 @@ export function PreviewStep({
                         />
                     </View>
                 ) : (
-                    // Phone View: 3x3 Grid with drill-down
-                    <View className="px-4 py-6">
-                        {/* Breadcrumb / Navigation */}
-                        {expandedSection !== null && (
-                            <Pressable
-                                onPress={() => setExpandedSection(null)}
-                                className="flex-row items-center mb-4"
+                    /* Phone: 3x3 Grid with drill-down */
+                    <View className="px-4 py-3">
+                        {/* Progress Stats Bar - Permanently Visible */}
+                        <View className="mb-3 justify-center">
+                            <View
+                                className="bg-white px-5 py-3 rounded-2xl border border-gray-100 flex-row items-center justify-center"
+                                style={{
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.04,
+                                    shadowRadius: 8,
+                                    elevation: 2,
+                                }}
                             >
-                                <ChevronLeft size={20} color="#6b7280" />
-                                <Text className="text-gray-500 ml-1 font-medium">
-                                    {t('mandalart.create.preview.backToOverview')}
-                                </Text>
-                            </Pressable>
-                        )}
+                                <View className="flex-row items-center gap-x-5">
+                                    <View className="flex-row items-center">
+                                        <Text className="text-[13px] text-gray-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>{t('mandalart.detail.stats.coreGoal', '핵심목표')} </Text>
+                                        <Text className="text-[14px] text-gray-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                            {data.center_goal ? 1 : 0}/1
+                                        </Text>
+                                    </View>
+                                    <View className="w-[1px] h-3 bg-gray-100" />
+                                    <View className="flex-row items-center">
+                                        <Text className="text-[13px] text-gray-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>{t('mandalart.detail.stats.subGoal', '세부목표')} </Text>
+                                        <Text className="text-[14px] text-gray-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                            {data.sub_goals.filter(sg => sg.title?.trim()).length}/8
+                                        </Text>
+                                    </View>
+                                    <View className="w-[1px] h-3 bg-gray-100" />
+                                    <View className="flex-row items-center">
+                                        <Text className="text-[13px] text-gray-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>{t('mandalart.detail.stats.action', '실천항목')} </Text>
+                                        <Text className="text-[14px] text-gray-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                            {data.sub_goals.reduce((acc, sg) => acc + (sg.actions?.filter(a => a.title?.trim()).length || 0), 0)}/64
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
 
                         <View
-                            className="bg-white rounded-2xl overflow-hidden border border-gray-200"
+                            className={`bg-white overflow-hidden border border-gray-100 ${animationStage === 'idle' ? 'rounded-2xl' : ''}`}
                             style={{
-                                height: gridWidth, // Square aspect ratio
+                                padding: CARD_PADDING,
                                 shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.05,
-                                shadowRadius: 8,
-                                elevation: 2,
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.06,
+                                shadowRadius: 12,
+                                elevation: 3,
+                                minHeight: gridWidth + (CARD_PADDING * 2),
                                 position: 'relative'
                             }}
                         >
+
 
                             <Animated.View
                                 key={expandedSection === null ? 'overview' : `expanded-${expandedSection}`}
@@ -441,96 +480,147 @@ export function PreviewStep({
                                 )}
                                 {expandedSection === null ? (
                                     // Overview 3x3
-                                    <View className="flex-1 flex-row flex-wrap">
-                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((pos) => {
-                                            // Center Goal
-                                            if (pos === 4) {
-                                                return (
-                                                    <View key={pos} style={{ width: '33.33%', height: '33.33%', padding: 2 }}>
-                                                        <CenterGoalCell
-                                                            centerGoal={data.center_goal}
-                                                            size={cellSize}
-                                                            onPress={handleCenterGoalPress}
-                                                            numberOfLines={3}
-                                                        />
-                                                    </View>
-                                                )
-                                            }
-
-                                            // Sub Goals - convert visual position to data position
-                                            const dataPos = visualToDataPosition(pos)
-                                            const subGoal = getSubGoalByDataPosition(dataPos)
-
-                                            return (
-                                                <View key={pos} style={{ width: '33.33%', height: '33.33%', padding: 2 }}>
-                                                    <SubGoalCell
-                                                        title={subGoal?.title || ''}
-                                                        size={cellSize}
-                                                        position={dataPos}
-                                                        filledActions={subGoal?.actions?.filter(a => a.title?.trim()).length || 0}
-                                                        onPress={() => handleSubGoalPress(dataPos)}
-                                                        variant="overview"
-                                                    />
-                                                </View>
-                                            )
-                                        })}
+                                    <View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
+                                            {[0, 1, 2].map((pos) => renderOverviewCell(pos))}
+                                        </View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                                            {[3, 4, 5].map((pos) => renderOverviewCell(pos))}
+                                        </View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                                            {[6, 7, 8].map((pos) => renderOverviewCell(pos))}
+                                        </View>
                                     </View>
                                 ) : (
                                     // Expanded Sub-Goal View (3x3 actions)
-                                    <View className="flex-1 flex-row flex-wrap">
-                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((pos) => (
-                                            <View
-                                                key={pos}
-                                                style={{
-                                                    width: '33.33%',
-                                                    height: '33.33%',
-                                                    borderRightWidth: pos % 3 === 2 ? 0 : 1,
-                                                    borderBottomWidth: pos >= 6 ? 0 : 1,
-                                                    borderColor: '#f3f4f6', // gray-100
-                                                }}
-                                            >
-                                                {renderExpandedCell(expandedSection, pos)}
-                                            </View>
-                                        ))}
+                                    <View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP }}>
+                                            {[0, 1, 2].map((pos) => renderExpandedCell(expandedSection, pos))}
+                                        </View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                                            {[3, 4, 5].map((pos) => renderExpandedCell(expandedSection, pos))}
+                                        </View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: CELL_GAP, marginTop: CELL_GAP }}>
+                                            {[6, 7, 8].map((pos) => renderExpandedCell(expandedSection, pos))}
+                                        </View>
                                     </View>
                                 )}
                             </Animated.View>
                         </View>
 
-                        {/* Hint Text */}
-                        <Text className="text-center text-gray-400 text-sm mt-6">
-                            {expandedSection === null
-                                ? t('mandalart.create.preview.tapToEdit')
-                                : t('mandalart.create.preview.tapActionToEdit')}
-                        </Text>
 
-                        {/* Guide Card - Only show on overview (not expanded) */}
-                        {expandedSection === null && (
+                        {/* Footer Guide/Usage (Phone only) */}
+                        <View className="mt-3 pb-8">
                             <View
-                                className="bg-blue-50 rounded-2xl p-4 mt-4 border border-blue-100"
+                                className="bg-white rounded-2xl p-6 border border-gray-100"
+                                style={{
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.06,
+                                    shadowRadius: 12,
+                                    elevation: 3,
+                                }}
                             >
-                                <View className="flex-row items-center mb-3">
-                                    <Info size={18} color="#3b82f6" />
-                                    <Text
-                                        className="text-sm text-blue-700 ml-2"
-                                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                                    >
-                                        {t('mandalart.create.manualInput.guideTitle')}
-                                    </Text>
-                                </View>
-                                {(t('mandalart.create.manualInput.guideItems', { returnObjects: true }) as string[]).map((item, index) => (
-                                    <View key={index} className="flex-row items-start mb-1.5">
-                                        <Check size={14} color="#3b82f6" style={{ marginTop: 2 }} />
-                                        <Text
-                                            className="text-sm text-blue-600 ml-2 flex-1"
-                                            style={{ fontFamily: 'Pretendard-Regular' }}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </View>
-                                ))}
+                                {expandedSection === null ? (
+                                    /* Creation Guide - Visible only in Overview */
+                                    <>
+                                        <View className="flex-row items-center mb-4">
+                                            <Info size={20} color="#3b82f6" />
+                                            <Text
+                                                className="text-base text-gray-900 ml-2"
+                                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                                            >
+                                                {t('mandalart.create.manualInput.guideTitle', '만다라트 작성 안내')}
+                                            </Text>
+                                        </View>
+                                        {(t('mandalart.create.manualInput.guideItems', { returnObjects: true }) as string[] || []).map((item, index, arr) => (
+                                            <View key={index} className={`flex-row items-start ${index === arr.length - 1 ? '' : 'mb-2.5'}`}>
+                                                <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                                                <Text
+                                                    className="text-sm text-gray-600 ml-2 flex-1"
+                                                    style={{ fontFamily: 'Pretendard-Regular' }}
+                                                >
+                                                    {item}
+                                                </Text>
+                                            </View>
+                                        ))}
+                                    </>
+                                ) : (
+                                    /* Usage Instructions - Visible only when Expanded */
+                                    <>
+                                        <View className="flex-row items-center mb-4">
+                                            <Lightbulb size={20} color="#3b82f6" />
+                                            <Text
+                                                className="text-base text-gray-900 ml-2"
+                                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                                            >
+                                                {t('mandalart.detail.usage.title', '사용 방법')}
+                                            </Text>
+                                        </View>
+
+                                        {/* Item 1: Tap to View */}
+                                        <View className="flex-row items-start mb-2.5">
+                                            <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                                            <Text
+                                                className="text-sm text-gray-600 ml-2 flex-1"
+                                                style={{ fontFamily: 'Pretendard-Regular' }}
+                                            >
+                                                {t('mandalart.detail.usage.tapToView', '각 영역을 탭하여 상세보기 및 수정이 가능합니다.')}
+                                            </Text>
+                                        </View>
+
+                                        {/* Item 2: Navigation Hint */}
+                                        <View className="flex-row items-start mb-2.5">
+                                            <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                                            <Text
+                                                className="text-sm text-gray-600 ml-2 flex-1"
+                                                style={{ fontFamily: 'Pretendard-Regular' }}
+                                            >
+                                                {t('mandalart.detail.usage.backToOverview', '상단 뒤로가기(<) 버튼을 눌러 전체 보기로 돌아갑니다.')}
+                                            </Text>
+                                        </View>
+
+                                        {/* Item 3: Types Explanation */}
+                                        <View className="flex-row items-start">
+                                            <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                                            <View className="ml-2 flex-1">
+                                                <View className="flex-row items-center">
+                                                    <Text
+                                                        className="text-sm text-gray-600"
+                                                        style={{ fontFamily: 'Pretendard-Regular' }}
+                                                    >
+                                                        {t('mandalart.detail.usage.typeLabel', '타입 구분:')}{' '}
+                                                    </Text>
+                                                    <View className="flex-row items-center bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
+                                                        <RotateCw size={12} color="#3b82f6" />
+                                                        <Text
+                                                            className="text-[12px] text-gray-500 ml-1 mr-2"
+                                                            style={{ fontFamily: 'Pretendard-Medium' }}
+                                                        >
+                                                            {t('mandalart.detail.usage.routine')}
+                                                        </Text>
+                                                        <Target size={12} color="#10b981" />
+                                                        <Text
+                                                            className="text-[12px] text-gray-500 ml-1 mr-2"
+                                                            style={{ fontFamily: 'Pretendard-Medium' }}
+                                                        >
+                                                            {t('mandalart.detail.usage.mission')}
+                                                        </Text>
+                                                        <Lightbulb size={12} color="#f59e0b" />
+                                                        <Text
+                                                            className="text-[12px] text-gray-500 ml-1"
+                                                            style={{ fontFamily: 'Pretendard-Medium' }}
+                                                        >
+                                                            {t('mandalart.detail.usage.reference')}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </>
+                                )}
                             </View>
-                        )}
+                        </View>
                     </View>
                 )}
             </ScrollView>

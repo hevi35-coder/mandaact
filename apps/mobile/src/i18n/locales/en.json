@@ -740,7 +740,27 @@
         "typeSettings": "Type Settings",
         "selectType": "Select type for \"{{title}}\"",
         "actionTypeLabel": "Action Type",
-        "notSet": "Not Set"
+        "notSet": "Not Set",
+        "guide": {
+          "title": "Finding the 8 Pillars for Your Vision",
+          "tip1_title": "Alignment with Core Goal",
+          "tip1_desc": "If you achieve this, will you be one step closer\nto your vision? Think of it as an 'essential piece'\nneeded to manifest the core goal.",
+          "tip2_title": "Holistic Balance",
+          "tip2_desc": "Take a 360-degree approach. Consider aspects\nlike mindset, environment, luck, and character,\nnot just technical skills.",
+          "tip3_title": "Define with Bold Themes",
+          "tip3_desc": "Use clear keywords (e.g., Physical Strength) that\ndefine the area at a glance—acting as a 'pillar'\nthat can hold 8 different actions."
+        },
+        "aiSuggest": {
+          "title": "Get 'Help' from AI Coach",
+          "subtitle": "Suggested sub-goals aligned with your vision",
+          "getHelp": "Get Help",
+          "loading": "Analyzing personalized suggestions...",
+          "empty": "Bringing fresh ideas to fill your space.",
+          "tapToApply": "Tap to apply instantly",
+          "suggested": "Suggested",
+          "getStarted": "Get AI Recommendations",
+          "refresh": "Refresh Ideas"
+        }
       },
       "coreGoal": {
         "title": "Core Goal Settings",
@@ -777,7 +797,7 @@
       "referenceInfo": "Reference type is not included in achievement rate"
     },
     "subGoalEdit": {
-      "title": "Edit Sub-goal",
+      "title": "Sub-goal",
       "description": "You can edit sub-goal and actions",
       "subGoalLabel": "Sub-goal",
       "subGoalPlaceholder": "Enter sub-goal title",
@@ -892,7 +912,10 @@
         "titlePlaceholder": "Enter your core goal",
         "backToOverview": "Back to overview",
         "tapToEdit": "Tap cells to edit",
-        "tapActionToEdit": "Tap action to edit"
+        "tapActionToEdit": "Tap action to edit",
+        "coreGoalProgress": "Core Goal {{filled}}/{{total}}",
+        "subGoalProgress": "Sub-goals {{filled}}/{{total}}",
+        "actionProgress": "Actions {{filled}}/{{total}}"
       },
       "validation": {
         "enterTitle": "Please enter your core goal.",
@@ -935,6 +958,11 @@
       "exportError": "An error occurred while exporting.",
       "loadingError": "An error occurred while loading the mandalart.",
       "exportWatermark": "Turn goals into action, MandaAct",
+      "stats": {
+        "coreGoal": "Core Goal",
+        "subGoal": "Sub-goals",
+        "action": "Actions"
+      },
       "usage": {
         "title": "How to Use",
         "tapToView": "Tap each area to view details and edit.",

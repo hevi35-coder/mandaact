@@ -23,6 +23,8 @@ interface SubGoalCellProps {
   variant?: 'overview' | 'center'
   /** Number of lines to show before truncating */
   numberOfLines?: number
+  /** Custom border radius (default: 12) */
+  borderRadius?: number
 }
 
 /**
@@ -41,6 +43,7 @@ export default function SubGoalCell({
   onPress,
   variant = 'overview',
   numberOfLines = 2,
+  borderRadius = 12,
 }: SubGoalCellProps) {
   const { t } = useTranslation()
   const isOverview = variant === 'overview'
@@ -53,10 +56,11 @@ export default function SubGoalCell({
         {
           width: size,
           height: size,
-          borderRadius: 12,
+          borderRadius,
         },
       ]}
     >
+
       {/* Position label - only in overview variant */}
       {isOverview && position !== undefined && (
         <Text style={styles.positionLabel}>{t('mandalart.cell.subGoalLabel', { position })}</Text>

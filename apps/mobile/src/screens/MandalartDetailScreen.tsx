@@ -41,17 +41,21 @@ import {
   Trash2,
   ArrowLeft,
   MessageCircle,
+  Check,
+  Info,
 } from 'lucide-react-native'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { useMandalartWithDetails } from '../hooks/useMandalarts'
+import type { MandalartWithDetails } from '@mandaact/shared'
 import { saveToGallery, shareImage, captureViewAsImage } from '../services/exportService'
 import { supabase } from '../lib/supabase'
 import MandalartExportGrid from '../components/MandalartExportGrid'
 import MandalartInfoModal from '../components/MandalartInfoModal'
 import SubGoalEditModal from '../components/SubGoalEditModal'
 import DeleteMandalartModal from '../components/DeleteMandalartModal'
+import SubGoalModalV2 from '../components/SubGoalModalV2'
 import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import type { Action, SubGoal, ActionType } from '@mandaact/shared'
@@ -116,6 +120,8 @@ export default function MandalartDetailScreen() {
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [subGoalModalV2Visible, setSubGoalModalV2Visible] = useState(false)
+  const [selectedSubGoalForTitle, setSelectedSubGoalForTitle] = useState<SubGoal | null>(null)
 
   // v20.4: Refined 3-Stage Animation State
   const [animationStage, setAnimationStage] = useState<'idle' | 'expanding' | 'centering' | 'revealing'>('idle')
@@ -244,18 +250,117 @@ export default function MandalartDetailScreen() {
   }, [queryClient, navigation])
 
   const handleEditSubGoal = useCallback(() => {
-    // v20.4: Animation test - Disabled modal inside expanded view
-    /*
     if (expandedSubGoal) {
-      setSelectedSubGoal(expandedSubGoal)
-      setEditModalVisible(true)
+      setSelectedSubGoalForTitle(expandedSubGoal)
+      setSubGoalModalV2Visible(true)
     }
-    */
-  }, [])
+  }, [expandedSubGoal])
+
+  const handleSubGoalTitleSave = useCallback(async (newTitle: string, newDescription?: string) => {
+    console.log('[MandalartDetailScreen] handleSubGoalTitleSave called');
+    console.log('[MandalartDetailScreen] newTitle:', newTitle, 'newDescription:', newDescription);
+    console.log('[MandalartDetailScreen] selectedSubGoalForTitle:', selectedSubGoalForTitle);
+
+    if (!selectedSubGoalForTitle) {
+      console.warn('[MandalartDetailScreen] No selectedSubGoalForTitle, aborting');
+      return
+    }
+
+    const trimmedTitle = (newTitle || '').trim();
+    const trimmedDesc = newDescription?.trim();
+
+    // Capture values before closing modal to avoid null reference in background task
+    const subGoalId = selectedSubGoalForTitle.id;
+    const subGoalPosition = selectedSubGoalForTitle.position;
+
+    // STEP 1: Optimistic Update - Update the cache immediately for instant UI feedback
+    const queryKey = ['mandalarts', 'detail', id];
+    const previousData = queryClient.getQueryData<MandalartWithDetails>(queryKey);
+
+    if (previousData) {
+      console.log('[MandalartDetailScreen] Applying optimistic update...');
+      const updatedSubGoals = previousData.sub_goals.map(sg =>
+        sg.position === subGoalPosition
+          ? { ...sg, title: trimmedTitle, description: trimmedDesc || sg.description }
+          : sg
+      );
+
+      queryClient.setQueryData(queryKey, {
+        ...previousData,
+        sub_goals: updatedSubGoals
+      });
+
+      // v21.4: Update local expandedSubGoal IMMEDIATELY for instant UI transition
+      if (expandedSubGoal && expandedSubGoal.position === subGoalPosition) {
+        setExpandedSubGoal({
+          ...expandedSubGoal,
+          title: trimmedTitle,
+          description: trimmedDesc || expandedSubGoal.description
+        });
+      }
+    }
+
+    // Close modal immediately for snappy UX
+    handleModalSuccess();
+
+    // STEP 2: Persist to database in background
+    try {
+      const updates: any = {
+        mandalart_id: id,
+        position: subGoalPosition,
+        title: trimmedTitle,
+      }
+
+      if (trimmedDesc) {
+        updates.description = trimmedDesc;
+      }
+
+      console.log('[MandalartDetailScreen] Persisting to DB:', updates);
+
+      let error;
+
+      if (subGoalId) {
+        const result = await supabase
+          .from('sub_goals')
+          .update(updates)
+          .eq('id', subGoalId)
+        error = result.error
+      } else {
+        const result = await supabase
+          .from('sub_goals')
+          .insert(updates)
+        error = result.error
+      }
+
+      if (error) {
+        console.error('[MandalartDetailScreen] Database error:', error);
+        // Rollback optimistic update on error
+        if (previousData) {
+          queryClient.setQueryData(queryKey, previousData);
+        }
+        Alert.alert(t('common.error'), t('mandalart.subGoalEdit.toast.saveError'))
+        return;
+      }
+
+      console.log('[MandalartDetailScreen] DB save successful');
+      // Refetch in background to sync with server (for new IDs etc.)
+      queryClient.invalidateQueries({ queryKey });
+
+    } catch (err) {
+      console.error('Failed to update sub-goal title:', err)
+      // Rollback optimistic update on error
+      if (previousData) {
+        queryClient.setQueryData(queryKey, previousData);
+      }
+      Alert.alert(t('common.error'), t('mandalart.subGoalEdit.toast.saveError'))
+    }
+  }, [selectedSubGoalForTitle, id, t, handleModalSuccess, queryClient])
 
   const handleModalSuccess = useCallback(() => {
-    refetch()
-  }, [refetch])
+    console.log('[MandalartDetailScreen] handleModalSuccess - closing modals');
+    setSubGoalModalV2Visible(false)
+    setSelectedSubGoalForTitle(null)
+  }, [])
 
   // v18.1: Continue coaching from draft
   const handleContinueCoaching = useCallback(() => {
@@ -317,8 +422,9 @@ export default function MandalartDetailScreen() {
   // Sync expandedSubGoal when mandalart data changes
   useEffect(() => {
     if (expandedSubGoal && mandalart) {
+      // v21.4: Match by position instead of ID for more robust sync (especially for new entries)
       const updatedSubGoal = mandalart.sub_goals.find(
-        sg => sg.id === expandedSubGoal.id
+        sg => sg.position === expandedSubGoal.position
       ) as SubGoalWithActions | undefined
       if (updatedSubGoal) {
         setExpandedSubGoal(updatedSubGoal)
@@ -656,73 +762,45 @@ export default function MandalartDetailScreen() {
           ) : (
             /* Phone: 3x3 Grid with drill-down */
             <>
-              {/* Header Bar */}
-              <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                {!expandedSubGoal ? (
-                  <Pressable
-                    onPress={handleCenterGoalTap}
-                    className="flex-1 flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
-                    style={{
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.04,
-                      shadowRadius: 8,
-                      elevation: 2,
-                    }}
-                  >
-                    <Text
-                      className="text-base text-gray-700 flex-1"
-                      style={{ fontFamily: 'Pretendard-Medium' }}
-                      numberOfLines={1}
-                    >
-                      {mandalart.center_goal}
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <>
-                    <Pressable
-                      onPress={() => setExpandedSubGoal(null)}
-                      className="flex-row items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl active:bg-gray-50"
-                      style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.04,
-                        shadowRadius: 8,
-                        elevation: 2,
-                      }}
-                    >
-                      <ArrowLeft size={16} color="#374151" />
-                      <Text
-                        className="text-base text-gray-700 ml-1"
-                        style={{ fontFamily: 'Pretendard-Medium' }}
-                      >
-                        {t('mandalart.detail.back')}
+              {/* Progress Stats Bar - Permanently Visible */}
+              <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 12, justifyContent: 'center' }}>
+                <View
+                  className="bg-white px-5 py-3 rounded-2xl border border-gray-100 flex-row items-center justify-center"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <View className="flex-row items-center gap-x-5">
+                    <View className="flex-row items-center">
+                      <Text className="text-[13px] text-gray-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>{t('mandalart.detail.stats.coreGoal', '핵심목표')} </Text>
+                      <Text className="text-[14px] text-gray-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                        {mandalart.center_goal ? 1 : 0}/1
                       </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={handleEditSubGoal}
-                      className="px-5 py-3 bg-gray-900 rounded-2xl active:bg-gray-800"
-                      style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 8,
-                        elevation: 3,
-                      }}
-                    >
-                      <Text
-                        className="text-base text-white"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                      >
-                        {t('mandalart.detail.edit')}
+                    </View>
+                    <View className="w-[1px] h-3 bg-gray-100" />
+                    <View className="flex-row items-center">
+                      <Text className="text-[13px] text-gray-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>{t('mandalart.detail.stats.subGoal', '세부목표')} </Text>
+                      <Text className="text-[14px] text-gray-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                        {mandalart.sub_goals.filter(sg => sg.title?.trim()).length}/8
                       </Text>
-                    </Pressable>
-                  </>
-                )}
+                    </View>
+                    <View className="w-[1px] h-3 bg-gray-100" />
+                    <View className="flex-row items-center">
+                      <Text className="text-[13px] text-gray-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>{t('mandalart.detail.stats.action', '실천항목')} </Text>
+                      <Text className="text-[14px] text-gray-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                        {mandalart.sub_goals.reduce((acc, sg) => acc + (sg.actions?.filter(a => a.title?.trim()).length || 0), 0)}/64
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               </View>
 
               {/* 3x3 Grid */}
-              <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 16 }} ref={gridRef} collapsable={false}>
+              <View style={{ marginHorizontal: CONTAINER_PADDING, marginTop: 12, flex: 1 }} ref={gridRef} collapsable={false}>
                 <View
                   className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
                   style={{
@@ -791,8 +869,8 @@ export default function MandalartDetailScreen() {
                 </View>
               </View>
 
-              {/* Usage Instructions (Phone only) */}
-              <View className="px-5 py-5 pb-8">
+              {/* Footer Guide/Usage (Phone only) */}
+              <View style={{ paddingHorizontal: CONTAINER_PADDING, marginTop: 12, paddingBottom: 32 }}>
                 <View
                   className="bg-white rounded-2xl p-6 border border-gray-100"
                   style={{
@@ -803,50 +881,104 @@ export default function MandalartDetailScreen() {
                     elevation: 3,
                   }}
                 >
-                  <View className="flex-row items-center mb-3">
-                    <Lightbulb size={20} color="#2563eb" />
-                    <Text
-                      className="text-base text-gray-900 ml-2"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('mandalart.detail.usage.title')}
-                    </Text>
-                  </View>
-                  <Text
-                    className="text-sm text-gray-500 mb-2"
-                    style={{ fontFamily: 'Pretendard-Regular' }}
-                  >
-                    • {t('mandalart.detail.usage.tapToView')}
-                  </Text>
-                  <View className="flex-row items-center">
-                    <Text
-                      className="text-sm text-gray-500"
-                      style={{ fontFamily: 'Pretendard-Regular' }}
-                    >
-                      • {t('mandalart.detail.usage.typeLabel')}{' '}
-                    </Text>
-                    <RotateCw size={14} color="#3b82f6" />
-                    <Text
-                      className="text-sm text-gray-500 ml-1 mr-2"
-                      style={{ fontFamily: 'Pretendard-Regular' }}
-                    >
-                      {t('mandalart.detail.usage.routine')}
-                    </Text>
-                    <Target size={14} color="#10b981" />
-                    <Text
-                      className="text-sm text-gray-500 ml-1 mr-2"
-                      style={{ fontFamily: 'Pretendard-Regular' }}
-                    >
-                      {t('mandalart.detail.usage.mission')}
-                    </Text>
-                    <Lightbulb size={14} color="#f59e0b" />
-                    <Text
-                      className="text-sm text-gray-500 ml-1"
-                      style={{ fontFamily: 'Pretendard-Regular' }}
-                    >
-                      {t('mandalart.detail.usage.reference')}
-                    </Text>
-                  </View>
+                  {!expandedSubGoal ? (
+                    /* Creation Guide - Visible only in Overview */
+                    <>
+                      <View className="flex-row items-center mb-4">
+                        <Info size={20} color="#3b82f6" />
+                        <Text
+                          className="text-base text-gray-900 ml-2"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('mandalart.create.manualInput.guideTitle', '만다라트 작성 안내')}
+                        </Text>
+                      </View>
+                      {(t('mandalart.create.manualInput.guideItems', { returnObjects: true }) as string[] || []).map((item, index, arr) => (
+                        <View key={index} className={`flex-row items-start ${index === arr.length - 1 ? '' : 'mb-2.5'}`}>
+                          <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                          <Text
+                            className="text-sm text-gray-600 ml-2 flex-1"
+                            style={{ fontFamily: 'Pretendard-Regular' }}
+                          >
+                            {item}
+                          </Text>
+                        </View>
+                      ))}
+                    </>
+                  ) : (
+                    /* Usage Instructions - Visible only when Expanded */
+                    <>
+                      <View className="flex-row items-center mb-4">
+                        <Lightbulb size={20} color="#3b82f6" />
+                        <Text
+                          className="text-base text-gray-900 ml-2"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('mandalart.detail.usage.title', '사용 방법')}
+                        </Text>
+                      </View>
+
+                      {/* Item 1: Tap to View */}
+                      <View className="flex-row items-start mb-2.5">
+                        <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                        <Text
+                          className="text-sm text-gray-600 ml-2 flex-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {t('mandalart.detail.usage.tapToView')}
+                        </Text>
+                      </View>
+
+                      {/* Item 2: Navigation Hint */}
+                      <View className="flex-row items-start mb-2.5">
+                        <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                        <Text
+                          className="text-sm text-gray-600 ml-2 flex-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {t('mandalart.detail.usage.backToOverview', '상단 뒤로가기(<) 버튼을 눌러 전체 보기로 돌아갑니다.')}
+                        </Text>
+                      </View>
+
+                      {/* Item 3: Types Explanation */}
+                      <View className="flex-row items-start">
+                        <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                        <View className="ml-2 flex-1">
+                          <View className="flex-row items-center">
+                            <Text
+                              className="text-sm text-gray-600"
+                              style={{ fontFamily: 'Pretendard-Regular' }}
+                            >
+                              {t('mandalart.detail.usage.typeLabel', '타입 구분:')}{' '}
+                            </Text>
+                            <View className="flex-row items-center bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
+                              <RotateCw size={12} color="#3b82f6" />
+                              <Text
+                                className="text-[12px] text-gray-500 ml-1 mr-2"
+                                style={{ fontFamily: 'Pretendard-Medium' }}
+                              >
+                                {t('mandalart.detail.usage.routine')}
+                              </Text>
+                              <Target size={12} color="#10b981" />
+                              <Text
+                                className="text-[12px] text-gray-500 ml-1 mr-2"
+                                style={{ fontFamily: 'Pretendard-Medium' }}
+                              >
+                                {t('mandalart.detail.usage.mission')}
+                              </Text>
+                              <Lightbulb size={12} color="#f59e0b" />
+                              <Text
+                                className="text-[12px] text-gray-500 ml-1"
+                                style={{ fontFamily: 'Pretendard-Medium' }}
+                              >
+                                {t('mandalart.detail.usage.reference')}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </>
+                  )}
                 </View>
               </View>
             </>
@@ -888,6 +1020,17 @@ export default function MandalartDetailScreen() {
           setSelectedSubGoal(null)
         }}
         onSuccess={handleModalSuccess}
+      />
+
+      <SubGoalModalV2
+        visible={subGoalModalV2Visible}
+        initialTitle={selectedSubGoalForTitle?.title || ''}
+        onClose={() => {
+          setSubGoalModalV2Visible(false)
+          setSelectedSubGoalForTitle(null)
+        }}
+        onSave={handleSubGoalTitleSave}
+        coreGoal={mandalart?.center_goal || ''}
       />
 
       <DeleteMandalartModal
