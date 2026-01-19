@@ -79,6 +79,19 @@ export const logger = {
    */
   error(message: string, error?: unknown, context?: LogContext): void {
     const errorObj = error instanceof Error ? error : new Error(String(error))
+    const errorMsg = String(errorObj.message || message).toLowerCase()
+
+    // Downgrade noisy background network errors to warn in DEV to avoid red screen
+    const isNoisyNetworkError =
+      errorMsg.includes('posthog') ||
+      errorMsg.includes('no-fill') ||
+      errorMsg.includes('network error while fetching')
+
+    if (__DEV__ && isNoisyNetworkError) {
+      // eslint-disable-next-line no-console
+      console.warn(`[WARN: Downgraded] ${message}`, errorObj, context || '')
+      return
+    }
 
     // eslint-disable-next-line no-console
     console.error(`[ERROR] ${message}`, errorObj, context || '')
@@ -94,6 +107,19 @@ export const logger = {
    */
   captureException(error: unknown, context?: LogContext): void {
     const errorObj = error instanceof Error ? error : new Error(String(error))
+    const errorMsg = String(errorObj.message).toLowerCase()
+
+    // Downgrade noisy background network errors to warn in DEV to avoid red screen
+    const isNoisyNetworkError =
+      errorMsg.includes('posthog') ||
+      errorMsg.includes('no-fill') ||
+      errorMsg.includes('network error while fetching')
+
+    if (__DEV__ && isNoisyNetworkError) {
+      // eslint-disable-next-line no-console
+      console.warn('[EXCEPTION: Downgraded]', errorObj, context || '')
+      return
+    }
 
     // eslint-disable-next-line no-console
     console.error('[EXCEPTION]', errorObj, context || '')

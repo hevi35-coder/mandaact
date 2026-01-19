@@ -218,7 +218,12 @@ export function useRewardedAd({
     const unsubError = rewardedAd.addAdEventListener(
       AdEventType.ERROR,
       (err) => {
-        logger.error(`Rewarded ad error: ${adType}`, err)
+        const isNoFill = err.message?.includes('no-fill')
+        if (isNoFill) {
+          logger.warn(`Rewarded ad no-fill: ${adType}`, err)
+        } else {
+          logger.error(`Rewarded ad error: ${adType}`, err)
+        }
         const error = new Error(err.message || 'Failed to load rewarded ad')
         trackAdFailed({
           ad_format: 'rewarded',

@@ -44,7 +44,7 @@ export default function MandalartFullGrid({
   // Dynamic font sizes based on cell size
   const fontSize = {
     coreGoal: Math.max(14, cellSize * 0.22),
-    subGoal: Math.max(13, cellSize * 0.20),
+    subGoal: Math.max(14, cellSize * 0.22), // Increased from 13 / 0.20 to match coreGoal
     action: Math.max(11, cellSize * 0.16),
   }
 
@@ -121,7 +121,7 @@ export default function MandalartFullGrid({
             {subGoal?.title && (
               <Text
                 style={{
-                  fontFamily: 'Pretendard-SemiBold',
+                  fontFamily: 'Pretendard-Bold', // Upgraded from SemiBold to match core goal
                   fontSize: fontSize.subGoal,
                   color: '#1f2937',
                   textAlign: 'center',

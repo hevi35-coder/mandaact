@@ -7,6 +7,7 @@ export interface AISuggestSubGoalsParams {
     priorityArea?: string
     detailedContext?: string
     language?: string
+    existingSubGoals?: string[]  // NEW: Already selected sub-goals to exclude
 }
 
 export interface AIGenerateActionsParams {
@@ -122,7 +123,13 @@ class CoachingService {
         return result.actions || []
     }
 
-    async suggestActionsV2(params: { subGoal: string; coreGoal?: string; language?: string }, sessionId?: string | null): Promise<string[]> {
+    async suggestActionsV2(params: { subGoal: string; coreGoal?: string; language?: string; existingActions?: string[] }, sessionId?: string | null): Promise<{
+        keyword: string;
+        description: string;
+        type?: 'routine' | 'mission' | 'reference';
+        frequency?: 'daily' | 'weekly' | 'monthly';
+        cycle?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+    }[]> {
         const result = await this.invokeFunction('suggest_actions_v2', params, sessionId)
         return result.actions || []
     }

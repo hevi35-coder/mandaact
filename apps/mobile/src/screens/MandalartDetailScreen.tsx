@@ -43,19 +43,22 @@ import {
   MessageCircle,
   Check,
   Info,
+  Plus,
 } from 'lucide-react-native'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../components/Toast'
 
 import { useMandalartWithDetails } from '../hooks/useMandalarts'
 import type { MandalartWithDetails } from '@mandaact/shared'
 import { saveToGallery, shareImage, captureViewAsImage } from '../services/exportService'
 import { supabase } from '../lib/supabase'
 import MandalartExportGrid from '../components/MandalartExportGrid'
-import MandalartInfoModal from '../components/MandalartInfoModal'
 import SubGoalEditModal from '../components/SubGoalEditModal'
 import DeleteMandalartModal from '../components/DeleteMandalartModal'
 import SubGoalModalV2 from '../components/SubGoalModalV2'
+import ActionInputModal from '../components/ActionInputModal'
+import CoreGoalModal from '../components/CoreGoalModal'
 import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import type { Action, SubGoal, ActionType } from '@mandaact/shared'
@@ -98,6 +101,7 @@ export default function MandalartDetailScreen() {
   const gridRef = useRef<View>(null)
   const exportGridRef = useRef<View>(null)
   const queryClient = useQueryClient()
+  const toast = useToast()
   const insets = useSafeAreaInsets()
   const { width: screenWidth, height: screenHeight, isTablet, contentMaxWidth } = useResponsive()
   const { user } = useAuthStore()
@@ -117,11 +121,17 @@ export default function MandalartDetailScreen() {
   const [expandedSubGoal, setExpandedSubGoal] = useState<SubGoalWithActions | null>(null)
   const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoalWithActions | null>(null)
   const [lastTappedPos, setLastTappedPos] = useState<number | null>(null)
-  const [infoModalVisible, setInfoModalVisible] = useState(false)
+  const [coreGoalModalVisible, setCoreGoalModalVisible] = useState(false)
+  const [isSavingCoreGoal, setIsSavingCoreGoal] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [subGoalModalV2Visible, setSubGoalModalV2Visible] = useState(false)
   const [selectedSubGoalForTitle, setSelectedSubGoalForTitle] = useState<SubGoal | null>(null)
+
+  // v21.4: Action Input Modal State
+  const [actionInputModalVisible, setActionInputModalVisible] = useState(false)
+  const [selectedActionPosition, setSelectedActionPosition] = useState<number | null>(null)
+  const [isSavingAction, setIsSavingAction] = useState(false)
 
   // v20.4: Refined 3-Stage Animation State
   const [animationStage, setAnimationStage] = useState<'idle' | 'expanding' | 'centering' | 'revealing'>('idle')
@@ -175,7 +185,7 @@ export default function MandalartDetailScreen() {
 
   const handleCenterGoalTap = useCallback(() => {
     setLastTappedPos(0)
-    setInfoModalVisible(true)
+    setCoreGoalModalVisible(true)
   }, [])
 
   const handleSubGoalTap = useCallback((position: number) => {
@@ -249,12 +259,103 @@ export default function MandalartDetailScreen() {
     navigation.goBack()
   }, [queryClient, navigation])
 
+  const handleCoreGoalSave = useCallback(async (saveData: { title: string; centerGoal: string }) => {
+    if (!mandalart) return
+
+    setIsSavingCoreGoal(true)
+    try {
+      const { error } = await supabase
+        .from('mandalarts')
+        .update({
+          title: saveData.title.trim(),
+          center_goal: saveData.centerGoal.trim()
+        })
+        .eq('id', mandalart.id)
+
+      if (error) throw error
+
+      // Invalidate queries to ensure UI is fresh
+      queryClient.invalidateQueries({ queryKey: mandalartKeys.all })
+
+      toast.success(t('common.success'))
+      setCoreGoalModalVisible(false)
+    } catch (err) {
+      console.error('Save error:', err)
+      toast.error(t('mandalart.create.errors.save'))
+    } finally {
+      setIsSavingCoreGoal(false)
+    }
+  }, [mandalart, queryClient, t, toast])
+
   const handleEditSubGoal = useCallback(() => {
     if (expandedSubGoal) {
       setSelectedSubGoalForTitle(expandedSubGoal)
       setSubGoalModalV2Visible(true)
     }
   }, [expandedSubGoal])
+
+  const handleActionTap = useCallback((position: number) => {
+    if (!expandedSubGoal) return
+
+    // If sub-goal is empty, open SubGoal Modal (Title Edit) first
+    if (!expandedSubGoal.title || expandedSubGoal.title.trim() === '') {
+      setSelectedSubGoalForTitle(expandedSubGoal)
+      setSubGoalModalV2Visible(true)
+      return
+    }
+
+    // Otherwise, open Action Edit Modal with position context
+    setSelectedActionPosition(position)
+    setActionInputModalVisible(true)
+  }, [expandedSubGoal])
+
+  const handleActionSave = useCallback(async (title: string, type: string = 'routine', details: any = {}) => {
+    if (!expandedSubGoal || selectedActionPosition === null) return
+
+    setIsSavingAction(true)
+    try {
+      const existingAction = expandedSubGoal.actions?.find(a => a.position === selectedActionPosition)
+      const subGoalId = expandedSubGoal.id
+
+      const updates = {
+        sub_goal_id: subGoalId,
+        position: selectedActionPosition,
+        title: title,
+        type: type,
+        ...details,
+      }
+
+      let error
+
+      if (existingAction) {
+        // Update
+        const result = await supabase
+          .from('actions')
+          .update({ title, type, ...details })
+          .eq('id', existingAction.id)
+        error = result.error
+      } else {
+        // Insert
+        const result = await supabase
+          .from('actions')
+          .insert(updates)
+        error = result.error
+      }
+
+      if (error) throw error
+
+      // Update UI via refetch or optimistic (refetch is safer for now due to complex expandedSubGoal sync)
+      await queryClient.invalidateQueries({ queryKey: mandalartKeys.all })
+
+      setActionInputModalVisible(false)
+      toast.success(t('common.saved'))
+    } catch (err) {
+      console.error('Action save error:', err)
+      toast.error(t('common.error'))
+    } finally {
+      setIsSavingAction(false)
+    }
+  }, [expandedSubGoal, selectedActionPosition, queryClient, t, toast])
 
   const handleSubGoalTitleSave = useCallback(async (newTitle: string, newDescription?: string) => {
     console.log('[MandalartDetailScreen] handleSubGoalTitleSave called');
@@ -539,19 +640,20 @@ export default function MandalartDetailScreen() {
         })}
       >
         <Pressable
-          onPress={handleEditSubGoal}
-          className="items-center justify-center p-1.5 rounded-xl bg-white border border-gray-200 active:bg-gray-50"
+          onPress={() => handleActionTap(cellPos)}
+          className={`items-center justify-center p-1.5 rounded-xl border ${action ? 'bg-white border-gray-200 active:bg-gray-50' : 'bg-gray-50 border-gray-100/50 active:bg-gray-100'
+            }`}
           style={{
             width: cellSize,
             height: cellSize,
           }}
         >
           {action ? (
-            <Text className="text-xs text-gray-800 text-center" numberOfLines={4}>
+            <Text className="text-[15px] text-gray-800 text-center leading-5" numberOfLines={3}>
               {action.title}
             </Text>
           ) : (
-            <Text className="text-xs text-gray-300">-</Text>
+            <Plus size={20} color="#9ca3af" />
           )}
         </Pressable>
       </Animated.View>
@@ -887,7 +989,7 @@ export default function MandalartDetailScreen() {
                       <View className="flex-row items-center mb-4">
                         <Info size={20} color="#3b82f6" />
                         <Text
-                          className="text-base text-gray-900 ml-2"
+                          className="text-lg text-gray-900 ml-2"
                           style={{ fontFamily: 'Pretendard-SemiBold' }}
                         >
                           {t('mandalart.create.manualInput.guideTitle', '만다라트 작성 안내')}
@@ -897,7 +999,7 @@ export default function MandalartDetailScreen() {
                         <View key={index} className={`flex-row items-start ${index === arr.length - 1 ? '' : 'mb-2.5'}`}>
                           <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
                           <Text
-                            className="text-sm text-gray-600 ml-2 flex-1"
+                            className="text-base text-gray-600 ml-2 flex-1"
                             style={{ fontFamily: 'Pretendard-Regular' }}
                           >
                             {item}
@@ -911,7 +1013,7 @@ export default function MandalartDetailScreen() {
                       <View className="flex-row items-center mb-4">
                         <Lightbulb size={20} color="#3b82f6" />
                         <Text
-                          className="text-base text-gray-900 ml-2"
+                          className="text-lg text-gray-900 ml-2"
                           style={{ fontFamily: 'Pretendard-SemiBold' }}
                         >
                           {t('mandalart.detail.usage.title', '사용 방법')}
@@ -922,7 +1024,7 @@ export default function MandalartDetailScreen() {
                       <View className="flex-row items-start mb-2.5">
                         <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
                         <Text
-                          className="text-sm text-gray-600 ml-2 flex-1"
+                          className="text-base text-gray-600 ml-2 flex-1"
                           style={{ fontFamily: 'Pretendard-Regular' }}
                         >
                           {t('mandalart.detail.usage.tapToView')}
@@ -933,7 +1035,7 @@ export default function MandalartDetailScreen() {
                       <View className="flex-row items-start mb-2.5">
                         <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
                         <Text
-                          className="text-sm text-gray-600 ml-2 flex-1"
+                          className="text-base text-gray-600 ml-2 flex-1"
                           style={{ fontFamily: 'Pretendard-Regular' }}
                         >
                           {t('mandalart.detail.usage.backToOverview', '상단 뒤로가기(<) 버튼을 눌러 전체 보기로 돌아갑니다.')}
@@ -946,7 +1048,7 @@ export default function MandalartDetailScreen() {
                         <View className="ml-2 flex-1">
                           <View className="flex-row items-center">
                             <Text
-                              className="text-sm text-gray-600"
+                              className="text-base text-gray-600"
                               style={{ fontFamily: 'Pretendard-Regular' }}
                             >
                               {t('mandalart.detail.usage.typeLabel', '타입 구분:')}{' '}
@@ -954,21 +1056,21 @@ export default function MandalartDetailScreen() {
                             <View className="flex-row items-center bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
                               <RotateCw size={12} color="#3b82f6" />
                               <Text
-                                className="text-[12px] text-gray-500 ml-1 mr-2"
+                                className="text-[13px] text-gray-500 ml-1 mr-2"
                                 style={{ fontFamily: 'Pretendard-Medium' }}
                               >
                                 {t('mandalart.detail.usage.routine')}
                               </Text>
                               <Target size={12} color="#10b981" />
                               <Text
-                                className="text-[12px] text-gray-500 ml-1 mr-2"
+                                className="text-[13px] text-gray-500 ml-1 mr-2"
                                 style={{ fontFamily: 'Pretendard-Medium' }}
                               >
                                 {t('mandalart.detail.usage.mission')}
                               </Text>
                               <Lightbulb size={12} color="#f59e0b" />
                               <Text
-                                className="text-[12px] text-gray-500 ml-1"
+                                className="text-[13px] text-gray-500 ml-1"
                                 style={{ fontFamily: 'Pretendard-Medium' }}
                               >
                                 {t('mandalart.detail.usage.reference')}
@@ -1005,11 +1107,12 @@ export default function MandalartDetailScreen() {
       </View >
 
       {/* Modals */}
-      < MandalartInfoModal
-        visible={infoModalVisible}
-        mandalart={mandalart}
-        onClose={() => setInfoModalVisible(false)}
-        onSuccess={handleModalSuccess}
+      <CoreGoalModal
+        visible={coreGoalModalVisible}
+        initialCenterGoal={mandalart?.center_goal || ''}
+        onClose={() => setCoreGoalModalVisible(false)}
+        onSave={handleCoreGoalSave}
+        isSaving={isSavingCoreGoal}
       />
 
       <SubGoalEditModal
@@ -1031,6 +1134,22 @@ export default function MandalartDetailScreen() {
         }}
         onSave={handleSubGoalTitleSave}
         coreGoal={mandalart?.center_goal || ''}
+        existingSubGoals={mandalart?.sub_goals?.filter(sg => sg.title?.trim()).map(sg => sg.title) || []}
+      />
+
+      <ActionInputModal
+        visible={actionInputModalVisible}
+        initialTitle={
+          expandedSubGoal?.actions?.find(a => a.position === selectedActionPosition)?.title || ''
+        }
+        subGoalTitle={expandedSubGoal?.title || ''}
+        coreGoal={mandalart?.center_goal || ''}
+        existingActions={
+          expandedSubGoal?.actions?.map(a => a.title).filter(title => !!title) || []
+        }
+        onClose={() => setActionInputModalVisible(false)}
+        onSave={handleActionSave}
+        isSaving={isSavingAction}
       />
 
       <DeleteMandalartModal

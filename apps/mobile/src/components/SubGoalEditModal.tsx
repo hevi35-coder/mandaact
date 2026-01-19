@@ -479,17 +479,17 @@ export default function SubGoalEditModal({
       prev.map((a) =>
         a.id === actionId
           ? {
-              ...a,
-              type: typeData.type,
-              routine_frequency: typeData.routine_frequency,
-              routine_weekdays: typeData.routine_weekdays,
-              routine_count_per_period: typeData.routine_count_per_period,
-              mission_completion_type: typeData.mission_completion_type,
-              mission_period_cycle: typeData.mission_period_cycle,
-              mission_current_period_start: typeData.mission_current_period_start,
-              mission_current_period_end: typeData.mission_current_period_end,
-              ai_suggestion: typeData.ai_suggestion,
-            }
+            ...a,
+            type: typeData.type,
+            routine_frequency: typeData.routine_frequency,
+            routine_weekdays: typeData.routine_weekdays,
+            routine_count_per_period: typeData.routine_count_per_period,
+            mission_completion_type: typeData.mission_completion_type,
+            mission_period_cycle: typeData.mission_period_cycle,
+            mission_current_period_start: typeData.mission_current_period_start,
+            mission_current_period_end: typeData.mission_current_period_end,
+            ai_suggestion: typeData.ai_suggestion,
+          }
           : a
       )
     )
@@ -728,570 +728,311 @@ export default function SubGoalEditModal({
 
               {/* Content based on viewMode */}
               {viewMode === 'list' ? (
-              <ScrollView style={{ padding: 20 }}>
-                <Text
-                  className="text-sm text-gray-500 mb-4"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('mandalart.subGoalEdit.description')}
-                </Text>
-
-                {/* Sub-goal Title */}
-                <View className="mb-6">
-                  <Text
-                    className="text-sm text-gray-700 mb-2"
-                    style={{ fontFamily: 'Pretendard-Medium' }}
-                  >
-                    {t('mandalart.subGoalEdit.subGoalLabel')}
-                  </Text>
-                  {isEditingSubGoalTitle ? (
-                    <View className="flex-row items-center" style={{ gap: 8 }}>
-                      <TextInput
-                        value={subGoalTitle}
-                        onChangeText={setSubGoalTitle}
-                        placeholder={t('mandalart.subGoalEdit.subGoalPlaceholder')}
-                        className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-base"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                        autoFocus
-                        onSubmitEditing={handleSubGoalTitleSave}
-                      />
-                      <Pressable
-                        onPress={handleSubGoalTitleSave}
-                        disabled={isSaving}
-                        className="p-2"
-                      >
-                        {isSaving ? (
-                          <ActivityIndicator size="small" color="#10b981" />
-                        ) : (
-                          <Check size={20} color="#10b981" />
-                        )}
-                      </Pressable>
-                      <Pressable
-                        onPress={() => {
-                          setSubGoalTitle(subGoal.title)
-                          setIsEditingSubGoalTitle(false)
-                        }}
-                        className="p-2"
-                      >
-                        <X size={20} color="#6b7280" />
-                      </Pressable>
-                    </View>
-                  ) : (
-                    <Pressable
-                      onPress={() => setIsEditingSubGoalTitle(true)}
-                      className="flex-row items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50"
-                    >
-                      <Text
-                        className="flex-1 text-base text-gray-900"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                      >
-                        {subGoalTitle}
-                      </Text>
-                      <Pencil size={16} color="#9ca3af" />
-                    </Pressable>
-                  )}
-                </View>
-
-                {/* Actions List */}
-                <View className="mb-4">
-                  <View className="flex-row items-center justify-between mb-3">
-                    <Text
-                      className="text-sm text-gray-700"
-                      style={{ fontFamily: 'Pretendard-Medium' }}
-                    >
-                      {t('mandalart.subGoalEdit.actions')} ({actions.length}/8)
-                    </Text>
-                    {actions.length < 8 && (
-                      <Pressable
-                        onPress={handleActionAdd}
-                        className="flex-row items-center px-3 py-2 border border-gray-200 rounded-lg bg-white"
-                      >
-                        <Plus size={16} color="#2563eb" />
-                        <Text
-                          className="text-sm text-primary ml-1"
-                          style={{ fontFamily: 'Pretendard-Medium' }}
-                        >
-                          {t('mandalart.subGoalEdit.add')}
-                        </Text>
-                      </Pressable>
-                    )}
-                  </View>
-
-                  {actions.length === 0 ? (
-                    <View className="py-8 border border-dashed border-gray-300 rounded-lg">
-                      <Text
-                        className="text-sm text-gray-400 text-center"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                      >
-                        {t('mandalart.subGoalEdit.noActions')}
-                      </Text>
-                    </View>
-                  ) : (
-                    <GestureHandlerRootView>
-                      <SortableList
-                        data={actions}
-                        keyExtractor={(action) => action.id}
-                        itemHeight={52}
-                        onDragEnd={handleDragEnd}
-                        renderItem={({ item: action, index: idx }) => (
-                          <View className="flex-row items-center bg-white border border-gray-200 rounded-lg p-2 mb-2">
-                            {/* Handle + Position */}
-                            <View className="flex-row items-center mr-2">
-                              <GripVertical size={16} color="#9ca3af" />
-                              <Text
-                                className="text-sm text-gray-400 ml-1 w-5"
-                                style={{ fontFamily: 'Pretendard-Regular' }}
-                              >
-                                {idx + 1}.
-                              </Text>
-                            </View>
-
-                            {/* Action Content */}
-                            <View className="flex-1">
-                              {editingActionId === action.id ? (
-                                <View className="flex-row items-center" style={{ gap: 4 }}>
-                                  <TextInput
-                                    value={editingActionTitle}
-                                    onChangeText={setEditingActionTitle}
-                                    className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
-                                    style={{ fontFamily: 'Pretendard-Regular' }}
-                                    autoFocus
-                                    onSubmitEditing={() => handleActionTitleSave(action.id)}
-                                  />
-                                  <Pressable
-                                    onPress={() => handleActionTitleSave(action.id)}
-                                    className="p-1"
-                                  >
-                                    <Check size={18} color="#10b981" />
-                                  </Pressable>
-                                  <Pressable
-                                    onPress={() => {
-                                      setEditingActionId(null)
-                                      setEditingActionTitle('')
-                                    }}
-                                    className="p-1"
-                                  >
-                                    <X size={18} color="#6b7280" />
-                                  </Pressable>
-                                </View>
-                              ) : (
-                                <Pressable
-                                  onPress={() => {
-                                    setEditingActionId(action.id)
-                                    setEditingActionTitle(action.title)
-                                  }}
-                                  className="py-1"
-                                >
-                                  <Text
-                                    className="text-sm text-gray-900"
-                                    style={{ fontFamily: 'Pretendard-Regular' }}
-                                  >
-                                    {action.title}
-                                  </Text>
-                                </Pressable>
-                              )}
-                            </View>
-
-                            {/* Type Badge */}
-                            <Pressable
-                              onPress={() => openTypeSelector(action)}
-                              className="flex-row items-center px-2.5 py-1.5 bg-gray-100 rounded-lg ml-2 active:bg-gray-200"
-                            >
-                              <ActionTypeIcon type={action.type} size={12} />
-                              <Text
-                                className="text-xs text-gray-600 ml-1"
-                                style={{ fontFamily: 'Pretendard-Medium' }}
-                              >
-                                {getTranslatedTypeDetails(action)}
-                              </Text>
-                            </Pressable>
-
-                            {/* Delete */}
-                            <Pressable
-                              onPress={() => handleActionDelete(action)}
-                              className="p-1.5 ml-2"
-                            >
-                              <Trash2 size={14} color="#ef4444" />
-                            </Pressable>
-                          </View>
-                        )}
-                      />
-                    </GestureHandlerRootView>
-                  )}
-                </View>
-
-                {/* Bottom padding */}
-                <View className="h-8" />
-              </ScrollView>
-              ) : (
-              /* Type Selector View */
-              <ScrollView style={{ padding: 20 }}>
-                {/* Action Title */}
-                {selectedAction && (
+                <ScrollView style={{ padding: 20 }}>
                   <Text
                     className="text-sm text-gray-500 mb-4"
                     style={{ fontFamily: 'Pretendard-Regular' }}
                   >
-                    {t('mandalart.subGoalEdit.selectTypeDesc', { title: selectedAction.title })}
+                    {t('mandalart.subGoalEdit.description')}
                   </Text>
-                )}
 
-                {/* AI Suggestion */}
-                {aiSuggestion && (
-                  <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-                    <Text
-                      className="text-sm text-blue-900"
-                      style={{ fontFamily: 'Pretendard-Medium' }}
-                    >
-                      💡 {t('mandalart.subGoalEdit.autoSuggestion')}: {getTranslatedTypeLabel(aiSuggestion.type as ActionType)}
-                    </Text>
-                    <View className="flex-row items-center mt-1">
-                      <Info size={12} color="#1e40af" />
-                      <Text
-                        className="text-xs text-blue-700 ml-1 flex-1"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                      >
-                        {getTranslatedSuggestionReason(aiSuggestion)} ({t('mandalart.subGoalEdit.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                {/* Type Selection */}
-                <View className="mb-4">
-                  <Text
-                    className="text-sm text-gray-700 mb-2"
-                    style={{ fontFamily: 'Pretendard-SemiBold' }}
-                  >
-                    {t('mandalart.modal.subGoal.actionTypeLabel')}
-                  </Text>
-                  <View style={{ gap: 8 }}>
-                    {TYPE_OPTIONS.map((option) => (
-                      <Pressable
-                        key={option.type}
-                        onPress={() => setSelectedType(option.type)}
-                        className={`flex-row items-center p-4 rounded-xl border ${
-                          selectedType === option.type
-                            ? 'border-gray-900 bg-gray-50'
-                            : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        <View
-                          className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${
-                            selectedType === option.type
-                              ? 'border-gray-900 bg-gray-900'
-                              : 'border-gray-300'
-                          }`}
+                  {/* Sub-goal Title */}
+                  <View className="mb-6">
+                    {isEditingSubGoalTitle ? (
+                      <View className="flex-row items-center" style={{ gap: 8 }}>
+                        <TextInput
+                          value={subGoalTitle}
+                          onChangeText={setSubGoalTitle}
+                          placeholder={t('mandalart.subGoalEdit.subGoalPlaceholder')}
+                          className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-base"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                          autoFocus
+                          onSubmitEditing={handleSubGoalTitleSave}
+                        />
+                        <Pressable
+                          onPress={handleSubGoalTitleSave}
+                          disabled={isSaving}
+                          className="p-2"
                         >
-                          {selectedType === option.type && (
-                            <View className="w-2 h-2 rounded-full bg-white" />
+                          {isSaving ? (
+                            <ActivityIndicator size="small" color="#10b981" />
+                          ) : (
+                            <Check size={20} color="#10b981" />
                           )}
-                        </View>
-                        <View className="mr-2">{option.icon}</View>
-                        <View className="flex-1">
+                        </Pressable>
+                        <Pressable
+                          onPress={() => {
+                            setSubGoalTitle(subGoal.title)
+                            setIsEditingSubGoalTitle(false)
+                          }}
+                          className="p-2"
+                        >
+                          <X size={20} color="#6b7280" />
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={() => setIsEditingSubGoalTitle(true)}
+                        className="flex-row items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50"
+                      >
+                        <Text
+                          className="flex-1 text-base text-gray-900"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {subGoalTitle}
+                        </Text>
+                        <Pencil size={16} color="#9ca3af" />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Actions List */}
+                  <View className="mb-4">
+                    <View className="flex-row items-center justify-between mb-3">
+                      {actions.length < 8 && (
+                        <Pressable
+                          onPress={handleActionAdd}
+                          className="flex-row items-center px-3 py-2 border border-gray-200 rounded-lg bg-white"
+                        >
+                          <Plus size={16} color="#2563eb" />
                           <Text
-                            className="text-sm text-gray-900"
+                            className="text-sm text-primary ml-1"
                             style={{ fontFamily: 'Pretendard-Medium' }}
                           >
-                            {option.label}
+                            {t('mandalart.subGoalEdit.add')}
                           </Text>
-                          <Text
-                            className="text-xs text-gray-500 mt-0.5"
-                            style={{ fontFamily: 'Pretendard-Regular' }}
-                          >
-                            {option.description}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    ))}
+                        </Pressable>
+                      )}
+                    </View>
+
+                    {actions.length === 0 ? (
+                      <View className="py-8 border border-dashed border-gray-300 rounded-lg">
+                        <Text
+                          className="text-sm text-gray-400 text-center"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {t('mandalart.subGoalEdit.noActions')}
+                        </Text>
+                      </View>
+                    ) : (
+                      <GestureHandlerRootView>
+                        <SortableList
+                          data={actions}
+                          keyExtractor={(action) => action.id}
+                          itemHeight={52}
+                          onDragEnd={handleDragEnd}
+                          renderItem={({ item: action, index: idx }) => (
+                            <View className="flex-row items-center bg-white border border-gray-200 rounded-lg p-2 mb-2">
+                              {/* Handle + Position */}
+                              <View className="flex-row items-center mr-2">
+                                <GripVertical size={16} color="#9ca3af" />
+                                <Text
+                                  className="text-sm text-gray-400 ml-1 w-5"
+                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                >
+                                  {idx + 1}.
+                                </Text>
+                              </View>
+
+                              {/* Action Content */}
+                              <View className="flex-1">
+                                {editingActionId === action.id ? (
+                                  <View className="flex-row items-center" style={{ gap: 4 }}>
+                                    <TextInput
+                                      value={editingActionTitle}
+                                      onChangeText={setEditingActionTitle}
+                                      className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
+                                      style={{ fontFamily: 'Pretendard-Regular' }}
+                                      autoFocus
+                                      onSubmitEditing={() => handleActionTitleSave(action.id)}
+                                    />
+                                    <Pressable
+                                      onPress={() => handleActionTitleSave(action.id)}
+                                      className="p-1"
+                                    >
+                                      <Check size={18} color="#10b981" />
+                                    </Pressable>
+                                    <Pressable
+                                      onPress={() => {
+                                        setEditingActionId(null)
+                                        setEditingActionTitle('')
+                                      }}
+                                      className="p-1"
+                                    >
+                                      <X size={18} color="#6b7280" />
+                                    </Pressable>
+                                  </View>
+                                ) : (
+                                  <Pressable
+                                    onPress={() => {
+                                      setEditingActionId(action.id)
+                                      setEditingActionTitle(action.title)
+                                    }}
+                                    className="py-1"
+                                  >
+                                    <Text
+                                      className="text-sm text-gray-900"
+                                      style={{ fontFamily: 'Pretendard-Regular' }}
+                                    >
+                                      {action.title}
+                                    </Text>
+                                  </Pressable>
+                                )}
+                              </View>
+
+                              {/* Type Badge */}
+                              <Pressable
+                                onPress={() => openTypeSelector(action)}
+                                className="flex-row items-center px-2.5 py-1.5 bg-gray-100 rounded-lg ml-2 active:bg-gray-200"
+                              >
+                                <ActionTypeIcon type={action.type} size={12} />
+                                <Text
+                                  className="text-xs text-gray-600 ml-1"
+                                  style={{ fontFamily: 'Pretendard-Medium' }}
+                                >
+                                  {getTranslatedTypeDetails(action)}
+                                </Text>
+                              </Pressable>
+
+                              {/* Delete */}
+                              <Pressable
+                                onPress={() => handleActionDelete(action)}
+                                className="p-1.5 ml-2"
+                              >
+                                <Trash2 size={14} color="#ef4444" />
+                              </Pressable>
+                            </View>
+                          )}
+                        />
+                      </GestureHandlerRootView>
+                    )}
                   </View>
-                </View>
 
-                {/* Routine Settings */}
-                {selectedType === 'routine' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                  {/* Bottom padding */}
+                  <View className="h-8" />
+                </ScrollView>
+              ) : (
+                /* Type Selector View */
+                <ScrollView style={{ padding: 20 }}>
+                  {/* Action Title */}
+                  {selectedAction && (
                     <Text
-                      className="text-base text-gray-900 mb-3"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      className="text-sm text-gray-500 mb-4"
+                      style={{ fontFamily: 'Pretendard-Regular' }}
                     >
-                      {t('mandalart.modal.routine.title')}
+                      {t('mandalart.subGoalEdit.selectTypeDesc', { title: selectedAction.title })}
                     </Text>
+                  )}
 
-                    {/* Frequency Select - Button Style */}
-                    <View className="mb-3">
+                  {/* AI Suggestion */}
+                  {aiSuggestion && (
+                    <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
                       <Text
-                        className="text-sm text-gray-700 mb-2"
+                        className="text-sm text-blue-900"
                         style={{ fontFamily: 'Pretendard-Medium' }}
                       >
-                        {t('mandalart.modal.routine.repeatCycle')}
+                        💡 {t('mandalart.subGoalEdit.autoSuggestion')}: {getTranslatedTypeLabel(aiSuggestion.type as ActionType)}
                       </Text>
-                      <View className="flex-row" style={{ gap: 8 }}>
-                        {FREQUENCY_OPTIONS.map((option) => (
-                          <Pressable
-                            key={option.value}
-                            onPress={() => {
-                              setRoutineFrequency(option.value)
-                              // Reset count to appropriate default when frequency changes
-                              setRoutineCountPerPeriod(1)
-                              setRoutineWeekdays([])
-                              setShowCustomMonthlyInput(false)
-                              setCustomMonthlyValue('')
-                            }}
-                            className={`flex-1 py-2.5 rounded-lg border items-center ${
-                              routineFrequency === option.value
-                                ? 'bg-gray-900 border-gray-900'
-                                : 'bg-white border-gray-300'
+                      <View className="flex-row items-center mt-1">
+                        <Info size={12} color="#1e40af" />
+                        <Text
+                          className="text-xs text-blue-700 ml-1 flex-1"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {getTranslatedSuggestionReason(aiSuggestion)} ({t('mandalart.subGoalEdit.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Type Selection */}
+                  <View className="mb-4">
+                    <Text
+                      className="text-sm text-gray-700 mb-2"
+                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    >
+                      {t('mandalart.modal.subGoal.actionTypeLabel')}
+                    </Text>
+                    <View style={{ gap: 8 }}>
+                      {TYPE_OPTIONS.map((option) => (
+                        <Pressable
+                          key={option.type}
+                          onPress={() => setSelectedType(option.type)}
+                          className={`flex-row items-center p-4 rounded-xl border ${selectedType === option.type
+                              ? 'border-gray-900 bg-gray-50'
+                              : 'border-gray-200 bg-white'
                             }`}
-                          >
-                            <Text
-                              className={`text-sm ${
-                                routineFrequency === option.value
-                                  ? 'text-white'
-                                  : 'text-gray-700'
+                        >
+                          <View
+                            className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${selectedType === option.type
+                                ? 'border-gray-900 bg-gray-900'
+                                : 'border-gray-300'
                               }`}
+                          >
+                            {selectedType === option.type && (
+                              <View className="w-2 h-2 rounded-full bg-white" />
+                            )}
+                          </View>
+                          <View className="mr-2">{option.icon}</View>
+                          <View className="flex-1">
+                            <Text
+                              className="text-sm text-gray-900"
                               style={{ fontFamily: 'Pretendard-Medium' }}
                             >
                               {option.label}
                             </Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    </View>
-
-                    {/* Weekly Weekdays Selection */}
-                    {routineFrequency === 'weekly' && (
-                      <View className="mb-3">
-                        <Text className="text-sm text-gray-700 mb-2">
-                          {t('mandalart.modal.routine.weekdayLabel')}
-                        </Text>
-                        <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                          {weekdays.map((day) => (
-                            <Pressable
-                              key={day.value}
-                              onPress={() => handleWeekdayToggle(day.value)}
-                              className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                                routineWeekdays.includes(day.value)
-                                  ? 'bg-gray-900 border-gray-900'
-                                  : 'bg-white border-gray-300'
-                              }`}
+                            <Text
+                              className="text-xs text-gray-500 mt-0.5"
+                              style={{ fontFamily: 'Pretendard-Regular' }}
                             >
-                              <Text
-                                className={`text-sm font-medium ${
-                                  routineWeekdays.includes(day.value)
-                                    ? 'text-white'
-                                    : 'text-gray-700'
-                                }`}
-                              >
-                                {day.short}
-                              </Text>
-                            </Pressable>
-                          ))}
-                        </View>
-                        <View className="flex-row items-center mt-2">
-                          <Info size={12} color="#9ca3af" />
-                          <Text className="text-xs text-gray-400 ml-1">
-                            {t('actionType.selector.weekdayHint')}
-                          </Text>
-                        </View>
-
-                        {/* Weekly Count (when no weekdays selected) */}
-                        {routineWeekdays.length === 0 && (
-                          <View className="mt-3">
-                            <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.weeklyGoal')}</Text>
-                            <View className="flex-row" style={{ gap: 8 }}>
-                              {WEEKLY_COUNT_OPTIONS.map((count) => (
-                                <Pressable
-                                  key={count}
-                                  onPress={() => setRoutineCountPerPeriod(count)}
-                                  className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                                    routineCountPerPeriod === count
-                                      ? 'bg-gray-900 border-gray-900'
-                                      : 'bg-white border-gray-300'
-                                  }`}
-                                >
-                                  <Text
-                                    className={`text-sm font-medium ${
-                                      routineCountPerPeriod === count
-                                        ? 'text-white'
-                                        : 'text-gray-700'
-                                    }`}
-                                  >
-                                    {count}
-                                  </Text>
-                                </Pressable>
-                              ))}
-                            </View>
+                              {option.description}
+                            </Text>
                           </View>
-                        )}
-                      </View>
-                    )}
-
-                    {/* Monthly Count */}
-                    {routineFrequency === 'monthly' && (
-                      <View className="mb-3">
-                        <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.monthlyGoal')}</Text>
-                        <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
-                          {MONTHLY_COUNT_OPTIONS.map((count) => (
-                            <Pressable
-                              key={count}
-                              onPress={() => {
-                                setRoutineCountPerPeriod(count)
-                                setShowCustomMonthlyInput(false)
-                              }}
-                              className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                                routineCountPerPeriod === count && !showCustomMonthlyInput
-                                  ? 'bg-gray-900 border-gray-900'
-                                  : 'bg-white border-gray-300'
-                              }`}
-                            >
-                              <Text
-                                className={`text-sm font-medium ${
-                                  routineCountPerPeriod === count && !showCustomMonthlyInput
-                                    ? 'text-white'
-                                    : 'text-gray-700'
-                                }`}
-                              >
-                                {count}
-                              </Text>
-                            </Pressable>
-                          ))}
-                          {/* Custom Input - inline */}
-                          {showCustomMonthlyInput ? (
-                            <View className="flex-row items-center" style={{ gap: 4 }}>
-                              <TextInput
-                                value={customMonthlyValue}
-                                onChangeText={(text) => {
-                                  const num = text.replace(/[^0-9]/g, '')
-                                  const limitedNum = num ? Math.min(parseInt(num), 31) : 0
-                                  setCustomMonthlyValue(limitedNum > 0 ? String(limitedNum) : '')
-                                  if (limitedNum > 0) {
-                                    setRoutineCountPerPeriod(limitedNum)
-                                  }
-                                }}
-                                placeholder="?"
-                                keyboardType="number-pad"
-                                maxLength={2}
-                                className="w-9 h-9 border border-gray-900 bg-gray-900 rounded-lg text-sm text-center text-white"
-                                placeholderTextColor="#9ca3af"
-                                autoFocus
-                              />
-                            </View>
-                          ) : (
-                            <Pressable
-                              onPress={() => {
-                                setShowCustomMonthlyInput(true)
-                                setCustomMonthlyValue(
-                                  !MONTHLY_COUNT_OPTIONS.includes(routineCountPerPeriod)
-                                    ? String(routineCountPerPeriod)
-                                    : ''
-                                )
-                              }}
-                              className="w-9 h-9 rounded-lg items-center justify-center border border-dashed border-gray-400"
-                            >
-                              <Text className="text-sm font-medium text-gray-500">+</Text>
-                            </Pressable>
-                          )}
-                        </View>
-                        <View className="flex-row items-center mt-2">
-                          <Info size={12} color="#9ca3af" />
-                          <Text className="text-xs text-gray-400 ml-1">
-                            {t('mandalart.modal.routine.dailyHint')}
-                          </Text>
-                        </View>
-                      </View>
-                    )}
-                  </View>
-                )}
-
-                {/* Mission Settings */}
-                {selectedType === 'mission' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                    <Text
-                      className="text-base text-gray-900 mb-3"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('mandalart.modal.mission.title')}
-                    </Text>
-
-                    {/* Completion Type */}
-                    <View className="mb-3">
-                      <Text
-                        className="text-sm text-gray-700 mb-2"
-                        style={{ fontFamily: 'Pretendard-Medium' }}
-                      >
-                        {t('mandalart.modal.mission.completionType')}
-                      </Text>
-                      <View style={{ gap: 8 }}>
-                        {MISSION_COMPLETION_OPTIONS.map((option) => (
-                          <Pressable
-                            key={option.value}
-                            onPress={() => {
-                              setMissionCompletionType(option.value)
-                            }}
-                            className={`flex-row items-center p-4 rounded-lg border ${
-                              missionCompletionType === option.value
-                                ? 'border-gray-900 bg-white'
-                                : 'border-gray-200 bg-white'
-                            }`}
-                          >
-                            <View
-                              className={`w-4 h-4 rounded-full border-2 mr-3 items-center justify-center ${
-                                missionCompletionType === option.value
-                                  ? 'border-gray-900'
-                                  : 'border-gray-300'
-                              }`}
-                            >
-                              {missionCompletionType === option.value && (
-                                <View className="w-2 h-2 rounded-full bg-gray-900" />
-                              )}
-                            </View>
-                            <View className="flex-1">
-                              <Text
-                                className="text-sm text-gray-900"
-                                style={{ fontFamily: 'Pretendard-Medium' }}
-                              >
-                                {option.title}
-                              </Text>
-                              <Text
-                                className="text-xs text-gray-500 mt-0.5"
-                                style={{ fontFamily: 'Pretendard-Regular' }}
-                              >
-                                {option.description}
-                              </Text>
-                            </View>
-                          </Pressable>
-                        ))}
-                      </View>
+                        </Pressable>
+                      ))}
                     </View>
+                  </View>
 
-                    {/* Period Cycle (for periodic missions) */}
-                    {missionCompletionType === 'periodic' && (
-                      <View className="mt-3">
+                  {/* Routine Settings */}
+                  {selectedType === 'routine' && (
+                    <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                      <Text
+                        className="text-base text-gray-900 mb-3"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('mandalart.modal.routine.title')}
+                      </Text>
+
+                      {/* Frequency Select - Button Style */}
+                      <View className="mb-3">
                         <Text
                           className="text-sm text-gray-700 mb-2"
                           style={{ fontFamily: 'Pretendard-Medium' }}
                         >
-                          {t('mandalart.modal.mission.periodCycle')}
+                          {t('mandalart.modal.routine.repeatCycle')}
                         </Text>
-                        <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                          {PERIOD_CYCLE_OPTIONS.map((option) => (
+                        <View className="flex-row" style={{ gap: 8 }}>
+                          {FREQUENCY_OPTIONS.map((option) => (
                             <Pressable
                               key={option.value}
                               onPress={() => {
-                                setMissionPeriodCycle(option.value)
+                                setRoutineFrequency(option.value)
+                                // Reset count to appropriate default when frequency changes
+                                setRoutineCountPerPeriod(1)
+                                setRoutineWeekdays([])
+                                setShowCustomMonthlyInput(false)
+                                setCustomMonthlyValue('')
                               }}
-                              className={`px-4 py-2.5 rounded-lg border ${
-                                missionPeriodCycle === option.value
+                              className={`flex-1 py-2.5 rounded-lg border items-center ${routineFrequency === option.value
                                   ? 'bg-gray-900 border-gray-900'
                                   : 'bg-white border-gray-300'
-                              }`}
+                                }`}
                             >
                               <Text
-                                className={`text-sm ${
-                                  missionPeriodCycle === option.value
+                                className={`text-sm ${routineFrequency === option.value
                                     ? 'text-white'
                                     : 'text-gray-700'
-                                }`}
+                                  }`}
                                 style={{ fontFamily: 'Pretendard-Medium' }}
                               >
                                 {option.label}
@@ -1300,28 +1041,261 @@ export default function SubGoalEditModal({
                           ))}
                         </View>
                       </View>
-                    )}
-                  </View>
-                )}
 
-                {/* Reference Info */}
-                {selectedType === 'reference' && (
-                  <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                    <View className="flex-row items-center">
-                      <Info size={16} color="#6b7280" />
-                      <Text
-                        className="text-sm text-gray-500 ml-2"
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                      >
-                        {t('mandalart.modal.referenceInfo')}
-                      </Text>
+                      {/* Weekly Weekdays Selection */}
+                      {routineFrequency === 'weekly' && (
+                        <View className="mb-3">
+                          <Text className="text-sm text-gray-700 mb-2">
+                            {t('mandalart.modal.routine.weekdayLabel')}
+                          </Text>
+                          <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+                            {weekdays.map((day) => (
+                              <Pressable
+                                key={day.value}
+                                onPress={() => handleWeekdayToggle(day.value)}
+                                className={`w-9 h-9 rounded-lg items-center justify-center border ${routineWeekdays.includes(day.value)
+                                    ? 'bg-gray-900 border-gray-900'
+                                    : 'bg-white border-gray-300'
+                                  }`}
+                              >
+                                <Text
+                                  className={`text-sm font-medium ${routineWeekdays.includes(day.value)
+                                      ? 'text-white'
+                                      : 'text-gray-700'
+                                    }`}
+                                >
+                                  {day.short}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                          <View className="flex-row items-center mt-2">
+                            <Info size={12} color="#9ca3af" />
+                            <Text className="text-xs text-gray-400 ml-1">
+                              {t('actionType.selector.weekdayHint')}
+                            </Text>
+                          </View>
+
+                          {/* Weekly Count (when no weekdays selected) */}
+                          {routineWeekdays.length === 0 && (
+                            <View className="mt-3">
+                              <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.weeklyGoal')}</Text>
+                              <View className="flex-row" style={{ gap: 8 }}>
+                                {WEEKLY_COUNT_OPTIONS.map((count) => (
+                                  <Pressable
+                                    key={count}
+                                    onPress={() => setRoutineCountPerPeriod(count)}
+                                    className={`w-9 h-9 rounded-lg items-center justify-center border ${routineCountPerPeriod === count
+                                        ? 'bg-gray-900 border-gray-900'
+                                        : 'bg-white border-gray-300'
+                                      }`}
+                                  >
+                                    <Text
+                                      className={`text-sm font-medium ${routineCountPerPeriod === count
+                                          ? 'text-white'
+                                          : 'text-gray-700'
+                                        }`}
+                                    >
+                                      {count}
+                                    </Text>
+                                  </Pressable>
+                                ))}
+                              </View>
+                            </View>
+                          )}
+                        </View>
+                      )}
+
+                      {/* Monthly Count */}
+                      {routineFrequency === 'monthly' && (
+                        <View className="mb-3">
+                          <Text className="text-sm text-gray-700 mb-2">{t('mandalart.modal.routine.monthlyGoal')}</Text>
+                          <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
+                            {MONTHLY_COUNT_OPTIONS.map((count) => (
+                              <Pressable
+                                key={count}
+                                onPress={() => {
+                                  setRoutineCountPerPeriod(count)
+                                  setShowCustomMonthlyInput(false)
+                                }}
+                                className={`w-9 h-9 rounded-lg items-center justify-center border ${routineCountPerPeriod === count && !showCustomMonthlyInput
+                                    ? 'bg-gray-900 border-gray-900'
+                                    : 'bg-white border-gray-300'
+                                  }`}
+                              >
+                                <Text
+                                  className={`text-sm font-medium ${routineCountPerPeriod === count && !showCustomMonthlyInput
+                                      ? 'text-white'
+                                      : 'text-gray-700'
+                                    }`}
+                                >
+                                  {count}
+                                </Text>
+                              </Pressable>
+                            ))}
+                            {/* Custom Input - inline */}
+                            {showCustomMonthlyInput ? (
+                              <View className="flex-row items-center" style={{ gap: 4 }}>
+                                <TextInput
+                                  value={customMonthlyValue}
+                                  onChangeText={(text) => {
+                                    const num = text.replace(/[^0-9]/g, '')
+                                    const limitedNum = num ? Math.min(parseInt(num), 31) : 0
+                                    setCustomMonthlyValue(limitedNum > 0 ? String(limitedNum) : '')
+                                    if (limitedNum > 0) {
+                                      setRoutineCountPerPeriod(limitedNum)
+                                    }
+                                  }}
+                                  placeholder="?"
+                                  keyboardType="number-pad"
+                                  maxLength={2}
+                                  className="w-9 h-9 border border-gray-900 bg-gray-900 rounded-lg text-sm text-center text-white"
+                                  placeholderTextColor="#9ca3af"
+                                  autoFocus
+                                />
+                              </View>
+                            ) : (
+                              <Pressable
+                                onPress={() => {
+                                  setShowCustomMonthlyInput(true)
+                                  setCustomMonthlyValue(
+                                    !MONTHLY_COUNT_OPTIONS.includes(routineCountPerPeriod)
+                                      ? String(routineCountPerPeriod)
+                                      : ''
+                                  )
+                                }}
+                                className="w-9 h-9 rounded-lg items-center justify-center border border-dashed border-gray-400"
+                              >
+                                <Text className="text-sm font-medium text-gray-500">+</Text>
+                              </Pressable>
+                            )}
+                          </View>
+                          <View className="flex-row items-center mt-2">
+                            <Info size={12} color="#9ca3af" />
+                            <Text className="text-xs text-gray-400 ml-1">
+                              {t('mandalart.modal.routine.dailyHint')}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
                     </View>
-                  </View>
-                )}
+                  )}
 
-                {/* Bottom spacing */}
-                <View className="h-8" />
-              </ScrollView>
+                  {/* Mission Settings */}
+                  {selectedType === 'mission' && (
+                    <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                      <Text
+                        className="text-base text-gray-900 mb-3"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('mandalart.modal.mission.title')}
+                      </Text>
+
+                      {/* Completion Type */}
+                      <View className="mb-3">
+                        <Text
+                          className="text-sm text-gray-700 mb-2"
+                          style={{ fontFamily: 'Pretendard-Medium' }}
+                        >
+                          {t('mandalart.modal.mission.completionType')}
+                        </Text>
+                        <View style={{ gap: 8 }}>
+                          {MISSION_COMPLETION_OPTIONS.map((option) => (
+                            <Pressable
+                              key={option.value}
+                              onPress={() => {
+                                setMissionCompletionType(option.value)
+                              }}
+                              className={`flex-row items-center p-4 rounded-lg border ${missionCompletionType === option.value
+                                  ? 'border-gray-900 bg-white'
+                                  : 'border-gray-200 bg-white'
+                                }`}
+                            >
+                              <View
+                                className={`w-4 h-4 rounded-full border-2 mr-3 items-center justify-center ${missionCompletionType === option.value
+                                    ? 'border-gray-900'
+                                    : 'border-gray-300'
+                                  }`}
+                              >
+                                {missionCompletionType === option.value && (
+                                  <View className="w-2 h-2 rounded-full bg-gray-900" />
+                                )}
+                              </View>
+                              <View className="flex-1">
+                                <Text
+                                  className="text-sm text-gray-900"
+                                  style={{ fontFamily: 'Pretendard-Medium' }}
+                                >
+                                  {option.title}
+                                </Text>
+                                <Text
+                                  className="text-xs text-gray-500 mt-0.5"
+                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                >
+                                  {option.description}
+                                </Text>
+                              </View>
+                            </Pressable>
+                          ))}
+                        </View>
+                      </View>
+
+                      {/* Period Cycle (for periodic missions) */}
+                      {missionCompletionType === 'periodic' && (
+                        <View className="mt-3">
+                          <Text
+                            className="text-sm text-gray-700 mb-2"
+                            style={{ fontFamily: 'Pretendard-Medium' }}
+                          >
+                            {t('mandalart.modal.mission.periodCycle')}
+                          </Text>
+                          <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+                            {PERIOD_CYCLE_OPTIONS.map((option) => (
+                              <Pressable
+                                key={option.value}
+                                onPress={() => {
+                                  setMissionPeriodCycle(option.value)
+                                }}
+                                className={`px-4 py-2.5 rounded-lg border ${missionPeriodCycle === option.value
+                                    ? 'bg-gray-900 border-gray-900'
+                                    : 'bg-white border-gray-300'
+                                  }`}
+                              >
+                                <Text
+                                  className={`text-sm ${missionPeriodCycle === option.value
+                                      ? 'text-white'
+                                      : 'text-gray-700'
+                                    }`}
+                                  style={{ fontFamily: 'Pretendard-Medium' }}
+                                >
+                                  {option.label}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Reference Info */}
+                  {selectedType === 'reference' && (
+                    <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                      <View className="flex-row items-center">
+                        <Info size={16} color="#6b7280" />
+                        <Text
+                          className="text-sm text-gray-500 ml-2"
+                          style={{ fontFamily: 'Pretendard-Regular' }}
+                        >
+                          {t('mandalart.modal.referenceInfo')}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Bottom spacing */}
+                  <View className="h-8" />
+                </ScrollView>
               )}
             </Pressable>
           </Pressable>

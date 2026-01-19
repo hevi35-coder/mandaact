@@ -14,7 +14,7 @@ import {
 // v20.2: Import separated modules
 import { getCommonRules } from './prompts/common.ts'
 import { getStepPrompts, getSubGoalPrompt } from './prompts/step-prompts.ts'
-import { sanitize, cleanMessage, cleanJson, stripJargon, JARGON_PATTERNS, cleanKeyword } from './utils/sanitize.ts'
+import { sanitize, cleanMessage, cleanJson, stripJargon, JARGON_PATTERNS, cleanKeyword, extractKeywordFromDescription } from './utils/sanitize.ts'
 import { getStepLabel, getNextStepInfo } from './utils/step-labels.ts'
 
 
@@ -704,64 +704,151 @@ async function suggestSubGoals(
     priorityArea?: string
     detailedContext?: string
     language?: string
+    existingSubGoals?: string[]  // NEW: Already selected sub-goals
   },
   sessionId?: string,
   userId?: string,
   supabase?: any
 ) {
   const isEn = !!(payload.language && payload.language.startsWith('en'));
-  const systemPrompt = `
-### IDENTITY: You are a Strategic Mandalart Consultant specializing in creating punchy, meaningful labels.
-### TASK: Suggest exactly 3 strategic sub-goals (pillars) for the user's Core Goal.
-### RULES:
-1. OUTPUT: PURE JSON ONLY.
-2. FORMAT: { "sub_goals": [ { "keyword": "SHORT_LABEL", "description": "FULL_SENTENCE" }, ... ] }
-3. KEYWORD (CRITICAL): 
-   - MAX 10 characters (strictly enforced).
-   - MUST be a clean, standalone noun or phrase.
-   - ABSOLUTELY NO hanging punctuation (e.g., avoid "(", ",", "-", "의" at the end).
-   - If a word doesn't fit, find a SHORTER synonym or abbreviation.
-   - Bad: "앱스토어 최적화(A", "유료 광고 캠페("
-   - Good: "ASO 최적화", "유료 광고", "마케팅 전략", "체력 증진"
-4. DESCRIPTION: A full, professional sentence explaining the strategy.
-5. COUNT: Exactly 3.
-6. QUALITY: Provide distinct, high-quality strategic directions.
+  const existingSubGoals = payload.existingSubGoals || [];
 
-### EXAMPLES (Korean):
+  // 8 Strategic Dimensions for balanced recommendations
+  const DIMENSIONS = isEn ? [
+    { id: 'Skill', name: 'Skill/Competency', desc: 'Professional knowledge, skill development, learning' },
+    { id: 'Mindset', name: 'Mindset', desc: 'Thinking patterns, mental strength, motivation' },
+    { id: 'Environment', name: 'Environment/System', desc: 'Workspace, tools, processes' },
+    { id: 'Health', name: 'Health/Energy', desc: 'Physical health, energy management' },
+    { id: 'Finance', name: 'Finance/Resources', desc: 'Budget, revenue, investment' },
+    { id: 'Network', name: 'Network', desc: 'Relationships, collaboration, community' },
+    { id: 'Visibility', name: 'Visibility/Branding', desc: 'Marketing, PR, recognition' },
+    { id: 'Data', name: 'Data/Analysis', desc: 'Performance tracking, optimization, feedback' }
+  ] : [
+    { id: 'Skill', name: '기술/역량', desc: '전문 지식, 스킬 개발, 학습' },
+    { id: 'Mindset', name: '마인드셋', desc: '사고방식, 멘탈, 동기부여' },
+    { id: 'Environment', name: '환경/시스템', desc: '작업 환경, 도구, 프로세스' },
+    { id: 'Health', name: '건강/체력', desc: '신체 건강, 에너지 관리' },
+    { id: 'Finance', name: '재정/자원', desc: '자금, 예산, 수익' },
+    { id: 'Network', name: '네트워크', desc: '인맥, 협력, 커뮤니티' },
+    { id: 'Visibility', name: '가시성/브랜딩', desc: '홍보, 마케팅, 인지도' },
+    { id: 'Data', name: '데이터/분석', desc: '성과 측정, 최적화, 피드백' }
+  ];
+
+  const dimensionList = DIMENSIONS.map((d, i) => `${i + 1}. ${d.name}: ${d.desc}`).join('\n');
+
+  // Build exclusion context
+  const exclusionContext = existingSubGoals.length > 0
+    ? `\n### ALREADY SELECTED (MUST EXCLUDE):\n${existingSubGoals.map(s => `- "${s}"`).join('\n')}\n\n⚠️ DO NOT suggest anything similar to the above. Suggest from DIFFERENT strategic dimensions.`
+    : '';
+
+  const selectedCount = existingSubGoals.length;
+  const remainingCount = 8 - selectedCount;
+
+  const systemPrompt = `
+### IDENTITY: You are a Strategic Life Architect.
+### TASK: Generate exactly 3 strategic pillars for the user's Core Goal.
+
+### 8 STRATEGIC DIMENSIONS (for balanced goal-setting):
+${dimensionList}
+
+${exclusionContext}
+
+### DIVERSITY RULE:
+- The user needs ${remainingCount} more sub-goals out of 8 total
+- Each suggestion should come from a DIFFERENT dimension
+- Prioritize dimensions NOT YET covered by existing selections
+- Ensure suggestions complement (not duplicate) existing ones
+
+### CRITICAL OUTPUT FORMAT:
 {
   "sub_goals": [
-    { "keyword": "ASO 전략", "description": "앱 스토어 최적화(ASO)를 통해 전환율을 높이고 검색 순위를 상위권으로 끌어올립니다." },
-    { "keyword": "SNS 마케팅", "description": "인스타그램과 틱톡을 활용해 초기 유저들의 참여를 유도하고 브랜드 인지도를 높입니다." },
-    { "keyword": "유료 광고", "description": "Meta 및 Google 검색 광고를 집행하여 타겟팅된 신규 가입자를 효율적으로 확보합니다." }
+    { "keyword": "SHORT_LABEL", "description": "FULL_STRATEGIC_SENTENCE", "dimension": "DIMENSION_ID" },
+    { "keyword": "SHORT_LABEL", "description": "FULL_STRATEGIC_SENTENCE", "dimension": "DIMENSION_ID" },
+    { "keyword": "SHORT_LABEL", "description": "FULL_STRATEGIC_SENTENCE", "dimension": "DIMENSION_ID" }
+  ]
+}
+
+### RULES FOR "keyword":
+- MUST be 2-4 words MAXIMUM
+- MUST be a NOUN PHRASE (e.g., "시장 분석", "핵심 기술", "체력 관리")
+- Max ${isEn ? '25' : '15'} characters
+- NEVER use verb endings like "-하기", "-기반으로", "-을 위한"
+- Think: "What would this appear as on a BADGE or CATEGORY LABEL?"
+
+### RULES FOR "description":
+- MUST be a COMPLETE SENTENCE (15-30 words)
+- Explain WHY this pillar matters and WHAT it includes
+- MUST be significantly longer than the keyword
+
+### RULES FOR "dimension":
+- MUST be one of: Skill, Mindset, Environment, Health, Finance, Network, Visibility, Data
+- Each suggestion should ideally be from a DIFFERENT dimension
+
+### EXAMPLE (Korean):
+Core Goal: "앱 스토어 1위 달성"
+{
+  "sub_goals": [
+    { "keyword": "ASO 최적화", "description": "스토어 검색 알고리즘을 분석하여 앱 노출과 다운로드 전환율을 극대화합니다.", "dimension": "Data" },
+    { "keyword": "바이럴 마케팅", "description": "사용자 공유를 유도하는 루프를 설계하고 SNS 기반의 커뮤니티 정체성을 확립합니다.", "dimension": "Visibility" },
+    { "keyword": "개발 역량", "description": "최신 기술 스택을 학습하고 안정적인 앱 성능을 위한 기술적 기반을 강화합니다.", "dimension": "Skill" }
   ]
 }
 
 LANGUAGE: ${isEn ? 'English' : 'Korean (Polite)'}`;
 
   const userPrompt = `CORE GOAL: ${payload.coreGoal}
-(Generate 3 strategic pillars with CLEAN, word-based keywords following the rules above.)`;
+${existingSubGoals.length > 0 ? `\nALREADY SELECTED: ${existingSubGoals.join(', ')}\n\nProvide 3 NEW suggestions from DIFFERENT dimensions.` : '\nGenerate 3 strategic pillars from diverse dimensions.'}`;
+
+  // Increase temperature for more diverse suggestions
+  const temperature = existingSubGoals.length > 0 ? 0.7 : 0.5;
 
   const result = await callPerplexity([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt }
-  ], sessionId, userId, supabase);
+  ], sessionId, userId, supabase, temperature);
 
-  // Post-processing: Clean up keywords in suggestions
+  console.log('[suggestSubGoals] Raw AI result:', JSON.stringify(result, null, 2));
+  console.log('[suggestSubGoals] Existing sub-goals:', existingSubGoals);
+
+  // Post-processing: Clean, validate, and filter duplicates
   if (result && Array.isArray(result.sub_goals)) {
-    result.sub_goals = result.sub_goals.map((item: any) => {
-      if (item.keyword) {
-        item.keyword = cleanKeyword(item.keyword);
-        // Strict length enforcement
-        if (item.keyword.length > 10) {
-          item.keyword = item.keyword.substring(0, 10).trim();
+    result.sub_goals = result.sub_goals
+      .map((item: any) => {
+        if (!item.keyword || !item.description) return null;
+
+        let keyword = cleanKeyword(item.keyword);
+        const description = item.description;
+        const dimension = item.dimension || 'Skill'; // Default dimension
+
+        // Safety check: If keyword is suspiciously long or identical to description
+        if (keyword.length > (isEn ? 30 : 20) || keyword === description) {
+          console.log(`[suggestSubGoals] Suspicious keyword detected: "${keyword}", extracting from description`);
+          keyword = extractKeywordFromDescription(description, isEn);
         }
-      }
-      return item;
-    });
+
+        return { keyword, description, dimension };
+      })
+      .filter((item: any) => item !== null)
+      // Filter out any suggestions that match existing sub-goals
+      .filter((item: any) => {
+        const isDuplicate = existingSubGoals.some(existing =>
+          existing.toLowerCase() === item.keyword.toLowerCase() ||
+          existing.includes(item.keyword) ||
+          item.keyword.includes(existing)
+        );
+        if (isDuplicate) {
+          console.log(`[suggestSubGoals] Filtered duplicate: "${item.keyword}"`);
+        }
+        return !isDuplicate;
+      });
   }
+
+  console.log('[suggestSubGoals] Final result:', JSON.stringify(result, null, 2));
 
   return result;
 }
+
+
 
 async function summarizeToKeyword(
   payload: {
@@ -774,21 +861,23 @@ async function summarizeToKeyword(
 ) {
   const isEn = !!(payload.language && payload.language.startsWith('en'));
   const systemPrompt = `
-### IDENTITY: You are an expert at information condensation and strategic labeling for Mandalarts.
-### TASK: Summarize the input text into ONE punchy, clear keyword or short phrase for a Mandalart grid cell.
+### IDENTITY: You are an expert at information condensation and strategic labeling for Mandalart grids.
+### TASK: Transform the input text into ONE punchy, clear keyword or short noun phrase.
 ### RULES:
 1. OUTPUT: PURE JSON ONLY. { "keyword": "...", "description": "..." }
-2. KEYWORD (STRICLY ENFORCED): 
-   - MAX 10 characters (including spaces). 
-   - MUST be a Noun or Noun Phrase that captures the CORE ESSENCE.
+2. KEYWORD (STRATEGY): 
+   - Preferably under ${isEn ? '20' : '10'} characters (including spaces). 
+   - Can exceed this (up to ${isEn ? '25' : '15'} max) if clarity is required.
+   - MUST be a NOUN or NOUN PHRASE (e.g., "시장 분석", "기술 연구").
+   - NEVER use descriptive suffixes like "-하기", "-기반으로", "-을 위한", "-을 통해".
    - ABSOLUTELY NO trailing punctuation, parentheses, or ellipses.
-   - DO NOT just cut the text. REWRITE it into a complete, standalone label.
-   - Bad: "Analyze the", "경쟁사 시장을 분", "앱스토어 최적화(", "마케팅 전략..."
-   - Good: "Market Study", "시장 분석", "ASO 최적화", "체력 증진", "SNS 유입"
+   - DO NOT just cut the text. REWRITE it into a complete, standalone "Badge" style label.
+   - Bad: "Analyze the", "경쟁사 시장을 분", "앱스토어 최적화(", "마케팅 전략...", "운동을 하기"
+   - Good: "Market Study", "시장 분석", "ASO 최적화", "체력 증진", "SNS 유입", "운동 루틴"
 3. DESCRIPTION: Keep the original input text for context.
 4. LANGUAGE: ${isEn ? 'English' : 'Korean'}
 
-### EXAMPLES:
+### EXAMPLES (Korean):
 Input: "Analyze the competitor market to identify unique selling points."
 Output: { "keyword": "Market Study", "description": "Analyze the competitor market to identify unique selling points." }
 
@@ -807,10 +896,6 @@ LANGUAGE: ${isEn ? 'English' : 'Korean'}`;
   // Post-processing: Clean up keywords in suggestions
   if (result && result.keyword) {
     result.keyword = cleanKeyword(result.keyword);
-    // Safety: ensure it doesn't exceed 10 chars
-    if (result.keyword.length > 10) {
-      result.keyword = result.keyword.substring(0, 10).trim();
-    }
   }
 
   return result;
@@ -860,38 +945,147 @@ Detailed Context: ${payload.detailedContext || 'None'} `;
  * v20.4: New suggestion logic for manual input mode.
  * Generates 8 specific actions for a SINGLE sub-goal.
  */
+/* 
+ * v20.4.2: Action Types Support (Smart Inference)
+ * - Returns { title, type } objects instead of plain strings.
+ * - type: 'routine' | 'mission'
+ */
 async function suggestActionsV2(
   payload: {
     subGoal: string
     coreGoal?: string
     language?: string
+    existingActions?: string[]
   },
   sessionId?: string,
   userId?: string,
   supabase?: any
 ) {
   const isEn = payload.language && payload.language.startsWith('en');
-  const corePrompt = GET_CORE_PROMPT(isEn);
+  const existingActions = payload.existingActions || [];
 
-  const systemPrompt = `${corePrompt}
+  // Build exclusion context
+  const exclusionContext = existingActions.length > 0
+    ? `\n### ALREADY SELECTED (MUST EXCLUDE):\n${existingActions.map(s => `- "${s}"`).join('\n')}\n\n⚠️ DO NOT suggest anything similar to the above. PIVOT to different methods or aspects.`
+    : '';
 
-### Task Specifics:
-Design exactly 8 specific, actionable items for the given sub-goal. 
-Each item should be concise (max 15 characters) and starting with a verb if possible.
-Ensure variety (some routines, some one-time tasks).
+  const systemPrompt = `
+### IDENTITY: You are a Strategic Action Planner.
+### TASK: Design exactly 3 high-impact, actionable items for the given sub-goal.
 
-### Output Format(JSON):
-  {
-    "actions": ["Action 1", "Action 2", ..., "Action 8"]
-  } `;
+### RULES:
+1. OUTPUT: JSON Object with key "actions".
+2. FORMAT: Array of objects: { "keyword": "SHORT_LABEL", "description": "FULL_STRATEGIC_SENTENCE", "type": "routine" | "mission" | "reference", "frequency"?: "daily" | "weekly" | "monthly", "cycle"?: "daily" | "weekly" | "monthly" | "quarterly" | "yearly" }
+3. MAX LENGTH (Keyword): ${isEn ? '25' : '15'} characters (strictly enforced).
+4. STRUCTURE: Use "Verb + Object" format for keyword (e.g., "매일 스쿼트 50개", "뉴스레터 1건 발행").
+5. TYPE & SCHEDULE DEFINITION:
+   - "routine": Recurring habits. MUST include "frequency".
+   - "mission": One-time milestones with a review cycle. MUST include "cycle".
+   - "reference": Mindset, philosophy, or non-actionable guidelines (e.g., "시장 중심 사고", "사용자 경험 우선"). Does NOT need frequency/cycle.
+   - Analyze keyword and description to set correct type. Mindset/Values should be "reference".
+
+${exclusionContext}
+
+### RULES FOR "keyword":
+- MUST be 2-4 words MAXIMUM
+- MUST be a NOUN PHRASE or short action phrase
+- Max ${isEn ? '25' : '15'} characters
+- Think: "What would this appear as on a BADGE or CATEGORY LABEL?"
+
+### RULES FOR "description":
+- MUST be a COMPLETE SENTENCE (15-30 words)
+- Explain WHY this action matters and HOW it contributes to the sub-goal
+- MUST be significantly longer than the keyword
+
+### EXAMPLES (Korean):
+Sub-goal: "체력 증진"
+{
+  "actions": [
+    { "keyword": "매일 7,000보 걷기", "description": "일상적인 활동량을 확보하여 기초 체력을 다지고 신체 리듬을 개선합니다.", "type": "routine", "frequency": "daily" },
+    { "keyword": "주 3회 고강도 운동", "description": "전문적인 프로그램을 통해 근력을 강화하고 체내 에너지 대사를 최적화합니다.", "type": "routine", "frequency": "weekly" },
+    { "keyword": "전문 피티 10회 등록", "description": "체계적인 지도를 받기 위한 환경을 구축하여 장기적인 운동 습관의 기초를 마련합니다.", "type": "mission", "cycle": "weekly" }
+  ]
+}
+`;
 
   const userPrompt = `Sub-Goal: ${payload.subGoal}
-${payload.coreGoal ? `Context (Core Goal): ${payload.coreGoal}` : ''}`;
+${payload.coreGoal ? `Context (Core Goal): ${payload.coreGoal}` : ''}
+${existingActions.length > 0 ? `\nExisting Actions Count: ${existingActions.length}` : ''}
+Generate 3 actions.`;
 
-  return await callPerplexity([
+  // Increase temperature slightly for variety
+  const temperature = 0.6;
+
+  const response = await callPerplexity([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt }
-  ], sessionId, userId, supabase)
+  ], sessionId, userId, supabase, temperature);
+
+  let rawActions: any[] = [];
+
+  // 1. Attempt to extract array from various response structures
+  if (response && Array.isArray(response.actions)) {
+    rawActions = response.actions;
+  } else if (Array.isArray(response)) {
+    rawActions = response;
+  } else if (response && response.message && typeof response.message === 'string') {
+    try {
+      // Try to find JSON array in message
+      const arrayMatch = response.message.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        const parsed = JSON.parse(arrayMatch[0]);
+        if (Array.isArray(parsed)) rawActions = parsed;
+      } else {
+        // Try to find JSON object with actions key
+        const objectMatch = response.message.match(/\{[\s\S]*\}/);
+        if (objectMatch) {
+          const parsed = JSON.parse(objectMatch[0]);
+          if (parsed.actions && Array.isArray(parsed.actions)) {
+            rawActions = parsed.actions;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to recover actions from message:', e);
+    }
+  }
+
+  // 2. Sanitize and Normalize
+  const cleanActions = rawActions
+    .map(item => {
+      // Handle string fallback (default to routine)
+      if (typeof item === 'string') {
+        const trimmed = item.trim();
+        return trimmed ? { keyword: trimmed, description: '', type: 'routine' } : null;
+      }
+
+      // Handle object
+      if (typeof item === 'object' && item !== null) {
+        let keyword = item.keyword || item.title || item.action || item.summary || Object.values(item).find(v => typeof v === 'string') || '';
+        keyword = String(keyword).trim();
+
+        let description = item.description || item.reason || '';
+        description = String(description).trim();
+
+        let type = String(item.type || 'routine').toLowerCase();
+        if (type !== 'routine' && type !== 'mission' && type !== 'reference') type = 'routine';
+
+        let frequency = item.frequency ? String(item.frequency).toLowerCase() : undefined;
+        if (frequency && !['daily', 'weekly', 'monthly'].includes(frequency)) frequency = undefined;
+
+        let cycle = item.cycle ? String(item.cycle).toLowerCase() : undefined;
+        if (cycle && !['daily', 'weekly', 'monthly', 'quarterly', 'yearly'].includes(cycle)) cycle = undefined;
+
+        return keyword ? { keyword, description, type, frequency, cycle } : null;
+      }
+      return null;
+    })
+    .filter(item => item !== null)
+    .slice(0, 3);
+
+  console.log(`[suggestActionsV2] Final actions: ${JSON.stringify(cleanActions)}`);
+
+  return { actions: cleanActions };
 }
 
 async function realityCheck(
@@ -1296,8 +1490,9 @@ ${isEn ? '### RESPOND IN ENGLISH. NO KOREAN.' : ''}
           currentDraft.center_goal = cg.summary;
           currentDraft.center_goal_detail = cg.detail || cg.summary;
         } else if (typeof cg === 'string') {
-          // Legacy string format - truncate for summary
-          currentDraft.center_goal = cg.length > 15 ? cg.substring(0, 15) : cg;
+          // Legacy string format - allow more room for summary
+          const maxLen = isEn ? 30 : 20;
+          currentDraft.center_goal = cg.length > maxLen ? cg.substring(0, maxLen).trim() : cg;
           currentDraft.center_goal_detail = cg;
         }
       }
@@ -1314,8 +1509,9 @@ ${isEn ? '### RESPOND IN ENGLISH. NO KOREAN.' : ''}
             currentDraft.sub_goals[i] = sg.summary;
             currentDraft.sub_goals_detail[i] = sg.detail || sg.summary;
           } else if (typeof sg === 'string' && sg.trim()) {
-            // Legacy string format - truncate for summary
-            currentDraft.sub_goals[i] = sg.length > 15 ? sg.substring(0, 15) : sg;
+            // Legacy string format
+            const maxLen = isEn ? 25 : 15;
+            currentDraft.sub_goals[i] = sg.length > maxLen ? sg.substring(0, maxLen).trim() : sg;
             currentDraft.sub_goals_detail[i] = sg;
           }
         });
@@ -1360,7 +1556,8 @@ ${isEn ? '### RESPOND IN ENGLISH. NO KOREAN.' : ''}
             detail = a.detail;
           } else {
             const content = a.content || a.title || '';
-            summary = content.length > 20 ? content.substring(0, 20) : content;
+            const maxLen = isEn ? 35 : 25;
+            summary = content.length > maxLen ? content.substring(0, maxLen).trim() : content;
             detail = content;
           }
 

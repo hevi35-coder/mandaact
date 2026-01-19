@@ -12,7 +12,8 @@ import {
     ScrollView,
     TextInput,
     useWindowDimensions,
-    StyleSheet, // Import StyleSheet for absoluteFillObject
+    StyleSheet,
+    Alert,
 } from 'react-native'
 import Animated, {
     FadeIn,
@@ -104,6 +105,21 @@ export function PreviewStep({
         const visualPos = [0, 1, 2, 3, 5, 6, 7, 8].find(v => visualToDataPosition(v) === dataPosition)
         const subGoal = getSubGoalByDataPosition(dataPosition)
 
+        // Ensure core goal is set before allowing expansion/sub-goal entry
+        if (!data.center_goal?.trim()) {
+            Alert.alert(
+                t('mandalart.create.manualInput.guideTitle', '만다라트 작성 안내'),
+                t('mandalart.create.validation.enterCoreGoal', '핵심 목표를 먼저 입력해주세요.'),
+                [
+                    {
+                        text: t('common.confirm', '확인'),
+                        onPress: () => setCoreGoalModalOpen(true)
+                    }
+                ]
+            )
+            return
+        }
+
         const vPos = visualPos ?? 4
         setLastVisualTappedPos(vPos)
         setHeroSubGoalTitle(subGoal?.title || '')
@@ -158,12 +174,9 @@ export function PreviewStep({
         }, 1000)
     }
 
-    const handleSubGoalEdit = (_dataPosition: number) => {
-        // v20.4: Animation test - Disabled modal inside expanded view
-        /*
+    const handleSubGoalEdit = (dataPosition: number) => {
         setSelectedSubGoalPosition(dataPosition)
         setSubGoalModalOpen(true)
-        */
     }
 
     const handleCoreGoalSave = (saveData: { title: string; centerGoal: string }) => {
@@ -172,6 +185,7 @@ export function PreviewStep({
             title: saveData.title,
             center_goal: saveData.centerGoal,
         })
+        setCoreGoalModalOpen(false)
     }
 
     const handleSubGoalSave = (saveData: { position: number; title: string; actions: Array<{ position: number; title: string; type?: string }> }) => {

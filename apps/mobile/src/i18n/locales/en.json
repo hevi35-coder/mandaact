@@ -751,15 +751,15 @@
           "tip3_desc": "Use clear keywords (e.g., Physical Strength) that\ndefine the area at a glance—acting as a 'pillar'\nthat can hold 8 different actions."
         },
         "aiSuggest": {
-          "title": "Get 'Help' from AI Coach",
-          "subtitle": "Suggested sub-goals aligned with your vision",
-          "getHelp": "Get Help",
+          "title": "AI-Suggested Sub-Goals",
+          "subtitle": "Ideas tailored to your vision",
+          "getHelp": "Get Ideas",
           "loading": "Analyzing personalized suggestions...",
-          "empty": "Bringing fresh ideas to fill your space.",
-          "tapToApply": "Tap to apply instantly",
+          "empty": "Tap the button to get AI-powered ideas",
+          "tapToApply": "Tap to apply",
           "suggested": "Suggested",
-          "getStarted": "Get AI Recommendations",
-          "refresh": "Refresh Ideas"
+          "getStarted": "Get AI Ideas",
+          "refresh": "Get New Ideas"
         }
       },
       "coreGoal": {

@@ -1,15 +1,15 @@
 import React from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { useTranslation } from 'react-i18next'
+import { Plus } from 'lucide-react-native'
 
 interface SubGoalCellProps {
   /** Sub-goal title to display */
   title: string
   /** Size of the cell (width and height) */
   size: number
-  /** Position number (1-8) - shown as label when variant is 'overview' */
+  /** Position number (1-8) - no longer displayed but kept for API compatibility */
   position?: number
-  /** Number of filled actions (shown in overview variant) */
+  /** Number of filled actions - no longer displayed but kept for API compatibility */
   filledActions?: number
   /** Total actions count (default 8) */
   totalActions?: number
@@ -17,8 +17,8 @@ interface SubGoalCellProps {
   onPress?: () => void
   /**
    * Variant determines the display style:
-   * - 'overview': Used in main 3x3 grid (shows position label and action count)
-   * - 'center': Used as center cell in expanded 3x3 action grid (no labels, larger text)
+   * - 'overview': Used in main 3x3 grid (minimalist: title only)
+   * - 'center': Used as center cell in expanded 3x3 action grid (larger text)
    */
   variant?: 'overview' | 'center'
   /** Number of lines to show before truncating */
@@ -31,22 +31,16 @@ interface SubGoalCellProps {
  * Shared component for displaying sub-goal cells with consistent styling.
  * Used in MandalartCreateScreen and MandalartDetailScreen.
  *
- * Design: Light blue background (bg-blue-50) with blue border
- * Consistent with web MandalartGrid.tsx
+ * Design: Minimalist - only shows title when filled, + icon when empty
+ * Light blue background (bg-blue-50) with blue border
  */
 export default function SubGoalCell({
   title,
   size,
-  position,
-  filledActions,
-  totalActions = 8,
   onPress,
   variant = 'overview',
-  numberOfLines = 2,
   borderRadius = 12,
 }: SubGoalCellProps) {
-  const { t } = useTranslation()
-  const isOverview = variant === 'overview'
   const isCenter = variant === 'center'
 
   const content = (
@@ -60,34 +54,22 @@ export default function SubGoalCell({
         },
       ]}
     >
-
-      {/* Position label - only in overview variant */}
-      {isOverview && position !== undefined && (
-        <Text style={styles.positionLabel}>{t('mandalart.cell.subGoalLabel', { position })}</Text>
-      )}
-
-      {/* Sub-goal title */}
+      {/* Minimalist design: only show title when filled */}
       {title ? (
         <Text
           style={[
             styles.title,
             isCenter && styles.titleCenter,
           ]}
-          numberOfLines={isCenter ? 3 : numberOfLines}
+          numberOfLines={3}
+          lineBreakStrategyIOS="hangul-word-priority"
+          textBreakStrategy="balanced"
         >
           {title}
         </Text>
-      ) : isOverview ? (
-        <Text style={styles.emptyTitle}>-</Text>
       ) : (
-        <Text style={styles.placeholder}>{t('mandalart.cell.subGoalPlaceholder')}</Text>
-      )}
-
-      {/* Action count - only in overview variant when title exists */}
-      {isOverview && title && filledActions !== undefined && (
-        <Text style={styles.actionCount}>
-          {t('mandalart.cell.actionCount', { filled: filledActions, total: totalActions })}
-        </Text>
+        /* Empty state: show + icon to encourage filling */
+        <Plus size={24} color="#d1d5db" strokeWidth={1.5} />
       )}
     </View>
   )
@@ -112,47 +94,26 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 8,
+    padding: 6,
     backgroundColor: '#eff6ff', // bg-blue-50
     borderWidth: 1,
     borderColor: '#bfdbfe', // border-blue-200
+    overflow: 'hidden',
   },
   pressed: {
     opacity: 0.8,
     backgroundColor: '#dbeafe', // bg-blue-100
   },
-  positionLabel: {
-    fontSize: 10,
-    color: '#9ca3af', // text-gray-400
-    marginBottom: 2,
-    fontFamily: 'Pretendard-Regular',
-  },
   title: {
-    fontSize: 12, // text-xs
-    fontFamily: 'Pretendard-Medium',
+    fontSize: 16,
+    fontFamily: 'Pretendard-SemiBold',
     color: '#1f2937', // text-gray-800
     textAlign: 'center',
+    lineHeight: 20,
   },
   titleCenter: {
-    fontSize: 14, // text-sm
-    fontFamily: 'Pretendard-SemiBold',
-  },
-  emptyTitle: {
-    fontSize: 12,
-    fontFamily: 'Pretendard-Medium',
-    color: '#1f2937',
-    textAlign: 'center',
-  },
-  placeholder: {
-    fontSize: 12,
-    fontFamily: 'Pretendard-Regular',
-    color: '#9ca3af', // text-gray-400
-    textAlign: 'center',
-  },
-  actionCount: {
-    fontSize: 10,
-    color: '#9ca3af', // text-gray-400
-    marginTop: 2,
-    fontFamily: 'Pretendard-Regular',
+    fontSize: 18, // Match CenterGoalCell
+    fontFamily: 'Pretendard-Bold',
+    lineHeight: 22,
   },
 })

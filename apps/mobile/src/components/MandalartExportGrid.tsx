@@ -113,7 +113,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
               {subGoal?.title && (
                 <Text
                   style={{
-                    fontFamily: 'Pretendard-SemiBold',
+                    fontFamily: 'Pretendard-Bold',
                     fontSize: fontSize.subGoal,
                     color: '#1f2937',
                     textAlign: 'center',
