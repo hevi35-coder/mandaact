@@ -59,7 +59,7 @@ import DeleteMandalartModal from '../components/DeleteMandalartModal'
 import SubGoalModalV2 from '../components/SubGoalModalV2'
 import ActionInputModal from '../components/ActionInputModal'
 import CoreGoalModal from '../components/CoreGoalModal'
-import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '../components'
+import { CenterGoalCell, SubGoalCell, MandalartFullGrid, TabletGuidance } from '../components'
 import type { RootStackParamList } from '../navigation/RootNavigator'
 import type { Action, SubGoal, ActionType } from '@mandaact/shared'
 import { logger } from '../lib/logger'
@@ -295,15 +295,27 @@ export default function MandalartDetailScreen() {
   }, [expandedSubGoal])
 
   const handleActionTap = useCallback((position: number) => {
-    if (!expandedSubGoal) return
+    console.log('[MandalartDetailScreen] handleActionTap called at position:', position);
+    console.log('[MandalartDetailScreen] expandedSubGoal state:', JSON.stringify({
+      id: expandedSubGoal?.id,
+      title: expandedSubGoal?.title,
+      position: expandedSubGoal?.position
+    }));
+
+    if (!expandedSubGoal) {
+      console.warn('[MandalartDetailScreen] No expandedSubGoal, ignoring tap');
+      return
+    }
 
     // If sub-goal is empty, open SubGoal Modal (Title Edit) first
     if (!expandedSubGoal.title || expandedSubGoal.title.trim() === '') {
+      console.log('[MandalartDetailScreen] Sub-goal title missing, opening SubGoalModalV2');
       setSelectedSubGoalForTitle(expandedSubGoal)
       setSubGoalModalV2Visible(true)
       return
     }
 
+    console.log('[MandalartDetailScreen] Sub-goal title present, opening ActionInputModal');
     // Otherwise, open Action Edit Modal with position context
     setSelectedActionPosition(position)
     setActionInputModalVisible(true)
@@ -833,11 +845,8 @@ export default function MandalartDetailScreen() {
           {/* iPad: Full 9x9 Grid */}
           {isTablet ? (
             (() => {
-              const headerHeight = 64 + insets.top
-              const verticalPadding = 48
-              const availableHeight = screenHeight - headerHeight - verticalPadding
-              const availableWidth = screenWidth - (CONTAINER_PADDING * 2)
-              const gridSize = Math.min(availableWidth, availableHeight, 800)
+              // Unified Tablet Grid Sizing (Matches PreviewStep.tsx)
+              const gridSize = Math.min(screenWidth - 64, screenHeight - 200)
 
               return (
                 <View style={{ alignItems: 'center', paddingHorizontal: CONTAINER_PADDING }} ref={gridRef} collapsable={false}>
@@ -850,14 +859,28 @@ export default function MandalartDetailScreen() {
                     gridSize={gridSize}
                     onCenterGoalPress={handleCenterGoalTap}
                     onSubGoalPress={(subGoal) => {
-                      setSelectedSubGoal(subGoal)
-                      setEditModalVisible(true)
+                      // Switch to V2 Modal for consistency
+                      setSelectedSubGoalForTitle(subGoal)
+                      setSubGoalModalV2Visible(true)
                     }}
-                    onActionPress={(subGoal, _action) => {
-                      setSelectedSubGoal(subGoal)
-                      setEditModalVisible(true)
+                    onActionPress={(subGoal, action) => {
+                      // Set expandedSubGoal context for modal saving
+                      setExpandedSubGoal(subGoal)
+
+                      // Logic mirroring handleActionTap (Phone)
+                      if (!subGoal.title || subGoal.title.trim() === '') {
+                        setSelectedSubGoalForTitle(subGoal)
+                        setSubGoalModalV2Visible(true)
+                        return
+                      }
+
+                      setSelectedActionPosition(action?.position || 1) // Default to 1 if missing, though unlikely on grid tap
+                      setActionInputModalVisible(true)
                     }}
                   />
+
+                  {/* Shared Tablet Guidance */}
+                  <TabletGuidance width={gridSize} />
                 </View>
               )
             })()

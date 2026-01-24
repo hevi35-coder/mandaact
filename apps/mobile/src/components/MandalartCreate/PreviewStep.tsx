@@ -25,12 +25,13 @@ import Animated, {
     Easing
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChevronLeft, Info, Check, RotateCw, Target, Lightbulb } from 'lucide-react-native'
+import { ChevronLeft, Info, Check, RotateCw, Target, Lightbulb, Plus } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
-import SubGoalModal from '../SubGoalModal'
-import { CenterGoalCell, SubGoalCell, MandalartFullGrid } from '..'
+import SubGoalModalV2 from '../SubGoalModalV2'
+import ActionInputModal from '../ActionInputModal'
+import { CenterGoalCell, SubGoalCell, MandalartFullGrid, TabletGuidance } from '..'
 import type { PreviewStepProps } from './types'
 
 // Grid layout constants
@@ -55,11 +56,18 @@ export function PreviewStep({
     const gridWidth = screenWidth - (CONTAINER_PADDING * 2) - (CARD_PADDING * 2)
     const cellSize = Math.floor((gridWidth - (CELL_GAP * 2)) / 3)
 
+    // Dynamic font sizes based on cell size (matching MandalartFullGrid)
+    const fontSize = {
+        action: Math.max(11, cellSize * 0.16),
+    }
+
     // Local state for modals and navigation
     const [expandedSection, setExpandedSection] = useState<number | null>(null)
     const [coreGoalModalOpen, setCoreGoalModalOpen] = useState(false)
-    const [subGoalModalOpen, setSubGoalModalOpen] = useState(false)
+    const [subGoalModalV2Open, setSubGoalModalV2Open] = useState(false)
     const [selectedSubGoalPosition, setSelectedSubGoalPosition] = useState<number | null>(null)
+    const [actionModalOpen, setActionModalOpen] = useState(false)
+    const [selectedActionPosition, setSelectedActionPosition] = useState<number | null>(null)
     const [lastVisualTappedPos, setLastVisualTappedPos] = useState<number | null>(null)
 
     // v20.4: Refined 3-Stage Animation State
@@ -175,8 +183,25 @@ export function PreviewStep({
     }
 
     const handleSubGoalEdit = (dataPosition: number) => {
+        // Enforce Core Goal first (Same as handleSubGoalPress)
+        if (!data.center_goal?.trim()) {
+            Alert.alert(
+                t('mandalart.create.manualInput.guideTitle', '만다라트 작성 안내'),
+                t('mandalart.create.validation.enterCoreGoal', '핵심 목표를 먼저 입력해주세요.'),
+                [
+                    {
+                        text: t('common.confirm', '확인'),
+                        onPress: () => setCoreGoalModalOpen(true)
+                    }
+                ]
+            )
+            return
+        }
+
+        const subGoal = getSubGoalByDataPosition(dataPosition)
         setSelectedSubGoalPosition(dataPosition)
-        setSubGoalModalOpen(true)
+        // Always use SubGoalModalV2 for consistency with MandalartDetailScreen
+        setSubGoalModalV2Open(true)
     }
 
     const handleCoreGoalSave = (saveData: { title: string; centerGoal: string }) => {
@@ -202,6 +227,19 @@ export function PreviewStep({
                 : sg
         )
         onUpdateData({ ...data, sub_goals: newSubGoals })
+    }
+
+    // Handler for SubGoalModalV2 (AI-assisted creation)
+    const handleSubGoalV2Save = (title: string) => {
+        if (!selectedSubGoalPosition) return
+        const newSubGoals = data.sub_goals.map((sg) =>
+            sg.position === selectedSubGoalPosition
+                ? { ...sg, title }
+                : sg
+        )
+        onUpdateData({ ...data, sub_goals: newSubGoals })
+        setSubGoalModalV2Open(false)
+        setSelectedSubGoalPosition(null)
     }
 
     const handleTitleChange = (text: string) => {
@@ -302,8 +340,8 @@ export function PreviewStep({
                 })}
             >
                 <Pressable
-                    onPress={() => handleSubGoalEdit(sectionDataPos)}
-                    className="items-center justify-center p-1.5 rounded-xl bg-white border border-gray-200 active:bg-gray-50"
+                    onPress={() => handleActionPress(sectionDataPos, actionDataPos)}
+                    className={`items-center justify-center p-1.5 rounded-xl border ${action?.title ? 'bg-white border-gray-200 active:bg-gray-50' : 'bg-gray-50 border-gray-100/50 active:bg-gray-100'}`}
                     style={{
                         width: cellSize,
                         height: cellSize,
@@ -311,23 +349,44 @@ export function PreviewStep({
                 >
                     {action?.title ? (
                         <Text
-                            className="text-center text-gray-800"
-                            style={{ fontSize: 12, fontFamily: 'Pretendard-Regular' }}
-                            numberOfLines={4}
+                            className="text-[15px] text-gray-800 text-center leading-5"
+                            numberOfLines={3}
                         >
                             {action.title}
                         </Text>
                     ) : (
-                        <Text
-                            className="text-center text-gray-300"
-                            style={{ fontSize: 12, fontFamily: 'Pretendard-Regular' }}
-                        >
-                            -
-                        </Text>
+                        <Plus size={20} color="#9ca3af" />
                     )}
                 </Pressable>
             </Animated.View>
         )
+    }
+
+    // Handler for action cell press - open action modal
+    const handleActionPress = (subGoalDataPos: number, actionDataPos: number) => {
+        setSelectedSubGoalPosition(subGoalDataPos)
+        setSelectedActionPosition(actionDataPos)
+        setActionModalOpen(true)
+    }
+
+    // Handler for action save
+    const handleActionSave = async (title: string, type: string, details?: any) => {
+        if (selectedSubGoalPosition === null || selectedActionPosition === null) return
+
+        const newSubGoals = data.sub_goals.map((sg) => {
+            if (sg.position === selectedSubGoalPosition) {
+                const newActions = sg.actions.map((a) =>
+                    a.position === selectedActionPosition
+                        ? { ...a, title, type }
+                        : a
+                )
+                return { ...sg, actions: newActions }
+            }
+            return sg
+        })
+        onUpdateData({ ...data, sub_goals: newSubGoals })
+        setActionModalOpen(false)
+        setSelectedActionPosition(null)
     }
 
     return (
@@ -398,7 +457,35 @@ export function PreviewStep({
                             gridSize={Math.min(screenWidth - 64, screenHeight - 200)}
                             onCenterGoalPress={handleCenterGoalPress}
                             onSubGoalPress={(subGoal) => handleSubGoalEdit(subGoal.position)}
-                            onActionPress={(subGoal) => handleSubGoalEdit(subGoal.position)}
+                            onActionPress={(subGoal, action) => {
+                                // Enforce Core Goal first
+                                if (!data.center_goal?.trim()) {
+                                    Alert.alert(
+                                        t('mandalart.create.manualInput.guideTitle', '만다라트 작성 안내'),
+                                        t('mandalart.create.validation.enterCoreGoal', '핵심 목표를 먼저 입력해주세요.'),
+                                        [
+                                            {
+                                                text: t('common.confirm', '확인'),
+                                                onPress: () => setCoreGoalModalOpen(true)
+                                            }
+                                        ]
+                                    )
+                                    return
+                                }
+
+                                // Enforce Sub Goal title
+                                if (!subGoal.title?.trim()) {
+                                    handleSubGoalEdit(subGoal.position)
+                                    return
+                                }
+
+                                handleActionPress(subGoal.position, action?.position || 1)
+                            }}
+                        />
+
+                        {/* Guide for Tablet (Split View) */}
+                        <TabletGuidance
+                            width={Math.min(screenWidth - 64, screenHeight - 200)}
                         />
                     </View>
                 ) : (
@@ -647,18 +734,36 @@ export function PreviewStep({
                 onSave={handleCoreGoalSave}
             />
 
+            {/* SubGoalModalV2 for all sub-goal editing */}
             {selectedSubGoalPosition !== null && (
-                <SubGoalModal
-                    visible={subGoalModalOpen}
-                    position={selectedSubGoalPosition}
+                <SubGoalModalV2
+                    visible={subGoalModalV2Open}
                     initialTitle={getSubGoalByDataPosition(selectedSubGoalPosition)?.title || ''}
-                    initialActions={getSubGoalByDataPosition(selectedSubGoalPosition)?.actions || []}
                     onClose={() => {
-                        setSubGoalModalOpen(false)
+                        setSubGoalModalV2Open(false)
                         setSelectedSubGoalPosition(null)
                     }}
-                    onSave={handleSubGoalSave}
-                    centerGoal={data.center_goal}
+                    onSave={handleSubGoalV2Save}
+                    coreGoal={data.center_goal}
+                    existingSubGoals={data.sub_goals.filter(sg => sg.title?.trim() && sg.position !== selectedSubGoalPosition).map(sg => sg.title)}
+                />
+            )}
+
+
+
+            {/* ActionInputModal for editing action items */}
+            {selectedSubGoalPosition !== null && selectedActionPosition !== null && (
+                <ActionInputModal
+                    visible={actionModalOpen}
+                    initialTitle={getSubGoalByDataPosition(selectedSubGoalPosition)?.actions.find(a => a.position === selectedActionPosition)?.title || ''}
+                    subGoalTitle={getSubGoalByDataPosition(selectedSubGoalPosition)?.title || ''}
+                    coreGoal={data.center_goal}
+                    existingActions={getSubGoalByDataPosition(selectedSubGoalPosition)?.actions.filter(a => a.title?.trim()).map(a => a.title) || []}
+                    onClose={() => {
+                        setActionModalOpen(false)
+                        setSelectedActionPosition(null)
+                    }}
+                    onSave={handleActionSave}
                 />
             )}
         </View>
