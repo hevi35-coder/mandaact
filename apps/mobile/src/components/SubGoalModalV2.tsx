@@ -8,8 +8,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Animated,
+  Easing,
 } from 'react-native'
-import { X, Check, Lightbulb, Sparkles, RefreshCcw, ChevronDown, ChevronUp } from 'lucide-react-native'
+import { X, Check, Lightbulb, Sparkles, RefreshCcw, ChevronDown, ChevronUp, PlusCircle } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +23,7 @@ interface SubGoalModalV2Props {
   initialTitle: string
   onSave: (title: string, description?: string) => void
   coreGoal: string
+  existingSubGoals?: string[]  // NEW: Already selected sub-goals to exclude from suggestions
 }
 
 const cleanKeyword = (keyword: string): string => {
@@ -38,12 +41,36 @@ export default function SubGoalModalV2({
   initialTitle,
   onSave,
   coreGoal,
+  existingSubGoals = [],
 }: SubGoalModalV2Props) {
   const { t, i18n } = useTranslation()
   const [title, setTitle] = useState('')
   const [suggestions, setSuggestions] = useState<{ keyword: string; description: string }[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [isGuideExpanded, setIsGuideExpanded] = useState(false)
+
+  // Animation for loading spinner
+  const [spinValue] = useState(new Animated.Value(0))
+
+  useEffect(() => {
+    if (isSuggesting || processingSuggestion !== null) {
+      Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start()
+    } else {
+      spinValue.setValue(0)
+    }
+  }, [isSuggesting, processingSuggestion])
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '-360deg'],
+  })
 
   useEffect(() => {
     if (visible) {
@@ -69,21 +96,29 @@ export default function SubGoalModalV2({
         coachingService.suggestSubGoals({
           coreGoal,
           language: i18n.language,
+          existingSubGoals,  // Pass already-selected sub-goals for exclusion
         }),
         timeoutPromise
-      ]) as any[]
+      ]) as any
 
-      // Correctly typecast result to expected structure, handling both old and new
-      const cleanedSuggestions = result.map((item: any) => {
-        // v21.4: Strict structure mapping
-        if (typeof item === 'string') return { keyword: item.substring(0, 10), description: item };
-        if (item.suggestion) return { keyword: item.suggestion.substring(0, 10), description: item.suggestion };
+      console.log('[SubGoalModalV2] Raw AI response:', JSON.stringify(result, null, 2));
+
+      // coachingService.suggestSubGoals already returns the sub_goals array
+      // So result IS the array, not an object with sub_goals property
+      const subGoals = Array.isArray(result) ? result : (result.sub_goals || result || []);
+
+      console.log('[SubGoalModalV2] SubGoals array:', JSON.stringify(subGoals, null, 2));
+
+      // Map to UI format
+      const cleanedSuggestions = subGoals.map((item: any) => {
+        console.log('[SubGoalModalV2] Processing item:', item);
         return {
-          keyword: item.keyword || item.title || (item.description || '').substring(0, 10),
+          keyword: item.keyword || item.title || '',
           description: item.description || item.reason || ''
         };
       });
 
+      console.log('[SubGoalModalV2] Cleaned suggestions:', cleanedSuggestions);
       setSuggestions(cleanedSuggestions)
     } catch (err: any) {
       console.error('Failed to fetch sub-goal suggestions:', err)
@@ -173,18 +208,14 @@ export default function SubGoalModalV2({
             <ScrollView className="p-5" showsVerticalScrollIndicator={false}>
               {/* Sub Goal Title Input */}
               <View className="mb-6">
-                <Text className="text-sm font-semibold text-gray-400 mb-2 ml-1" style={{ fontFamily: 'Pretendard-SemiBold' }}>
-                  {t('mandalart.modal.subGoal.subGoalLabel')}
-                </Text>
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
                   placeholder={t('mandalart.modal.subGoal.subGoalPlaceholder')}
                   className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-lg text-gray-900"
                   placeholderTextColor="#9ca3af"
-                  multiline
-                  numberOfLines={2}
-                  textAlignVertical="top"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSave}
                   style={{
                     fontFamily: 'Pretendard-SemiBold',
                     shadowColor: '#000',
@@ -244,7 +275,7 @@ export default function SubGoalModalV2({
 
               {/* AI Recommendations Section */}
               <View className="bg-purple-50/50 rounded-3xl p-5 border border-purple-100/50">
-                <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
                     <View className="bg-purple-100 p-2 rounded-xl mr-3">
                       <Sparkles size={18} color="#9333ea" />
@@ -269,7 +300,9 @@ export default function SubGoalModalV2({
                     className="ml-2 px-4 py-2 bg-purple-600 rounded-xl active:bg-purple-700 disabled:bg-purple-300"
                   >
                     {isSuggesting ? (
-                      <RefreshCcw size={18} color="#fff" className="animate-spin" />
+                      <Text className="text-purple-200 font-bold text-sm" style={{ fontFamily: 'Pretendard-Bold' }}>
+                        분석 중...
+                      </Text>
                     ) : (
                       <Text className="text-white font-bold text-sm" style={{ fontFamily: 'Pretendard-Bold' }}>
                         {t('mandalart.modal.subGoal.aiSuggest.getHelp')}
@@ -278,92 +311,95 @@ export default function SubGoalModalV2({
                   </Pressable>
                 </View>
 
-                <View className="gap-y-3">
-                  {isSuggesting ? (
-                    <View className="py-8 items-center justify-center">
-                      <RefreshCcw size={24} color="#9333ea" className="animate-spin mb-3 opacity-20" />
-                      <Text className="text-sm text-purple-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>
-                        {t('mandalart.modal.subGoal.aiSuggest.loading')}
-                      </Text>
-                    </View>
-                  ) : suggestions.length > 0 ? (
-                    <>
-                      {suggestions.slice(0, 3).map((suggestion, index) => {
-                        const itemDescription = suggestion.description;
-                        const itemKeyword = suggestion.keyword;
-
-                        if (!itemDescription) return null;
-
-                        const isProcessing = processingSuggestion === index;
-
-                        return (
-                          <Pressable
-                            key={index}
-                            onPress={() => !isProcessing && handleApplySuggestion(itemKeyword, itemDescription, index)}
-                            className={`bg-white border rounded-2xl overflow-hidden active:opacity-90 ${isProcessing ? 'border-purple-300' : 'border-purple-100/50'
-                              }`}
-                            style={{
-                              shadowColor: '#9333ea',
-                              shadowOffset: { width: 0, height: 4 },
-                              shadowOpacity: 0.04,
-                              shadowRadius: 10,
-                              elevation: 2,
-                            }}
-                          >
-                            <LinearGradient
-                              colors={isProcessing ? ['#faf5ff', '#f3e8ff'] : ['#ffffff', '#fafaff']}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 1 }}
-                              className="p-4"
-                            >
-                              {isProcessing ? (
-                                <View className="flex-row items-center justify-center py-2">
-                                  <RefreshCcw size={18} color="#9333ea" className="animate-spin mr-3" />
-                                  <Text className="text-purple-600 font-bold text-sm" style={{ fontFamily: 'Pretendard-Bold' }}>
-                                    {t('mandalart.modal.subGoal.aiSuggest.applying') || '생성된 계획 적용 중...'}
-                                  </Text>
-                                </View>
-                              ) : (
-                                <View className="flex-row items-start">
-                                  <View className="flex-1">
-                                    <View className="flex-row items-center mb-2">
-                                      <View className="bg-purple-100/80 px-2.5 py-1 rounded-lg border border-purple-200">
-                                        <Text className="text-[11px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
-                                          {cleanKeyword(itemKeyword)}
-                                        </Text>
-                                      </View>
-                                    </View>
-                                    <Text
-                                      className="text-[15px] text-gray-800 leading-6"
-                                      style={{ fontFamily: 'Pretendard-Medium' }}
-                                    >
-                                      {itemDescription}
-                                    </Text>
-                                  </View>
-                                  <View className="ml-2 mt-1">
-                                    <Check size={18} color="#d8b4fe" />
-                                  </View>
-                                </View>
-                              )}
-                            </LinearGradient>
-                          </Pressable>
-                        );
-                      })}
-                      <View className="flex-row items-center justify-center mt-2">
-                        <Sparkles size={12} color="#d8b4fe" />
-                        <Text className="text-[11px] text-purple-300 font-medium ml-1.5" style={{ fontFamily: 'Pretendard-Medium' }}>
-                          {t('mandalart.modal.subGoal.aiSuggest.tapToApply')}
+                {(isSuggesting || suggestions.length > 0) && (
+                  <View className="gap-y-3 mt-4">
+                    {isSuggesting ? (
+                      <View className="py-8 items-center justify-center">
+                        <Animated.View style={{ transform: [{ rotate: spin }], marginBottom: 12, opacity: 0.5 }}>
+                          <RefreshCcw size={24} color="#9333ea" />
+                        </Animated.View>
+                        <Text className="text-sm text-purple-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>
+                          {t('mandalart.modal.subGoal.aiSuggest.loading')}
                         </Text>
                       </View>
-                    </>
-                  ) : (
-                    <View className="py-4 items-center">
-                      <Text className="text-[13px] text-purple-300 font-medium text-center px-4" style={{ fontFamily: 'Pretendard-Medium' }}>
-                        {t('mandalart.modal.subGoal.aiSuggest.emptyHint') || (i18n.language.startsWith('en') ? 'Tap "Get Help" for AI suggestions' : '도움 받기 버튼을 눌러 AI 제안을 받아보세요')}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+                    ) : suggestions.length > 0 ? (
+                      <>
+                        {suggestions.slice(0, 3).map((suggestion, index) => {
+                          const itemDescription = suggestion.description;
+                          const itemKeyword = suggestion.keyword;
+
+                          if (!itemDescription) return null;
+
+                          const isProcessing = processingSuggestion === index;
+
+                          const isBestMatch = index === 0;
+
+                          return (
+                            <Pressable
+                              key={index}
+                              onPress={() => !isProcessing && handleApplySuggestion(itemKeyword, itemDescription, index)}
+                              className={`bg-white border rounded-2xl overflow-hidden active:opacity-90 ${isProcessing ? 'border-purple-300' : 'border-purple-100/50'
+                                }`}
+                              style={{
+                                shadowColor: '#9333ea',
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.04,
+                                shadowRadius: 10,
+                                elevation: 2,
+                              }}
+                            >
+                              <LinearGradient
+                                colors={isProcessing ? ['#faf5ff', '#f3e8ff'] : ['#ffffff', '#fafaff']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="px-4 pt-4 pb-3"
+                              >
+                                {isProcessing ? (
+                                  <View className="flex-row items-center justify-center py-2">
+                                    <Animated.View style={{ transform: [{ rotate: spin }], marginRight: 12 }}>
+                                      <RefreshCcw size={18} color="#9333ea" />
+                                    </Animated.View>
+                                    <Text className="text-purple-600 font-bold text-sm" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                      {t('mandalart.modal.subGoal.aiSuggest.applying') || '생성된 계획 적용 중...'}
+                                    </Text>
+                                  </View>
+                                ) : (
+                                  <View className="flex-row items-start">
+                                    <View className="flex-1">
+                                      <View className="flex-row items-center mb-2 flex-wrap gap-y-1">
+                                        <View className="bg-purple-100/80 px-3 py-1.5 rounded-lg border border-purple-200 mr-2">
+                                          <Text className="text-[13px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                            {cleanKeyword(itemKeyword)}
+                                          </Text>
+                                        </View>
+                                        {isBestMatch && (
+                                          <View className="bg-purple-600 px-2 py-0.5 rounded-full shadow-sm">
+                                            <Text className="text-[10px] text-white font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                              ✨ 추천
+                                            </Text>
+                                          </View>
+                                        )}
+                                      </View>
+                                      <Text
+                                        className="text-[15px] text-gray-800 leading-6"
+                                        style={{ fontFamily: 'Pretendard-Medium' }}
+                                      >
+                                        {itemDescription}
+                                      </Text>
+                                    </View>
+                                    <View className="ml-3 mt-1 bg-purple-50 p-1.5 rounded-full">
+                                      <PlusCircle size={20} color="#9333ea" />
+                                    </View>
+                                  </View>
+                                )}
+                              </LinearGradient>
+                            </Pressable>
+                          );
+                        })}
+                      </>
+                    ) : null}
+                  </View>
+                )}
               </View>
 
               {/* Bottom padding for safe area */}

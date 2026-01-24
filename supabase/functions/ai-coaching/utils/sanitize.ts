@@ -84,6 +84,50 @@ export const cleanKeyword = (keyword: string): string => {
     return keyword
         .replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣]+$/, '') // Remove trailing symbols/punctuation
         .replace(/\s*[(\[{]$/, '') // Remove trailing open brackets/braces
-        .replace(/\s*[(\[{][^)\]}]*$/, '') // Remove hanging open brackets that aren't closed
+        .replace(/\s*[(\[{][^\)\]}]*$/, '') // Remove hanging open brackets that aren't closed
+        .replace(/\s*(기반으로|하기|위한|통해|중심으로|관련|내용|항목|추가)$/, '') // Strip descriptive suffixes
         .trim();
+};
+
+/**
+ * Extract a punchy keyword from a verbose description
+ * Used when AI returns identical keyword and description
+ */
+export const extractKeywordFromDescription = (text: string, isEn: boolean): string => {
+    if (!text) return '';
+
+    const words = text.trim().split(/\s+/);
+
+    if (isEn) {
+        // English: Take first 2-4 words, max 25 chars
+        const extracted = words.slice(0, 4).join(' ');
+        if (extracted.length <= 25) return extracted;
+
+        // Fallback to 2 words if too long
+        return words.slice(0, 2).join(' ');
+    } else {
+        // Korean: Extract first noun phrase (up to 15 chars)
+        // Remove common sentence endings and connectors
+        let cleaned = text
+            .replace(/\s*(합니다|해요|하고|파악해요|분석하고|최적화하고|개선하고|강화하고|확보하고).*$/, '')
+            .replace(/\s*[-,.].*$/, '')
+            .trim();
+
+        // Limit to 15 chars, avoid cutting mid-word
+        if (cleaned.length > 15) {
+            cleaned = cleaned.substring(0, 15);
+            // Remove partial word at the end
+            cleaned = cleaned.replace(/\s+\S*$/, '').trim();
+        }
+
+        // Final cleanup
+        cleaned = cleanKeyword(cleaned);
+
+        // Fallback: if still empty or too short, take first 2 words
+        if (!cleaned || cleaned.length < 3) {
+            return words.slice(0, 2).join(' ');
+        }
+
+        return cleaned;
+    }
 };

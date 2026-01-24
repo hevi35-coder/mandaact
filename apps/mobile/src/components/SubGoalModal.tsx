@@ -480,9 +480,6 @@ export default function SubGoalModal({
               <ScrollView className="p-4">
                 {/* Sub-goal Title */}
                 <View className="mb-4">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">
-                    {t('mandalart.modal.subGoal.subGoalLabel')}
-                  </Text>
                   {editingTitleMode ? (
                     <View className="flex-row items-center" style={{ gap: 8 }}>
                       <TextInput
@@ -522,9 +519,6 @@ export default function SubGoalModal({
                 {/* Actions List with Drag Reorder */}
                 <View className="mb-4">
                   <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-sm font-medium text-gray-700">
-                      {t('mandalart.modal.subGoal.actionsLabel')}
-                    </Text>
                     <Pressable
                       onPress={handleAIActionSuggest}
                       disabled={isSuggesting || !title.trim()}

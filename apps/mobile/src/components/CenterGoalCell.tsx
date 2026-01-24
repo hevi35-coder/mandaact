@@ -47,7 +47,8 @@ export default function CenterGoalCell({
         <Text
           className="text-white text-center"
           style={styles.text}
-          numberOfLines={numberOfLines}
+          numberOfLines={3}
+          lineBreakStrategyIOS="hangul-word-priority"
         >
           {centerGoal}
         </Text>
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   text: {
-    fontSize: 14,
+    fontSize: 18,
     fontFamily: 'Pretendard-Bold',
     textShadowColor: 'rgba(0, 0, 0, 0.15)',
     textShadowOffset: { width: 0, height: 1 },
