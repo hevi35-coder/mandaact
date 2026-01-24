@@ -1006,6 +1006,9 @@ Sub-goal: "체력 증진"
     { "keyword": "전문 피티 10회 등록", "description": "체계적인 지도를 받기 위한 환경을 구축하여 장기적인 운동 습관의 기초를 마련합니다.", "type": "mission", "cycle": "weekly" }
   ]
 }
+
+### CRITICAL LANGUAGE RULE:
+LANGUAGE: ${isEn ? 'ENGLISH ONLY. ALL keywords and descriptions MUST be in English. NO Korean characters allowed.' : 'Korean (Polite). 모든 키워드와 설명은 한국어로 작성하세요.'}
 `;
 
   const userPrompt = `Sub-Goal: ${payload.subGoal}

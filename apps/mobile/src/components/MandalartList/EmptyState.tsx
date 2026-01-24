@@ -53,19 +53,19 @@ export function EmptyState({ onCreateNew, onShowTutorial }: EmptyStateProps) {
                 <View className="flex-row items-center mb-2">
                     <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
                     <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-                        {t('mandalart.list.empty.methodImage')}
+                        {t('mandalart.list.empty.benefit1')}
                     </Text>
                 </View>
                 <View className="flex-row items-center mb-2">
                     <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
                     <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-                        {t('mandalart.list.empty.methodText')}
+                        {t('mandalart.list.empty.benefit2')}
                     </Text>
                 </View>
                 <View className="flex-row items-center">
                     <View className="w-1 h-1 rounded-full bg-gray-400 mr-2" />
                     <Text className="text-sm text-gray-600" style={{ fontFamily: 'Pretendard-Regular' }}>
-                        {t('mandalart.list.empty.methodManual')}
+                        {t('mandalart.list.empty.benefit3')}
                     </Text>
                 </View>
             </View>

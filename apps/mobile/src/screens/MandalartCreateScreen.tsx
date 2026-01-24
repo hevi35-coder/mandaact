@@ -2,10 +2,10 @@
  * MandalartCreateScreen - Refactored
  * 
  * Main screen for creating new Mandalarts.
- * Orchestrates the creation flow: Method Selection -> Input -> Preview/Edit -> Save.
+ * Simplified to only support Manual Input (Fresh Start).
  */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -19,18 +19,10 @@ import { suggestActionType } from '@mandaact/shared'
 import { logger, trackMandalartCreated } from '../lib'
 import { mandalartKeys } from '../hooks/useMandalarts'
 import {
-  MethodSelector,
   ProgressOverlay,
-  ImageInputStep,
-  TextInputStep,
   PreviewStep,
-  type InputMethod,
-  type Step,
   type MandalartData,
 } from '../components/MandalartCreate'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { View, Text, Pressable } from 'react-native'
-import { ArrowLeft } from 'lucide-react-native'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
 
@@ -41,77 +33,46 @@ export default function MandalartCreateScreen() {
   const queryClient = useQueryClient()
 
   // State
-  const [step, setStep] = useState<Step>('select-method')
-  const [inputMethod, setInputMethod] = useState<InputMethod>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [progressMessage, setProgressMessage] = useState('')
   const [mandalartData, setMandalartData] = useState<MandalartData | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
+  // Initialize empty data on mount
+  useEffect(() => {
+    // Position convention: 1-8 (consistent with web app and database)
+    const emptyData: MandalartData = {
+      title: '',
+      center_goal: '',
+      sub_goals: Array.from({ length: 8 }, (_, i) => ({
+        position: i + 1,
+        title: '',
+        actions: Array.from({ length: 8 }, (_, j) => ({
+          position: j + 1,
+          title: '',
+        })),
+      })),
+    }
+    setMandalartData(emptyData)
+  }, [])
+
   // Handlers
   const handleBack = useCallback(() => {
-    if (step === 'select-method') {
-      navigation.goBack()
-    } else if (step === 'input') {
-      setStep('select-method')
-      setInputMethod(null)
-    } else if (step === 'preview') {
-      Alert.alert(
-        t('common.confirm'),
-        t('mandalart.create.confirmDiscard'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('common.discard'),
-            style: 'destructive',
-            onPress: () => {
-              setStep('select-method')
-              setInputMethod(null)
-              setMandalartData(null)
-            }
+    Alert.alert(
+      t('common.confirm'),
+      t('mandalart.create.confirmDiscard'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.discard'),
+          style: 'destructive',
+          onPress: () => {
+            navigation.goBack()
           }
-        ]
-      )
-    }
-  }, [step, navigation, t])
-
-  const handleSelectMethod = useCallback((method: InputMethod) => {
-    if (method === 'coaching') {
-      navigation.navigate('CoachingGate')
-      return
-    }
-    setInputMethod(method)
-    if (method === 'manual') {
-      // Initialize empty data for manual mode
-      // Position convention: 1-8 (consistent with web app and database)
-      const emptyData: MandalartData = {
-        title: '',
-        center_goal: '',
-        sub_goals: Array.from({ length: 8 }, (_, i) => ({
-          position: i + 1,
-          title: '',
-          actions: Array.from({ length: 8 }, (_, j) => ({
-            position: j + 1,
-            title: '',
-          })),
-        })),
-      }
-      setMandalartData(emptyData)
-      setStep('preview')
-    } else {
-      setStep('input')
-    }
-  }, [])
-
-  const handleDataReady = useCallback((data: MandalartData) => {
-    setMandalartData(data)
-    setStep('preview')
-  }, [])
-
-  const handleLoading = useCallback((loading: boolean, message: string = '') => {
-    setIsLoading(loading)
-    setProgressMessage(message)
-  }, [])
+        }
+      ]
+    )
+  }, [navigation, t])
 
   const handleSave = useCallback(async () => {
     if (!user || !mandalartData) return
@@ -123,8 +84,8 @@ export default function MandalartCreateScreen() {
     setIsSaving(true)
     try {
       // 1. Create Mandalart
-      // Map InputMethod to DB input_method value
-      const dbInputMethod = inputMethod === 'image' ? 'image' : inputMethod === 'text' ? 'text' : 'manual'
+      // Always 'manual' now
+      const dbInputMethod = 'manual'
 
       const { data: mandalart, error: mandalartError } = await supabase
         .from('mandalarts')
@@ -220,7 +181,7 @@ export default function MandalartCreateScreen() {
       )
       trackMandalartCreated({
         mandalart_id: mandalart.id,
-        input_method: inputMethod || 'manual',
+        input_method: 'manual',
         sub_goals_count: subGoalsCount,
         actions_count: actionsCount,
       })
@@ -237,49 +198,14 @@ export default function MandalartCreateScreen() {
     } finally {
       setIsSaving(false)
     }
-  }, [user, mandalartData, inputMethod, navigation, queryClient, t])
+  }, [user, mandalartData, navigation, queryClient, t])
 
   // Render
   return (
     <>
       <ProgressOverlay visible={isLoading} message={progressMessage} />
 
-      {step === 'select-method' && (
-        <SafeAreaView className="flex-1 bg-gray-50">
-          <View className="flex-row items-center px-5 h-16 border-b border-gray-100">
-            <Pressable onPress={handleBack} className="p-2.5 -ml-2.5 rounded-full active:bg-gray-100">
-              <ArrowLeft size={24} color="#374151" />
-            </Pressable>
-            <View className="flex-row items-center ml-2">
-              <Text className="text-xl text-gray-900" style={{ fontFamily: 'Pretendard-Bold' }}>
-                {t('mandalart.create.title')}
-              </Text>
-              <Text className="text-base text-gray-500 ml-3" style={{ fontFamily: 'Pretendard-Medium' }}>
-                {t('mandalart.create.subtitle')}
-              </Text>
-            </View>
-          </View>
-          <MethodSelector onSelectMethod={handleSelectMethod} />
-        </SafeAreaView>
-      )}
-
-      {step === 'input' && inputMethod === 'image' && (
-        <ImageInputStep
-          onBack={handleBack}
-          onNext={handleDataReady}
-          setLoading={handleLoading}
-        />
-      )}
-
-      {step === 'input' && inputMethod === 'text' && (
-        <TextInputStep
-          onBack={handleBack}
-          onNext={handleDataReady}
-          setLoading={handleLoading}
-        />
-      )}
-
-      {step === 'preview' && mandalartData && (
+      {mandalartData && (
         <PreviewStep
           data={mandalartData}
           onBack={handleBack}
@@ -291,3 +217,4 @@ export default function MandalartCreateScreen() {
     </>
   )
 }
+

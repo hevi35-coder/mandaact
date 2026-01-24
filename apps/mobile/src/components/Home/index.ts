@@ -11,5 +11,7 @@ export { XPInfoSection } from './XPInfoSection'
 export { BadgeCollectionSection } from './BadgeCollectionSection'
 export { FourWeekHeatmap } from './FourWeekHeatmap'
 export { CoachingBanner } from './CoachingBanner'
+export { OnboardingChecklist } from './OnboardingChecklist'
+export { NotificationPrimerModal } from './NotificationPrimerModal'
 
 export * from './types'

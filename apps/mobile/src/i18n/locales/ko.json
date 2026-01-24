@@ -1,5 +1,6 @@
 {
   "common": {
+    "language_code": "ko",
     "loading": "불러오는 중...",
     "error": "오류",
     "retry": "다시 시도",
@@ -18,6 +19,7 @@
     "all": "전체",
     "new": "새로운",
     "success": "성공",
+    "notice": "알림",
     "ok": "확인",
     "generate": "생성",
     "generating": "생성 중...",
@@ -31,7 +33,14 @@
     "skip": "건너뛰기",
     "start": "시작하기",
     "lastCheck": "마지막: {{date}}",
-    "recordDate": "달성: {{date}}"
+    "recordDate": "달성: {{date}}",
+    "created_label": "생성",
+    "updated_label": "수정",
+    "permissionRequired": "권한 필요",
+    "notificationPermission": "알림을 받으려면 설정에서 알림 권한을 허용해주세요.",
+    "settings": "설정",
+    "later": "나중에 할게요",
+    "saved": "저장되었습니다"
   },
   "datePicker": {
     "title": "날짜 선택",
@@ -155,7 +164,8 @@
         "alreadyTaken": "이미 사용 중인 닉네임입니다",
         "saveError": "닉네임 저장 중 오류가 발생했습니다",
         "updateError": "닉네임 변경 중 오류가 발생했습니다"
-      }
+      },
+      "hint": "한글, 영문, 숫자 허용 (2~12자)"
     },
     "coachingResume": {
       "title": "AI 코칭 진행 중",
@@ -643,27 +653,29 @@
     "yearly": "매년",
     "selector": {
       "title": "실천 항목 타입 설정",
-      "description": "\"{{title}}\"의 타입과 세부 설정을 선택하세요",
+      "description": "\"{{title}}\"",
       "aiSuggestion": "자동 추천",
       "confidence": "신뢰도",
       "confidenceHigh": "높음",
       "confidenceMedium": "중간",
       "confidenceLow": "낮음",
       "typeLabel": "실천 항목 타입",
-      "routineDesc": "매일, 매주, 매월 등 반복적으로 실천하는 항목",
-      "missionDesc": "끝이 있는 목표 (책 1권 읽기, 자격증 취득 등)",
-      "referenceDesc": "마음가짐, 가치관 등 체크가 필요없는 참고 항목",
-      "routineSettings": "루틴 설정",
+      "actionLabel": "실천항목",
+      "routineDesc": "일상처럼 반복되는 실천",
+      "missionDesc": "기한 내 완료가 필요한 목표",
+      "referenceDesc": "체크 없이 마음에 새기는 원칙",
+      "routineSettings": "",
       "repeatCycle": "반복 주기",
       "weekdaySelect": "주중 실천 요일 선택 (선택사항)",
+      "weekdaySelectCompact": "요일 선택",
       "weekdayHint": "요일을 선택하지 않으면 주간 횟수 기반으로 설정됩니다",
       "weeklyGoal": "주간 목표 횟수",
       "monthlyGoal": "월간 목표 횟수",
       "dailyHint": "매일 실천하는 항목은 반복 주기를 '매일'로 선택하세요",
-      "missionSettings": "미션 설정",
+      "missionSettings": "",
       "completionType": "완료 방식",
-      "onceDesc": "1회 완료 (예: 자격증)",
-      "periodicDesc": "기간 목표 (주/월 등)",
+      "onceDesc": "단 1번 완료",
+      "periodicDesc": "기간별 반복 완료",
       "periodCycle": "반복 주기",
       "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다",
       "reasonRoutine": "반복 실천으로 보여요",
@@ -739,10 +751,10 @@
       "empty": {
         "title": "아직 만다라트가 없어요",
         "description": "만다라트를 만들면\n체계적으로 목표를 관리할 수 있어요",
-        "howTo": "만다라트 만드는 방법",
-        "methodImage": "이미지 업로드",
-        "methodText": "텍스트 붙여넣기",
-        "methodManual": "직접 입력",
+        "howTo": "지금 바로 시작해보세요",
+        "benefit1": "AI 코칭 지원: 막막해도 괜찮아요",
+        "benefit2": "3분이면 완성: 쉽고 빠르게 목표 설계",
+        "benefit3": "맞춤 실천 추천: 나에게 딱 맞는 행동 제안",
         "guide": "사용 가이드"
       },
       "create": "만다라트 생성",
@@ -764,20 +776,22 @@
         "actionTypeLabel": "실천 항목 타입",
         "notSet": "미설정",
         "guide": {
-          "title": "세부 목표 작성 팁",
-          "tip1_title": "핵심 목표와의 연결성",
-          "tip1_desc": "이 세부 목표를 달성하면 핵심 목표에\n한 걸음 더 다가설 수 있나요?\n목표 실현을 위한 '필수 조각'인지 생각해보세요.",
-          "tip2_title": "다각도의 균형 잡기",
-          "tip2_desc": "기술적인 부분뿐만 아니라 멘탈, 환경, 운,\n인간성 등 다양한 측면을 고려해보세요.\n입체적인 접근이 목표 달성 확률을 높입니다.",
-          "tip3_title": "나만의 '키워드'로 정의하기",
-          "tip3_desc": "한눈에 무엇을 위한 영역인지 알 수 있도록\n8개의 실천을 담을 수 있는 넓은 범주의\n명확한 키워드(예: 체력 강화)가 좋습니다."
+          "title": "실천 행동 작성 팁",
+          "tip1_title": "명확하고 구체적으로",
+          "tip1_desc": "누가 봐도 바로 행동할 수 있을 만큼 구체적이어야 합니다.",
+          "tip2_title": "측정 가능하게",
+          "tip2_desc": "완료했는지 여부를 확실히 알 수 있는 기준을 세워보세요.",
+          "tip3_title": "작은 습관부터",
+          "tip3_desc": "너무 거창한 계획보다는 매일 실천 가능한 작은 단위가 좋습니다."
         },
         "aiSuggest": {
-          "title": "AI 추천 세부목표",
-          "subtitle": "당신의 목표에 맞는 아이디어를 제안해요",
+          "title": "세부목표 AI 추천",
+          "subtitle": "핵심 목표에 어울리는 세부 목표 제안",
+          "emptyHint": "핵심 목표에 어울리는 세부 목표 제안",
           "getHelp": "추천 받기",
-          "loading": "맞춤형 제안을 분석 중이에요...",
+          "loading": "분석 중...",
           "empty": "추천 버튼을 눌러 아이디어를 받아보세요",
+          "applying": "생성된 계획 적용 중...",
           "tapToApply": "탭하여 바로 적용",
           "suggested": "추천됨",
           "getStarted": "AI에게 아이디어 받기",
@@ -827,6 +841,13 @@
           "tip2_desc": "오늘 했는지 안 했는지 명확하게 체크할 수 있어야 해요.",
           "tip3_title": "작고 가볍게",
           "tip3_desc": "당장 오늘 시작할 수 있을 만큼 부담 없는 크기로 쪼개보세요."
+        },
+        "aiSuggest": {
+          "title": "AI 추천 실천항목",
+          "subtitle": "목표 달성을 위한 구체적인 행동을 제안해요",
+          "getHelp": "추천 받기",
+          "loading": "분석 중...",
+          "analyzing": "맞춤형 제안을 분석 중이에요..."
         }
       }
     },
@@ -885,8 +906,8 @@
         "description": "따뜻한 코칭으로 목표를 함께 설계해요"
       },
       "imageUpload": {
-        "title": "이미지 업로드",
-        "description": "만들어둔 만다라트가 있다면 사진 찍어 업로드",
+        "title": "이미지 스캔",
+        "description": "이미지에서 목표 추출",
         "hint": "만다라트 이미지를 업로드하면 자동으로 텍스트를 추출합니다",
         "selectImage": "이미지 선택",
         "selectSource": "이미지 선택",
@@ -895,6 +916,7 @@
         "permissionRequired": "권한 필요",
         "cameraPermission": "카메라 접근 권한이 필요합니다.",
         "galleryPermission": "갤러리 접근 권한이 필요합니다.",
+        "notificationPermission": "알림을 받으려면 설정에서 알림 권한을 허용해주세요.",
         "extractText": "이미지 분석",
         "processing": "OCR 처리 중...",
         "tapToSelect": "탭하여 이미지 선택 (최대 5MB)",
@@ -907,8 +929,8 @@
         "tapToChange": "탭하여 다른 이미지 선택"
       },
       "textPaste": {
-        "title": "텍스트 붙여넣기",
-        "description": "AI로 만든 텍스트가 있다면 복사해서 붙여넣기",
+        "title": "노트 붙여넣기",
+        "description": "텍스트를 목표로 변환",
         "hint": "만다라트 텍스트를 붙여넣으면 자동으로 분석합니다",
         "analyze": "텍스트 분석",
         "processing": "텍스트 분석 중...",
@@ -919,8 +941,8 @@
         "exampleContent": "핵심 목표: 건강한 삶\n\n1. 운동\n- 매일 30분 걷기\n- 주 3회 헬스장\n...\n\n2. 식습관\n- 물 2L 마시기\n..."
       },
       "manualInput": {
-        "title": "직접 입력",
-        "description": "아직 없다면 빈 그리드에서 처음부터 작성",
+        "title": "새로 시작하기",
+        "description": "AI 추천과 함께 처음부터 작성",
         "tapToEdit": "셀을 탭하여 목표와 실천 항목을 입력하세요",
         "guideTitle": "만다라트 작성 안내",
         "guideItems": [
@@ -961,6 +983,7 @@
       },
       "errors": {
         "imageSelect": "이미지 선택 중 오류가 발생했습니다.",
+        "ocrFailed": "이미지 분석에 실패했습니다. 더 선명한 이미지로 다시 시도해주세요.",
         "ocrProcess": "OCR 처리 중 오류가 발생했습니다.",
         "save": "저장 중 오류가 발생했습니다.",
         "emptyText": "텍스트를 입력해주세요.",
@@ -1129,7 +1152,8 @@
       "title": "앱 설정",
       "language": "언어 설정",
       "timezone": "시간대 설정",
-      "notifications": "알림 설정"
+      "notifications": "알림 설정",
+      "tutorial": "사용 가이드"
     },
     "privacy": {
       "title": "개인정보 및 AI 데이터",
@@ -1272,62 +1296,48 @@
   },
   "tutorial": {
     "title": "튜토리얼",
-    "welcome": "MandaAct에 오신 것을 환영합니다!",
     "skip": "건너뛰기",
-    "start": "시작하기",
+    "start": "첫 목표 만들기",
     "next": "다음",
     "previous": "이전",
-    "steps": {
-      "intro": "만다라트 소개",
-      "create": "만다라트 만들기",
-      "actions": "실천 항목 설정",
-      "check": "매일 체크하기",
-      "gamification": "게임처럼 성장하기",
-      "streak": "스트릭 유지하기",
-      "complete": "시작할 준비 완료!"
+    "stepOf": "{{total}}단계 중 {{current}}단계",
+    "completionReward": {
+      "title": "준비 완료! 🎉",
+      "message": "튜토리얼 완료 보상으로 +50 XP를 획득했습니다!",
+      "button": "첫 목표 만들기"
+    },
+    "completion": {
+      "title": "튜토리얼 완료",
+      "message": "이제 목표를 달성할 준비가 되었습니다!",
+      "button": "첫 번째 목표 만들기"
     },
     "content": {
       "welcome": {
         "title": "MandaAct에 오신 것을\n환영합니다!",
-        "description": "만다라트와 함께 체계적인 목표 관리를 시작하세요.\n작은 실천들이 모여 큰 변화를 만듭니다."
+        "description": "오늘의 작은 실천이\n내일의 큰 변화를 만듭니다."
       },
       "mandalart": {
         "title": "만다라트란?",
-        "description": "9x9 격자에 핵심 목표와 세부 목표,\n구체적인 실천 항목을 배치하는\n목표 관리 프레임워크입니다.",
-        "bullet1": "중앙: 핵심 목표 (1개)",
-        "bullet2": "주변 8칸: 세부 목표 (8개)",
-        "bullet3": "각 세부 목표: 실천 항목 (각 8개, 총 64개)"
-      },
-      "create": {
-        "title": "3가지 생성 방식",
-        "description": "편한 방법으로 만다라트를 만들어보세요.",
-        "imageUpload": "이미지 업로드: 사진에서 텍스트 추출",
-        "textPaste": "텍스트 붙여넣기: 복사한 텍스트로 생성",
-        "manual": "직접 입력: 하나씩 직접 입력"
+        "description": "오타니 쇼헤이도 사용한,\n꿈을 현실로 만드는 목표 관리 도구입니다.",
+        "bullet1": "중앙에 1개의 핵심 목표",
+        "bullet2": "주변에 8개의 세부 목표",
+        "bullet3": "총 64개의 구체적 실천 항목"
       },
       "daily": {
-        "title": "오늘의 실천",
-        "description": "오늘 할 일을 확인하고 체크하세요.",
-        "routine": "루틴: 반복되는 습관 (체크 가능)",
-        "mission": "미션: 달성해야 할 목표 (체크 가능)",
-        "reference": "참고: 마음가짐/참고사항 (체크 불가)"
+        "title": "매일의 실천",
+        "description": "체크할 때마다 XP가 쌓이고,\n레벨업하며 성장을 느껴보세요.",
+        "routine": "루틴: 매일 쌓이는 습관",
+        "mission": "미션: 달성해야 할 목표",
+        "reference": "참고: 마음에 새기는 원칙"
       },
-      "gamification": {
-        "title": "레벨업",
-        "description": "실천할 때마다 XP를 획득합니다.\n레벨업도 하고 배지도 획득하세요!",
-        "bullet1": "다양한 보너스로 XP 최대 3.5배",
-        "bullet2": "다양한 배지 수집"
-      },
-      "stats": {
-        "title": "AI 리포트",
-        "description": "AI 리포트로 맞춤 피드백을 받으세요.",
-        "bullet1": "만다라트 목표 진단 및 개선 제안",
-        "bullet2": "7일간 실천 데이터 분석 및 개선 제안"
-      },
-      "notification": {
-        "title": "알림 설정",
-        "description": "실천 리마인더로\n목표를 잊지 않도록 도와드립니다.\n설정에서 원하는 시간에 알림을 받으세요."
+      "getStarted": {
+        "title": "시작할 준비가 되셨나요?",
+        "description": "첫 번째 만다라트를 만들어보세요.\n꿈을 향한 여정이 지금 시작됩니다!"
       }
+    },
+    "interactiveDemo": {
+      "coreGoal": "핵심 목표!",
+      "tapHint": "중앙 셀을 탭해보세요"
     }
   },
   "badges": {
@@ -1654,5 +1664,20 @@
     "activeBenefits": "활성화된 혜택",
     "active": "활성화",
     "upgrade": "업그레이드"
+  },
+  "onboarding": {
+    "title": "MandaAct에 오신 것을 환영합니다!",
+    "subtitle": "아래 단계를 완료하고 앱을 시작해보세요.",
+    "guide": "사용 가이드 보기",
+    "createGoal": "첫 번째 목표 만들기",
+    "notification": "알림 설정하기",
+    "firstAction": "첫 실천 기록하기",
+    "lockedAlert": "먼저 목표를 만들어주세요!",
+    "almostDone": "거의 다 됐어요!"
+  },
+  "notification_primer": {
+    "title": "놓치지 않고 실천하기",
+    "description": "알림을 켜두면 목표 달성 확률이 3배 높아집니다.\nAI가 딱 맞는 시점에 코칭해드릴게요.",
+    "enable": "알림 켜기"
   }
 }

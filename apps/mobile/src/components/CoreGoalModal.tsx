@@ -32,7 +32,7 @@ export default function CoreGoalModal({
 }: CoreGoalModalProps) {
   const { t } = useTranslation()
   const [centerGoal, setCenterGoal] = useState('')
-  const [isGuideExpanded, setIsGuideExpanded] = useState(false)
+  const [isGuideExpanded, setIsGuideExpanded] = useState(true)
 
   useEffect(() => {
     if (visible) {

@@ -182,6 +182,18 @@ export function formatNumericDate(
   return formatInTimeZone(date, timeZone, pattern, { locale })
 }
 
+export function formatNumericDateTime(
+  value: Date | string | number,
+  { language, timeZone }: DateFormatOptions
+): string {
+  const date = toDate(value)
+  if (!date) return ''
+  const lang = normalizeLanguage(language)
+  const locale = getDateFnsLocale(lang)
+  const pattern = lang === 'ko' ? 'yyyy.MM.dd HH:mm' : 'MM/dd/yyyy HH:mm'
+  return formatInTimeZone(date, timeZone, pattern, { locale })
+}
+
 export function formatYearlessShortDate(
   value: Date | string | number,
   { language, timeZone }: DateFormatOptions

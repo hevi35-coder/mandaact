@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Plus } from 'lucide-react-native'
 import type { SubGoal, Action } from '@mandaact/shared'
 
 // Sub-goal with actions type
@@ -44,7 +45,7 @@ export default function MandalartFullGrid({
   // Dynamic font sizes based on cell size
   const fontSize = {
     coreGoal: Math.max(14, cellSize * 0.22),
-    subGoal: Math.max(14, cellSize * 0.22), // Increased from 13 / 0.20 to match coreGoal
+    subGoal: Math.max(13, cellSize * 0.20), // Reduced to be slightly smaller than coreGoal
     action: Math.max(11, cellSize * 0.16),
   }
 
@@ -205,7 +206,7 @@ export default function MandalartFullGrid({
               {action.title}
             </Text>
           ) : (
-            <Text style={{ fontSize: fontSize.action * 0.8, color: '#d1d5db' }}>-</Text>
+            <Plus size={fontSize.action * 1.2} color="#d1d5db" />
           )}
         </Pressable>
       )

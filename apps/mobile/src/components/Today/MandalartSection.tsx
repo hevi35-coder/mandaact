@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight, Grid3X3 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { ActionItem } from './ActionItem'
+import { formatNumericDateTime } from '../../lib/dateFormat'
 import type { MandalartSectionProps } from './types'
 
 export const MandalartSection = React.memo(({
@@ -26,7 +27,7 @@ export const MandalartSection = React.memo(({
     yesterdayMissedIds,
     onYesterdayCheckCompleted,
 }: MandalartSectionProps) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
 
     // Calculate progress (exclude reference actions)
     const mandalartNonRef = actions.filter((a) => a.type !== 'reference')
@@ -34,7 +35,10 @@ export const MandalartSection = React.memo(({
     const mandalartTotal = mandalartNonRef.length
 
     // Get core goal from first action's mandalart
-    const coreGoal = actions[0]?.sub_goal?.mandalart?.center_goal || ''
+    // Get mandalart info from first action
+    const firstMandalart = actions[0]?.sub_goal?.mandalart
+    const coreGoal = firstMandalart?.center_goal || ''
+    const createdAt = firstMandalart?.created_at
 
     return (
         <Animated.View
@@ -60,11 +64,10 @@ export const MandalartSection = React.memo(({
                         </Text>
                     </View>
                     <Text
-                        className="text-sm text-gray-500 mt-1"
-                        numberOfLines={1}
+                        className="text-[13px] text-gray-500 mt-1"
                         style={{ fontFamily: 'Pretendard-Regular' }}
                     >
-                        {t('today.coreGoal')}: {coreGoal}
+                        {t('common.created_label')}: {formatNumericDateTime(createdAt, { language: i18n.language, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Seoul' })}
                     </Text>
                 </View>
                 {isCollapsed ? (

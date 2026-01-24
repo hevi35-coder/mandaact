@@ -8,6 +8,7 @@
 import React, { useState, useCallback, useRef } from 'react'
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import { useUserProfile } from '../hooks/useUserProfile'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { CompositeNavigationProp } from '@react-navigation/native'
@@ -30,7 +31,7 @@ import type { RootStackParamList, MainTabParamList } from '../navigation/RootNav
 import { useCoachingStore } from '../store/coachingStore'
 
 // Sub-components
-import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal, CoachingBanner } from '../components/Home'
+import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal, CoachingBanner, OnboardingChecklist } from '../components/Home'
 import { BannerAd, XPBoostButton } from '../components/ads'
 
 type NavigationProp = CompositeNavigationProp<
@@ -70,6 +71,10 @@ export default function HomeScreen() {
   const { data: badgeProgress = [] } = useBadgeProgress(user?.id)
   const { data: activeMandalarts = [] } = useActiveMandalarts(user?.id)
   const hasActiveMandalarts = activeMandalarts.length > 0
+  const { profile: userProfile } = useUserProfile(user?.id)
+  const [hasNotificationsEnabled, setHasNotificationsEnabled] = useState(false)
+  const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false)
+
   const { sessionId, status, currentStep, summary, resumeSession } = useCoachingStore()
   const hasCoachingSession = Boolean(sessionId && status && status !== 'completed')
 
@@ -81,6 +86,16 @@ export default function HomeScreen() {
       if (user?.id) {
         queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
         xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
+
+        // Check notification status
+        import('../services/notificationService').then(({ areNotificationsEnabled }) => {
+          areNotificationsEnabled().then(setHasNotificationsEnabled)
+        })
+
+        // Check tutorial completion status (refreshes when returning from Tutorial)
+        import('../screens/TutorialScreen').then(({ isTutorialCompleted }) => {
+          isTutorialCompleted(user.id).then(setHasCompletedTutorial)
+        })
       }
     }, [user?.id, queryClient])
   )
@@ -89,7 +104,7 @@ export default function HomeScreen() {
   const totalXP = gamification?.total_xp || 0
   const currentLevel = getLevelFromXP(totalXP)
   const { current: xpProgress, required: xpRequired, percentage: xpPercentage } = getXPForCurrentLevel(totalXP, currentLevel)
-  const nickname = gamification?.nickname || user?.email?.split('@')[0] || '새 사용자'
+  const nickname = gamification?.nickname || user?.email?.split('@')[0] || 'User'
 
   // Stats
   const totalChecks = profileStats?.totalChecks || 0
@@ -113,6 +128,26 @@ export default function HomeScreen() {
     }
     navigation.navigate('ConversationalCoaching')
   }, [navigation, resumeSession, status])
+
+  // Check tutorial status on mount
+  React.useEffect(() => {
+    const checkTutorial = async () => {
+      if (!user?.id) return
+
+      const { isTutorialCompleted } = await import('../screens/TutorialScreen')
+      const completed = await isTutorialCompleted(user.id)
+      setHasCompletedTutorial(completed)
+
+      if (!completed) {
+        // Small delay to ensure navigation is ready and screen transitions are smooth
+        setTimeout(() => {
+          navigation.navigate('Tutorial')
+        }, 500)
+      }
+    }
+
+    checkTutorial()
+  }, [navigation, user?.id])
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -145,6 +180,14 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
+
+          <OnboardingChecklist
+            hasCreatedGoal={hasActiveMandalarts}
+            hasSetNotifications={hasNotificationsEnabled}
+            hasFirstAction={totalChecks > 0}
+            hasCompletedTutorial={hasCompletedTutorial}
+            signupDate={user?.created_at}
+          />
 
           {/* AI Coaching Entry Point - PAUSED (2026-01-17) */}
           {/* Feature hidden for later development. See: AI_COACHING_PAUSE.md */}

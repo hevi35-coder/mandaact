@@ -139,13 +139,16 @@ export function NicknameModal({
                             className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
                             placeholderTextColor="#9ca3af"
                         />
+                        <Text className="text-xs text-gray-400 mt-1 ml-1">
+                            {t('home.nickname.hint')}
+                        </Text>
                         {nicknameError ? (
                             <Text className="text-sm text-red-500 mt-2">{nicknameError}</Text>
                         ) : null}
                     </View>
 
                     {/* Buttons */}
-                    <View className="space-y-2">
+                    <View className="gap-y-3">
                         <Pressable
                             onPress={handleSave}
                             disabled={nicknameSaving}

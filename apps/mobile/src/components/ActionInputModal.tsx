@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -12,13 +12,12 @@ import {
   Easing,
   ActivityIndicator,
 } from 'react-native'
-import { X, Lightbulb, Sparkles, RefreshCcw, ChevronDown, ChevronUp, PlusCircle, Check, ArrowLeft, Target, Calendar, Info, RotateCw } from 'lucide-react-native'
+import { X, Lightbulb, Sparkles, RefreshCcw, ChevronDown, ChevronUp, PlusCircle, Check, ArrowLeft } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTranslation } from 'react-i18next'
 import { coachingService } from '../services/coachingService'
-
-const WEEKLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
-const MONTHLY_COUNT_OPTIONS = [1, 2, 3, 5, 10, 20, 30]
+import ActionTypeSettingsView from './ActionTypeSettingsView'
+import type { ActionType, RoutineFrequency, MissionCompletionType, MissionPeriodCycle } from '@mandaact/shared'
 
 const cleanKeyword = (keyword: string): string => {
   if (!keyword) return '';
@@ -78,36 +77,6 @@ export default function ActionInputModal({
 
   // UI State
   const [isGuideExpanded, setIsGuideExpanded] = useState(false)
-
-  // Translated constants
-  const weekdays = useMemo(() => [
-    { value: 1, label: t('actionType.weekdayShort.mon', '월'), short: t('actionType.weekdayShort.mon', '월') },
-    { value: 2, label: t('actionType.weekdayShort.tue', '화'), short: t('actionType.weekdayShort.tue', '화') },
-    { value: 3, label: t('actionType.weekdayShort.wed', '수'), short: t('actionType.weekdayShort.wed', '수') },
-    { value: 4, label: t('actionType.weekdayShort.thu', '목'), short: t('actionType.weekdayShort.thu', '목') },
-    { value: 5, label: t('actionType.weekdayShort.fri', '금'), short: t('actionType.weekdayShort.fri', '금') },
-    { value: 6, label: t('actionType.weekdayShort.sat', '토'), short: t('actionType.weekdayShort.sat', '토') },
-    { value: 0, label: t('actionType.weekdayShort.sun', '일'), short: t('actionType.weekdayShort.sun', '일') },
-  ], [t])
-
-  const frequencyOptions = [
-    { value: 'daily', label: t('actionType.daily', '매일') },
-    { value: 'weekly', label: t('actionType.weekly', '주간') },
-    { value: 'monthly', label: t('actionType.monthly', '월간') },
-  ] as const
-
-  const missionCompletionOptions = [
-    { value: 'once', label: t('actionType.selector.onceDesc', '1회성') },
-    { value: 'periodic', label: t('actionType.selector.periodicDesc', '주기별') },
-  ] as const
-
-  const periodCycleOptions = [
-    { value: 'daily', label: t('actionType.daily', '매일') },
-    { value: 'weekly', label: t('actionType.weekly', '주간') },
-    { value: 'monthly', label: t('actionType.monthly', '월간') },
-    { value: 'quarterly', label: t('actionType.quarterly', '분기별') },
-    { value: 'yearly', label: t('actionType.yearly', '매년') },
-  ] as const
 
   // Reset on Open
   useEffect(() => {
@@ -246,14 +215,21 @@ export default function ActionInputModal({
   // Render Step 1: Input (Refined - Removed Chips)
   const renderInputStep = () => (
     <ScrollView className="px-5 py-4" showsVerticalScrollIndicator={false}>
+      {/* Context Label (SubGoal Title) - Single Line */}
+      <View className="mb-4 px-1">
+        <Text className="text-gray-500 text-[14px]" style={{ fontFamily: 'Pretendard-Medium' }} numberOfLines={1}>
+          {t('mandalart.detail.stats.subGoal', '세부목표')}: <Text className="text-gray-800 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>{subGoalTitle}</Text>
+        </Text>
+      </View>
+
       <TextInput
         ref={inputRef}
         value={title}
         onChangeText={setTitle}
-        placeholder={t('mandalart.action.placeholder', '구체적인 실천 행동을 입력하세요')}
+        placeholder={t('mandalart.modal.action.placeholder', 'Enter a specific action')}
         placeholderTextColor="#9ca3af"
-        className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-lg text-gray-900 mb-6"
-        style={{ fontFamily: 'Pretendard-SemiBold' }}
+        className="bg-gray-50 border border-gray-100 rounded-2xl px-5 text-lg text-gray-900 mb-6"
+        style={{ fontFamily: 'Pretendard-SemiBold', height: 56, textAlignVertical: 'center' }}
         multiline={false}
         returnKeyType="done"
         onSubmitEditing={handleNext}
@@ -304,22 +280,25 @@ export default function ActionInputModal({
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-purple-950" numberOfLines={1} style={{ fontFamily: 'Pretendard-Bold' }}>
-                AI 추천 실천항목
+                {t('mandalart.modal.action.aiSuggest.title', 'AI-Suggested Actions')}
               </Text>
               <Text className="text-[12px] text-purple-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>
-                목표 달성을 위한 구체적인 행동을 제안해요
+                {t('mandalart.modal.action.aiSuggest.subtitle', 'Personalized actions to help you achieve your goal')}
               </Text>
             </View>
           </View>
-          <Pressable
-            onPress={fetchSuggestions}
-            disabled={isSuggesting}
-            className="ml-2 px-4 py-2 bg-purple-600 rounded-xl active:bg-purple-700 disabled:bg-purple-300"
-          >
-            <Text className="text-white font-bold text-xs" style={{ fontFamily: 'Pretendard-Bold' }}>
-              {isSuggesting ? '분석 중...' : '추천 받기'}
-            </Text>
-          </Pressable>
+          {/* Hide button during loading in English mode to prevent layout shift */}
+          {(!isSuggesting || i18n.language.startsWith('ko')) && (
+            <Pressable
+              onPress={fetchSuggestions}
+              disabled={isSuggesting}
+              className="ml-2 px-4 py-2 bg-purple-600 rounded-xl active:bg-purple-700 disabled:bg-purple-300"
+            >
+              <Text className="text-white font-bold text-xs" style={{ fontFamily: 'Pretendard-Bold' }}>
+                {isSuggesting ? t('mandalart.modal.action.aiSuggest.loading', 'Analyzing...') : t('mandalart.modal.subGoal.aiSuggest.getHelp', 'Get Ideas')}
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         {(isSuggesting || suggestions.length > 0) && (
@@ -330,7 +309,7 @@ export default function ActionInputModal({
                   <RefreshCcw size={24} color="#9333ea" />
                 </Animated.View>
                 <Text className="text-sm text-purple-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>
-                  {t('mandalart.modal.subGoal.aiSuggest.loading') || '맞춤형 제안을 분석 중이에요...'}
+                  {t('mandalart.modal.action.aiSuggest.analyzing', 'Analyzing personalized suggestions...')}
                 </Text>
               </View>
             ) : (
@@ -400,247 +379,38 @@ export default function ActionInputModal({
     </ScrollView>
   )
 
-  // Render Step 2: Details (Exact Match to ActionTypeSelector)
+  // Render Step 2: Details (Using shared ActionTypeSettingsView)
   const renderDetailStep = () => (
     <ScrollView className="px-5 py-4" showsVerticalScrollIndicator={false}>
-      <Text className="text-gray-500 mb-6 text-sm" style={{ fontFamily: 'Pretendard-Medium' }}>
-        "{title}"의 타입과 세부 설정을 선택하세요
-      </Text>
-
-      {/* Type Selection Cards */}
-      <View className="mb-6">
-        <Text className="text-base font-bold text-gray-900 mb-3" style={{ fontFamily: 'Pretendard-Bold' }}>
-          {t('actionType.selector.typeLabel', '실천 항목 타입')}
-        </Text>
-        <View className="gap-3">
-          {(['routine', 'mission', 'reference'] as const).map(type => (
-            <Pressable
-              key={type}
-              onPress={() => setSelectedType(type)}
-              className={`p-4 rounded-2xl border flex-row items-center ${selectedType === type ? 'bg-white border-gray-900' : 'bg-white border-gray-100'
-                }`}
-              style={selectedType === type ? { borderWidth: 1.5 } : {}}
-            >
-              <View className={`w-5 h-5 rounded-full border items-center justify-center mr-3 ${selectedType === type ? 'border-gray-900 bg-gray-900' : 'border-gray-300'}`}>
-                {selectedType === type && <View className="w-2 h-2 rounded-full bg-white" />}
-              </View>
-
-              {type === 'routine' && <RefreshCcw size={20} color={selectedType === type ? '#3b82f6' : '#9ca3af'} />}
-              {type === 'mission' && <Target size={20} color={selectedType === type ? '#10b981' : '#9ca3af'} />}
-              {type === 'reference' && <Lightbulb size={20} color={selectedType === type ? '#f59e0b' : '#9ca3af'} />}
-
-              <View className="ml-3 flex-1">
-                <View className="flex-row items-center">
-                  <Text className="text-gray-900 font-bold text-[15px] mb-0.5 mr-2" style={{ fontFamily: 'Pretendard-Bold' }}>
-                    {t(`actionType.${type}`, type === 'routine' ? '루틴' : type === 'mission' ? '미션' : '참고')}
-                  </Text>
-                  {aiRecommendedType === type && (
-                    <View className="bg-blue-100 px-1.5 py-0.5 rounded-md self-start mb-0.5">
-                      <Text className="text-[10px] font-bold text-blue-600" style={{ fontFamily: 'Pretendard-Bold' }}>추천</Text>
-                    </View>
-                  )}
-                </View>
-                <Text className="text-gray-400 text-xs">
-                  {t(`actionType.selector.${type}Desc`, type === 'routine' ? '매일, 매주, 매월 등 반복적으로 실천하는 항목' :
-                    type === 'mission' ? '끝이 있는 목표 (책 1권 읽기, 자격증 취득 등)' :
-                      '마음가짐, 가치관 등 체크가 필요없는 참고 항목')}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      {/* Detailed Settings conditionally rendered */}
-      {selectedType === 'routine' && (
-        <View className="bg-gray-50 rounded-2xl p-5 mb-10 border border-gray-100">
-          <Text className="text-base font-bold text-gray-900 mb-3" style={{ fontFamily: 'Pretendard-Bold' }}>
-            {t('actionType.selector.routineSettings', '루틴 설정')}
-          </Text>
-
-          < View className="mb-3">
-            <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.repeatCycle', '반복 주기')}</Text>
-            <View className="flex-row" style={{ gap: 8 }}>
-              {frequencyOptions.map(option => (
-                <Pressable
-                  key={option.value}
-                  onPress={() => {
-                    setRoutineFrequency(option.value)
-                    setRoutineCountPerPeriod(1)
-                    setRoutineWeekdays([])
-                  }}
-                  className={`flex-1 py-2.5 rounded-lg border items-center ${routineFrequency === option.value ? 'bg-gray-900 border-gray-900' : 'bg-white border-gray-300'
-                    }`}
-                >
-                  <Text className={`text-sm font-medium ${routineFrequency === option.value ? 'text-white' : 'text-gray-700'}`}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {routineFrequency === 'weekly' && (
-            <View className="mb-3">
-              <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.weekdaySelect', '실천 요일 (선택사항)')}</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {weekdays.map(day => (
-                  <Pressable
-                    key={day.value}
-                    onPress={() => handleWeekdayToggle(day.value)}
-                    className={`w-9 h-9 rounded-lg items-center justify-center border ${routineWeekdays.includes(day.value) ? 'bg-gray-900 border-gray-900' : 'bg-white border-gray-300'
-                      }`}
-                  >
-                    <Text className={`text-sm font-medium ${routineWeekdays.includes(day.value) ? 'text-white' : 'text-gray-700'}`}>
-                      {day.short}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <View className="flex-row items-center mt-2">
-                <Info size={12} color="#9ca3af" />
-                <Text className="text-xs text-gray-400 ml-1">{t('actionType.selector.weekdayHint', '요일을 선택하지 않으면 주간 횟수 기반으로 설정됩니다')}</Text>
-              </View>
-
-              {routineWeekdays.length === 0 && (
-                <View className="mt-3">
-                  <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.weeklyGoal', '주간 목표 횟수')}</Text>
-                  <View className="flex-row" style={{ gap: 8 }}>
-                    {WEEKLY_COUNT_OPTIONS.map(count => (
-                      <Pressable
-                        key={count}
-                        onPress={() => setRoutineCountPerPeriod(count)}
-                        className={`w-9 h-9 rounded-lg items-center justify-center border ${routineCountPerPeriod === count ? 'bg-gray-900 border-gray-900' : 'bg-white border-gray-300'
-                          }`}
-                      >
-                        <Text className={`text-sm font-medium ${routineCountPerPeriod === count ? 'text-white' : 'text-gray-700'}`}>
-                          {count}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              )}
-            </View>
-          )}
-
-          {routineFrequency === 'monthly' && (
-            <View className="mb-3">
-              <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.monthlyGoal', '월간 목표 횟수')}</Text>
-              <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
-                {MONTHLY_COUNT_OPTIONS.map(count => (
-                  <Pressable
-                    key={count}
-                    onPress={() => {
-                      setRoutineCountPerPeriod(count)
-                      setShowMonthlyCustomInput(false)
-                    }}
-                    className={`w-9 h-9 rounded-lg items-center justify-center border ${routineCountPerPeriod === count && !showMonthlyCustomInput ? 'bg-gray-900 border-gray-900' : 'bg-white border-gray-300'
-                      }`}
-                  >
-                    <Text className={`text-sm font-medium ${routineCountPerPeriod === count && !showMonthlyCustomInput ? 'text-white' : 'text-gray-700'}`}>
-                      {count}
-                    </Text>
-                  </Pressable>
-                ))}
-
-                {showMonthlyCustomInput ? (
-                  <View className="flex-row items-center" style={{ gap: 4 }}>
-                    <TextInput
-                      value={monthlyCustomValue}
-                      onChangeText={(text) => {
-                        const num = text.replace(/[^0-9]/g, '')
-                        const limitedNum = num ? Math.min(parseInt(num), 31) : 0
-                        setMonthlyCustomValue(limitedNum > 0 ? String(limitedNum) : '')
-                        if (limitedNum > 0) {
-                          setRoutineCountPerPeriod(limitedNum)
-                        }
-                      }}
-                      placeholder="?"
-                      keyboardType="number-pad"
-                      maxLength={2}
-                      className="w-9 h-9 border border-gray-900 bg-gray-900 rounded-lg text-sm text-center text-white"
-                      placeholderTextColor="#9ca3af"
-                      autoFocus
-                    />
-                  </View>
-                ) : (
-                  <Pressable
-                    onPress={() => {
-                      setShowMonthlyCustomInput(true)
-                      setMonthlyCustomValue(!MONTHLY_COUNT_OPTIONS.includes(routineCountPerPeriod) ? String(routineCountPerPeriod) : '')
-                    }}
-                    className="w-9 h-9 rounded-lg items-center justify-center border border-dashed border-gray-400"
-                  >
-                    <Text className="text-sm font-medium text-gray-500">+</Text>
-                  </Pressable>
-                )}
-              </View>
-            </View>
-          )}
-
-        </View>
-      )}
-
-      {selectedType === 'mission' && (
-        <View className="bg-gray-50 rounded-2xl p-5 mb-10 border border-gray-100">
-          <Text className="text-base font-bold text-gray-900 mb-3" style={{ fontFamily: 'Pretendard-Bold' }}>
-            {t('actionType.selector.missionSettings', '미션 설정')}
-          </Text>
-
-          <View className="mb-3">
-            <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.completionType', '완료 방식')}</Text>
-            <View className="gap-2">
-              {missionCompletionOptions.map(option => (
-                <Pressable
-                  key={option.value}
-                  onPress={() => setMissionType(option.value)}
-                  className={`flex-row items-center p-3 rounded-lg border ${missionType === option.value ? 'bg-white border-gray-900' : 'bg-white border-gray-200'
-                    }`}
-                >
-                  <View className={`w-4 h-4 rounded-full border items-center justify-center mr-3 ${missionType === option.value ? 'border-gray-900' : 'border-gray-300'}`}>
-                    {missionType === option.value && <View className="w-2 h-2 rounded-full bg-gray-900" />}
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-sm font-medium text-gray-900">{option.label}</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {missionType === 'periodic' && (
-            <View className="mt-3">
-              <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.periodCycle', '반복 주기')}</Text>
-              <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                {periodCycleOptions.map(option => (
-                  <Pressable
-                    key={option.value}
-                    onPress={() => setMissionCycle(option.value)}
-                    className={`px-4 py-2 rounded-lg border ${missionCycle === option.value ? 'bg-gray-900 border-gray-900' : 'bg-white border-gray-300'
-                      }`}
-                  >
-                    <Text className={`text-sm font-medium ${missionCycle === option.value ? 'text-white' : 'text-gray-700'}`}>
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-      )}
-
-      {selectedType === 'reference' && (
-        <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-          <View className="flex-row items-center">
-            <Info size={16} color="#6b7280" />
-            <Text className="text-sm text-gray-500 ml-2">
-              {t('actionType.selector.referenceInfo', '마음가짐, 가치관 등 체크가 필요없는 참고 항목')}
-            </Text>
-          </View>
-        </View>
-      )}
+      <ActionTypeSettingsView
+        type={selectedType}
+        actionTitle={title}
+        routineFrequency={routineFrequency}
+        routineWeekdays={routineWeekdays}
+        routineCountPerPeriod={routineCountPerPeriod}
+        missionType={missionType}
+        missionCycle={missionCycle}
+        showMonthlyCustomInput={showMonthlyCustomInput}
+        monthlyCustomValue={monthlyCustomValue}
+        aiSuggestion={aiRecommendedType ? { type: aiRecommendedType } : null}
+        onTypeChange={(type) => setSelectedType(type as 'routine' | 'mission' | 'reference')}
+        onRoutineFrequencyChange={(freq) => {
+          setRoutineFrequency(freq as 'daily' | 'weekly' | 'monthly')
+          setRoutineWeekdays([])
+          setShowMonthlyCustomInput(false)
+          setMonthlyCustomValue('')
+        }}
+        onWeekdayToggle={(day) => {
+          setRoutineWeekdays(prev =>
+            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+          )
+        }}
+        onRoutineCountChange={setRoutineCountPerPeriod}
+        onMissionTypeChange={(type) => setMissionType(type as 'once' | 'periodic')}
+        onMissionCycleChange={(cycle) => setMissionCycle(cycle as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly')}
+        onShowMonthlyCustomInputChange={setShowMonthlyCustomInput}
+        onMonthlyCustomValueChange={setMonthlyCustomValue}
+      />
 
       <View className="h-8" />
     </ScrollView>
@@ -665,29 +435,53 @@ export default function ActionInputModal({
                   </Pressable>
                 )}
                 <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Pretendard-Bold' }}>
-                  {step === 0 ? t('mandalart.action.inputTitle', '실천항목 입력') : t('actionType.selector.title', '타입 설정')}
+                  {step === 0 ? t('mandalart.modal.action.inputTitle', 'Enter Action') : t('actionType.selector.title', 'Type Settings')}
                 </Text>
               </View>
 
-              <Pressable
-                onPress={step === 0 ? handleNext : handleSave}
-                disabled={!title.trim() || isSaving}
-                className="rounded-2xl overflow-hidden"
-              >
-                <LinearGradient
-                  colors={!title.trim() ? ['#e5e7eb', '#e5e7eb'] : ['#2563eb', '#9333ea', '#db2777']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 16 }}
+              {step === 0 ? (
+                /* Next button: gradient border only */
+                <Pressable
+                  onPress={handleNext}
+                  disabled={!title.trim()}
+                  className="rounded-2xl overflow-hidden"
                 >
-                  {isSaving ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <Text className={`font-bold ${!title.trim() ? 'text-gray-400' : 'text-white'}`} style={{ fontFamily: 'Pretendard-Bold' }}>
-                      {step === 0 ? t('common.next', '다음') : t('common.done', '완료')}
-                    </Text>
-                  )}
-                </LinearGradient>
-              </Pressable>
+                  <LinearGradient
+                    colors={!title.trim() ? ['#e5e7eb', '#e5e7eb'] : ['#2563eb', '#9333ea', '#db2777']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={{ padding: 2, borderRadius: 16 }}
+                  >
+                    <View style={{ backgroundColor: 'white', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 14 }}>
+                      <Text className={`font-bold ${!title.trim() ? 'text-gray-400' : 'text-violet-600'}`} style={{ fontFamily: 'Pretendard-Bold' }}>
+                        {t('common.next', 'Next')}
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              ) : (
+                /* Save button: gradient border like Next */
+                <Pressable
+                  onPress={handleSave}
+                  disabled={!title.trim() || isSaving}
+                  className="rounded-2xl overflow-hidden"
+                >
+                  <LinearGradient
+                    colors={!title.trim() ? ['#e5e7eb', '#e5e7eb'] : ['#2563eb', '#9333ea', '#db2777']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={{ padding: 2, borderRadius: 16 }}
+                  >
+                    <View style={{ backgroundColor: 'white', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 14 }}>
+                      {isSaving ? (
+                        <ActivityIndicator size="small" color="#7c3aed" />
+                      ) : (
+                        <Text className={`font-bold ${!title.trim() ? 'text-gray-400' : 'text-violet-600'}`} style={{ fontFamily: 'Pretendard-Bold' }}>
+                          {t('common.save', 'Save')}
+                        </Text>
+                      )}
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              )}
             </View>
 
             {step === 0 ? renderInputStep() : renderDetailStep()}
