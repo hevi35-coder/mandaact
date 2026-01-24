@@ -3,7 +3,8 @@ export interface Mandalart {
   user_id: string
   title: string
   center_goal: string
-  input_method: 'image' | 'manual'
+  description?: string // Detailed explanation (AI coaching generated)
+  input_method: 'image' | 'manual' | 'coaching'
   image_url?: string
   raw_ocr_data?: Record<string, unknown>
   is_active: boolean
@@ -12,6 +13,8 @@ export interface Mandalart {
   sub_goals?: SubGoal[]
   current_plan_mode?: 'base' | 'minimum' | 'challenge'
   emergency_action?: string
+  coaching_session_id?: string | null // v17.0: Link to coaching session for history navigation
+  status?: 'draft' | 'completed' // v18.1: Draft = in-progress coaching
 }
 
 export interface SubGoal {
@@ -19,8 +22,10 @@ export interface SubGoal {
   mandalart_id: string
   position: number // 1-8
   title: string
+  description?: string // Detailed explanation
   created_at: string
   actions?: Action[]
+  is_user_edited?: boolean // v18.1: Protected from AI overwrite if true
 }
 
 export interface Action {
@@ -28,6 +33,7 @@ export interface Action {
   sub_goal_id: string
   position: number // 1-8
   title: string
+  description?: string // Detailed explanation
   created_at: string
 
   // Type system
@@ -53,6 +59,7 @@ export interface Action {
   }
 
   variant?: 'base' | 'minimum' | 'challenge' | 'extra'
+  is_user_edited?: boolean // v18.1: Protected from AI overwrite if true
 }
 
 export interface CheckHistory {

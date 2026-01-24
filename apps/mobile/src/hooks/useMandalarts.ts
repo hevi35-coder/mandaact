@@ -131,6 +131,8 @@ async function fetchMandalartWithDetails(id: string): Promise<MandalartWithDetai
   return {
     ...mandalartData,
     sub_goals: subGoalsWithActions,
+    // v17.0: Include coaching_session_id for coaching history navigation
+    coaching_session_id: mandalartData.coaching_session_id || null,
   }
 }
 

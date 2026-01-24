@@ -21,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { Crown, X } from 'lucide-react-native'
 import { useScrollToTop } from '../navigation/RootNavigator'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useTranslation } from 'react-i18next'
 import { Header } from '../components'
@@ -71,6 +71,13 @@ export default function MandalartListScreen() {
 
   // Mutations
   const toggleActive = useToggleMandalartActive()
+
+  // v20.4: Refresh data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      refetch()
+    }, [refetch])
+  )
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)

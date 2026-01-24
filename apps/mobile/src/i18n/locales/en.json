@@ -75,7 +75,8 @@
       "startBody": "Turn your aspirations into actionable plans with our AI coach.",
       "startCta": "Start Coaching",
       "resumeTitle": "Resume Coaching",
-      "resumeCta": "Continue Chat"
+      "resumeCta": "Continue Chat",
+      "history": "View Coaching History"
     },
     "level": "Level",
     "totalXP": "Total XP",
@@ -170,10 +171,28 @@
   },
   "coaching": {
     "title": "AI Coaching",
+    "history": {
+      "title": "Coaching History",
+      "empty": "No completed coaching sessions found.",
+      "deleteConfirmTitle": "Delete History",
+      "deleteConfirmMessage": "Are you sure you want to delete this coaching history record?",
+      "deleteError": "An error occurred while deleting the record."
+    },
     "step": "Step {{step}}",
     "inProgress": "Coaching in progress — I’m here to help.",
     "resume": "Resume",
     "pause": "Pause",
+    "reset": "Reset",
+    "resetConfirmTitle": "Reset Coaching",
+    "resetConfirmMessage": "Are you sure you want to start over? Current chat history and draft will be deleted.",
+    "continue": "Continue Coaching",
+    "finishNow": "Finish As Is",
+    "finishConfirmTitle": "Finish with Current State",
+    "finishConfirmMessage": "Some sub-goals are still empty. You can fill them in later.",
+    "draftSaved": "✓ Draft saved",
+    "transitionReady": "Ready for next step",
+    "continueChat": "Continue chatting",
+    "proceedNext": "Next",
     "recap": {
       "show": "View recap",
       "hide": "Hide recap",
@@ -231,6 +250,10 @@
       "confirmDelete": "Delete",
       "deleteSuccess": "Deleted. You can now start AI coaching.",
       "deleteError": "Failed to delete. Please try again."
+    },
+    "finalize": {
+      "button": "Complete & Launch Mandalart",
+      "instruction": "Tap to generate your personal goal system!"
     },
     "step1": {
       "title": "Tell us about your current situation",
@@ -485,7 +508,7 @@
       "createMandalart": "Create Mandalart",
       "stages": {
         "onboarding": "Preparing",
-        "lifestyle": "Lifestyle Discovery",
+        "lifestyle": "Lifestyle Exploration",
         "core_goal": "Setting Core Goal",
         "sub_goals": "8 Pillars & Action Plans",
         "actions": "Plan Fine-tuning",
@@ -668,6 +691,8 @@
     }
   },
   "mandalart": {
+    "draft": "Draft",
+    "draftDescription": "Coaching in progress",
     "plan": {
       "title": "Plan",
       "subtitle": "Pick which action is active or minimum for today.",
@@ -702,23 +727,59 @@
       "coreGoal": "Core Goal"
     },
     "modal": {
+      "preview": {
+        "title": "Mandalart Preview"
+      },
       "subGoal": {
         "title": "Sub-goal {{position}}",
         "subGoalLabel": "Sub-goal",
         "subGoalPlaceholder": "Enter sub-goal",
         "actionsLabel": "Actions (8)",
         "actionPlaceholder": "Action {{index}}",
+        "aiSuggest": "AI Action Recommendations",
         "typeSettings": "Type Settings",
         "selectType": "Select type for \"{{title}}\"",
         "actionTypeLabel": "Action Type",
-        "notSet": "Not Set"
+        "notSet": "Not Set",
+        "guide": {
+          "title": "Finding the 8 Pillars for Your Vision",
+          "tip1_title": "Alignment with Core Goal",
+          "tip1_desc": "If you achieve this, will you be one step closer\nto your vision? Think of it as an 'essential piece'\nneeded to manifest the core goal.",
+          "tip2_title": "Holistic Balance",
+          "tip2_desc": "Take a 360-degree approach. Consider aspects\nlike mindset, environment, luck, and character,\nnot just technical skills.",
+          "tip3_title": "Define with Bold Themes",
+          "tip3_desc": "Use clear keywords (e.g., Physical Strength) that\ndefine the area at a glance—acting as a 'pillar'\nthat can hold 8 different actions."
+        },
+        "aiSuggest": {
+          "title": "Get 'Help' from AI Coach",
+          "subtitle": "Suggested sub-goals aligned with your vision",
+          "getHelp": "Get Help",
+          "loading": "Analyzing personalized suggestions...",
+          "empty": "Bringing fresh ideas to fill your space.",
+          "tapToApply": "Tap to apply instantly",
+          "suggested": "Suggested",
+          "getStarted": "Get AI Recommendations",
+          "refresh": "Refresh Ideas"
+        }
       },
       "coreGoal": {
         "title": "Core Goal Settings",
         "mandalartTitle": "Mandalart Title",
         "titlePlaceholder": "e.g., Healthy Life, Self-Improvement",
         "coreGoalLabel": "Core Goal",
-        "coreGoalPlaceholder": "Enter your core goal"
+        "coreGoalPlaceholder": "Enter your core goal",
+        "aiSuggest": "AI Sub-goal Recommendations",
+        "guide": {
+          "title": "Finding Your Heartfelt Goal",
+          "tip1_title": "Listen to Your Voice",
+          "tip1_desc": "Is this something YOU truly want,\nor is it a 'should' based on social pressure?",
+          "tip2_title": "Feel the Joy",
+          "tip2_desc": "When you visualize achieving this,\ndoes it make you feel genuinely excited?",
+          "tip3_title": "Ask Your 'Why'",
+          "tip3_desc": "A clear purpose gives you the resilience\nto keep going when things get tough.",
+          "tip4_title": "Vision Over Precision",
+          "tip4_desc": "It's okay to be abstract—save the specific\nmetrics for sub-goals and actions."
+        }
       },
       "routine": {
         "title": "Routine Settings",
@@ -736,7 +797,7 @@
       "referenceInfo": "Reference type is not included in achievement rate"
     },
     "subGoalEdit": {
-      "title": "Edit Sub-goal",
+      "title": "Sub-goal",
       "description": "You can edit sub-goal and actions",
       "subGoalLabel": "Sub-goal",
       "subGoalPlaceholder": "Enter sub-goal title",
@@ -848,14 +909,17 @@
         "action": "Action",
         "back": "Back",
         "saving": "Saving...",
-        "titlePlaceholder": "Enter mandalart title",
+        "titlePlaceholder": "Enter your core goal",
         "backToOverview": "Back to overview",
         "tapToEdit": "Tap cells to edit",
-        "tapActionToEdit": "Tap action to edit"
+        "tapActionToEdit": "Tap action to edit",
+        "coreGoalProgress": "Core Goal {{filled}}/{{total}}",
+        "subGoalProgress": "Sub-goals {{filled}}/{{total}}",
+        "actionProgress": "Actions {{filled}}/{{total}}"
       },
       "validation": {
-        "enterTitle": "Please enter a title.",
-        "enterCoreGoal": "Please enter the core goal."
+        "enterTitle": "Please enter your core goal.",
+        "enterCoreGoal": "Please enter your core goal."
       },
       "success": {
         "title": "Success",
@@ -894,6 +958,11 @@
       "exportError": "An error occurred while exporting.",
       "loadingError": "An error occurred while loading the mandalart.",
       "exportWatermark": "Turn goals into action, MandaAct",
+      "stats": {
+        "coreGoal": "Core Goal",
+        "subGoal": "Sub-goals",
+        "action": "Actions"
+      },
       "usage": {
         "title": "How to Use",
         "tapToView": "Tap each area to view details and edit.",

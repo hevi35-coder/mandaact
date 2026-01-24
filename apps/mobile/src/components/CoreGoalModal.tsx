@@ -7,8 +7,9 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native'
-import { X, Check } from 'lucide-react-native'
+import { X, Check, Lightbulb } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
@@ -16,7 +17,6 @@ import { useTranslation } from 'react-i18next'
 interface CoreGoalModalProps {
   visible: boolean
   onClose: () => void
-  initialTitle: string
   initialCenterGoal: string
   onSave: (data: { title: string; centerGoal: string }) => void
 }
@@ -24,23 +24,21 @@ interface CoreGoalModalProps {
 export default function CoreGoalModal({
   visible,
   onClose,
-  initialTitle,
   initialCenterGoal,
   onSave,
 }: CoreGoalModalProps) {
   const { t } = useTranslation()
-  const [title, setTitle] = useState('')
   const [centerGoal, setCenterGoal] = useState('')
 
   useEffect(() => {
     if (visible) {
-      setTitle(initialTitle)
       setCenterGoal(initialCenterGoal)
     }
-  }, [visible, initialTitle, initialCenterGoal])
+  }, [visible, initialCenterGoal])
 
   const handleSave = () => {
-    onSave({ title, centerGoal })
+    // Use the same value for both title and centerGoal
+    onSave({ title: centerGoal, centerGoal })
     onClose()
   }
 
@@ -108,22 +106,8 @@ export default function CoreGoalModal({
               </Pressable>
             </View>
 
-            <View className="p-4">
-              {/* Title */}
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">
-                  {t('mandalart.modal.coreGoal.mandalartTitle')}
-                </Text>
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder={t('mandalart.modal.coreGoal.titlePlaceholder')}
-                  className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-base text-gray-900"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-
-              {/* Center Goal */}
+            <ScrollView className="p-4" showsVerticalScrollIndicator={false}>
+              {/* Core Goal - Single unified field */}
               <View className="mb-4">
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   {t('mandalart.modal.coreGoal.coreGoalLabel')}
@@ -140,9 +124,72 @@ export default function CoreGoalModal({
                 />
               </View>
 
+              {/* Goal Writing Guide */}
+              <View className="bg-blue-50 rounded-xl p-4 mb-4">
+                <View className="flex-row items-center mb-3">
+                  <Lightbulb size={18} color="#3b82f6" />
+                  <Text
+                    className="text-lg font-bold text-blue-800 ml-2"
+                    style={{ fontFamily: 'Pretendard-Bold' }}
+                  >
+                    {t('mandalart.modal.coreGoal.guide.title')}
+                  </Text>
+                </View>
+
+                <View className="gap-y-5">
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip1_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip1_desc')}
+                    </Text>
+                  </View>
+
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip2_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip2_desc')}
+                    </Text>
+                  </View>
+
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip3_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip3_desc')}
+                    </Text>
+                  </View>
+
+                  <View>
+                    <Text
+                      className="text-base font-bold text-blue-900 mb-1"
+                      style={{ fontFamily: 'Pretendard-Bold' }}
+                    >
+                      {t('mandalart.modal.coreGoal.guide.tip4_title')}
+                    </Text>
+                    <Text className="text-[15px] text-gray-700 leading-6">
+                      {t('mandalart.modal.coreGoal.guide.tip4_desc')}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
               {/* Bottom padding for safe area */}
-              <View className="h-4" />
-            </View>
+              <View className="h-8" />
+            </ScrollView>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

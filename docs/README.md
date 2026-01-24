@@ -6,6 +6,8 @@
 
 - `docs/development/SETUP_GUIDE.md`  
   개발 환경 최초 세팅(Supabase/외부 API 포함). 새로 온 팀원 온보딩의 1순위.
+- `docs/development/SIMULATOR_SETUP_GUIDE.md`  
+  모바일 앱 개발을 위한 시뮬레이터/에뮬레이터 환경 구성 가이드. 시행착오 방지용.
 - `docs/development/DEVELOPMENT.md`  
   코드 스타일/구조/개발 규칙. 리팩토링/새 기능 추가 전 필독.
 - `docs/development/BUILD_GUIDE.md`  

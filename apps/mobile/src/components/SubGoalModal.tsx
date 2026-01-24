@@ -21,8 +21,11 @@ import {
   Lightbulb,
   ChevronLeft,
   Info,
+  Sparkles,
 } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
+import { coachingService } from '../services/coachingService'
+import { ActivityIndicator } from 'react-native'
 import SortableList from './SortableList'
 import {
   suggestActionType,
@@ -57,6 +60,7 @@ interface SubGoalModalProps {
   initialTitle: string
   initialActions: Array<{ position: number; title: string; type?: ActionType }>
   onSave: (data: SubGoalData) => void
+  centerGoal?: string
 }
 
 const WEEKLY_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
@@ -150,6 +154,7 @@ export default function SubGoalModal({
   initialTitle,
   initialActions,
   onSave,
+  centerGoal,
 }: SubGoalModalProps) {
   const { t } = useTranslation()
   const [title, setTitle] = useState('')
@@ -171,6 +176,7 @@ export default function SubGoalModal({
   // Custom monthly input states
   const [showCustomMonthlyInput, setShowCustomMonthlyInput] = useState(false)
   const [customMonthlyValue, setCustomMonthlyValue] = useState('')
+  const [isSuggesting, setIsSuggesting] = useState(false)
 
   const weekdays = useMemo(() => ([
     { value: 1, short: t('actionType.weekdayShort.mon') },
@@ -321,6 +327,44 @@ export default function SubGoalModal({
     }
     setActions(newActions)
   }, [actions])
+
+  const handleAIActionSuggest = useCallback(async () => {
+    if (!title.trim()) return
+    setIsSuggesting(true)
+    try {
+      const suggestedActions = await coachingService.suggestActionsV2({
+        subGoal: title,
+        coreGoal: centerGoal,
+        language: t('common.language_code') || 'ko'
+      })
+
+      if (suggestedActions && suggestedActions.length > 0) {
+        const newActions = actions.map((a, idx) => {
+          const suggestedTitle = suggestedActions[idx] || ''
+          if (!suggestedTitle) return a
+
+          const suggestion = suggestActionType(suggestedTitle)
+          const isHighConfidence = suggestion.confidence === 'high'
+
+          return {
+            ...a,
+            title: suggestedTitle,
+            type: suggestion.type,
+            routine_frequency: isHighConfidence ? suggestion.routineFrequency : undefined,
+            routine_weekdays: isHighConfidence ? suggestion.routineWeekdays : undefined,
+            routine_count_per_period: isHighConfidence ? suggestion.routineCountPerPeriod : undefined,
+            mission_completion_type: isHighConfidence ? suggestion.missionCompletionType : undefined,
+            mission_period_cycle: isHighConfidence ? suggestion.missionPeriodCycle : undefined,
+          }
+        })
+        setActions(newActions)
+      }
+    } catch (error) {
+      console.error('AI Action Suggestion error:', error)
+    } finally {
+      setIsSuggesting(false)
+    }
+  }, [title, centerGoal, actions, t])
 
   // Open type selector
   const openTypeSelector = useCallback((index: number) => {
@@ -477,9 +521,30 @@ export default function SubGoalModal({
 
                 {/* Actions List with Drag Reorder */}
                 <View className="mb-4">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">
-                    {t('mandalart.modal.subGoal.actionsLabel')}
-                  </Text>
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-sm font-medium text-gray-700">
+                      {t('mandalart.modal.subGoal.actionsLabel')}
+                    </Text>
+                    <Pressable
+                      onPress={handleAIActionSuggest}
+                      disabled={isSuggesting || !title.trim()}
+                      className={`flex-row items-center px-3 py-1.5 rounded-full ${isSuggesting || !title.trim() ? 'opacity-50' : ''
+                        }`}
+                      style={{ backgroundColor: '#f0f9ff' }}
+                    >
+                      {isSuggesting ? (
+                        <ActivityIndicator size="small" color="#0ea5e9" />
+                      ) : (
+                        <Sparkles size={14} color="#0ea5e9" />
+                      )}
+                      <Text
+                        className="text-xs font-semibold ml-1.5 text-sky-700"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('mandalart.modal.subGoal.aiSuggest')}
+                      </Text>
+                    </Pressable>
+                  </View>
                   <GestureHandlerRootView>
                     <SortableList
                       data={actions}
@@ -536,9 +601,8 @@ export default function SubGoalModal({
                               <Pressable
                                 onPress={() => action.title && openTypeSelector(index)}
                                 disabled={!action.title}
-                                className={`flex-row items-center px-2 py-1 rounded ml-2 ${
-                                  action.title ? 'bg-gray-100 active:bg-gray-200' : 'bg-gray-50'
-                                }`}
+                                className={`flex-row items-center px-2 py-1 rounded ml-2 ${action.title ? 'bg-gray-100 active:bg-gray-200' : 'bg-gray-50'
+                                  }`}
                               >
                                 <ActionTypeIcon type={action.type || 'routine'} size={12} />
                                 <Text className={`text-xs ml-1 ${action.title ? 'text-gray-600' : 'text-gray-400'}`}>
@@ -584,18 +648,16 @@ export default function SubGoalModal({
                       <Pressable
                         key={option.type}
                         onPress={() => setSelectedType(option.type)}
-                        className={`flex-row items-center p-4 rounded-xl border ${
-                          selectedType === option.type
-                            ? 'border-gray-900 bg-gray-50'
-                            : 'border-gray-200 bg-white'
-                        }`}
+                        className={`flex-row items-center p-4 rounded-xl border ${selectedType === option.type
+                          ? 'border-gray-900 bg-gray-50'
+                          : 'border-gray-200 bg-white'
+                          }`}
                       >
                         <View
-                          className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${
-                            selectedType === option.type
-                              ? 'border-gray-900 bg-gray-900'
-                              : 'border-gray-300'
-                          }`}
+                          className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${selectedType === option.type
+                            ? 'border-gray-900 bg-gray-900'
+                            : 'border-gray-300'
+                            }`}
                         >
                           {selectedType === option.type && (
                             <View className="w-2 h-2 rounded-full bg-white" />
@@ -638,18 +700,16 @@ export default function SubGoalModal({
                               setShowCustomMonthlyInput(false)
                               setCustomMonthlyValue('')
                             }}
-                            className={`flex-1 py-2.5 rounded-lg border items-center ${
-                              routineFrequency === option.value
-                                ? 'bg-gray-900 border-gray-900'
-                                : 'bg-white border-gray-300'
-                            }`}
+                            className={`flex-1 py-2.5 rounded-lg border items-center ${routineFrequency === option.value
+                              ? 'bg-gray-900 border-gray-900'
+                              : 'bg-white border-gray-300'
+                              }`}
                           >
                             <Text
-                              className={`text-sm font-medium ${
-                                routineFrequency === option.value
-                                  ? 'text-white'
-                                  : 'text-gray-700'
-                              }`}
+                              className={`text-sm font-medium ${routineFrequency === option.value
+                                ? 'text-white'
+                                : 'text-gray-700'
+                                }`}
                             >
                               {option.label}
                             </Text>
@@ -669,18 +729,16 @@ export default function SubGoalModal({
                             <Pressable
                               key={day.value}
                               onPress={() => handleWeekdayToggle(day.value)}
-                              className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                                routineWeekdays.includes(day.value)
-                                  ? 'bg-gray-900 border-gray-900'
-                                  : 'bg-white border-gray-300'
-                              }`}
+                              className={`w-9 h-9 rounded-lg items-center justify-center border ${routineWeekdays.includes(day.value)
+                                ? 'bg-gray-900 border-gray-900'
+                                : 'bg-white border-gray-300'
+                                }`}
                             >
                               <Text
-                                className={`text-sm font-medium ${
-                                  routineWeekdays.includes(day.value)
-                                    ? 'text-white'
-                                    : 'text-gray-700'
-                                }`}
+                                className={`text-sm font-medium ${routineWeekdays.includes(day.value)
+                                  ? 'text-white'
+                                  : 'text-gray-700'
+                                  }`}
                               >
                                 {day.short}
                               </Text>
@@ -699,18 +757,16 @@ export default function SubGoalModal({
                                 <Pressable
                                   key={count}
                                   onPress={() => setRoutineCountPerPeriod(count)}
-                                  className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                                    routineCountPerPeriod === count
-                                      ? 'bg-gray-900 border-gray-900'
-                                      : 'bg-white border-gray-300'
-                                  }`}
+                                  className={`w-9 h-9 rounded-lg items-center justify-center border ${routineCountPerPeriod === count
+                                    ? 'bg-gray-900 border-gray-900'
+                                    : 'bg-white border-gray-300'
+                                    }`}
                                 >
                                   <Text
-                                    className={`text-sm font-medium ${
-                                      routineCountPerPeriod === count
-                                        ? 'text-white'
-                                        : 'text-gray-700'
-                                    }`}
+                                    className={`text-sm font-medium ${routineCountPerPeriod === count
+                                      ? 'text-white'
+                                      : 'text-gray-700'
+                                      }`}
                                   >
                                     {count}
                                   </Text>
@@ -734,18 +790,16 @@ export default function SubGoalModal({
                                 setRoutineCountPerPeriod(count)
                                 setShowCustomMonthlyInput(false)
                               }}
-                              className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                                routineCountPerPeriod === count && !showCustomMonthlyInput
-                                  ? 'bg-gray-900 border-gray-900'
-                                  : 'bg-white border-gray-300'
-                              }`}
+                              className={`w-9 h-9 rounded-lg items-center justify-center border ${routineCountPerPeriod === count && !showCustomMonthlyInput
+                                ? 'bg-gray-900 border-gray-900'
+                                : 'bg-white border-gray-300'
+                                }`}
                             >
                               <Text
-                                className={`text-sm font-medium ${
-                                  routineCountPerPeriod === count && !showCustomMonthlyInput
-                                    ? 'text-white'
-                                    : 'text-gray-700'
-                                }`}
+                                className={`text-sm font-medium ${routineCountPerPeriod === count && !showCustomMonthlyInput
+                                  ? 'text-white'
+                                  : 'text-gray-700'
+                                  }`}
                               >
                                 {count}
                               </Text>
@@ -813,18 +867,16 @@ export default function SubGoalModal({
                           <Pressable
                             key={option.value}
                             onPress={() => setMissionCompletionType(option.value)}
-                            className={`flex-row items-center p-4 rounded-lg border ${
-                              missionCompletionType === option.value
-                                ? 'border-gray-900 bg-white'
-                                : 'border-gray-200 bg-white'
-                            }`}
+                            className={`flex-row items-center p-4 rounded-lg border ${missionCompletionType === option.value
+                              ? 'border-gray-900 bg-white'
+                              : 'border-gray-200 bg-white'
+                              }`}
                           >
                             <View
-                              className={`w-4 h-4 rounded-full border-2 mr-3 items-center justify-center ${
-                                missionCompletionType === option.value
-                                  ? 'border-gray-900'
-                                  : 'border-gray-300'
-                              }`}
+                              className={`w-4 h-4 rounded-full border-2 mr-3 items-center justify-center ${missionCompletionType === option.value
+                                ? 'border-gray-900'
+                                : 'border-gray-300'
+                                }`}
                             >
                               {missionCompletionType === option.value && (
                                 <View className="w-2 h-2 rounded-full bg-gray-900" />
@@ -851,18 +903,16 @@ export default function SubGoalModal({
                             <Pressable
                               key={option.value}
                               onPress={() => setMissionPeriodCycle(option.value)}
-                              className={`px-4 py-2 rounded-lg border ${
-                                missionPeriodCycle === option.value
-                                  ? 'bg-gray-900 border-gray-900'
-                                  : 'bg-white border-gray-300'
-                              }`}
+                              className={`px-4 py-2 rounded-lg border ${missionPeriodCycle === option.value
+                                ? 'bg-gray-900 border-gray-900'
+                                : 'bg-white border-gray-300'
+                                }`}
                             >
                               <Text
-                                className={`text-sm font-medium ${
-                                  missionPeriodCycle === option.value
-                                    ? 'text-white'
-                                    : 'text-gray-700'
-                                }`}
+                                className={`text-sm font-medium ${missionPeriodCycle === option.value
+                                  ? 'text-white'
+                                  : 'text-gray-700'
+                                  }`}
                               >
                                 {option.label}
                               </Text>

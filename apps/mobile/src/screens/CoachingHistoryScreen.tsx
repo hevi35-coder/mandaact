@@ -6,6 +6,7 @@ import {
     ActivityIndicator,
     Pressable,
     Modal,
+    Alert,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -30,12 +31,16 @@ interface Message {
 interface MandalartAction {
     sub_goal: string;
     content: string;
+    summary?: string;    // Short label for grid display
+    detail?: string;     // Full description for preview
     type?: 'habit' | 'task';
 }
 
 interface MandalartDraft {
     center_goal: string;
+    center_goal_detail?: string;      // Detailed version
     sub_goals: string[];
+    sub_goals_detail?: string[];      // Detailed versions
     actions: MandalartAction[];
     emergency_action?: string;
 }
@@ -92,6 +97,35 @@ export default function CoachingHistoryScreen() {
         }
     };
 
+    const handleDeleteHistory = async () => {
+        Alert.alert(
+            t('coaching.history.deleteConfirmTitle', '기록 삭제'),
+            t('coaching.history.deleteConfirmMessage', '이 코칭 대화 기록을 삭제하시겠습니까?'),
+            [
+                { text: t('common.cancel'), style: 'cancel' },
+                {
+                    text: t('common.delete'),
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const { error: deleteError } = await supabase
+                                .from('coaching_sessions')
+                                .delete()
+                                .eq('id', sessionId);
+
+                            if (deleteError) throw deleteError;
+
+                            navigation.goBack();
+                        } catch (err) {
+                            console.error('Failed to delete coaching history:', err);
+                            Alert.alert(t('common.error'), t('coaching.history.deleteError', '기록 삭제 중 오류가 발생했습니다.'));
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     if (isLoading) {
         return (
             <View style={{ flex: 1, backgroundColor: '#f9fafb', justifyContent: 'center', alignItems: 'center' }}>
@@ -110,19 +144,34 @@ export default function CoachingHistoryScreen() {
                 showBackButton
                 navigation={navigation}
                 rightElement={
-                    mandalartDraft ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        {/* Delete Button */}
                         <Pressable
-                            onPress={() => setIsPreviewVisible(true)}
+                            onPress={handleDeleteHistory}
                             style={{
                                 padding: 8,
-                                backgroundColor: '#f3f4f6',
+                                backgroundColor: '#fee2e2',
                                 borderRadius: 20
                             }}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Ionicons name="list-outline" size={20} color="#6366f1" />
+                            <Ionicons name="trash-outline" size={20} color="#ef4444" />
                         </Pressable>
-                    ) : null
+                        {/* Preview Button */}
+                        {mandalartDraft && (
+                            <Pressable
+                                onPress={() => setIsPreviewVisible(true)}
+                                style={{
+                                    padding: 8,
+                                    backgroundColor: '#f3f4f6',
+                                    borderRadius: 20
+                                }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="list-outline" size={20} color="#6366f1" />
+                            </Pressable>
+                        )}
+                    </View>
                 }
             />
 
@@ -130,26 +179,34 @@ export default function CoachingHistoryScreen() {
             <Modal
                 visible={isPreviewVisible}
                 animationType="slide"
-                transparent={false}
+                transparent={true}
+                presentationStyle="overFullScreen"
+                statusBarTranslucent={true}
                 onRequestClose={() => setIsPreviewVisible(false)}
             >
-                <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'white',
+                    paddingTop: Math.max(insets.top, 47),
+                    paddingBottom: insets.bottom
+                }}>
                     {/* Header */}
                     <View style={{
                         flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         paddingHorizontal: 16,
-                        height: 56,
+                        height: 64,
                         borderBottomWidth: 1,
                         borderBottomColor: '#f3f4f6'
                     }}>
-                        <Text style={{ fontSize: 18, fontFamily: 'Pretendard-Bold', color: '#1f2937' }}>
+                        <View style={{ width: 40 }} />
+                        <Text style={{ fontSize: 18, fontFamily: 'Pretendard-Bold', color: '#1f2937', flex: 1, textAlign: 'center' }}>
                             {t('mandalart.modal.preview.title', 'Mandalart Preview')}
                         </Text>
                         <Pressable
                             onPress={() => setIsPreviewVisible(false)}
-                            style={{ padding: 8 }}
+                            style={{ padding: 8, width: 40, alignItems: 'flex-end' }}
                         >
                             <Ionicons name="close" size={24} color="#6b7280" />
                         </Pressable>
@@ -164,7 +221,7 @@ export default function CoachingHistoryScreen() {
                         {/* Compact Core Goal */}
                         <View style={{
                             flexDirection: 'row',
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
                             backgroundColor: '#1e40af',
                             borderRadius: 12,
                             padding: 14,
@@ -177,7 +234,8 @@ export default function CoachingHistoryScreen() {
                                 backgroundColor: 'rgba(255,255,255,0.2)',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                marginRight: 12
+                                marginRight: 12,
+                                marginTop: 2
                             }}>
                                 <Ionicons name="flag" size={18} color="white" />
                             </View>
@@ -188,6 +246,12 @@ export default function CoachingHistoryScreen() {
                                 <Text style={{ fontSize: 15, color: 'white', fontFamily: 'Pretendard-Bold' }} numberOfLines={2}>
                                     {mandalartDraft?.center_goal || t('coaching.step2.placeholder', 'Not set')}
                                 </Text>
+                                {/* v18.0: Show detail if different from summary */}
+                                {mandalartDraft?.center_goal_detail && mandalartDraft.center_goal_detail !== mandalartDraft.center_goal && (
+                                    <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', fontFamily: 'Pretendard-Regular', marginTop: 4, lineHeight: 17 }}>
+                                        {mandalartDraft.center_goal_detail}
+                                    </Text>
+                                )}
                             </View>
                         </View>
 
@@ -251,6 +315,19 @@ export default function CoachingHistoryScreen() {
                                                 }}>
                                                     {subGoal}
                                                 </Text>
+                                                {/* v18.0: Show detail if different from summary */}
+                                                {mandalartDraft?.sub_goals_detail?.[idx] &&
+                                                    mandalartDraft.sub_goals_detail[idx] !== subGoal &&
+                                                    isExpanded && (
+                                                        <Text style={{
+                                                            fontSize: 11,
+                                                            color: '#64748b',
+                                                            fontFamily: 'Pretendard-Regular',
+                                                            marginTop: 4
+                                                        }}>
+                                                            {mandalartDraft.sub_goals_detail[idx]}
+                                                        </Text>
+                                                    )}
 
                                                 <View style={{
                                                     backgroundColor: actionCount > 0 ? '#f0fdf4' : '#fff7ed',
@@ -300,15 +377,28 @@ export default function CoachingHistoryScreen() {
                                                                     marginTop: 7,
                                                                     marginRight: 10
                                                                 }} />
-                                                                <Text style={{
-                                                                    fontSize: 13,
-                                                                    color: '#475569',
-                                                                    flex: 1,
-                                                                    lineHeight: 18,
-                                                                    fontFamily: 'Pretendard-Regular'
-                                                                }}>
-                                                                    {action.content}
-                                                                </Text>
+                                                                <View style={{ flex: 1 }}>
+                                                                    <Text style={{
+                                                                        fontSize: 13,
+                                                                        color: '#1e293b',
+                                                                        fontFamily: 'Pretendard-Medium',
+                                                                        lineHeight: 18
+                                                                    }}>
+                                                                        {action.summary || action.content}
+                                                                    </Text>
+                                                                    {/* v18.0: Show detail if different from summary */}
+                                                                    {action.detail && action.detail !== (action.summary || action.content) && (
+                                                                        <Text style={{
+                                                                            fontSize: 11,
+                                                                            color: '#64748b',
+                                                                            fontFamily: 'Pretendard-Regular',
+                                                                            marginTop: 2,
+                                                                            lineHeight: 15
+                                                                        }}>
+                                                                            {action.detail}
+                                                                        </Text>
+                                                                    )}
+                                                                </View>
                                                             </View>
                                                         ))
                                                     ) : (
@@ -371,7 +461,7 @@ export default function CoachingHistoryScreen() {
                             </Text>
                         </Pressable>
                     </View>
-                </SafeAreaView>
+                </View>
             </Modal>
 
             <ScrollView

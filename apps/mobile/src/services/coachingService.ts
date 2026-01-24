@@ -2,9 +2,9 @@ import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 
 export interface AISuggestSubGoalsParams {
-    persona: string
+    persona?: string
     coreGoal: string
-    priorityArea: string
+    priorityArea?: string
     detailedContext?: string
     language?: string
 }
@@ -112,13 +112,18 @@ class CoachingService {
         }
     }
 
-    async suggestSubGoals(params: AISuggestSubGoalsParams, sessionId?: string | null): Promise<string[]> {
+    async suggestSubGoals(params: AISuggestSubGoalsParams, sessionId?: string | null): Promise<{ title: string; reason: string }[]> {
         const result = await this.invokeFunction('suggest_sub_goals', params, sessionId)
         return result.sub_goals || []
     }
 
     async generateActions(params: AIGenerateActionsParams, sessionId?: string | null): Promise<ActionVariant[]> {
         const result = await this.invokeFunction('generate_actions', params, sessionId)
+        return result.actions || []
+    }
+
+    async suggestActionsV2(params: { subGoal: string; coreGoal?: string; language?: string }, sessionId?: string | null): Promise<string[]> {
+        const result = await this.invokeFunction('suggest_actions_v2', params, sessionId)
         return result.actions || []
     }
 
@@ -136,8 +141,30 @@ class CoachingService {
         return await this.invokeFunction('chat', params, sessionId)
     }
 
-    async commitMandalart(mandalart_draft: any, sessionId?: string | null): Promise<{ success: boolean; mandalartId?: string; error?: string }> {
+    async commitMandalart(mandalart_draft: any, sessionId?: string | null): Promise<{
+        success: boolean;
+        mandalartId?: string;
+        error?: string;
+        canRetry?: boolean;
+        draftSource?: string;
+        actionsInserted?: number;
+    }> {
         return await this.invokeFunction('commit_mandalart', { mandalart_draft }, sessionId)
+    }
+
+    // v18.2: Force step transition via button click
+    async forceNextStep(params: { currentStep: number }, sessionId?: string | null): Promise<{
+        success: boolean;
+        previous_step: number;
+        current_step: number;
+        message?: string;
+    }> {
+        return await this.invokeFunction('force_next_step', params, sessionId)
+    }
+
+    async summarizeToKeyword(text: string, language?: string, sessionId?: string | null): Promise<{ keyword: string; description: string }> {
+        const result = await this.invokeFunction('summarize_to_keyword', { text, language }, sessionId)
+        return result
     }
 }
 

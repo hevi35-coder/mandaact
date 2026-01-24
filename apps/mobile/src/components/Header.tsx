@@ -118,9 +118,6 @@ export default function Header({
             </Pressable>
           )}
         </View>
-
-        {/* Empty space for alignment when back button is shown */}
-        {showBackButton && <View className="w-10" />}
       </View>
     </View>
   )
