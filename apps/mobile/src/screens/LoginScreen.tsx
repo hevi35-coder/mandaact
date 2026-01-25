@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
-import { Globe, ChevronDown } from 'lucide-react-native'
+import { Globe, ChevronDown } from 'lucide-native'
 import { useTranslation } from 'react-i18next'
 import { changeLanguage, getCurrentLanguage, type SupportedLanguage } from '../i18n'
 import { AppleIcon } from '../components/icons/AppleIcon'
@@ -25,9 +25,9 @@ const LANGUAGES = [
 ]
 
 /**
- * SOPHISTICATED PERFECTION BUTTON (V10)
- * Expert Note: Sophisticated 1.0px borders with Gray-200. 
- * Decoupled rendering for absolute stability.
+ * FINAL STABLE SOCIAL BUTTON (V11)
+ * Combines visual shield and touch layer into a single robust Pressable.
+ * Guarantees centered alignment and 1:1 touch response.
  */
 interface SocialButtonProps {
   onPress?: () => void
@@ -42,7 +42,6 @@ function SocialLoginButton({ onPress, icon, label }: SocialButtonProps) {
       style={({ pressed }) => [
         styles.sophisticatedWrapper,
         styles.visualBox,
-        { position: 'relative' },
         pressed && styles.touchLayerPressed
       ]}
     >
@@ -80,6 +79,8 @@ export default function LoginScreen() {
         identifyUser(result.user.id, { email: result.user.email })
       }
     } catch (error: any) {
+      // NOTE: This often fails in simulator with "missing support for URL schemes"
+      // because it requires manual configuration in Info.plist.
       Alert.alert(t('common.error'), t('login.googleLoginFailed'))
     }
   }, [signInWithGoogle, t])
@@ -92,6 +93,7 @@ export default function LoginScreen() {
         identifyUser(result.user.id, { email: result.user.email })
       }
     } catch (error: any) {
+      // NOTE: This often fails in simulator due to absence of proper device entitlements.
       Alert.alert(t('common.error'), t('login.appleLoginFailed'))
     }
   }, [signInWithApple, t])
@@ -140,10 +142,9 @@ export default function LoginScreen() {
           )}
         </View>
 
-        {/* Hero Branding Section (Fixed Axial Alignment) */}
+        {/* Hero Branding Section (Axial Alignment Perfected) */}
         <View style={styles.heroLayout}>
           <View style={styles.brandingCenterGroup}>
-            {/* Logo Group: Mathematically Calibrated Centering */}
             <View style={styles.logoRootCenter}>
               <Text style={styles.mandaTextBold}>Manda</Text>
               <MaskedView
@@ -173,7 +174,7 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Action Sector: REFINED SPACING & SOPHISTICATED WEIGHT */}
+        {/* Action Sector: STABLE TOUCH BUTTONS */}
         <View style={styles.actionSectorGroup}>
           <View style={styles.buttonStackGroup}>
             <View style={{ marginBottom: 16 }}>
@@ -193,7 +194,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Legal Footer: Optimized for Single Line */}
           <View style={styles.footerLegalZone}>
             <Text
               style={styles.legalNoticeTinyText}
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     fontFamily: 'Pretendard-Bold'
   },
-  // HERO & BRANDING (AXIAL ALIGNMENT CORRECTED)
+  // HERO & BRANDING
   heroLayout: {
     flex: 1,
     justifyContent: 'center',
@@ -301,12 +301,11 @@ const styles = StyleSheet.create({
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     color: '#111827',
-    letterSpacing: -2.5, // Slightly tighter to pull center
+    letterSpacing: -2.5,
   },
   actMaskFixedSize: {
-    width: 76,  // CALIBRATED: Reduced from 85/90 to perfectly frame 'Act'
+    width: 76,
     height: 64,
-    marginLeft: 0
   },
   actTextBold: {
     fontSize: 50,
@@ -333,7 +332,7 @@ const styles = StyleSheet.create({
     height: 104,
     borderRadius: 26
   },
-  // SOPHISTICATED PERFECTION BUTTONS
+  // SOCIAL BUTTONS (CORRECTED STRUCTURE)
   actionSectorGroup: {
     width: '100%',
     maxWidth: 345,
@@ -344,15 +343,15 @@ const styles = StyleSheet.create({
   },
   sophisticatedWrapper: {
     width: '100%',
-    height: 58, // Tighter premium height
-    position: 'relative'
+    height: 58,
+    justifyContent: 'center', // CENTER CONTENT VERTICALLY
+    alignItems: 'center',     // CENTER CONTENT HORIZONTALLY
   },
   visualBox: {
-    backgroundColor: '#fcfdfe', // Slightly purer fill
-    borderWidth: 1.0, // ULTRA-SOPHISTICATED WEIGHT
-    borderColor: '#e2e8f0', // SOFT GRAY-200
+    backgroundColor: '#fcfdfe',
+    borderWidth: 1.0,
+    borderColor: '#e2e8f0',
     borderRadius: 18,
-    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
@@ -363,7 +362,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
+    width: '100%',
+    height: '100%'
   },
   iconCenterWrap: {
     marginRight: 10,
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   labelPremiumText: {
-    fontSize: 17, // Subtly refined font size
+    fontSize: 17,
     fontFamily: 'Pretendard-Bold',
     color: '#1e293b',
     textAlign: 'center',
@@ -381,25 +382,16 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     lineHeight: 22
   },
-  touchLayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 18,
-    zIndex: 10
-  },
   touchLayerPressed: {
     backgroundColor: 'rgba(0, 0, 0, 0.04)'
   },
   footerLegalZone: {
-    paddingHorizontal: 4, // MINIMIZED for single line fit
-    marginTop: 20, // Tightened from Google button
+    paddingHorizontal: 4,
+    marginTop: 20,
     paddingBottom: 40
   },
   legalNoticeTinyText: {
-    fontSize: 10.5, // Slightly smaller to guarantee 1-line
+    fontSize: 10.5,
     color: '#94a3b8',
     textAlign: 'center',
     lineHeight: 14,
