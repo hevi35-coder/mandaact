@@ -928,10 +928,16 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
             storeProductsCount: planLoad.storeProducts.length,
           })
         }
-      } catch (error) {
-        console.error('[useSubscription] ❌ Initialization error:', error)
-        if (mounted) {
-          setError(i18n.t('errors.unknown', { defaultValue: 'Something went wrong. Please try again.' }))
+      } catch (error: any) {
+        const errorMessage = error?.message || String(error)
+        // Ignore network cancellation errors (common during hot reload or background fetch)
+        if (errorMessage.toLowerCase().includes('cancelled') || errorMessage.toLowerCase().includes('network error')) {
+          console.warn('[useSubscription] ⚠️ Initialization cancelled/network error (ignoring):', errorMessage)
+        } else {
+          console.error('[useSubscription] ❌ Initialization error:', error)
+          if (mounted) {
+            setError(i18n.t('errors.unknown', { defaultValue: 'Something went wrong. Please try again.' }))
+          }
         }
       } finally {
         if (mounted) {

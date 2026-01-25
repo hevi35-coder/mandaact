@@ -156,7 +156,7 @@ export default function SubGoalModal({
   onSave,
   centerGoal,
 }: SubGoalModalProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [title, setTitle] = useState('')
   const [actions, setActions] = useState<ActionData[]>([])
   const [editingTitleMode, setEditingTitleMode] = useState(false)
@@ -335,7 +335,7 @@ export default function SubGoalModal({
       const suggestedActions = await coachingService.suggestActionsV2({
         subGoal: title,
         coreGoal: centerGoal,
-        language: t('common.language_code') || 'ko'
+        language: i18n.language
       })
 
       if (suggestedActions && suggestedActions.length > 0) {
@@ -535,7 +535,7 @@ export default function SubGoalModal({
                         className="text-xs font-semibold ml-1.5 text-sky-700"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                       >
-                        {t('mandalart.modal.subGoal.aiSuggest')}
+                        {t('mandalart.modal.subGoal.aiSuggest.getHelp', 'Get AI Ideas')}
                       </Text>
                     </Pressable>
                   </View>

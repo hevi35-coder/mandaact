@@ -9,6 +9,7 @@ import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { Toggle } from '../ui/Toggle'
+import { formatNumericDateTime } from '../../lib/dateFormat'
 import type { MandalartCardProps } from './types'
 
 export const MandalartCard = React.memo(({
@@ -17,7 +18,7 @@ export const MandalartCard = React.memo(({
     onPress,
     onToggleActive,
 }: MandalartCardProps) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
 
     return (
         <Animated.View
@@ -60,11 +61,10 @@ export const MandalartCard = React.memo(({
                             )}
                         </View>
                         <Text
-                            className="text-base text-gray-500 mt-1"
+                            className="text-[13px] text-gray-400 mt-1.5"
                             style={{ fontFamily: 'Pretendard-Regular' }}
-                            numberOfLines={2}
                         >
-                            {t('mandalart.list.coreGoal')}: {mandalart.center_goal}
+                            {t('common.created_label')}: {formatNumericDateTime(mandalart.created_at, { language: i18n.language, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Seoul' })}
                         </Text>
                     </View>
 

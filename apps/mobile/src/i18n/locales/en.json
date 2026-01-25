@@ -1,5 +1,6 @@
 {
   "common": {
+    "language_code": "en",
     "loading": "Loading...",
     "error": "Error",
     "retry": "Retry",
@@ -18,11 +19,12 @@
     "all": "All",
     "new": "New",
     "success": "Success",
+    "notice": "Notice",
     "ok": "OK",
     "generate": "Generate",
     "generating": "Generating...",
     "viewDetails": "View Details",
-    "userGuide": "User Guide",
+    "userGuide": "Tutorial",
     "create": "Create",
     "sharing": "Sharing...",
     "exporting": "Exporting...",
@@ -31,7 +33,14 @@
     "skip": "Skip",
     "start": "Get Started",
     "lastCheck": "Last: {{date}}",
-    "recordDate": "Set: {{date}}"
+    "recordDate": "Set: {{date}}",
+    "created_label": "Created",
+    "updated_label": "Updated",
+    "permissionRequired": "Permission Required",
+    "notificationPermission": "Please enable notification permissions in settings.",
+    "settings": "Settings",
+    "later": "Maybe Later",
+    "saved": "Saved"
   },
   "datePicker": {
     "title": "Select Date",
@@ -157,7 +166,8 @@
         "alreadyTaken": "That nickname is already taken.",
         "saveError": "Failed to save nickname.",
         "updateError": "Failed to update nickname."
-      }
+      },
+      "hint": "Letters, numbers allowed (2-12 characters)"
     },
     "coachingResume": {
       "title": "AI Coaching in Progress",
@@ -574,15 +584,15 @@
       }
     },
     "empty": {
-      "title": "No practice items yet",
-      "description": "Create a mandalart to\nmanage your daily goals",
+      "title": "Start Your Day Strong",
+      "description": "Small wins lead to big success.\nLet's set up your first simple goal.",
       "howTo": {
-        "title": "How to Start Practicing",
+        "title": "Quick Start Guide",
         "step1": "Create a mandalart",
         "step2": "Check off items daily"
       },
-      "guide": "User Guide",
-      "create": "Create Mandalart"
+      "guide": "Tutorial",
+      "create": "Set First Goal"
     },
     "xp": {
       "earned": "+{{xp}} XP",
@@ -636,20 +646,22 @@
       "confidenceMedium": "Medium",
       "confidenceLow": "Low",
       "typeLabel": "Action Type",
+      "actionLabel": "Action",
       "routineDesc": "Recurring actions like daily, weekly, monthly",
       "missionDesc": "Goal with an end (read a book, get certification)",
       "referenceDesc": "Mindset, values - no check needed",
-      "routineSettings": "Routine Settings",
+      "routineSettings": "",
       "repeatCycle": "Repeat Cycle",
       "weekdaySelect": "Select weekdays (optional)",
+      "weekdaySelectCompact": "Select Days",
       "weekdayHint": "If no weekdays selected, it will be count-based",
       "weeklyGoal": "Weekly goal count",
       "monthlyGoal": "Monthly goal count",
       "dailyHint": "For daily actions, select 'Daily' as repeat cycle",
-      "missionSettings": "Mission Settings",
+      "missionSettings": "",
       "completionType": "Completion Type",
-      "onceDesc": "Finish once (e.g., certification)",
-      "periodicDesc": "Target per period (week/month/etc.)",
+      "onceDesc": "Complete once",
+      "periodicDesc": "Repeat per period",
       "periodCycle": "Period Cycle",
       "referenceInfo": "Reference type is not included in achievement rate",
       "reasonRoutine": "Looks like a recurring practice",
@@ -714,16 +726,17 @@
       "active": "Active",
       "inactive": "Inactive",
       "createNew": "Create New",
+      "createNew": "Create New",
       "empty": {
-        "title": "No mandalarts yet",
-        "description": "Create a mandalart to\nmanage your goals systematically",
-        "howTo": "How to Create a Mandalart",
-        "methodImage": "Upload Image",
-        "methodText": "Paste Text",
-        "methodManual": "Manual Input",
-        "guide": "User Guide"
+        "title": "Visualize Your Success",
+        "description": "Turn vague dreams into concrete plans.\nStart with one core goal.",
+        "howTo": "Why Start Now?",
+        "benefit1": "Clarity: See your path instantly",
+        "benefit2": "Speed: Setup in 3 mins",
+        "benefit3": "Growth: AI-powered suggestions",
+        "guide": "Tutorial"
       },
-      "create": "Create Mandalart",
+      "create": "Create My First Plan",
       "coreGoal": "Core Goal"
     },
     "modal": {
@@ -753,9 +766,11 @@
         "aiSuggest": {
           "title": "AI-Suggested Sub-Goals",
           "subtitle": "Ideas tailored to your vision",
+          "emptyHint": "Ideas tailored to your vision",
           "getHelp": "Get Ideas",
           "loading": "Analyzing personalized suggestions...",
           "empty": "Tap the button to get AI-powered ideas",
+          "applying": "Applying generated plan...",
           "tapToApply": "Tap to apply",
           "suggested": "Suggested",
           "getStarted": "Get AI Ideas",
@@ -794,7 +809,28 @@
         "completionType": "Completion Type",
         "periodCycle": "Period Cycle"
       },
-      "referenceInfo": "Reference type is not included in achievement rate"
+      "referenceInfo": "Reference type is not included in achievement rate",
+      "action": {
+        "title": "Enter Action",
+        "inputTitle": "Enter Action",
+        "placeholder": "Enter a specific action",
+        "guide": {
+          "title": "Action Writing Tips",
+          "tip1_title": "Be Specific",
+          "tip1_desc": "Instead of 'work hard', try 'do it for 10 minutes' with numbers.",
+          "tip2_title": "Make it Measurable",
+          "tip2_desc": "You should be able to clearly check if you did it or not.",
+          "tip3_title": "Keep it Small",
+          "tip3_desc": "Break it down into something you can start today without pressure."
+        },
+        "aiSuggest": {
+          "title": "AI-Suggested Actions",
+          "subtitle": "Personalized actions to help you achieve your goal",
+          "getHelp": "Get Suggestions",
+          "loading": "Analyzing...",
+          "analyzing": "Analyzing personalized suggestions..."
+        }
+      }
     },
     "subGoalEdit": {
       "title": "Sub-goal",
@@ -851,8 +887,8 @@
         "description": "Create goals with a warm coaching session"
       },
       "imageUpload": {
-        "title": "Upload Image",
-        "description": "Upload a photo if you have an existing mandalart",
+        "title": "Scan Image",
+        "description": "From photo to plan",
         "hint": "Auto-extract text from your mandalart image",
         "selectImage": "Select Image",
         "selectSource": "Select Source",
@@ -873,8 +909,8 @@
         "tapToChange": "Tap to select different image"
       },
       "textPaste": {
-        "title": "Paste Text",
-        "description": "Paste your AI-generated text",
+        "title": "Paste Notes",
+        "description": "From notes to plan",
         "hint": "Auto-analyze your pasted mandalart text",
         "analyze": "Analyze Text",
         "processing": "Analyzing text...",
@@ -885,8 +921,8 @@
         "exampleContent": "Core Goal: Healthy Life\n\n1. Exercise\n- Walk 30 min daily\n- Gym 3x/week\n...\n\n2. Eating Habits\n- Drink 2L water\n..."
       },
       "manualInput": {
-        "title": "Manual Input",
-        "description": "Start with an empty grid",
+        "title": "Start Fresh",
+        "description": "Build comfortably with AI",
         "tapToEdit": "Tap cells to enter goals and actions",
         "guideTitle": "How to Create Mandalart",
         "guideItems": [
@@ -927,6 +963,7 @@
       },
       "errors": {
         "imageSelect": "Error selecting image.",
+        "ocrFailed": "Failed to analyze image. Please try again with a clearer image.",
         "ocrProcess": "Error processing OCR.",
         "save": "Error saving.",
         "emptyText": "Please enter text.",
@@ -966,6 +1003,7 @@
       "usage": {
         "title": "How to Use",
         "tapToView": "Tap each area to view details and edit.",
+        "backToOverview": "Press the back button (<) at the top to return to overview.",
         "typeLabel": "Type guide:",
         "routine": "Routine",
         "mission": "Mission",
@@ -1093,7 +1131,8 @@
       "title": "App Settings",
       "language": "Language Settings",
       "timezone": "Timezone Settings",
-      "notifications": "Notification Settings"
+      "notifications": "Notification Settings",
+      "tutorial": "Tutorial"
     },
     "privacy": {
       "title": "Privacy & AI Data",
@@ -1234,62 +1273,48 @@
   },
   "tutorial": {
     "title": "Tutorial",
-    "welcome": "Welcome to MandaAct!",
     "skip": "Skip",
-    "start": "Get Started",
+    "start": "Create My First Goal",
     "next": "Next",
     "previous": "Previous",
-    "steps": {
-      "intro": "Introduction to Mandalart",
-      "create": "Create a Mandalart",
-      "actions": "Set Up Actions",
-      "check": "Daily Checking",
-      "gamification": "Grow Like a Game",
-      "streak": "Maintain Your Streak",
-      "complete": "Ready to Start!"
+    "stepOf": "Step {{current}} of {{total}}",
+    "completionReward": {
+      "title": "You're All Set! 🎉",
+      "message": "You earned +50 XP for completing the tutorial!",
+      "button": "Create My First Goal"
+    },
+    "completion": {
+      "title": "Tutorial Completed",
+      "message": "You're ready to achieve your goals!",
+      "button": "Create My First Goal"
     },
     "content": {
       "welcome": {
-        "title": "Welcome to\nMandaAct!",
-        "description": "Start systematic goal management with Mandalart.\nSmall actions add up to big changes."
+        "title": "Welcome to MandaAct!",
+        "description": "Small daily actions create\nbig changes for tomorrow."
       },
       "mandalart": {
         "title": "What is Mandalart?",
-        "description": "A goal management framework that places\ncore goals, sub-goals, and specific actions\nin a 9x9 grid.",
-        "bullet1": "Center: Core Goal (1)",
-        "bullet2": "Surrounding 8 cells: Sub-goals (8)",
-        "bullet3": "Each sub-goal: Actions (8 each, 64 total)"
-      },
-      "create": {
-        "title": "3 Creation Methods",
-        "description": "Create your mandalart in the way that works best for you.",
-        "imageUpload": "Image Upload: Extract text from photos",
-        "textPaste": "Text Paste: Create from copied text",
-        "manual": "Manual Input: Enter one by one"
+        "description": "A visual framework that turns\nbig goals into daily actions.",
+        "bullet1": "1 Core Goal in the center",
+        "bullet2": "8 Sub Goals surrounding it",
+        "bullet3": "64 Action Items in total"
       },
       "daily": {
-        "title": "Today's Practice",
-        "description": "Check off your tasks for today.",
-        "routine": "Routine: Recurring habits (checkable)",
-        "mission": "Mission: Goals to achieve (checkable)",
-        "reference": "Reference: Mindset/notes (not checkable)"
+        "title": "Daily Practice",
+        "description": "Every check earns XP.\nLevel up as you build momentum.",
+        "routine": "Routine: Daily habits",
+        "mission": "Mission: Goals to achieve",
+        "reference": "Reference: Mindset remainders"
       },
-      "gamification": {
-        "title": "Level Up",
-        "description": "Earn XP with every check.\nLevel up and collect badges!",
-        "bullet1": "Up to 3.5x XP with various bonuses",
-        "bullet2": "Collect various badges"
-      },
-      "stats": {
-        "title": "AI Reports",
-        "description": "Get personalized feedback with AI reports.",
-        "bullet1": "Mandalart goal diagnosis and improvement suggestions",
-        "bullet2": "7-day practice data analysis and improvement suggestions"
-      },
-      "notification": {
-        "title": "Notification Settings",
-        "description": "Practice reminders help you\nstay on track with your goals.\nSet up notifications at your preferred time in Settings."
+      "getStarted": {
+        "title": "Ready to Start?",
+        "description": "Let's create your first Mandalart.\nYour journey begins now!"
       }
+    },
+    "interactiveDemo": {
+      "coreGoal": "Core Goal!",
+      "tapHint": "Tap the center cell"
     }
   },
   "badges": {
@@ -1441,16 +1466,16 @@
     "goalDiagnosis": "Goal Diagnosis",
     "goalDiagnosisSubtitle": "Mandalart plan review and improvement suggestions",
     "empty": {
-      "title": "No reports yet",
-      "description": "Start practicing and AI reports\nwill be generated automatically every Monday",
-      "firstReportTitle": "Get your first report!",
-      "firstReportDesc": "Based on your practice records,\nAI provides personalized analysis",
+      "title": "Unlock Your Growth Data",
+      "description": "We can't analyze what hasn't happened yet.\nStart practicing to see your trends.",
+      "firstReportTitle": "Ready for First Report?",
+      "firstReportDesc": "You have enough data to generate your first analysis.",
+      "stepsTitle": "How to Unlock Insights",
+      "step1": "Create a plan",
+      "step2": "Practice at least once",
       "generateFirst": "Generate First Report",
-      "stepsTitle": "Steps to generate reports",
-      "step1": "Create a mandalart",
-      "step2": "Record practice (1+ times)",
-      "goPractice": "Start Practicing",
-      "createMandalart": "Create Mandalart"
+      "goPractice": "Go Practice",
+      "createMandalart": "Create Plan"
     },
     "card": {
       "viewDetails": "View Details",
@@ -1617,5 +1642,20 @@
     "activeBenefits": "Active Benefits",
     "active": "Active",
     "upgrade": "Upgrade"
+  },
+  "onboarding": {
+    "title": "Welcome to MandaAct!",
+    "subtitle": "Complete these steps to get started.",
+    "guide": "View User Guide",
+    "createGoal": "Create First Goal",
+    "notification": "Set Notifications",
+    "firstAction": "Record First Action",
+    "lockedAlert": "Please create a goal first!",
+    "almostDone": "Almost done!"
+  },
+  "notification_primer": {
+    "title": "Stay on Track",
+    "description": "Enabling notifications increases your goal achievement rate by 3x.\nOur AI coach will assist you at the perfect time.",
+    "enable": "Enable Notifications"
   }
 }

@@ -115,7 +115,12 @@ export function createXPService(supabase: SupabaseClient): XPService {
           // No record found, create one
           const { data: newData, error: insertError } = await supabase
             .from('user_levels')
-            .insert({ user_id: userId, level: 1, total_xp: 0 })
+            .insert({
+              user_id: userId,
+              level: 1,
+              total_xp: 0,
+              nickname: 'User'
+            })
             .select('level, total_xp')
             .single()
 

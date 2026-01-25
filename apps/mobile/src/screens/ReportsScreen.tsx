@@ -26,6 +26,7 @@ import {
 } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
+import { ActiveEmptyState } from '../components/ui/ActiveEmptyState'
 import { useTranslation } from 'react-i18next'
 import { Header } from '../components'
 import { BannerAd, ReportGenerateButton } from '../components/ads'
@@ -391,9 +392,8 @@ function EmptyReportState({
   }) => (
     <View className="flex-row items-center">
       <View
-        className={`w-5 h-5 rounded-full items-center justify-center mr-2 ${
-          completed ? 'bg-primary' : 'border border-gray-300'
-        }`}
+        className={`w-5 h-5 rounded-full items-center justify-center mr-2 ${completed ? 'bg-primary' : 'border border-gray-300'
+          }`}
       >
         <Text
           className={`text-xs ${completed ? 'text-white' : 'text-gray-500'}`}
@@ -412,226 +412,49 @@ function EmptyReportState({
   )
 
   return (
-    <View className="bg-white rounded-2xl p-6">
-      {/* Icon */}
-      <View className="items-center mb-4">
-        <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center">
-          <FileText size={28} color="#9ca3af" />
-        </View>
-      </View>
-
-      {/* Title & Description - different messages based on condition */}
+    <View>
       {canGenerateFirst ? (
-        <>
-          <Text
-            className="text-lg text-gray-900 text-center mb-2"
-            style={{ fontFamily: 'Pretendard-SemiBold' }}
-          >
-            {t('reports.empty.firstReportTitle')}
-          </Text>
-          <Text
-            className="text-sm text-gray-500 text-center mb-5"
-            style={{ fontFamily: 'Pretendard-Regular' }}
-          >
-            {t('reports.empty.firstReportDesc')}
-          </Text>
-        </>
-      ) : (
-        <>
-          <Text
-            className="text-lg text-gray-900 text-center mb-2"
-            style={{ fontFamily: 'Pretendard-SemiBold' }}
-          >
-            {t('reports.empty.title')}
-          </Text>
-          <Text
-            className="text-sm text-gray-500 text-center mb-5"
-            style={{ fontFamily: 'Pretendard-Regular' }}
-          >
-            {t('reports.empty.description')}
-          </Text>
-        </>
-      )}
-
-      {/* Guide Box - show only when no practice records */}
-      {!hasChecks && (
-        <View className="bg-gray-50 rounded-xl p-4 mb-5">
-          <Text
-            className="text-sm text-gray-700 mb-3"
-            style={{ fontFamily: 'Pretendard-SemiBold' }}
-          >
-            {t('reports.empty.stepsTitle')}
-          </Text>
-          <View className="mb-2">
-            <StepRow step={1} completed={hasMandalarts} label={t('reports.empty.step1')} />
-          </View>
-          <StepRow step={2} completed={hasChecks} label={t('reports.empty.step2')} />
-        </View>
-      )}
-
-      {/* Action Buttons */}
-      {canGenerateFirst ? (
-        // Case 2: First report generation button
-        <Pressable
-          onPress={onGenerate}
-          disabled={isGenerating}
-          className="rounded-xl overflow-hidden"
-        >
-          <LinearGradient
-            colors={['#2563eb', '#9333ea', '#db2777']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{ padding: 1, borderRadius: 12 }}
-          >
-            <View className="bg-white rounded-xl py-3 items-center justify-center">
-              {isGenerating ? (
-                <View className="flex-row items-center">
-                  <ActivityIndicator size="small" color="#2563eb" />
-                  <Text
-                    className="text-primary text-sm ml-2"
-                    style={{ fontFamily: 'Pretendard-SemiBold' }}
-                  >
-                    {t('reports.generating')}
-                  </Text>
-                </View>
-              ) : (
-                <MaskedView
-                  maskElement={
-                    <View className="flex-row items-center">
-                      <Sparkles size={16} color="#000" />
-                      <Text
-                        className="text-sm ml-2"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                      >
-                        {t('reports.empty.generateFirst')}
-                      </Text>
-                    </View>
-                  }
-                >
-                  <LinearGradient
-                    colors={['#2563eb', '#9333ea', '#db2777']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <View className="flex-row items-center opacity-0">
-                      <Sparkles size={16} color="#000" />
-                      <Text
-                        className="text-sm ml-2"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                      >
-                        {t('reports.empty.generateFirst')}
-                      </Text>
-                    </View>
-                  </LinearGradient>
-                </MaskedView>
-              )}
-            </View>
-          </LinearGradient>
-        </Pressable>
+        <ActiveEmptyState
+          title={t('reports.empty.firstReportTitle')}
+          description={t('reports.empty.firstReportDesc')}
+          icon={Sparkles}
+          iconColor="#db2777" // pink-600
+          iconBgColor="#fdf2f8" // pink-50
+          primaryActionLabel={t('reports.empty.generateFirst')}
+          onPrimaryAction={onGenerate}
+          isGenerating={isGenerating}
+        />
       ) : hasMandalarts ? (
-        // Case 3-a: Has mandalart + no practice → go to practice
-        <View className="flex-row gap-3">
-          <Pressable
-            className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
-            onPress={() => navigation.navigate('Tutorial')}
-          >
-            <Text
-              className="text-sm text-gray-700 text-center"
-              style={{ fontFamily: 'Pretendard-SemiBold' }}
-            >
-              {t('common.userGuide')}
-            </Text>
-          </Pressable>
-          <Pressable
-            className="flex-1 rounded-xl overflow-hidden"
-            onPress={() => navigation.navigate('Main', { screen: 'Today' } as never)}
-          >
-            <LinearGradient
-              colors={['#2563eb', '#9333ea', '#db2777']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ padding: 1, borderRadius: 12 }}
-            >
-              <View className="bg-white rounded-xl py-3 items-center justify-center">
-                <MaskedView
-                  maskElement={
-                    <Text
-                      className="text-sm text-center"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('reports.empty.goPractice')}
-                    </Text>
-                  }
-                >
-                  <LinearGradient
-                    colors={['#2563eb', '#9333ea', '#db2777']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Text
-                      className="text-sm opacity-0"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('reports.empty.goPractice')}
-                    </Text>
-                  </LinearGradient>
-                </MaskedView>
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </View>
+        <ActiveEmptyState
+          title={t('reports.empty.title')}
+          description={t('reports.empty.description')}
+          icon={TrendingUp} // Default chart icon
+          iconColor="#db2777" // pink-600
+          iconBgColor="#fdf2f8" // pink-50
+          benefits={[
+            t('reports.empty.step2')
+          ]}
+          primaryActionLabel={t('reports.empty.goPractice')}
+          secondaryActionLabel={t('common.userGuide')}
+          onPrimaryAction={() => navigation.navigate('Main', { screen: 'Today' } as never)}
+          onSecondaryAction={() => navigation.navigate('Tutorial')}
+        />
       ) : (
-        // Case 3-b: No mandalart → create mandalart
-        <View className="flex-row gap-3">
-          <Pressable
-            className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
-            onPress={() => navigation.navigate('Tutorial')}
-          >
-            <Text
-              className="text-sm text-gray-700 text-center"
-              style={{ fontFamily: 'Pretendard-SemiBold' }}
-            >
-              {t('common.userGuide')}
-            </Text>
-          </Pressable>
-          <Pressable
-            className="flex-1 rounded-xl overflow-hidden"
-            onPress={() => navigation.navigate('CreateMandalart')}
-          >
-            <LinearGradient
-              colors={['#2563eb', '#9333ea', '#db2777']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ padding: 1, borderRadius: 12 }}
-            >
-              <View className="bg-white rounded-xl py-3 items-center justify-center">
-                <MaskedView
-                  maskElement={
-                    <Text
-                      className="text-sm text-center"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('reports.empty.createMandalart')}
-                    </Text>
-                  }
-                >
-                  <LinearGradient
-                    colors={['#2563eb', '#9333ea', '#db2777']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Text
-                      className="text-sm opacity-0"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('reports.empty.createMandalart')}
-                    </Text>
-                  </LinearGradient>
-                </MaskedView>
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </View>
+        <ActiveEmptyState
+          title={t('reports.empty.title')}
+          description={t('reports.empty.description')}
+          icon={FileText}
+          iconColor="#db2777" // pink-600
+          iconBgColor="#fdf2f8" // pink-50
+          benefits={[
+            t('reports.empty.step1'),
+            t('reports.empty.step2')
+          ]}
+          primaryActionLabel={t('reports.empty.createMandalart')}
+          secondaryActionLabel={t('common.userGuide')}
+          onPrimaryAction={() => navigation.navigate('CreateMandalart')}
+          onSecondaryAction={() => navigation.navigate('Tutorial')}
+        />
       )}
     </View>
   )
@@ -879,69 +702,69 @@ export default function ReportsScreen() {
           {canGenerateFirstReport && (
             <>
               {isPremium ? (
-            <Pressable
-              onPress={() => handleGenerateAll('direct')}
-              disabled={isGenerating}
-              className="rounded-2xl overflow-hidden"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.04,
-                shadowRadius: 8,
-                elevation: 2,
-              }}
-            >
-              <LinearGradient
-                colors={['#2563eb', '#9333ea', '#db2777']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{ padding: 1, borderRadius: 16 }}
-              >
-                <View className="bg-white rounded-2xl py-4 items-center justify-center">
-                  {isGenerating ? (
-                    <View className="flex-row items-center">
-                      <ActivityIndicator size="small" color="#2563eb" />
-                      <Text
-                        className="text-primary text-base ml-2"
-                        style={{ fontFamily: 'Pretendard-SemiBold' }}
-                      >
-                        {t('reports.generating')}
-                      </Text>
-                    </View>
-                  ) : (
-                    <MaskedView
-                      maskElement={
+                <Pressable
+                  onPress={() => handleGenerateAll('direct')}
+                  disabled={isGenerating}
+                  className="rounded-2xl overflow-hidden"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <LinearGradient
+                    colors={['#2563eb', '#9333ea', '#db2777']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ padding: 1, borderRadius: 16 }}
+                  >
+                    <View className="bg-white rounded-2xl py-4 items-center justify-center">
+                      {isGenerating ? (
                         <View className="flex-row items-center">
-                          <Sparkles size={18} color="#000" />
+                          <ActivityIndicator size="small" color="#2563eb" />
                           <Text
-                            className="text-base ml-2"
+                            className="text-primary text-base ml-2"
                             style={{ fontFamily: 'Pretendard-SemiBold' }}
                           >
-                            {t('reports.empty.generateFirst')}
+                            {t('reports.generating')}
                           </Text>
                         </View>
-                      }
-                    >
-                      <LinearGradient
-                        colors={['#2563eb', '#9333ea', '#db2777']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                      >
-                        <View className="flex-row items-center opacity-0">
-                          <Sparkles size={18} color="#000" />
-                          <Text
-                            className="text-base ml-2"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      ) : (
+                        <MaskedView
+                          maskElement={
+                            <View className="flex-row items-center">
+                              <Sparkles size={18} color="#000" />
+                              <Text
+                                className="text-base ml-2"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                              >
+                                {t('reports.empty.generateFirst')}
+                              </Text>
+                            </View>
+                          }
+                        >
+                          <LinearGradient
+                            colors={['#2563eb', '#9333ea', '#db2777']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
                           >
-                            {t('reports.empty.generateFirst')}
-                          </Text>
-                        </View>
-                      </LinearGradient>
-                    </MaskedView>
-                  )}
-                </View>
-              </LinearGradient>
-            </Pressable>
+                            <View className="flex-row items-center opacity-0">
+                              <Sparkles size={18} color="#000" />
+                              <Text
+                                className="text-base ml-2"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                              >
+                                {t('reports.empty.generateFirst')}
+                              </Text>
+                            </View>
+                          </LinearGradient>
+                        </MaskedView>
+                      )}
+                    </View>
+                  </LinearGradient>
+                </Pressable>
               ) : (
                 <View className="mt-4">
                   <ReportGenerateButton onGenerateReport={() => handleGenerateAll('rewarded')} />
@@ -1112,16 +935,16 @@ export default function ReportsScreen() {
               <Animated.View entering={FadeInUp.duration(400)}>
                 {/* Case 1: Has mandalarts - show normal ReportCard */}
                 {hasMandalarts && (
-                    <ReportCard
-                      title={t('reports.goalDiagnosis')}
-                      subtitle={t('reports.goalDiagnosisSubtitle')}
-                      icon={Target}
-                      date={diagnosis ? formatMonthDay(diagnosis.created_at, { language: i18n.language, timeZone: timezone }) : undefined}
-                      summary={diagnosisSummary}
-                      isExpanded={isDiagnosisExpanded}
-                      onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
-                      isLoading={diagnosisLoading}
-                      isGenerating={generateDiagnosisMutation.isPending}
+                  <ReportCard
+                    title={t('reports.goalDiagnosis')}
+                    subtitle={t('reports.goalDiagnosisSubtitle')}
+                    icon={Target}
+                    date={diagnosis ? formatMonthDay(diagnosis.created_at, { language: i18n.language, timeZone: timezone }) : undefined}
+                    summary={diagnosisSummary}
+                    isExpanded={isDiagnosisExpanded}
+                    onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
+                    isLoading={diagnosisLoading}
+                    isGenerating={generateDiagnosisMutation.isPending}
                     generatingText={t('reports.card.newDiagnosisGenerating')}
                     viewDetailsText={t('reports.card.viewDetails')}
                     strengthsText={t('reports.card.strengths')}
@@ -1234,11 +1057,10 @@ export default function ReportsScreen() {
                       return (
                         <View key={report.id}>
                           <Pressable
-                            className={`p-4 flex-row items-center ${
-                              index < Math.min(reportHistory.length - 1, 4) - 1 && !isExpanded
-                                ? 'border-b border-gray-100'
-                                : ''
-                            }`}
+                            className={`p-4 flex-row items-center ${index < Math.min(reportHistory.length - 1, 4) - 1 && !isExpanded
+                              ? 'border-b border-gray-100'
+                              : ''
+                              }`}
                             onPress={() => setExpandedHistoryId(isExpanded ? null : report.id)}
                           >
                             <View className="w-11 h-11 bg-gray-100 rounded-full items-center justify-center">
@@ -1268,11 +1090,10 @@ export default function ReportsScreen() {
 
                           {/* Expanded Content */}
                           {isExpanded && historySummary && (
-                            <View className={`px-4 pb-4 bg-gray-50 ${
-                              index < Math.min(reportHistory.length - 1, 4) - 1
-                                ? 'border-b border-gray-100'
-                                : ''
-                            }`}>
+                            <View className={`px-4 pb-4 bg-gray-50 ${index < Math.min(reportHistory.length - 1, 4) - 1
+                              ? 'border-b border-gray-100'
+                              : ''
+                              }`}>
                               <Text
                                 className="text-sm text-gray-900 leading-relaxed mb-3"
                                 style={{ fontFamily: 'Pretendard-SemiBold' }}
@@ -1354,12 +1175,12 @@ export default function ReportsScreen() {
             </View>
           </View>
         ) : (
-        /* Phone: Single-column layout */
-        <View>
-          {/* Goal Diagnosis Card - First (목표 설정) */}
-          <Animated.View entering={FadeInUp.duration(400)}>
-            {/* Case 1: Has mandalarts - show normal ReportCard */}
-            {hasMandalarts && (
+          /* Phone: Single-column layout */
+          <View>
+            {/* Goal Diagnosis Card - First (목표 설정) */}
+            <Animated.View entering={FadeInUp.duration(400)}>
+              {/* Case 1: Has mandalarts - show normal ReportCard */}
+              {hasMandalarts && (
                 <ReportCard
                   title={t('reports.goalDiagnosis')}
                   subtitle={t('reports.goalDiagnosisSubtitle')}
@@ -1370,19 +1191,19 @@ export default function ReportsScreen() {
                   onToggleExpand={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
                   isLoading={diagnosisLoading}
                   isGenerating={generateDiagnosisMutation.isPending}
-                generatingText={t('reports.card.newDiagnosisGenerating')}
-                viewDetailsText={t('reports.card.viewDetails')}
-                strengthsText={t('reports.card.strengths')}
-                improvementsText={t('reports.card.improvements')}
-                suggestionsText={t('reports.card.suggestions')}
-                translateLabel={translateLabel}
-                t={t}
-              />
-            )}
+                  generatingText={t('reports.card.newDiagnosisGenerating')}
+                  viewDetailsText={t('reports.card.viewDetails')}
+                  strengthsText={t('reports.card.strengths')}
+                  improvementsText={t('reports.card.improvements')}
+                  suggestionsText={t('reports.card.suggestions')}
+                  translateLabel={translateLabel}
+                  t={t}
+                />
+              )}
 
-            {/* Case 2: No mandalarts but has existing diagnosis - show existing diagnosis */}
-            {!hasMandalarts && diagnosis && (
-              <>
+              {/* Case 2: No mandalarts but has existing diagnosis - show existing diagnosis */}
+              {!hasMandalarts && diagnosis && (
+                <>
                   <ReportCard
                     title={t('reports.goalDiagnosis')}
                     subtitle={t('reports.goalDiagnosisSubtitle')}
@@ -1394,334 +1215,332 @@ export default function ReportsScreen() {
                     isLoading={diagnosisLoading}
                     isGenerating={false}
                     viewDetailsText={t('reports.card.viewDetails')}
-                  strengthsText={t('reports.card.strengths')}
-                  improvementsText={t('reports.card.improvements')}
-                  suggestionsText={t('reports.card.suggestions')}
-                  translateLabel={translateLabel}
-                  t={t}
-                />
-                {/* Notice for new diagnosis */}
+                    strengthsText={t('reports.card.strengths')}
+                    improvementsText={t('reports.card.improvements')}
+                    suggestionsText={t('reports.card.suggestions')}
+                    translateLabel={translateLabel}
+                    t={t}
+                  />
+                  {/* Notice for new diagnosis */}
+                  <View
+                    className="bg-white rounded-2xl p-4 mb-5 flex-row items-center border border-gray-100"
+                    style={{
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.04,
+                      shadowRadius: 8,
+                      elevation: 2,
+                    }}
+                  >
+                    <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3">
+                      <Target size={20} color="#6b7280" />
+                    </View>
+                    <View className="flex-1">
+                      <Text
+                        className="text-sm text-gray-700"
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        {t('reports.newDiagnosisNotice')}
+                      </Text>
+                    </View>
+                    <Pressable
+                      className="px-3 py-1.5 bg-gray-900 rounded-lg"
+                      onPress={() => navigation.navigate('CreateMandalart')}
+                    >
+                      <Text
+                        className="text-xs text-white"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('common.create')}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+
+              {/* Case 3: No mandalarts and no diagnosis - show "mandalart needed" card */}
+              {!hasMandalarts && !diagnosis && (
                 <View
-                  className="bg-white rounded-2xl p-4 mb-5 flex-row items-center border border-gray-100"
+                  className="bg-white rounded-3xl p-6 items-center mb-5 border border-gray-100"
                   style={{
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.04,
-                    shadowRadius: 8,
-                    elevation: 2,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
+                    elevation: 3,
                   }}
                 >
-                  <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3">
-                    <Target size={20} color="#6b7280" />
+                  <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center mb-4">
+                    <Target size={28} color="#6b7280" />
                   </View>
-                  <View className="flex-1">
-                    <Text
-                      className="text-sm text-gray-700"
-                      style={{ fontFamily: 'Pretendard-Medium' }}
-                    >
-                      {t('reports.newDiagnosisNotice')}
-                    </Text>
-                  </View>
-                  <Pressable
-                    className="px-3 py-1.5 bg-gray-900 rounded-lg"
-                    onPress={() => navigation.navigate('CreateMandalart')}
+                  <Text
+                    className="text-lg text-gray-900 mb-2"
+                    style={{ fontFamily: 'Pretendard-SemiBold' }}
                   >
-                    <Text
-                      className="text-xs text-white"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
+                    {t('reports.mandalartNeeded')}
+                  </Text>
+                  <Text
+                    className="text-sm text-gray-500 text-center mb-5"
+                    style={{ fontFamily: 'Pretendard-Regular' }}
+                  >
+                    {t('reports.mandalartNeededDesc')}
+                  </Text>
+                  <View className="flex-row gap-3 w-full">
+                    <Pressable
+                      className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
+                      onPress={() => navigation.navigate('Tutorial')}
                     >
-                      {t('common.create')}
-                    </Text>
-                  </Pressable>
+                      <Text
+                        className="text-sm text-gray-700 text-center"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('common.userGuide')}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      className="flex-1 rounded-xl overflow-hidden"
+                      onPress={() => navigation.navigate('CreateMandalart')}
+                    >
+                      <LinearGradient
+                        colors={['#2563eb', '#9333ea', '#db2777']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{ padding: 1, borderRadius: 12 }}
+                      >
+                        <View className="bg-white rounded-xl py-3 items-center justify-center">
+                          <MaskedView
+                            maskElement={
+                              <Text
+                                className="text-sm text-center"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                              >
+                                {t('reports.empty.createMandalart')}
+                              </Text>
+                            }
+                          >
+                            <LinearGradient
+                              colors={['#2563eb', '#9333ea', '#db2777']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
+                            >
+                              <Text
+                                className="text-sm opacity-0"
+                                style={{ fontFamily: 'Pretendard-SemiBold' }}
+                              >
+                                {t('reports.empty.createMandalart')}
+                              </Text>
+                            </LinearGradient>
+                          </MaskedView>
+                        </View>
+                      </LinearGradient>
+                    </Pressable>
+                  </View>
                 </View>
-              </>
-            )}
+              )}
+            </Animated.View>
 
-            {/* Case 3: No mandalarts and no diagnosis - show "mandalart needed" card */}
-            {!hasMandalarts && !diagnosis && (
-              <View
-                className="bg-white rounded-3xl p-6 items-center mb-5 border border-gray-100"
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 12,
-                  elevation: 3,
-                }}
-              >
-                <View className="w-14 h-14 bg-gray-100 rounded-full items-center justify-center mb-4">
-                  <Target size={28} color="#6b7280" />
-                </View>
+            {/* Practice Report Card - Second */}
+            <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+              <ReportCard
+                title={t('reports.practiceReport')}
+                subtitle={t('reports.practiceReportSubtitle')}
+                icon={TrendingUp}
+                date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, i18n.language, timezone) : undefined}
+                summary={weeklySummary}
+                isExpanded={isPracticeExpanded}
+                onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
+                isLoading={weeklyLoading}
+                isGenerating={generateWeeklyMutation.isPending}
+                generatingText={t('reports.card.newReportGenerating')}
+                viewDetailsText={t('reports.card.viewDetails')}
+                strengthsText={t('reports.card.strengths')}
+                improvementsText={t('reports.card.improvements')}
+                suggestionsText={t('reports.card.suggestions')}
+                translateLabel={translateLabel}
+                t={t}
+              />
+            </Animated.View>
+
+            {/* Report History */}
+            {reportHistory.length > 1 && (
+              <Animated.View entering={FadeInUp.delay(200).duration(400)} className="mt-4">
                 <Text
-                  className="text-lg text-gray-900 mb-2"
+                  className="text-lg text-gray-900 mb-3"
                   style={{ fontFamily: 'Pretendard-SemiBold' }}
                 >
-                  {t('reports.mandalartNeeded')}
+                  {t('reports.history.title')}
                 </Text>
-                <Text
-                  className="text-sm text-gray-500 text-center mb-5"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
+                <View
+                  className="bg-white rounded-3xl overflow-hidden border border-gray-100"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
+                    elevation: 3,
+                  }}
                 >
-                  {t('reports.mandalartNeededDesc')}
-                </Text>
-                <View className="flex-row gap-3 w-full">
-                  <Pressable
-                    className="flex-1 py-3 rounded-xl border border-gray-200 bg-white"
-                    onPress={() => navigation.navigate('Tutorial')}
-                  >
-                    <Text
-                      className="text-sm text-gray-700 text-center"
-                      style={{ fontFamily: 'Pretendard-SemiBold' }}
-                    >
-                      {t('common.userGuide')}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    className="flex-1 rounded-xl overflow-hidden"
-                    onPress={() => navigation.navigate('CreateMandalart')}
-                  >
-                    <LinearGradient
-                      colors={['#2563eb', '#9333ea', '#db2777']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={{ padding: 1, borderRadius: 12 }}
-                    >
-                      <View className="bg-white rounded-xl py-3 items-center justify-center">
-                        <MaskedView
-                          maskElement={
-                            <Text
-                              className="text-sm text-center"
-                              style={{ fontFamily: 'Pretendard-SemiBold' }}
-                            >
-                              {t('reports.empty.createMandalart')}
-                            </Text>
-                          }
+                  {reportHistory.slice(1, 5).map((report, index) => {
+                    const isExpanded = expandedHistoryId === report.id
+                    const historySummary = report.report_content ? parseWeeklyReport(report.report_content) : null
+
+                    return (
+                      <View key={report.id}>
+                        <Pressable
+                          className={`p-4 flex-row items-center ${index < Math.min(reportHistory.length - 1, 4) - 1 && !isExpanded
+                            ? 'border-b border-gray-100'
+                            : ''
+                            }`}
+                          onPress={() => setExpandedHistoryId(isExpanded ? null : report.id)}
                         >
-                          <LinearGradient
-                            colors={['#2563eb', '#9333ea', '#db2777']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                          >
+                          <View className="w-11 h-11 bg-gray-100 rounded-full items-center justify-center">
+                            <FileText size={20} color="#2563eb" />
+                          </View>
+                          <View className="flex-1 ml-3">
                             <Text
-                              className="text-sm opacity-0"
+                              className="text-sm text-gray-900"
+                              style={{ fontFamily: 'Pretendard-Medium' }}
+                            >
+                              {formatWeekDates(report.week_start, report.week_end, i18n.language, timezone)}
+                            </Text>
+                            <Text
+                              className="text-xs text-gray-500"
+                              style={{ fontFamily: 'Pretendard-Regular' }}
+                              numberOfLines={1}
+                            >
+                              {historySummary?.headline || report.summary || t('reports.history.weeklyReport')}
+                            </Text>
+                          </View>
+                          {isExpanded ? (
+                            <ChevronUp size={18} color="#9ca3af" />
+                          ) : (
+                            <ChevronDown size={18} color="#9ca3af" />
+                          )}
+                        </Pressable>
+
+                        {/* Expanded Content */}
+                        {isExpanded && historySummary && (
+                          <View className={`px-4 pb-4 bg-gray-50 ${index < Math.min(reportHistory.length - 1, 4) - 1
+                            ? 'border-b border-gray-100'
+                            : ''
+                            }`}>
+                            {/* Headline */}
+                            <Text
+                              className="text-sm text-gray-900 leading-relaxed mb-3"
                               style={{ fontFamily: 'Pretendard-SemiBold' }}
                             >
-                              {t('reports.empty.createMandalart')}
+                              {historySummary.headline}
                             </Text>
-                          </LinearGradient>
-                        </MaskedView>
-                      </View>
-                    </LinearGradient>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-          </Animated.View>
 
-          {/* Practice Report Card - Second */}
-          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-            <ReportCard
-              title={t('reports.practiceReport')}
-              subtitle={t('reports.practiceReportSubtitle')}
-              icon={TrendingUp}
-              date={weeklyReport ? formatWeekDates(weeklyReport.week_start, weeklyReport.week_end, i18n.language, timezone) : undefined}
-              summary={weeklySummary}
-              isExpanded={isPracticeExpanded}
-              onToggleExpand={() => setIsPracticeExpanded(!isPracticeExpanded)}
-              isLoading={weeklyLoading}
-              isGenerating={generateWeeklyMutation.isPending}
-              generatingText={t('reports.card.newReportGenerating')}
-              viewDetailsText={t('reports.card.viewDetails')}
-              strengthsText={t('reports.card.strengths')}
-              improvementsText={t('reports.card.improvements')}
-              suggestionsText={t('reports.card.suggestions')}
-              translateLabel={translateLabel}
-              t={t}
-            />
-          </Animated.View>
+                            {/* Metrics */}
+                            {historySummary.metrics.length > 0 && (
+                              <View className="gap-1 mb-3">
+                                {historySummary.metrics.map((metric, idx) => (
+                                  <View key={idx} className="flex-row">
+                                    <Text
+                                      className="text-sm text-gray-500"
+                                      style={{ fontFamily: 'Pretendard-Regular' }}
+                                    >
+                                      {translateLabel(metric.label)}:{' '}
+                                    </Text>
+                                    <Text
+                                      className="text-sm text-gray-900"
+                                      style={{ fontFamily: 'Pretendard-Medium' }}
+                                    >
+                                      {metric.value}
+                                    </Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
 
-          {/* Report History */}
-          {reportHistory.length > 1 && (
-            <Animated.View entering={FadeInUp.delay(200).duration(400)} className="mt-4">
-              <Text
-                className="text-lg text-gray-900 mb-3"
-                style={{ fontFamily: 'Pretendard-SemiBold' }}
-              >
-                {t('reports.history.title')}
-              </Text>
-              <View
-                className="bg-white rounded-3xl overflow-hidden border border-gray-100"
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 12,
-                  elevation: 3,
-                }}
-              >
-                {reportHistory.slice(1, 5).map((report, index) => {
-                  const isExpanded = expandedHistoryId === report.id
-                  const historySummary = report.report_content ? parseWeeklyReport(report.report_content) : null
-
-                  return (
-                    <View key={report.id}>
-                      <Pressable
-                        className={`p-4 flex-row items-center ${
-                          index < Math.min(reportHistory.length - 1, 4) - 1 && !isExpanded
-                            ? 'border-b border-gray-100'
-                            : ''
-                        }`}
-                        onPress={() => setExpandedHistoryId(isExpanded ? null : report.id)}
-                      >
-                        <View className="w-11 h-11 bg-gray-100 rounded-full items-center justify-center">
-                          <FileText size={20} color="#2563eb" />
-                        </View>
-                        <View className="flex-1 ml-3">
-                          <Text
-                            className="text-sm text-gray-900"
-                            style={{ fontFamily: 'Pretendard-Medium' }}
-                          >
-                            {formatWeekDates(report.week_start, report.week_end, i18n.language, timezone)}
-                          </Text>
-                          <Text
-                            className="text-xs text-gray-500"
-                            style={{ fontFamily: 'Pretendard-Regular' }}
-                            numberOfLines={1}
-                          >
-                            {historySummary?.headline || report.summary || t('reports.history.weeklyReport')}
-                          </Text>
-                        </View>
-                        {isExpanded ? (
-                          <ChevronUp size={18} color="#9ca3af" />
-                        ) : (
-                          <ChevronDown size={18} color="#9ca3af" />
-                        )}
-                      </Pressable>
-
-                      {/* Expanded Content */}
-                      {isExpanded && historySummary && (
-                        <View className={`px-4 pb-4 bg-gray-50 ${
-                          index < Math.min(reportHistory.length - 1, 4) - 1
-                            ? 'border-b border-gray-100'
-                            : ''
-                        }`}>
-                          {/* Headline */}
-                          <Text
-                            className="text-sm text-gray-900 leading-relaxed mb-3"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
-                          >
-                            {historySummary.headline}
-                          </Text>
-
-                          {/* Metrics */}
-                          {historySummary.metrics.length > 0 && (
-                            <View className="gap-1 mb-3">
-                              {historySummary.metrics.map((metric, idx) => (
-                                <View key={idx} className="flex-row">
+                            {/* Strengths */}
+                            {historySummary.strengths.length > 0 && (
+                              <View className="mb-3">
+                                <Text
+                                  className="text-sm text-gray-900 mb-1"
+                                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                                >
+                                  💪 {t('reports.card.strengths')}
+                                </Text>
+                                {historySummary.strengths.map((strength, idx) => (
                                   <Text
-                                    className="text-sm text-gray-500"
+                                    key={idx}
+                                    className="text-sm text-gray-600"
                                     style={{ fontFamily: 'Pretendard-Regular' }}
                                   >
-                                    {translateLabel(metric.label)}:{' '}
+                                    • {strength}
                                   </Text>
+                                ))}
+                              </View>
+                            )}
+
+                            {/* Improvements */}
+                            {(historySummary.improvements.problem || historySummary.improvements.insight || historySummary.improvements.items?.length) && (
+                              <View className="mb-3">
+                                <Text
+                                  className="text-sm text-gray-900 mb-1"
+                                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                                >
+                                  ⚡ {t('reports.card.improvements')}
+                                </Text>
+                                {historySummary.improvements.problem && (
                                   <Text
-                                    className="text-sm text-gray-900"
-                                    style={{ fontFamily: 'Pretendard-Medium' }}
+                                    className="text-sm text-gray-600"
+                                    style={{ fontFamily: 'Pretendard-Regular' }}
                                   >
-                                    {metric.value}
+                                    • {historySummary.improvements.problem}
                                   </Text>
-                                </View>
-                              ))}
-                            </View>
-                          )}
+                                )}
+                                {historySummary.improvements.insight && (
+                                  <Text
+                                    className="text-sm text-gray-600"
+                                    style={{ fontFamily: 'Pretendard-Regular' }}
+                                  >
+                                    • {historySummary.improvements.insight}
+                                  </Text>
+                                )}
+                                {historySummary.improvements.items?.map((item, idx) => (
+                                  <Text
+                                    key={idx}
+                                    className="text-sm text-gray-600"
+                                    style={{ fontFamily: 'Pretendard-Regular' }}
+                                  >
+                                    • <Text style={{ fontFamily: 'Pretendard-Medium' }}>{item.area}</Text>: {item.issue} → {item.solution}
+                                  </Text>
+                                ))}
+                              </View>
+                            )}
 
-                          {/* Strengths */}
-                          {historySummary.strengths.length > 0 && (
-                            <View className="mb-3">
-                              <Text
-                                className="text-sm text-gray-900 mb-1"
-                                style={{ fontFamily: 'Pretendard-SemiBold' }}
-                              >
-                                💪 {t('reports.card.strengths')}
-                              </Text>
-                              {historySummary.strengths.map((strength, idx) => (
+                            {/* Action Plan */}
+                            {historySummary.actionPlan.length > 0 && (
+                              <View>
                                 <Text
-                                  key={idx}
-                                  className="text-sm text-gray-600"
-                                  style={{ fontFamily: 'Pretendard-Regular' }}
+                                  className="text-sm text-gray-900 mb-1"
+                                  style={{ fontFamily: 'Pretendard-SemiBold' }}
                                 >
-                                  • {strength}
+                                  🎯 {t('reports.card.suggestions')}
                                 </Text>
-                              ))}
-                            </View>
-                          )}
-
-                          {/* Improvements */}
-                          {(historySummary.improvements.problem || historySummary.improvements.insight || historySummary.improvements.items?.length) && (
-                            <View className="mb-3">
-                              <Text
-                                className="text-sm text-gray-900 mb-1"
-                                style={{ fontFamily: 'Pretendard-SemiBold' }}
-                              >
-                                ⚡ {t('reports.card.improvements')}
-                              </Text>
-                              {historySummary.improvements.problem && (
-                                <Text
-                                  className="text-sm text-gray-600"
-                                  style={{ fontFamily: 'Pretendard-Regular' }}
-                                >
-                                  • {historySummary.improvements.problem}
-                                </Text>
-                              )}
-                              {historySummary.improvements.insight && (
-                                <Text
-                                  className="text-sm text-gray-600"
-                                  style={{ fontFamily: 'Pretendard-Regular' }}
-                                >
-                                  • {historySummary.improvements.insight}
-                                </Text>
-                              )}
-                              {historySummary.improvements.items?.map((item, idx) => (
-                                <Text
-                                  key={idx}
-                                  className="text-sm text-gray-600"
-                                  style={{ fontFamily: 'Pretendard-Regular' }}
-                                >
-                                  • <Text style={{ fontFamily: 'Pretendard-Medium' }}>{item.area}</Text>: {item.issue} → {item.solution}
-                                </Text>
-                              ))}
-                            </View>
-                          )}
-
-                          {/* Action Plan */}
-                          {historySummary.actionPlan.length > 0 && (
-                            <View>
-                              <Text
-                                className="text-sm text-gray-900 mb-1"
-                                style={{ fontFamily: 'Pretendard-SemiBold' }}
-                              >
-                                🎯 {t('reports.card.suggestions')}
-                              </Text>
-                              {historySummary.actionPlan.map((step, idx) => (
-                                <Text
-                                  key={idx}
-                                  className="text-sm text-gray-600"
-                                  style={{ fontFamily: 'Pretendard-Regular' }}
-                                >
-                                  • {step}
-                                </Text>
-                              ))}
-                            </View>
-                          )}
-                        </View>
-                      )}
-                    </View>
-                  )
-                })}
-              </View>
-            </Animated.View>
-          )}
-        </View>
+                                {historySummary.actionPlan.map((step, idx) => (
+                                  <Text
+                                    key={idx}
+                                    className="text-sm text-gray-600"
+                                    style={{ fontFamily: 'Pretendard-Regular' }}
+                                  >
+                                    • {step}
+                                  </Text>
+                                ))}
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    )
+                  })}
+                </View>
+              </Animated.View>
+            )}
+          </View>
         )}
 
         {/* Bottom spacing */}

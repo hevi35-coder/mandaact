@@ -198,9 +198,11 @@ export default function SubGoalModalV2({
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 16 }}
+                  style={{ padding: 2, borderRadius: 16 }}
                 >
-                  <Text className="text-white font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>{t('common.done')}</Text>
+                  <View style={{ backgroundColor: 'white', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 14 }}>
+                    <Text className="text-violet-600 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>{t('common.save')}</Text>
+                  </View>
                 </LinearGradient>
               </Pressable>
             </View>
@@ -294,21 +296,18 @@ export default function SubGoalModalV2({
                     </View>
                   </View>
 
-                  <Pressable
-                    onPress={fetchSuggestions}
-                    disabled={isSuggesting}
-                    className="ml-2 px-4 py-2 bg-purple-600 rounded-xl active:bg-purple-700 disabled:bg-purple-300"
-                  >
-                    {isSuggesting ? (
-                      <Text className="text-purple-200 font-bold text-sm" style={{ fontFamily: 'Pretendard-Bold' }}>
-                        분석 중...
-                      </Text>
-                    ) : (
+                  {/* Hide button during loading in English mode to prevent layout shift */}
+                  {(!isSuggesting || i18n.language.startsWith('ko')) && (
+                    <Pressable
+                      onPress={fetchSuggestions}
+                      disabled={isSuggesting}
+                      className="ml-2 px-4 py-2 bg-purple-600 rounded-xl active:bg-purple-700 disabled:bg-purple-300"
+                    >
                       <Text className="text-white font-bold text-sm" style={{ fontFamily: 'Pretendard-Bold' }}>
-                        {t('mandalart.modal.subGoal.aiSuggest.getHelp')}
+                        {isSuggesting ? t('mandalart.modal.subGoal.aiSuggest.loading', 'Analyzing...') : t('mandalart.modal.subGoal.aiSuggest.getHelp')}
                       </Text>
-                    )}
-                  </Pressable>
+                    </Pressable>
+                  )}
                 </View>
 
                 {(isSuggesting || suggestions.length > 0) && (
@@ -375,7 +374,7 @@ export default function SubGoalModalV2({
                                         {isBestMatch && (
                                           <View className="bg-purple-600 px-2 py-0.5 rounded-full shadow-sm">
                                             <Text className="text-[10px] text-white font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
-                                              ✨ 추천
+                                              ✨ {t('mandalart.modal.subGoal.aiSuggest.suggested', 'Suggested')}
                                             </Text>
                                           </View>
                                         )}

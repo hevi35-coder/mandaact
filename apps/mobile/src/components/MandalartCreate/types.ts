@@ -18,29 +18,6 @@ export interface MandalartData {
     }>
 }
 
-export type InputMethod = 'image' | 'text' | 'manual' | 'coaching' | null
-export type Step = 'select-method' | 'input' | 'preview'
-
-export interface CreateState {
-    step: Step
-    method: InputMethod
-    isLoading: boolean
-    progressMessage: string
-    mandalartData: MandalartData | null
-}
-
-// Props for MethodSelector
-export interface MethodSelectorProps {
-    onSelectMethod: (method: InputMethod) => void
-}
-
-// Props for Input Steps
-export interface InputStepProps {
-    onBack: () => void
-    onNext: (data: MandalartData) => void
-    setLoading: (loading: boolean, message?: string) => void
-}
-
 // Props for Preview Step
 export interface PreviewStepProps {
     data: MandalartData

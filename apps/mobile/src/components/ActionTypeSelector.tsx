@@ -17,6 +17,7 @@ import {
   Target,
   Lightbulb,
   Info,
+  Sparkles,
 } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import {
@@ -30,6 +31,7 @@ import {
 } from '@mandaact/shared'
 import { logger } from '../lib/logger'
 import { trackActionTypeSuggested } from '../lib'
+import ActionTypeSettingsView from './ActionTypeSettingsView'
 
 export interface ActionTypeData {
   type: ActionType
@@ -87,19 +89,19 @@ export default function ActionTypeSelector({
       type: 'routine' as ActionType,
       label: t('actionType.routine'),
       description: t('actionType.selector.routineDesc'),
-      icon: getTypeIcon('routine'),
+      Icon: RotateCw,
     },
     {
       type: 'mission' as ActionType,
       label: t('actionType.mission'),
       description: t('actionType.selector.missionDesc'),
-      icon: getTypeIcon('mission'),
+      Icon: Target,
     },
     {
       type: 'reference' as ActionType,
       label: t('actionType.reference'),
       description: t('actionType.selector.referenceDesc'),
-      icon: getTypeIcon('reference'),
+      Icon: Lightbulb,
     },
   ]
 
@@ -168,29 +170,14 @@ export default function ActionTypeSelector({
       setRoutineCountPerPeriod(initialData.routine_count_per_period || 1)
       setMissionCompletionType(initialData.mission_completion_type || 'once')
       setMissionPeriodCycle(initialData.mission_period_cycle || 'monthly')
+
+      // Keep existing AI suggestion if available, otherwise null
+      setAiSuggestion(initialData.ai_suggestion)
+    } else {
+      // Default for new actions without suggestion
+      setAiSuggestion(undefined)
     }
 
-    // Generate AI suggestion
-    const suggestionV2 = suggestActionTypeV2(actionTitle)
-    const freshSuggestion = suggestActionType(actionTitle)
-    setAiSuggestion({
-      type: freshSuggestion.type,
-      confidence: freshSuggestion.confidence,
-      reason: freshSuggestion.reason,
-    })
-
-    trackActionTypeSuggested({
-      source_screen: 'action_type_selector',
-      input_language: suggestionV2.debug.input_language,
-      suggested_type: suggestionV2.type,
-      confidence: suggestionV2.confidence,
-      reason_code: suggestionV2.reason_code,
-    })
-
-    // Only auto-apply for new actions
-    if (!initialData) {
-      setType(freshSuggestion.type)
-    }
   }, [visible, actionTitle, initialData])
 
   const handleWeekdayToggle = (day: number) => {
@@ -323,353 +310,46 @@ export default function ActionTypeSelector({
               <Pressable
                 onPress={handleSave}
                 disabled={saving}
-                className="p-2"
+                className="bg-violet-500 px-4 py-2 rounded-full"
               >
                 {saving ? (
-                  <ActivityIndicator size="small" color="#374151" />
+                  <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
-                  <Check size={24} color="#374151" />
+                  <Text className="text-white text-[14px] font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                    {t('common.save', 'Save')}
+                  </Text>
                 )}
               </Pressable>
             </View>
 
             <ScrollView className="px-4 py-4">
-              {/* Action Title */}
-              <Text className="text-sm text-gray-500 mb-4">
-                {t('actionType.selector.description', { title: actionTitle })}
-              </Text>
-
-              {/* AI Suggestion */}
-              {aiSuggestion && (
-                <View className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
-                  <Text className="text-sm font-medium text-blue-900">
-                    {t('actionType.selector.aiSuggestion')}: {t(`actionType.${aiSuggestion.type}`)}
-                  </Text>
-                  <View className="flex-row items-center mt-1">
-                    <Info size={12} color="#1e40af" />
-                    <Text className="text-xs text-blue-700 ml-1 flex-1">
-                      {getTranslatedReason(aiSuggestion)} ({t('actionType.selector.confidence')}: {getConfidenceLabel(aiSuggestion.confidence)})
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-              {/* Type Selection */}
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-gray-700 mb-2">
-                  {t('actionType.selector.typeLabel')}
-                </Text>
-                <View className="gap-2">
-                  {typeOptions.map((option) => (
-                    <Pressable
-                      key={option.type}
-                      onPress={() => setType(option.type)}
-                      className={`flex-row items-center p-3 rounded-xl border ${
-                        type === option.type
-                          ? 'border-gray-900 bg-gray-50'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                    >
-                      <View
-                        className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${
-                          type === option.type
-                            ? 'border-gray-900 bg-gray-900'
-                            : 'border-gray-300'
-                        }`}
-                      >
-                        {type === option.type && (
-                          <View className="w-2 h-2 rounded-full bg-white" />
-                        )}
-                      </View>
-                      <View className="mr-2">{option.icon}</View>
-                      <View className="flex-1">
-                        <Text className="text-sm font-medium text-gray-900">
-                          {t(`actionType.${option.type}`)}
-                        </Text>
-                        <Text className="text-xs text-gray-500 mt-0.5">
-                          {t(`actionType.selector.${option.type}Desc`)}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              {/* Routine Settings */}
-              {type === 'routine' && (
-                <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                  <Text className="text-base font-semibold text-gray-900 mb-3">
-                    {t('actionType.selector.routineSettings')}
-                  </Text>
-
-                  {/* Frequency Select - Button Style */}
-                  <View className="mb-3">
-                    <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.repeatCycle')}</Text>
-                    <View className="flex-row" style={{ gap: 8 }}>
-                      {frequencyOptions.map((option) => (
-                        <Pressable
-                          key={option.value}
-                          onPress={() => {
-                            setRoutineFrequency(option.value)
-                            // Reset count to appropriate default when frequency changes
-                            setRoutineCountPerPeriod(1)
-                            setRoutineWeekdays([])
-                            setShowMonthlyCustomInput(false)
-                            setMonthlyCustomValue('')
-                          }}
-                          className={`flex-1 py-2.5 rounded-lg border items-center ${
-                            routineFrequency === option.value
-                              ? 'bg-gray-900 border-gray-900'
-                              : 'bg-white border-gray-300'
-                          }`}
-                        >
-                          <Text
-                            className={`text-sm font-medium ${
-                              routineFrequency === option.value
-                                ? 'text-white'
-                                : 'text-gray-700'
-                            }`}
-                          >
-                            {t(`actionType.${option.value}`)}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Weekly Weekdays Selection */}
-                  {routineFrequency === 'weekly' && (
-                    <View className="mb-3">
-                      <Text className="text-sm text-gray-700 mb-2">
-                        {t('actionType.selector.weekdaySelect')}
-                      </Text>
-                      <View className="flex-row flex-wrap gap-2">
-                        {weekdays.map((day) => (
-                          <Pressable
-                            key={day.value}
-                            onPress={() => handleWeekdayToggle(day.value)}
-                            className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                              routineWeekdays.includes(day.value)
-                                ? 'bg-gray-900 border-gray-900'
-                                : 'bg-white border-gray-300'
-                            }`}
-                          >
-                            <Text
-                              className={`text-sm font-medium ${
-                                routineWeekdays.includes(day.value)
-                                  ? 'text-white'
-                                  : 'text-gray-700'
-                              }`}
-                            >
-                              {day.short}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                      <View className="flex-row items-center mt-2">
-                        <Info size={12} color="#9ca3af" />
-                        <Text className="text-xs text-gray-400 ml-1">
-                          {t('actionType.selector.weekdayHint')}
-                        </Text>
-                      </View>
-
-                      {/* Weekly Count (when no weekdays selected) */}
-                      {routineWeekdays.length === 0 && (
-                        <View className="mt-3">
-                          <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.weeklyGoal')}</Text>
-                          <View className="flex-row" style={{ gap: 8 }}>
-                            {WEEKLY_COUNT_OPTIONS.map((count) => (
-                              <Pressable
-                                key={count}
-                                onPress={() => setRoutineCountPerPeriod(count)}
-                                className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                                  routineCountPerPeriod === count
-                                    ? 'bg-gray-900 border-gray-900'
-                                    : 'bg-white border-gray-300'
-                                }`}
-                              >
-                                <Text
-                                  className={`text-sm font-medium ${
-                                    routineCountPerPeriod === count
-                                      ? 'text-white'
-                                      : 'text-gray-700'
-                                  }`}
-                                >
-                                  {count}
-                                </Text>
-                              </Pressable>
-                            ))}
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {/* Monthly Count */}
-                  {routineFrequency === 'monthly' && (
-                    <View className="mb-3">
-                      <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.monthlyGoal')}</Text>
-                      <View className="flex-row flex-wrap items-center" style={{ gap: 8 }}>
-                        {MONTHLY_COUNT_OPTIONS.map((count) => (
-                          <Pressable
-                            key={count}
-                            onPress={() => {
-                              setRoutineCountPerPeriod(count)
-                              setShowMonthlyCustomInput(false)
-                            }}
-                            className={`w-9 h-9 rounded-lg items-center justify-center border ${
-                              routineCountPerPeriod === count && !showMonthlyCustomInput
-                                ? 'bg-gray-900 border-gray-900'
-                                : 'bg-white border-gray-300'
-                            }`}
-                          >
-                            <Text
-                              className={`text-sm font-medium ${
-                                routineCountPerPeriod === count && !showMonthlyCustomInput
-                                  ? 'text-white'
-                                  : 'text-gray-700'
-                              }`}
-                            >
-                              {count}
-                            </Text>
-                          </Pressable>
-                        ))}
-                        {/* Custom Input - inline */}
-                        {showMonthlyCustomInput ? (
-                          <View className="flex-row items-center" style={{ gap: 4 }}>
-                            <TextInput
-                              value={monthlyCustomValue}
-                              onChangeText={(text) => {
-                                const num = text.replace(/[^0-9]/g, '')
-                                const limitedNum = num ? Math.min(parseInt(num), 31) : 0
-                                setMonthlyCustomValue(limitedNum > 0 ? String(limitedNum) : '')
-                                if (limitedNum > 0) {
-                                  setRoutineCountPerPeriod(limitedNum)
-                                }
-                              }}
-                              placeholder="?"
-                              keyboardType="number-pad"
-                              maxLength={2}
-                              className="w-9 h-9 border border-gray-900 bg-gray-900 rounded-lg text-sm text-center text-white"
-                              placeholderTextColor="#9ca3af"
-                              autoFocus
-                            />
-                          </View>
-                        ) : (
-                          <Pressable
-                            onPress={() => {
-                              setShowMonthlyCustomInput(true)
-                              setMonthlyCustomValue(
-                                !MONTHLY_COUNT_OPTIONS.includes(routineCountPerPeriod)
-                                  ? String(routineCountPerPeriod)
-                                  : ''
-                              )
-                            }}
-                            className="w-9 h-9 rounded-lg items-center justify-center border border-dashed border-gray-400"
-                          >
-                            <Text className="text-sm font-medium text-gray-500">+</Text>
-                          </Pressable>
-                        )}
-                      </View>
-                      <View className="flex-row items-center mt-2">
-                        <Info size={12} color="#9ca3af" />
-                        <Text className="text-xs text-gray-400 ml-1">
-                          {t('actionType.selector.dailyHint')}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* Mission Settings */}
-              {type === 'mission' && (
-                <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                  <Text className="text-base font-semibold text-gray-900 mb-3">
-                    {t('actionType.selector.missionSettings')}
-                  </Text>
-
-                  {/* Completion Type */}
-                  <View className="mb-3">
-                    <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.completionType')}</Text>
-                    <View className="gap-2">
-                      {missionCompletionOptions.map((option) => (
-                        <Pressable
-                          key={option.value}
-                          onPress={() => setMissionCompletionType(option.value)}
-                          className={`flex-row items-center p-3 rounded-lg border ${
-                            missionCompletionType === option.value
-                              ? 'border-gray-900 bg-white'
-                              : 'border-gray-200 bg-white'
-                          }`}
-                        >
-                          <View
-                            className={`w-4 h-4 rounded-full border-2 mr-3 items-center justify-center ${
-                              missionCompletionType === option.value
-                                ? 'border-gray-900'
-                                : 'border-gray-300'
-                            }`}
-                          >
-                            {missionCompletionType === option.value && (
-                              <View className="w-2 h-2 rounded-full bg-gray-900" />
-                            )}
-                          </View>
-                          <View className="flex-1">
-                            <Text className="text-sm font-medium text-gray-900">
-                              {t(`actionType.${option.value}`)}
-                            </Text>
-                            <Text className="text-xs text-gray-500 mt-0.5">
-                              {t(`actionType.selector.${option.value}Desc`)}
-                            </Text>
-                          </View>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Period Cycle (for periodic missions) - Button Style */}
-                  {missionCompletionType === 'periodic' && (
-                    <View className="mt-3">
-                      <Text className="text-sm text-gray-700 mb-2">{t('actionType.selector.periodCycle')}</Text>
-                      <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                        {periodCycleOptions.map((option) => (
-                          <Pressable
-                            key={option.value}
-                            onPress={() => setMissionPeriodCycle(option.value)}
-                            className={`px-4 py-2 rounded-lg border ${
-                              missionPeriodCycle === option.value
-                                ? 'bg-gray-900 border-gray-900'
-                                : 'bg-white border-gray-300'
-                            }`}
-                          >
-                            <Text
-                              className={`text-sm font-medium ${
-                                missionPeriodCycle === option.value
-                                  ? 'text-white'
-                                  : 'text-gray-700'
-                              }`}
-                            >
-                              {t(`actionType.${option.value}`)}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* Reference Info */}
-              {type === 'reference' && (
-                <View className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                  <View className="flex-row items-center">
-                    <Info size={16} color="#6b7280" />
-                    <Text className="text-sm text-gray-500 ml-2">
-                      {t('actionType.selector.referenceInfo')}
-                    </Text>
-                  </View>
-                </View>
-              )}
+              {/* Type Selection & Settings (Shared Component) */}
+              <ActionTypeSettingsView
+                type={type}
+                actionTitle={actionTitle}
+                routineFrequency={routineFrequency}
+                routineWeekdays={routineWeekdays}
+                routineCountPerPeriod={routineCountPerPeriod}
+                missionType={missionCompletionType}
+                missionCycle={missionPeriodCycle}
+                showMonthlyCustomInput={showMonthlyCustomInput}
+                monthlyCustomValue={monthlyCustomValue}
+                aiSuggestion={aiSuggestion ? { type: aiSuggestion.type } : null}
+                onTypeChange={setType}
+                onRoutineFrequencyChange={(freq) => {
+                  setRoutineFrequency(freq)
+                  setRoutineCountPerPeriod(1)
+                  setRoutineWeekdays([])
+                  setShowMonthlyCustomInput(false)
+                  setMonthlyCustomValue('')
+                }}
+                onWeekdayToggle={handleWeekdayToggle}
+                onRoutineCountChange={setRoutineCountPerPeriod}
+                onMissionTypeChange={setMissionCompletionType}
+                onMissionCycleChange={setMissionPeriodCycle}
+                onShowMonthlyCustomInputChange={setShowMonthlyCustomInput}
+                onMonthlyCustomValueChange={setMonthlyCustomValue}
+              />
 
               {/* Bottom spacing */}
               <View className="h-8" />
@@ -677,6 +357,6 @@ export default function ActionTypeSelector({
           </View>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Modal >
   )
 }

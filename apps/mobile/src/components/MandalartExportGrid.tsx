@@ -34,9 +34,9 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
 
     // Font sizes optimized for 1080px grid - large enough for phone wallpaper
     const fontSize = {
-      coreGoal: 28, // Center goal - same as sub-goal
-      subGoal: 28,  // Sub-goal titles - semibold
-      action: 24,   // Action items - minimum readable on wallpaper
+      coreGoal: 24, // 28 -> 24: Smaller as requested
+      subGoal: 24,  // 28 -> 24: Smaller to fit more text
+      action: 20,   // 24 -> 20: Minimum readable on wallpaper, allows 3 lines
       title: 48,    // Mandalart title at top
       branding: 32, // Footer branding
     }
@@ -73,7 +73,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
               colors={['#2563eb', '#9333ea', '#db2777']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={[cellStyle, { alignItems: 'center', justifyContent: 'center', padding: 12 }]}
+              style={[cellStyle, { alignItems: 'center', justifyContent: 'center', padding: 4 }]}
             >
               <Text
                 style={{
@@ -81,7 +81,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   fontSize: fontSize.coreGoal,
                   color: 'white',
                   textAlign: 'center',
-                  lineHeight: fontSize.coreGoal * 1.25,
+                  lineHeight: fontSize.coreGoal * 1.1,
                   textShadowColor: 'rgba(0,0,0,0.3)',
                   textShadowOffset: { width: 1, height: 1 },
                   textShadowRadius: 2,
@@ -106,7 +106,8 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   backgroundColor: '#eff6ff', // blue-50
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: 8,
+                  justifyContent: 'center',
+                  padding: 4,
                 },
               ]}
             >
@@ -117,7 +118,8 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                     fontSize: fontSize.subGoal,
                     color: '#1f2937',
                     textAlign: 'center',
-                    lineHeight: fontSize.subGoal * 1.25,
+                    textAlign: 'center',
+                    lineHeight: fontSize.subGoal * 1.1,
                   }}
                   numberOfLines={3}
                   textBreakStrategy="balanced"
@@ -144,7 +146,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                 backgroundColor: '#eff6ff', // blue-50
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: 8,
+                padding: 4,
               },
             ]}
           >
@@ -155,7 +157,8 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   fontSize: fontSize.subGoal,
                   color: '#1f2937',
                   textAlign: 'center',
-                  lineHeight: fontSize.subGoal * 1.25,
+                  textAlign: 'center',
+                  lineHeight: fontSize.subGoal * 1.1,
                 }}
                 numberOfLines={3}
                 textBreakStrategy="balanced"
@@ -180,7 +183,7 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                 backgroundColor: '#ffffff',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: 6,
+                padding: 4,
               },
             ]}
           >
@@ -191,7 +194,8 @@ const MandalartExportGrid = forwardRef<View, MandalartExportGridProps>(
                   fontSize: fontSize.action,
                   color: '#374151',
                   textAlign: 'center',
-                  lineHeight: fontSize.action * 1.25,
+                  textAlign: 'center',
+                  lineHeight: fontSize.action * 1.1,
                 }}
                 numberOfLines={3}
                 textBreakStrategy="balanced"
