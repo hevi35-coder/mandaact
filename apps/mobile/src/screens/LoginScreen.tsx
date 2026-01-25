@@ -37,28 +37,24 @@ interface SocialButtonProps {
 
 function SocialLoginButton({ onPress, icon, label }: SocialButtonProps) {
   return (
-    <View style={styles.sophisticatedWrapper}>
-      {/* Visual Layer: Ultra-Refined for Premium Feel */}
-      <View style={styles.visualBox}>
-        <View style={styles.buttonContentRow}>
-          <View style={styles.iconCenterWrap}>
-            {icon}
-          </View>
-          <Text style={styles.labelPremiumText} allowFontScaling={false}>
-            {label}
-          </Text>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.sophisticatedWrapper,
+        styles.visualBox,
+        { position: 'relative' },
+        pressed && styles.touchLayerPressed
+      ]}
+    >
+      <View style={styles.buttonContentRow} pointerEvents="none">
+        <View style={styles.iconCenterWrap}>
+          {icon}
         </View>
+        <Text style={styles.labelPremiumText} allowFontScaling={false}>
+          {label}
+        </Text>
       </View>
-
-      {/* Interaction Layer */}
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.touchLayer,
-          pressed && styles.touchLayerPressed
-        ]}
-      />
-    </View>
+    </Pressable>
   )
 }
 
@@ -352,11 +348,6 @@ const styles = StyleSheet.create({
     position: 'relative'
   },
   visualBox: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     backgroundColor: '#fcfdfe', // Slightly purer fill
     borderWidth: 1.0, // ULTRA-SOPHISTICATED WEIGHT
     borderColor: '#e2e8f0', // SOFT GRAY-200
