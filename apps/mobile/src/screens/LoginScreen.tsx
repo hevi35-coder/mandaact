@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import {
   View,
   Text,
-  Pressable,
+  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   Image,
@@ -25,35 +25,41 @@ const LANGUAGES = [
 ]
 
 /**
- * FINAL STABLE SOCIAL BUTTON (V13)
- * Expert Note: Single-layer Pressable for 100% reliability.
- * Guaranteeing height and width for visibility across all engines.
+ * FINAL HIGH-CONTRAST BUTTONS (V14)
+ * Uses standard "Apple Black" and "Google White" styles for maximum visibility.
+ * Switched to TouchableOpacity for reliable native rendering.
  */
 interface SocialButtonProps {
-  onPress?: () => void
+  onPress: () => void
   icon: React.ReactNode
   label: string
+  variant: 'apple' | 'google'
 }
 
-function SocialLoginButton({ onPress, icon, label }: SocialButtonProps) {
+function SocialLoginButton({ onPress, icon, label, variant }: SocialButtonProps) {
+  const isApple = variant === 'apple'
+
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.btnRoot,
-        styles.visualBox,
-        pressed && styles.btnPressed
+      activeOpacity={0.8}
+      style={[
+        styles.btnBase,
+        isApple ? styles.btnApple : styles.btnGoogle
       ]}
     >
-      <View style={styles.btnContent} pointerEvents="none">
+      <View style={styles.btnContent}>
         <View style={styles.btnIconBox}>
           {icon}
         </View>
-        <Text style={styles.btnLabel} allowFontScaling={false}>
+        <Text
+          style={[styles.btnLabel, isApple ? styles.textWhite : styles.textDark]}
+          allowFontScaling={false}
+        >
           {label}
         </Text>
       </View>
-    </Pressable>
+    </TouchableOpacity>
   )
 }
 
@@ -99,8 +105,9 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.root}>
       {/* Absolute Language Picker */}
       <View style={styles.absHeader}>
-        <Pressable
+        <TouchableOpacity
           onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
+          activeOpacity={0.7}
           style={styles.langChip}
         >
           <Globe size={13} color="#475569" />
@@ -108,12 +115,12 @@ export default function LoginScreen() {
             {currentLanguage.code.toUpperCase()}
           </Text>
           <ChevronDown size={11} color="#94a3b8" />
-        </Pressable>
+        </TouchableOpacity>
 
         {showLanguageDropdown && (
           <View style={styles.langMenu}>
             {LANGUAGES.map((lang) => (
-              <Pressable
+              <TouchableOpacity
                 key={lang.code}
                 onPress={() => handleLanguageChange(lang.code)}
                 style={[
@@ -127,7 +134,7 @@ export default function LoginScreen() {
                 ]}>
                   {lang.label}
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -171,19 +178,21 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Action Sector */}
+        {/* Action Sector: High Visibility Buttons */}
         <View style={styles.actionSector}>
           <View style={styles.btnStack}>
             <View style={{ marginBottom: 16 }}>
               <SocialLoginButton
+                variant="apple"
                 onPress={handleAppleLogin}
                 label={t('login.continueWithApple')}
-                icon={<AppleIcon color="#111827" width={19} height={21} />}
+                icon={<AppleIcon color="#FFFFFF" width={19} height={21} />}
               />
             </View>
 
             <View style={{ marginBottom: 28 }}>
               <SocialLoginButton
+                variant="google"
                 onPress={handleGoogleLogin}
                 label={t('login.continueWithGoogle')}
                 icon={<GoogleIcon width={18} height={18} />}
@@ -218,10 +227,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingBottom: 40,
-    paddingTop: 80, // Space for the floating language picker
+    paddingTop: 80,
     alignItems: 'center'
   },
-  // TOP NAV (ABSOLUTE)
+  // TOP NAV
   absHeader: {
     position: 'absolute',
     top: 50,
@@ -237,6 +246,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2
   },
   langChipText: {
     fontSize: 12,
@@ -330,7 +344,7 @@ const styles = StyleSheet.create({
     height: 104,
     borderRadius: 26
   },
-  // ACTIONS
+  // HIGH CONTRAST BUTTONS
   actionSector: {
     width: '100%',
     maxWidth: 345,
@@ -339,25 +353,26 @@ const styles = StyleSheet.create({
   btnStack: {
     width: '100%'
   },
-  btnRoot: {
+  btnBase: {
     width: '100%',
     height: 58,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  visualBox: {
-    backgroundColor: '#f8fafc', // Slightly darker for better contrast
-    borderWidth: 1.0,
-    borderColor: '#cbd5e1', // Darker gray (Slate-300) for visibility
-    shadowColor: '#64748b', // Visible shadow color
-    shadowOffset: { width: 0, height: 2 }, // Increased offset
-    shadowOpacity: 0.06, // Increased opacity
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2
   },
-  btnPressed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+  btnApple: {
+    backgroundColor: '#000000', // Solid Black
+    borderWidth: 0
+  },
+  btnGoogle: {
+    backgroundColor: '#ffffff', // Solid White
+    borderWidth: 1,
+    borderColor: '#cbd5e1'
   },
   btnContent: {
     flexDirection: 'row',
@@ -376,11 +391,16 @@ const styles = StyleSheet.create({
   btnLabel: {
     fontSize: 17,
     fontFamily: 'Pretendard-Bold',
-    color: '#1e293b',
     textAlign: 'center',
     letterSpacing: -0.4,
     includeFontPadding: false,
     lineHeight: 22
+  },
+  textWhite: {
+    color: '#ffffff'
+  },
+  textDark: {
+    color: '#1e293b'
   },
   footerLegal: {
     marginTop: 10,
