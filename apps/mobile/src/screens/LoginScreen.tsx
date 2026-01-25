@@ -347,14 +347,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   visualBox: {
-    backgroundColor: '#fcfdfe',
+    backgroundColor: '#f8fafc', // Slightly darker for better contrast
     borderWidth: 1.0,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 1
+    borderColor: '#cbd5e1', // Darker gray (Slate-300) for visibility
+    shadowColor: '#64748b', // Visible shadow color
+    shadowOffset: { width: 0, height: 2 }, // Increased offset
+    shadowOpacity: 0.06, // Increased opacity
+    shadowRadius: 4,
+    elevation: 2
   },
   btnPressed: {
     backgroundColor: 'rgba(0, 0, 0, 0.04)'
