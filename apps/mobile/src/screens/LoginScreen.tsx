@@ -161,7 +161,7 @@ export default function LoginScreen() {
             <View style={{ marginBottom: 20 }}>
               <SocialLoginButton
                 label={t('login.continueWithGoogle')}
-                icon={<GoogleIcon width={21} height={21} />}
+                icon={<GoogleIcon width={18} height={18} />}
               />
             </View>
           </View>
