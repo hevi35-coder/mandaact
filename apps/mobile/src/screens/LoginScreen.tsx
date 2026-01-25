@@ -146,73 +146,79 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        {/* Branding Body */}
-        <View style={styles.brandingBody}>
-          <View style={styles.logoStack}>
-            <View style={styles.logoRow}>
-              <Text style={styles.logoManda}>Manda</Text>
-              <MaskedView
-                style={styles.logoActMask}
-                maskElement={<Text style={styles.logoAct}>Act</Text>}
-              >
-                <LinearGradient
-                  colors={['#2563eb', '#9333ea', '#db2777']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        {/* TABLET CONSTRAINT WRAPPER */}
+        <View style={styles.contentTabletWrapper}>
+
+          {/* TOP SPACER: Pushes Branding down to Optical Golden Zone */}
+          <View style={{ flex: 0.7 }} />
+
+          {/* Branding Body */}
+          <View style={styles.brandingBody}>
+            <View style={styles.logoStack}>
+              <View style={styles.logoRow}>
+                <Text style={styles.logoManda}>Manda</Text>
+                <MaskedView
+                  style={styles.logoActMask}
+                  maskElement={<Text style={styles.logoAct}>Act</Text>}
                 >
-                  <Text style={[styles.logoAct, { opacity: 0 }]}>Act</Text>
-                </LinearGradient>
-              </MaskedView>
+                  <LinearGradient
+                    colors={['#2563eb', '#9333ea', '#db2777']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  >
+                    <Text style={[styles.logoAct, { opacity: 0 }]}>Act</Text>
+                  </LinearGradient>
+                </MaskedView>
+              </View>
+
+              <Text style={styles.logoSubtitle}>
+                {currentLang === 'ko' ? '목표를 실천으로' : 'Turn Goals into Action'}
+              </Text>
             </View>
 
-            <Text style={styles.logoSubtitle}>
-              {currentLang === 'ko' ? '목표를 실천으로' : 'Turn Goals into Action'}
-            </Text>
-          </View>
-
-          <View style={styles.heroImgBox}>
-            <Image
-              source={require('../../assets/icon.png')}
-              style={styles.heroImg}
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-
-        {/* SPACER: THE GOLDEN RATIO FLEXIBLE DIVIDER */}
-        <View style={{ flex: 1, minHeight: 40 }} />
-
-        {/* Action Sector: High Visibility Buttons */}
-        <View style={styles.actionSector}>
-          <View style={styles.btnStack}>
-            <View style={{ marginBottom: 16 }}>
-              <SocialLoginButton
-                variant="apple"
-                onPress={handleAppleLogin}
-                label={t('login.continueWithApple')}
-                icon={<AppleIcon color="#FFFFFF" width={19} height={21} />}
-              />
-            </View>
-
-            <View style={{ marginBottom: 28 }}>
-              <SocialLoginButton
-                variant="google"
-                onPress={handleGoogleLogin}
-                label={t('login.continueWithGoogle')}
-                icon={<GoogleIcon width={18} height={18} />}
+            <View style={styles.heroImgBox}>
+              <Image
+                source={require('../../assets/icon.png')}
+                style={styles.heroImg}
+                resizeMode="contain"
               />
             </View>
           </View>
 
-          <View style={styles.footerLegal}>
-            <Text
-              style={styles.footerLegalText}
-              numberOfLines={1}
-              allowFontScaling={false}
-            >
-              {t('login.termsPolicy')}
-            </Text>
+          {/* MIDDLE SPACER: Separates Brand & Actions proportionally */}
+          <View style={{ flex: 1 }} />
+
+          {/* Action Sector: High Visibility Buttons */}
+          <View style={styles.actionSector}>
+            <View style={styles.btnStack}>
+              <View style={{ marginBottom: 16 }}>
+                <SocialLoginButton
+                  variant="apple"
+                  onPress={handleAppleLogin}
+                  label={t('login.continueWithApple')}
+                  icon={<AppleIcon color="#FFFFFF" width={19} height={21} />}
+                />
+              </View>
+
+              <View style={{ marginBottom: 28 }}>
+                <SocialLoginButton
+                  variant="google"
+                  onPress={handleGoogleLogin}
+                  label={t('login.continueWithGoogle')}
+                  icon={<GoogleIcon width={18} height={18} />}
+                />
+              </View>
+            </View>
+
+            <View style={styles.footerLegal}>
+              <Text
+                style={styles.footerLegalText}
+                numberOfLines={1}
+                allowFontScaling={false}
+              >
+                {t('login.termsPolicy')}
+              </Text>
+            </View>
           </View>
-        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -230,10 +236,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingBottom: 50, // FIXED FOOTER ANCHOR (Grounding)
-    paddingTop: 100, // FIXED HEADER ANCHOR (Stability)
-    // justifyContent: 'center', <-- REMOVED (No floating)
-    // alignItems: 'center' <-- REMOVED (Let children expand)
+    paddingBottom: 50,
+    // justifyContent: 'center', // Rely on Weighted Spacers
   },
   // TOP NAV
   absHeader: {
@@ -415,5 +419,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 14,
     fontFamily: 'Pretendard-Medium'
+  },
+  contentTabletWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 420, // TABLET CONSTRAINT
+    alignSelf: 'center',
+    alignItems: 'center'
   }
 })
