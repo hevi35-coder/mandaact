@@ -149,8 +149,8 @@ export default function LoginScreen() {
         {/* TABLET CONSTRAINT WRAPPER */}
         <View style={styles.contentTabletWrapper}>
 
-          {/* TOP SPACER: Pushes Branding down to Optical Golden Zone */}
-          <View style={{ flex: 0.7 }} />
+          {/* TOP SPACER: Pushes Branding down to Visual Center (V19 Pivot) */}
+          <View style={{ flex: 1.2 }} />
 
           {/* Branding Body */}
           <View style={styles.brandingBody}>
@@ -199,7 +199,7 @@ export default function LoginScreen() {
                 />
               </View>
 
-              <View style={{ marginBottom: 28 }}>
+              <View style={{ marginBottom: 0 }}>
                 <SocialLoginButton
                   variant="google"
                   onPress={handleGoogleLogin}
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   // TOP NAV
   absHeader: {
     position: 'absolute',
-    top: 60, // Increased status bar clearance
+    top: 80, // Lowered for better accessibility and aesthetics (V20)
     right: 24,
     zIndex: 1000
   },
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     color: '#1e293b'
   },
   footerLegal: {
-    marginTop: 24, // Detached slightly
+    marginTop: 16, // Pure 16px gap (No hidden margin)
     paddingHorizontal: 4
   },
   footerLegalText: {
