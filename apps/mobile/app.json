@@ -92,7 +92,19 @@
           }
         ],
         "GADApplicationIdentifier": "ca-app-pub-3170834290529005~1573851405",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": [
+          "ko",
+          "en"
+        ],
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.737355022545-vqbqbbofdbadee4ejc4ek2jrev92mtus"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -145,7 +157,8 @@
         {
           "userTrackingPermission": "This identifier will be used to deliver personalized ads to you."
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
