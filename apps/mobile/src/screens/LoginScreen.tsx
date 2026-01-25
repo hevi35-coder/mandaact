@@ -219,7 +219,7 @@ export default function LoginScreen() {
               </Text>
             </View>
           </View>
-
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
