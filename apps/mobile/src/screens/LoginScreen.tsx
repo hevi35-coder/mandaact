@@ -41,14 +41,15 @@ function SocialLoginButton({ onPress, icon, label }: SocialButtonProps) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.btnRoot,
+        styles.visualBox,
         pressed && styles.btnPressed
       ]}
     >
       <View style={styles.btnContent} pointerEvents="none">
-        <View style={styles.btnIconCenterer}>
+        <View style={styles.btnIconBox}>
           {icon}
         </View>
-        <Text style={styles.btnLabelText} allowFontScaling={false}>
+        <Text style={styles.btnLabel} allowFontScaling={false}>
           {label}
         </Text>
       </View>
@@ -95,10 +96,9 @@ export default function LoginScreen() {
   }, [signInWithApple, t])
 
   return (
-    <SafeAreaView style={styles.rootSafe}>
-
-      {/* Absolute Language Picker (Does not disrupt vertical spacing) */}
-      <View style={styles.absoluteHeader}>
+    <SafeAreaView style={styles.root}>
+      {/* Absolute Language Picker */}
+      <View style={styles.absHeader}>
         <Pressable
           onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
           style={styles.langChip}
@@ -134,45 +134,46 @@ export default function LoginScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollBody}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        {/* Branding Cluster: Centered with Explicit Top Margin */}
+        {/* Branding Body */}
         <View style={styles.brandingBody}>
-          <View style={styles.logoCenteredGroup}>
-            <View style={styles.logoAxialRow}>
-              <Text style={styles.textManda}>Manda</Text>
+          <View style={styles.logoStack}>
+            <View style={styles.logoRow}>
+              <Text style={styles.logoManda}>Manda</Text>
               <MaskedView
-                style={styles.maskActContainer}
-                maskElement={<Text style={styles.textAct}>Act</Text>}
+                style={styles.logoActMask}
+                maskElement={<Text style={styles.logoAct}>Act</Text>}
               >
                 <LinearGradient
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 >
-                  <Text style={[styles.textAct, { opacity: 0 }]}>Act</Text>
+                  <Text style={[styles.logoAct, { opacity: 0 }]}>Act</Text>
                 </LinearGradient>
               </MaskedView>
             </View>
 
-            <Text style={styles.textLogoSubtitle}>
+            <Text style={styles.logoSubtitle}>
               {currentLang === 'ko' ? '목표를 실천으로' : 'Turn Goals into Action'}
             </Text>
           </View>
 
-          <View style={styles.iconHaloWrapper}>
+          <View style={styles.heroImgBox}>
             <Image
               source={require('../../assets/icon.png')}
-              style={styles.imgHeroIcon}
+              style={styles.heroImg}
               resizeMode="contain"
             />
           </View>
         </View>
 
-        {/* Action Sector: Explicit Gap from Branding for Guaranteed Visibility */}
+        {/* Action Sector */}
         <View style={styles.actionSector}>
-          <View style={styles.btnColumn}>
+          <View style={styles.btnStack}>
             <View style={{ marginBottom: 16 }}>
               <SocialLoginButton
                 onPress={handleAppleLogin}
@@ -190,10 +191,9 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Legal Footer */}
-          <View style={styles.legalZone}>
+          <View style={styles.footerLegal}>
             <Text
-              style={styles.legalTextTiny}
+              style={styles.footerLegalText}
               numberOfLines={1}
               allowFontScaling={false}
             >
@@ -208,20 +208,23 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  rootSafe: {
+  root: {
     flex: 1,
     backgroundColor: '#ffffff'
   },
-  scrollBody: {
-    flexGrow: 1,
+  scroll: {
+    flex: 1
+  },
+  scrollContent: {
     paddingHorizontal: 24,
     paddingBottom: 40,
-    justifyContent: 'center', // Centers the entire Branding + Actions cluster
+    paddingTop: 80, // Space for the floating language picker
+    alignItems: 'center'
   },
   // TOP NAV (ABSOLUTE)
-  absoluteHeader: {
+  absHeader: {
     position: 'absolute',
-    top: 50, // Below StatusBar
+    top: 50,
     right: 24,
     zIndex: 1000
   },
@@ -234,18 +237,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2
   },
   langChipText: {
     fontSize: 12,
     color: '#475569',
+    fontFamily: 'Pretendard-Bold',
     marginLeft: 6,
-    marginRight: 4,
-    fontFamily: 'Pretendard-Bold'
+    marginRight: 4
   },
   langMenu: {
     position: 'absolute',
@@ -281,75 +279,77 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     fontFamily: 'Pretendard-Bold'
   },
-  // BRANDING AREA
+  // BRANDING
   brandingBody: {
     alignItems: 'center',
-    width: '100%',
-    paddingBottom: 60 // Space between 'M' and buttons
-  },
-  logoCenteredGroup: {
-    alignItems: 'center',
-    marginBottom: 44,
+    marginTop: 40,
+    marginBottom: 60,
     width: '100%'
   },
-  logoAxialRow: {
+  logoStack: {
+    alignItems: 'center',
+    marginBottom: 44,
+  },
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8
   },
-  textManda: {
+  logoManda: {
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     color: '#111827',
     letterSpacing: -2.5
   },
-  maskActContainer: {
+  logoActMask: {
     width: 76,
     height: 64,
   },
-  textAct: {
+  logoAct: {
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     letterSpacing: -2,
     lineHeight: 64
   },
-  textLogoSubtitle: {
+  logoSubtitle: {
     color: '#1e293b',
     fontSize: 20,
     fontFamily: 'Pretendard-Bold',
     letterSpacing: -0.8
   },
-  iconHaloWrapper: {
+  heroImgBox: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 4,
   },
-  imgHeroIcon: {
+  heroImg: {
     width: 104,
     height: 104,
     borderRadius: 26
   },
-  // ACTION AREA (GUARANTEED VISIBILITY)
+  // ACTIONS
   actionSector: {
     width: '100%',
     maxWidth: 345,
-    alignSelf: 'center'
+    alignItems: 'center'
   },
-  btnColumn: {
+  btnStack: {
     width: '100%'
   },
   btnRoot: {
     width: '100%',
     height: 58,
-    backgroundColor: '#fcfdfe',
-    borderWidth: 1.0,
-    borderColor: '#e2e8f0',
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  visualBox: {
+    backgroundColor: '#fcfdfe',
+    borderWidth: 1.0,
+    borderColor: '#e2e8f0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
@@ -366,14 +366,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%'
   },
-  btnIconCenterer: {
+  btnIconBox: {
     marginRight: 10,
     width: 24,
     height: 24,
     alignItems: 'center',
     justifyContent: 'center'
   },
-  btnLabelText: {
+  btnLabel: {
     fontSize: 17,
     fontFamily: 'Pretendard-Bold',
     color: '#1e293b',
@@ -382,11 +382,11 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     lineHeight: 22
   },
-  legalZone: {
+  footerLegal: {
     marginTop: 10,
     paddingHorizontal: 4
   },
-  legalTextTiny: {
+  footerLegalText: {
     fontSize: 10.5,
     color: '#94a3b8',
     textAlign: 'center',
