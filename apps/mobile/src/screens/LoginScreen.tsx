@@ -227,13 +227,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingBottom: 40,
-    paddingTop: 80,
+    paddingTop: 120, // INCREASED: Optical Center Strategy
     alignItems: 'center'
   },
   // TOP NAV
   absHeader: {
     position: 'absolute',
-    top: 50,
+    top: 60, // Increased status bar clearance
     right: 24,
     zIndex: 1000
   },
@@ -296,13 +296,13 @@ const styles = StyleSheet.create({
   // BRANDING
   brandingBody: {
     alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 60,
+    marginTop: 0, // Removed top margin to rely purely on padding
+    marginBottom: 80, // INCREASED: Separation between ID and Action
     width: '100%'
   },
   logoStack: {
     alignItems: 'center',
-    marginBottom: 44,
+    marginBottom: 56, // INCREASED: Grandeur for text
   },
   logoRow: {
     flexDirection: 'row',
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     color: '#1e293b'
   },
   footerLegal: {
-    marginTop: 10,
+    marginTop: 24, // Detached slightly
     paddingHorizontal: 4
   },
   footerLegalText: {
