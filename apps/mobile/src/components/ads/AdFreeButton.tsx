@@ -31,18 +31,18 @@ export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
       try {
         await activate()
         toast.success(
-          t('ads.adFree.activated', '🛡️ 집중 모드 활성화!'),
-          t('ads.adFree.activatedDesc', '24시간 동안 배너 광고가 보이지 않습니다.')
+          t('ads.adFree.activated'),
+          t('ads.adFree.activatedDesc')
         )
         onActivated?.()
       } catch (error) {
         console.error('[AdFreeButton] Failed to activate:', error)
-        toast.error(t('common.error', '오류'), t('ads.adFree.error', '활성화에 실패했습니다.'))
+        toast.error(t('common.error'), t('ads.adFree.error'))
       }
     },
     onError: (error) => {
       console.error('[AdFreeButton] Ad error:', error)
-      toast.error(t('common.error', '오류'), t('ads.loadError', '광고를 불러올 수 없습니다.'))
+      toast.error(t('common.error'), t('ads.loadError'))
     },
   })
 
@@ -50,8 +50,8 @@ export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
     if (isAdFree) {
       // Already active, just show info
       toast.info(
-        t('ads.adFree.alreadyActive', '이미 활성화됨'),
-        t('ads.adFree.remaining', '{{time}} 남음', { time: remainingTimeFormatted })
+        t('ads.adFree.alreadyActive'),
+        t('ads.adFree.remaining', { time: remainingTimeFormatted })
       )
       return
     }
@@ -83,12 +83,12 @@ export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
         </View>
         <View className="flex-1">
           <Text className="text-violet-900 font-semibold text-base">
-            {t('ads.adFree.activeTitle', '집중 모드')}
+            {t('ads.adFree.activeTitle')}
           </Text>
           <View className="flex-row items-center mt-0.5">
             <Clock size={12} color="#8b5cf6" />
             <Text className="text-violet-600 text-sm ml-1">
-              {t('ads.adFree.remaining', '{{time}} 남음', { time: remainingTimeFormatted })}
+              {t('ads.adFree.remaining', { time: remainingTimeFormatted })}
             </Text>
           </View>
         </View>
@@ -122,10 +122,10 @@ export function AdFreeButton({ onActivated }: AdFreeButtonProps) {
       </View>
       <View className="flex-1">
         <Text className="text-gray-900 font-semibold text-base">
-          {t('ads.adFree.button', '광고 보고 집중 모드')}
+          {t('ads.adFree.button')}
         </Text>
         <Text className="text-gray-500 text-sm mt-0.5">
-          {t('ads.adFree.subtitle', '24시간 배너 광고 숨김')}
+          {t('ads.adFree.subtitle')}
         </Text>
       </View>
     </Pressable>

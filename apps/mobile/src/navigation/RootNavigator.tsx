@@ -44,10 +44,7 @@ import LoginScreen from '../screens/LoginScreen'
 import LoadingScreen from '../screens/LoadingScreen'
 import SubscriptionScreen from '../screens/SubscriptionScreen'
 import CoachingFlowScreen from '../screens/CoachingFlowScreen'
-import CoachingGateScreen from '../screens/CoachingGateScreen'
-import CoachingSlotGateScreen from '../screens/CoachingSlotGateScreen'
-import ConversationalCoachingScreen from '../screens/ConversationalCoachingScreen'
-import CoachingHistoryScreen from '../screens/CoachingHistoryScreen'
+
 
 export type RootStackParamList = {
   Main: undefined
@@ -57,11 +54,7 @@ export type RootStackParamList = {
   Settings: undefined
   Tutorial: undefined
   Subscription: undefined
-  CoachingGate: undefined
-  CoachingSlotGate: undefined
   CoachingFlow: undefined
-  ConversationalCoaching: undefined
-  CoachingHistory: { sessionId: string }
 }
 
 export type MainTabParamList = {
@@ -243,36 +236,8 @@ export default function RootNavigator() {
             }}
           />
           <Stack.Screen
-            name="CoachingGate"
-            component={CoachingGateScreen}
-            options={{
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="CoachingSlotGate"
-            component={CoachingSlotGateScreen}
-            options={{
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
             name="CoachingFlow"
             component={CoachingFlowScreen}
-            options={{
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="ConversationalCoaching"
-            component={ConversationalCoachingScreen}
-            options={{
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="CoachingHistory"
-            component={CoachingHistoryScreen}
             options={{
               animation: 'slide_from_right',
             }}

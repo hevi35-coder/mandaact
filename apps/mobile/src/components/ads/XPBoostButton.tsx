@@ -140,7 +140,7 @@ export function XPBoostButton({ onBoostActivated, hasActiveMandalarts = true }: 
 
   const handlePress = useCallback(async () => {
     if (isBoostActive) {
-      toast.info(t('ads.xpBoost.activated'), t('ads.xpBoost.remaining', '{{time}} 남음', { time: remainingTimeFormatted }))
+      toast.info(t('ads.xpBoost.activated'), t('ads.xpBoost.remaining', { time: remainingTimeFormatted }))
       return
     }
     if (!isLoaded || isActivating) return

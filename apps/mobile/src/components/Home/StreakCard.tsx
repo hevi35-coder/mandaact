@@ -118,27 +118,27 @@ export function StreakCard({
 
             {/* Motivational Message */}
             {currentStreak === 0 ? (
-                <View className="mt-4 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-200">
+                <View className="mt-4">
                     <Text
-                        className="text-sm text-gray-600 text-center"
+                        className="text-sm text-gray-400 text-center"
                         style={{ fontFamily: 'Pretendard-Medium' }}
                     >
                         {t('home.streak.startNew')} 🌱
                     </Text>
                 </View>
             ) : currentStreak >= 7 ? (
-                <View className="mt-4 px-4 py-3 bg-orange-50 rounded-2xl border border-orange-200">
+                <View className="mt-4">
                     <Text
-                        className="text-sm text-orange-700 text-center"
+                        className="text-sm text-orange-500 text-center"
                         style={{ fontFamily: 'Pretendard-SemiBold' }}
                     >
                         {t('home.streak.amazing')} 🎉
                     </Text>
                 </View>
             ) : (
-                <View className="mt-4 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-200">
+                <View className="mt-4">
                     <Text
-                        className="text-sm text-gray-600 text-center"
+                        className="text-sm text-gray-400 text-center"
                         style={{ fontFamily: 'Pretendard-Medium' }}
                     >
                         {t('home.streak.keepGoing', { days: 7 - currentStreak })} 💪

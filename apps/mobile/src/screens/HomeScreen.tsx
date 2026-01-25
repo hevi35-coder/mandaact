@@ -28,10 +28,8 @@ import {
 import { xpService } from '../lib/xp'
 import type { XPMultiplier } from '@mandaact/shared'
 import type { RootStackParamList, MainTabParamList } from '../navigation/RootNavigator'
-import { useCoachingStore } from '../store/coachingStore'
-
 // Sub-components
-import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal, CoachingBanner, OnboardingChecklist } from '../components/Home'
+import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal, OnboardingChecklist } from '../components/Home'
 import { BannerAd, XPBoostButton } from '../components/ads'
 
 type NavigationProp = CompositeNavigationProp<
@@ -75,8 +73,6 @@ export default function HomeScreen() {
   const [hasNotificationsEnabled, setHasNotificationsEnabled] = useState(false)
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false)
 
-  const { sessionId, status, currentStep, summary, resumeSession } = useCoachingStore()
-  const hasCoachingSession = Boolean(sessionId && status && status !== 'completed')
 
   const isLoading = gamificationLoading || profileStatsLoading
 
@@ -121,13 +117,6 @@ export default function HomeScreen() {
   const openNicknameModal = useCallback(() => {
     setNicknameModalVisible(true)
   }, [])
-
-  const handleResumeCoaching = useCallback(() => {
-    if (status === 'paused') {
-      resumeSession()
-    }
-    navigation.navigate('ConversationalCoaching')
-  }, [navigation, resumeSession, status])
 
   // Check tutorial status on mount
   React.useEffect(() => {
@@ -189,9 +178,7 @@ export default function HomeScreen() {
             signupDate={user?.created_at}
           />
 
-          {/* AI Coaching Entry Point - PAUSED (2026-01-17) */}
-          {/* Feature hidden for later development. See: AI_COACHING_PAUSE.md */}
-          {/* <CoachingBanner /> */}
+
 
           {/* iPad: 2-column layout for cards */}
           <View style={isTablet ? { flexDirection: 'row', gap: 20 } : undefined}>

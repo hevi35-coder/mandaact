@@ -624,175 +624,6 @@ export default function SettingsScreen() {
               </Pressable>
             </Animated.View>
 
-            {/* App Settings Section */}
-            <Text
-              className="text-sm text-gray-500 mb-2 ml-1"
-              style={{ fontFamily: 'Pretendard-SemiBold' }}
-            >
-              {t('settings.app.title')}
-            </Text>
-            <Animated.View
-              entering={FadeInUp.delay(150).duration(400)}
-              className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.06,
-                shadowRadius: 12,
-                elevation: 3,
-              }}
-            >
-              {/* Language Setting */}
-              <Pressable
-                onPress={() => setShowLanguageModal(true)}
-                className="flex-row items-center px-5 py-4 border-b border-gray-100"
-              >
-                <Globe size={22} color="#6b7280" />
-                <Text
-                  className="flex-1 ml-3 text-base text-gray-900"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('settings.app.language')}
-                </Text>
-                <Text
-                  className="text-sm text-gray-400 mr-1"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {currentLanguageDisplay}
-                </Text>
-                <ChevronRight size={18} color="#9ca3af" />
-              </Pressable>
-
-              {/* Timezone Setting */}
-              <Pressable
-                onPress={() => setShowTimezoneModal(true)}
-                className="flex-row items-center px-5 py-4"
-              >
-                <Clock size={22} color="#6b7280" />
-                <Text
-                  className="flex-1 ml-3 text-base text-gray-900"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('settings.app.timezone')}
-                </Text>
-                <Text
-                  className="text-sm text-gray-400 mr-1"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {currentTimezoneDisplay}
-                </Text>
-                <ChevronRight size={18} color="#9ca3af" />
-              </Pressable>
-            </Animated.View>
-
-            {/* Focus Mode Section - Only for Free users (Premium users are always ad-free) */}
-            {!isPremium && (
-              <>
-                <Text
-                  className="text-sm text-gray-500 mb-2 ml-1"
-                  style={{ fontFamily: 'Pretendard-SemiBold' }}
-                >
-                  {t('settings.focus.title')}
-                </Text>
-                <Animated.View
-                  entering={FadeInUp.delay(175).duration(400)}
-                  className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 12,
-                    elevation: 3,
-                  }}
-                >
-                  <Pressable
-                    onPress={handleFocusModePress}
-                    disabled={isAdLoading || isActivatingFocus || isAdFreeLoading}
-                    className="flex-row items-center px-5 py-4"
-                  >
-                    <Shield size={20} color={isAdFree ? '#7c3aed' : '#6b7280'} />
-                    <View className="flex-1 ml-3">
-                      <Text
-                        className={`text-base ${isAdFree ? 'text-violet-700' : 'text-gray-900'}`}
-                        style={{ fontFamily: 'Pretendard-Medium' }}
-                      >
-                        {t('ads.adFree.button')}
-                      </Text>
-                      <Text
-                        className={`text-xs mt-0.5 ${isAdFree ? 'text-violet-500' : 'text-gray-500'}`}
-                        style={{ fontFamily: 'Pretendard-Regular' }}
-                      >
-                        {isAdFree
-                          ? t('ads.adFree.remaining', { time: remainingTimeFormatted })
-                          : t('ads.adFree.subtitle')
-                        }
-                      </Text>
-                    </View>
-                    {isAdLoading || isActivatingFocus ? (
-                      <ActivityIndicator size="small" color="#7c3aed" />
-                    ) : isAdFree ? (
-                      <View className="bg-violet-100 px-2 py-1 rounded-full">
-                        <Text
-                          className="text-xs text-violet-700"
-                          style={{ fontFamily: 'Pretendard-SemiBold' }}
-                        >
-                          {t('ads.adFree.activeTitle')}
-                        </Text>
-                      </View>
-                    ) : (
-                      <View className="w-8 h-8 rounded-full items-center justify-center bg-gray-100">
-                        <Play size={14} color="#6b7280" fill="#6b7280" />
-                      </View>
-                    )}
-                  </Pressable>
-                </Animated.View>
-              </>
-            )}
-
-            {/* Privacy & AI Data Section - AI Coaching PAUSED (2026-01-17) */}
-            {/* See docs/AI_COACHING_PAUSE.md */}
-            {/*
-          <Text
-            className="text-sm text-gray-500 mb-2 ml-1"
-            style={{ fontFamily: 'Pretendard-SemiBold' }}
-          >
-            {t('settings.privacy.title')}
-          </Text>
-          <Animated.View
-            entering={FadeInUp.delay(185).duration(400)}
-            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 3,
-            }}
-          >
-            <Pressable
-              onPress={handleDeleteCoachingData}
-              disabled={isDeletingCoachingData}
-              className="flex-row items-center px-5 py-4"
-            >
-              <Trash2 size={22} color="#ef4444" />
-              <View className="flex-1 ml-3">
-                <Text
-                  className="text-base text-red-500"
-                  style={{ fontFamily: 'Pretendard-Regular' }}
-                >
-                  {t('settings.privacy.deleteCoachingData')}
-                </Text>
-              </View>
-              {isDeletingCoachingData ? (
-                <ActivityIndicator size="small" color="#ef4444" />
-              ) : (
-                <ChevronRight size={18} color="#9ca3af" />
-              )}
-            </Pressable>
-          </Animated.View>
-          */}
-
-
             {/* Notification Settings */}
             <Text
               className="text-sm text-gray-500 mb-2 ml-1"
@@ -801,7 +632,7 @@ export default function SettingsScreen() {
               {t('settings.app.notifications')}
             </Text>
             <Animated.View
-              entering={FadeInUp.delay(200).duration(400)}
+              entering={FadeInUp.delay(150).duration(400)}
               className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
               style={{
                 shadowColor: '#000',
@@ -915,6 +746,175 @@ export default function SettingsScreen() {
                 </View>
               </View>
 
+            </Animated.View>
+
+            {/* Focus Mode Section - Only for Free users (Premium users are always ad-free) */}
+            {!isPremium && (
+              <>
+                <Text
+                  className="text-sm text-gray-500 mb-2 ml-1"
+                  style={{ fontFamily: 'Pretendard-SemiBold' }}
+                >
+                  {t('settings.focus.title')}
+                </Text>
+                <Animated.View
+                  entering={FadeInUp.delay(175).duration(400)}
+                  className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
+                    elevation: 3,
+                  }}
+                >
+                  <Pressable
+                    onPress={handleFocusModePress}
+                    disabled={isAdLoading || isActivatingFocus || isAdFreeLoading}
+                    className="flex-row items-center px-5 py-4"
+                  >
+                    <Shield size={20} color={isAdFree ? '#7c3aed' : '#6b7280'} />
+                    <View className="flex-1 ml-3">
+                      <Text
+                        className={`text-base ${isAdFree ? 'text-violet-700' : 'text-gray-900'}`}
+                        style={{ fontFamily: 'Pretendard-Medium' }}
+                      >
+                        {t('ads.adFree.button')}
+                      </Text>
+                      <Text
+                        className={`text-xs mt-0.5 ${isAdFree ? 'text-violet-500' : 'text-gray-500'}`}
+                        style={{ fontFamily: 'Pretendard-Regular' }}
+                      >
+                        {isAdFree
+                          ? t('ads.adFree.remaining', { time: remainingTimeFormatted })
+                          : t('ads.adFree.subtitle')
+                        }
+                      </Text>
+                    </View>
+                    {isAdLoading || isActivatingFocus ? (
+                      <ActivityIndicator size="small" color="#7c3aed" />
+                    ) : isAdFree ? (
+                      <View className="bg-violet-100 px-2 py-1 rounded-full">
+                        <Text
+                          className="text-xs text-violet-700"
+                          style={{ fontFamily: 'Pretendard-SemiBold' }}
+                        >
+                          {t('ads.adFree.activeTitle')}
+                        </Text>
+                      </View>
+                    ) : (
+                      <View className="w-8 h-8 rounded-full items-center justify-center bg-gray-100">
+                        <Play size={14} color="#6b7280" fill="#6b7280" />
+                      </View>
+                    )}
+                  </Pressable>
+                </Animated.View>
+              </>
+            )}
+
+            {/* Privacy & AI Data Section - AI Coaching PAUSED (2026-01-17) */}
+            {/* See docs/AI_COACHING_PAUSE.md */}
+            {/*
+          <Text
+            className="text-sm text-gray-500 mb-2 ml-1"
+            style={{ fontFamily: 'Pretendard-SemiBold' }}
+          >
+            {t('settings.privacy.title')}
+          </Text>
+          <Animated.View
+            entering={FadeInUp.delay(185).duration(400)}
+            className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 3,
+            }}
+          >
+            <Pressable
+              onPress={handleDeleteCoachingData}
+              disabled={isDeletingCoachingData}
+              className="flex-row items-center px-5 py-4"
+            >
+              <Trash2 size={22} color="#ef4444" />
+              <View className="flex-1 ml-3">
+                <Text
+                  className="text-base text-red-500"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {t('settings.privacy.deleteCoachingData')}
+                </Text>
+              </View>
+              {isDeletingCoachingData ? (
+                <ActivityIndicator size="small" color="#ef4444" />
+              ) : (
+                <ChevronRight size={18} color="#9ca3af" />
+              )}
+            </Pressable>
+          </Animated.View>
+          */}
+
+
+            {/* App Settings Section */}
+            <Text
+              className="text-sm text-gray-500 mb-2 ml-1"
+              style={{ fontFamily: 'Pretendard-SemiBold' }}
+            >
+              {t('settings.app.title')}
+            </Text>
+            <Animated.View
+              entering={FadeInUp.delay(200).duration(400)}
+              className="bg-white rounded-2xl overflow-hidden mb-5 border border-gray-100"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+                elevation: 3,
+              }}
+            >
+              {/* Language Setting */}
+              <Pressable
+                onPress={() => setShowLanguageModal(true)}
+                className="flex-row items-center px-5 py-4 border-b border-gray-100"
+              >
+                <Globe size={22} color="#6b7280" />
+                <Text
+                  className="flex-1 ml-3 text-base text-gray-900"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {t('settings.app.language')}
+                </Text>
+                <Text
+                  className="text-sm text-gray-400 mr-1"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {currentLanguageDisplay}
+                </Text>
+                <ChevronRight size={18} color="#9ca3af" />
+              </Pressable>
+
+              {/* Timezone Setting */}
+              <Pressable
+                onPress={() => setShowTimezoneModal(true)}
+                className="flex-row items-center px-5 py-4"
+              >
+                <Clock size={22} color="#6b7280" />
+                <Text
+                  className="flex-1 ml-3 text-base text-gray-900"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {t('settings.app.timezone')}
+                </Text>
+                <Text
+                  className="text-sm text-gray-400 mr-1"
+                  style={{ fontFamily: 'Pretendard-Regular' }}
+                >
+                  {currentTimezoneDisplay}
+                </Text>
+                <ChevronRight size={18} color="#9ca3af" />
+              </Pressable>
             </Animated.View>
 
 

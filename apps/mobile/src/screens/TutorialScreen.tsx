@@ -126,10 +126,10 @@ export default function TutorialScreen() {
   }
 
   const handleComplete = async () => {
-    if (user?.id) {
-      // Check if already completed to prevent duplicate XP
-      const alreadyCompleted = await isTutorialCompleted(user.id)
+    // Check if already completed to prevent duplicate XP and determine alert message
+    const alreadyCompleted = await isTutorialCompleted(user?.id)
 
+    if (user?.id) {
       if (!alreadyCompleted) {
         // Award 50 XP for tutorial completion
         try {
@@ -405,8 +405,8 @@ export default function TutorialScreen() {
                         }
                         return (
                           <View key={bIndex} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: bIndex < step.bullets!.length - 1 ? 10 : 0 }}>
-                            <View style={{ width: isTablet ? 28 : 22, height: isTablet ? 28 : 22, borderRadius: isTablet ? 14 : 11, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                              <Text style={{ color: '#2563eb', fontSize: isTablet ? 14 : 11, fontFamily: 'Pretendard-Bold' }}>{bIndex + 1}</Text>
+                            <View style={{ width: isTablet ? 36 : 28, height: isTablet ? 36 : 28, borderRadius: isTablet ? 18 : 14, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                              <Text style={{ color: '#2563eb', fontSize: isTablet ? 16 : 12, fontFamily: 'Pretendard-Bold' }}>{bIndex + 1}</Text>
                             </View>
                             <Text style={{ fontSize: isTablet ? 16 : 12, color: '#374151', flex: 1, fontFamily: 'Pretendard-Medium' }}>
                               {typeof bullet === 'string' ? t(`tutorial.content.${step.contentKey}.${bullet}`) : ''}

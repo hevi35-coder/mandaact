@@ -24,7 +24,7 @@
     "generate": "Generate",
     "generating": "Generating...",
     "viewDetails": "View Details",
-    "userGuide": "User Guide",
+    "userGuide": "Tutorial",
     "create": "Create",
     "sharing": "Sharing...",
     "exporting": "Exporting...",
@@ -584,15 +584,15 @@
       }
     },
     "empty": {
-      "title": "No practice items yet",
-      "description": "Create a mandalart to\nmanage your daily goals",
+      "title": "Start Your Day Strong",
+      "description": "Small wins lead to big success.\nLet's set up your first simple goal.",
       "howTo": {
-        "title": "How to Start Practicing",
+        "title": "Quick Start Guide",
         "step1": "Create a mandalart",
         "step2": "Check off items daily"
       },
-      "guide": "User Guide",
-      "create": "Create Mandalart"
+      "guide": "Tutorial",
+      "create": "Set First Goal"
     },
     "xp": {
       "earned": "+{{xp}} XP",
@@ -726,16 +726,17 @@
       "active": "Active",
       "inactive": "Inactive",
       "createNew": "Create New",
+      "createNew": "Create New",
       "empty": {
-        "title": "No mandalarts yet",
-        "description": "Create a mandalart to\nmanage your goals systematically",
-        "howTo": "Start Right Now",
-        "benefit1": "AI Coaching: Helper when stuck",
-        "benefit2": "3-Minute Setup: Fast & Easy",
-        "benefit3": "Smart Actions: Tailored for you",
-        "guide": "User Guide"
+        "title": "Visualize Your Success",
+        "description": "Turn vague dreams into concrete plans.\nStart with one core goal.",
+        "howTo": "Why Start Now?",
+        "benefit1": "Clarity: See your path instantly",
+        "benefit2": "Speed: Setup in 3 mins",
+        "benefit3": "Growth: AI-powered suggestions",
+        "guide": "Tutorial"
       },
-      "create": "Create Mandalart",
+      "create": "Create My First Plan",
       "coreGoal": "Core Goal"
     },
     "modal": {
@@ -1465,16 +1466,16 @@
     "goalDiagnosis": "Goal Diagnosis",
     "goalDiagnosisSubtitle": "Mandalart plan review and improvement suggestions",
     "empty": {
-      "title": "No reports yet",
-      "description": "Start practicing and AI reports\nwill be generated automatically every Monday",
-      "firstReportTitle": "Get your first report!",
-      "firstReportDesc": "Based on your practice records,\nAI provides personalized analysis",
+      "title": "Unlock Your Growth Data",
+      "description": "We can't analyze what hasn't happened yet.\nStart practicing to see your trends.",
+      "firstReportTitle": "Ready for First Report?",
+      "firstReportDesc": "You have enough data to generate your first analysis.",
+      "stepsTitle": "How to Unlock Insights",
+      "step1": "Create a plan",
+      "step2": "Practice at least once",
       "generateFirst": "Generate First Report",
-      "stepsTitle": "Steps to generate reports",
-      "step1": "Create a mandalart",
-      "step2": "Record practice (1+ times)",
-      "goPractice": "Start Practicing",
-      "createMandalart": "Create Mandalart"
+      "goPractice": "Go Practice",
+      "createMandalart": "Create Plan"
     },
     "card": {
       "viewDetails": "View Details",

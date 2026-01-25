@@ -475,15 +475,7 @@ export default function MandalartDetailScreen() {
     setSelectedSubGoalForTitle(null)
   }, [])
 
-  // v18.1: Continue coaching from draft
-  const handleContinueCoaching = useCallback(() => {
-    if (mandalart?.coaching_session_id) {
-      navigation.navigate('ConversationalCoaching', {
-        resumeSessionId: mandalart.coaching_session_id,
-        mandalartId: mandalart.id,
-      } as any)
-    }
-  }, [mandalart, navigation])
+
 
   // v18.1: Finish draft as-is
   const handleFinishDraft = useCallback(async () => {
@@ -776,14 +768,7 @@ export default function MandalartDetailScreen() {
           </View>
           <View className="flex-row items-center">
             {/* Coaching History Button - Only show for coaching-created mandalarts */}
-            {mandalart.coaching_session_id && (
-              <Pressable
-                onPress={() => navigation.navigate('CoachingHistory', { sessionId: mandalart.coaching_session_id! })}
-                className="p-2.5 rounded-full active:bg-gray-100"
-              >
-                <MessageCircle size={22} color="#6366f1" />
-              </Pressable>
-            )}
+
             <Pressable
               onPress={() => handleExport('save')}
               className="p-2.5 rounded-full active:bg-gray-100"
