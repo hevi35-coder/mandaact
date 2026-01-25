@@ -25,9 +25,8 @@ const LANGUAGES = [
 ]
 
 /**
- * FINAL STABLE SOCIAL BUTTON (V11)
- * Combines visual shield and touch layer into a single robust Pressable.
- * Guarantees centered alignment and 1:1 touch response.
+ * FINAL STABLE SOCIAL BUTTON (V12)
+ * Pure Pressable container for 100% touch capture and visual stability.
  */
 interface SocialButtonProps {
   onPress?: () => void
@@ -40,16 +39,15 @@ function SocialLoginButton({ onPress, icon, label }: SocialButtonProps) {
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.sophisticatedWrapper,
-        styles.visualBox,
-        pressed && styles.touchLayerPressed
+        styles.buttonContainer,
+        pressed && styles.buttonPressed
       ]}
     >
       <View style={styles.buttonContentRow} pointerEvents="none">
-        <View style={styles.iconCenterWrap}>
+        <View style={styles.iconBox}>
           {icon}
         </View>
-        <Text style={styles.labelPremiumText} allowFontScaling={false}>
+        <Text style={styles.buttonLabel} allowFontScaling={false}>
           {label}
         </Text>
       </View>
@@ -79,8 +77,6 @@ export default function LoginScreen() {
         identifyUser(result.user.id, { email: result.user.email })
       }
     } catch (error: any) {
-      // NOTE: This often fails in simulator with "missing support for URL schemes"
-      // because it requires manual configuration in Info.plist.
       Alert.alert(t('common.error'), t('login.googleLoginFailed'))
     }
   }, [signInWithGoogle, t])
@@ -93,46 +89,44 @@ export default function LoginScreen() {
         identifyUser(result.user.id, { email: result.user.email })
       }
     } catch (error: any) {
-      // NOTE: This often fails in simulator due to absence of proper device entitlements.
       Alert.alert(t('common.error'), t('login.appleLoginFailed'))
     }
   }, [signInWithApple, t])
 
   return (
-    <SafeAreaView style={styles.safeRoot}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollBody}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-
-        {/* Localization Trigger */}
-        <View style={styles.topNavRow}>
+        {/* Top Navbar */}
+        <View style={styles.header}>
           <Pressable
             onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
-            style={styles.langSelectorChip}
+            style={styles.langPicker}
           >
             <Globe size={13} color="#475569" />
-            <Text style={styles.langSelectorChipText}>
+            <Text style={styles.langText}>
               {currentLanguage.code.toUpperCase()}
             </Text>
             <ChevronDown size={11} color="#94a3b8" />
           </Pressable>
 
           {showLanguageDropdown && (
-            <View style={styles.langDropMenu}>
+            <View style={styles.langMenu}>
               {LANGUAGES.map((lang) => (
                 <Pressable
                   key={lang.code}
                   onPress={() => handleLanguageChange(lang.code)}
                   style={[
-                    styles.langOptItem,
-                    currentLang === lang.code && styles.langOptItemActive
+                    styles.langItem,
+                    currentLang === lang.code && styles.langItemActive
                   ]}
                 >
                   <Text style={[
-                    styles.langOptItemText,
-                    currentLang === lang.code && styles.langOptItemTextActive
+                    styles.langItemText,
+                    currentLang === lang.code && styles.langItemTextActive
                   ]}>
                     {lang.label}
                   </Text>
@@ -142,41 +136,41 @@ export default function LoginScreen() {
           )}
         </View>
 
-        {/* Hero Branding Section (Axial Alignment Perfected) */}
-        <View style={styles.heroLayout}>
-          <View style={styles.brandingCenterGroup}>
-            <View style={styles.logoRootCenter}>
-              <Text style={styles.mandaTextBold}>Manda</Text>
+        {/* Branding Area (Fixed Heights for Stability) */}
+        <View style={styles.branding}>
+          <View style={styles.logoGroup}>
+            <View style={styles.logoRow}>
+              <Text style={styles.logoManda}>Manda</Text>
               <MaskedView
-                style={styles.actMaskFixedSize}
-                maskElement={<Text style={styles.actTextBold}>Act</Text>}
+                style={styles.logoActMask}
+                maskElement={<Text style={styles.logoAct}>Act</Text>}
               >
                 <LinearGradient
                   colors={['#2563eb', '#9333ea', '#db2777']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 >
-                  <Text style={[styles.actTextBold, { opacity: 0 }]}>Act</Text>
+                  <Text style={[styles.logoAct, { opacity: 0 }]}>Act</Text>
                 </LinearGradient>
               </MaskedView>
             </View>
 
-            <Text style={styles.subtitlePremiumText}>
+            <Text style={styles.logoSubtitle}>
               {currentLang === 'ko' ? '목표를 실천으로' : 'Turn Goals into Action'}
             </Text>
           </View>
 
-          <View style={styles.appIconVisualHalo}>
+          <View style={styles.appIconContainer}>
             <Image
               source={require('../../assets/icon.png')}
-              style={styles.heroAppLogoImg}
+              style={styles.appIcon}
               resizeMode="contain"
             />
           </View>
         </View>
 
-        {/* Action Sector: STABLE TOUCH BUTTONS */}
-        <View style={styles.actionSectorGroup}>
-          <View style={styles.buttonStackGroup}>
+        {/* Action Area */}
+        <View style={styles.actions}>
+          <View style={styles.buttonStack}>
             <View style={{ marginBottom: 16 }}>
               <SocialLoginButton
                 onPress={handleAppleLogin}
@@ -185,7 +179,7 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View style={{ marginBottom: 20 }}>
+            <View style={{ marginBottom: 24 }}>
               <SocialLoginButton
                 onPress={handleGoogleLogin}
                 label={t('login.continueWithGoogle')}
@@ -194,9 +188,10 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <View style={styles.footerLegalZone}>
+          {/* Legal Bar */}
+          <View style={styles.footer}>
             <Text
-              style={styles.legalNoticeTinyText}
+              style={styles.legalText}
               numberOfLines={1}
               allowFontScaling={false}
             >
@@ -211,23 +206,22 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeRoot: {
+  container: {
     flex: 1,
     backgroundColor: '#ffffff'
   },
-  scrollBody: {
+  scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingBottom: 24
+    paddingBottom: 40
   },
-  // I18N
-  topNavRow: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     paddingTop: 12,
     zIndex: 100
   },
-  langSelectorChip: {
+  langPicker: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
@@ -237,14 +231,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  langSelectorChipText: {
+  langText: {
     fontSize: 12,
     color: '#475569',
     marginLeft: 6,
     marginRight: 4,
     fontFamily: 'Pretendard-Bold'
   },
-  langDropMenu: {
+  langMenu: {
     position: 'absolute',
     top: 54,
     right: 0,
@@ -260,103 +254,105 @@ const styles = StyleSheet.create({
     minWidth: 135,
     overflow: 'hidden'
   },
-  langOptItem: {
+  langItem: {
     paddingHorizontal: 18,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#f8fafc'
   },
-  langOptItemActive: {
+  langItemActive: {
     backgroundColor: '#f1f5f9'
   },
-  langOptItemText: {
+  langItemText: {
     fontSize: 14,
     color: '#64748b',
     fontFamily: 'Pretendard-Medium'
   },
-  langOptItemTextActive: {
+  langItemTextActive: {
     color: '#2563eb',
     fontFamily: 'Pretendard-Bold'
   },
-  // HERO & BRANDING
-  heroLayout: {
-    flex: 1,
-    justifyContent: 'center',
+  // BRANDING
+  branding: {
     alignItems: 'center',
-    paddingVertical: 40
+    marginTop: 60, // Fixed margin instead of flex: 1
+    marginBottom: 60
   },
-  brandingCenterGroup: {
+  logoGroup: {
     alignItems: 'center',
     marginBottom: 44,
     width: '100%'
   },
-  logoRootCenter: {
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
     width: '100%'
   },
-  mandaTextBold: {
+  logoManda: {
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     color: '#111827',
     letterSpacing: -2.5,
   },
-  actMaskFixedSize: {
+  logoActMask: {
     width: 76,
     height: 64,
   },
-  actTextBold: {
+  logoAct: {
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     letterSpacing: -2,
     lineHeight: 64
   },
-  subtitlePremiumText: {
+  logoSubtitle: {
     color: '#1e293b',
     fontSize: 20,
     fontFamily: 'Pretendard-Bold',
     letterSpacing: -0.8,
     textAlign: 'center'
   },
-  appIconVisualHalo: {
+  appIconContainer: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 4,
   },
-  heroAppLogoImg: {
+  appIcon: {
     width: 104,
     height: 104,
     borderRadius: 26
   },
-  // SOCIAL BUTTONS (CORRECTED STRUCTURE)
-  actionSectorGroup: {
+  // BUTTONS
+  actions: {
     width: '100%',
     maxWidth: 345,
     alignSelf: 'center',
+    marginTop: 'auto', // Pushes actions to the bottom of the visible area if content is small
+    marginBottom: 20
   },
-  buttonStackGroup: {
-    marginTop: 0
+  buttonStack: {
+    width: '100%'
   },
-  sophisticatedWrapper: {
+  buttonContainer: {
     width: '100%',
     height: 58,
-    justifyContent: 'center', // CENTER CONTENT VERTICALLY
-    alignItems: 'center',     // CENTER CONTENT HORIZONTALLY
-  },
-  visualBox: {
     backgroundColor: '#fcfdfe',
     borderWidth: 1.0,
     borderColor: '#e2e8f0',
     borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 3,
     elevation: 1
+  },
+  buttonPressed: {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)'
   },
   buttonContentRow: {
     flexDirection: 'row',
@@ -366,14 +362,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%'
   },
-  iconCenterWrap: {
+  iconBox: {
     marginRight: 10,
     width: 24,
     height: 24,
     alignItems: 'center',
     justifyContent: 'center'
   },
-  labelPremiumText: {
+  buttonLabel: {
     fontSize: 17,
     fontFamily: 'Pretendard-Bold',
     color: '#1e293b',
@@ -382,15 +378,11 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     lineHeight: 22
   },
-  touchLayerPressed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.04)'
-  },
-  footerLegalZone: {
-    paddingHorizontal: 4,
+  footer: {
     marginTop: 20,
-    paddingBottom: 40
+    paddingHorizontal: 4
   },
-  legalNoticeTinyText: {
+  legalText: {
     fontSize: 10.5,
     color: '#94a3b8',
     textAlign: 'center',
