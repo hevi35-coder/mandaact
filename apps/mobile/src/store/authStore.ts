@@ -7,21 +7,42 @@ import { logger } from '../lib/logger'
 import { useCoachingStore } from './coachingStore'
 import { useCoachingAccessStore } from './coachingAccessStore'
 import { usePlanStore } from './planStore'
+// Google Sign-In (Safe Import for Simulator)
+let GoogleSignin: any = {
+  configure: () => { },
+  hasPlayServices: async () => { },
+  signIn: async () => { throw new Error('Google Sign-In not available in simulator without dev client') },
+  signOut: async () => { },
+}
+let statusCodes: any = {}
+
+try {
+  const GoogleModule = require('@react-native-google-signin/google-signin')
+  GoogleSignin = GoogleModule.GoogleSignin
+  statusCodes = GoogleModule.statusCodes
+
+  // Configure Google Sign-In
+  GoogleSignin.configure({
+    scopes: ['email', 'profile'],
+    webClientId: '737355022545-t2220091rj6r2fkq7h4lvgo0dciqp4ne.apps.googleusercontent.com',
+    iosClientId: '737355022545-vqbqbbofdbadee4ejc4ek2jrev92mtus.apps.googleusercontent.com',
+  })
+} catch (e) {
+  console.warn('Google Sign-In module not found, using mock. (This is expected in Expo Go/Simulator without dev client)')
+}
 
 interface AuthResult {
   user: User | null
   session?: Session | null
-  requiresEmailConfirmation?: boolean
 }
 
 interface AuthState {
   user: User | null
   loading: boolean
   initialized: boolean
-  signIn: (email: string, password: string) => Promise<AuthResult>
-  signUp: (email: string, password: string) => Promise<AuthResult>
+  signInWithGoogle: () => Promise<AuthResult>
+  signInWithApple: () => Promise<AuthResult>
   signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<void>
   initialize: () => Promise<void>
 }
 
@@ -32,35 +53,66 @@ export const useAuthStore = create<AuthState>()(
       loading: false,
       initialized: false,
 
-      signIn: async (email, password) => {
+      signInWithGoogle: async () => {
         set({ loading: true })
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+          await GoogleSignin.hasPlayServices()
+          const userInfo = await GoogleSignin.signIn()
+
+          if (!userInfo.data?.idToken) throw new Error('No ID token present!')
+
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: userInfo.data.idToken,
           })
+
           if (error) throw error
+
           set({ user: data.user })
-          return { user: data.user }
+          return { user: data.user, session: data.session }
+        } catch (error: any) {
+          if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+            // User cancelled the login flow
+            return { user: null }
+          }
+          logger.error('Google Sign-In Error', error)
+          throw error
         } finally {
           set({ loading: false })
         }
       },
 
-      signUp: async (email, password) => {
+      signInWithApple: async () => {
         set({ loading: true })
         try {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
+          const credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
           })
-          if (error) throw error
-          set({ user: data.user })
-          return {
-            user: data.user,
-            session: data.session,
-            requiresEmailConfirmation: !!data.user && !data.session,
+
+          // Sign in to Supabase using the identity token
+          if (!credential.identityToken) {
+            throw new Error('No identity token provided.')
           }
+
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'apple',
+            token: credential.identityToken,
+          })
+
+          if (error) throw error
+
+          set({ user: data.user })
+          return { user: data.user, session: data.session }
+        } catch (error: any) {
+          if (error.code === 'ERR_REQUEST_CANCELED') {
+            // User cancelled
+            return { user: null }
+          }
+          logger.error('Apple Sign-In Error', error)
+          throw error
         } finally {
           set({ loading: false })
         }
@@ -75,19 +127,12 @@ export const useAuthStore = create<AuthState>()(
           usePlanStore.getState().reset()
 
           await supabase.auth.signOut()
+          try {
+            await GoogleSignin.signOut()
+          } catch (e) {
+            // Ignore if google signout fails (e.g. wasn't signed in with google)
+          }
           set({ user: null })
-        } finally {
-          set({ loading: false })
-        }
-      },
-
-      resetPassword: async (email) => {
-        set({ loading: true })
-        try {
-          const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'mandaact://reset-password',
-          })
-          if (error) throw error
         } finally {
           set({ loading: false })
         }
