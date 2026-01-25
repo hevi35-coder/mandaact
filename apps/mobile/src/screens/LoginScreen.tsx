@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Image,
   ScrollView,
+  Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
@@ -15,6 +16,8 @@ import { useTranslation } from 'react-i18next'
 import { changeLanguage, getCurrentLanguage, type SupportedLanguage } from '../i18n'
 import { AppleIcon } from '../components/icons/AppleIcon'
 import { GoogleIcon } from '../components/icons/GoogleIcon'
+import { useAuthStore } from '../store/authStore'
+import { trackLogin, identifyUser } from '../lib'
 
 const LANGUAGES = [
   { code: 'ko', label: '한국어' },
@@ -70,6 +73,32 @@ export default function LoginScreen() {
     setCurrentLang(langCode as SupportedLanguage)
     await changeLanguage(langCode as SupportedLanguage)
   }, [])
+
+  const { signInWithGoogle, signInWithApple } = useAuthStore()
+
+  const handleGoogleLogin = useCallback(async () => {
+    try {
+      const result = await signInWithGoogle()
+      if (result.user) {
+        trackLogin('google')
+        identifyUser(result.user.id, { email: result.user.email })
+      }
+    } catch (error: any) {
+      Alert.alert(t('common.error'), t('login.googleLoginFailed'))
+    }
+  }, [signInWithGoogle, t])
+
+  const handleAppleLogin = useCallback(async () => {
+    try {
+      const result = await signInWithApple()
+      if (result.user) {
+        trackLogin('apple')
+        identifyUser(result.user.id, { email: result.user.email })
+      }
+    } catch (error: any) {
+      Alert.alert(t('common.error'), t('login.appleLoginFailed'))
+    }
+  }, [signInWithApple, t])
 
   return (
     <SafeAreaView style={styles.safeRoot}>
@@ -153,6 +182,7 @@ export default function LoginScreen() {
           <View style={styles.buttonStackGroup}>
             <View style={{ marginBottom: 16 }}>
               <SocialLoginButton
+                onPress={handleAppleLogin}
                 label={t('login.continueWithApple')}
                 icon={<AppleIcon color="#111827" width={19} height={21} />}
               />
@@ -160,6 +190,7 @@ export default function LoginScreen() {
 
             <View style={{ marginBottom: 20 }}>
               <SocialLoginButton
+                onPress={handleGoogleLogin}
                 label={t('login.continueWithGoogle')}
                 icon={<GoogleIcon width={18} height={18} />}
               />
