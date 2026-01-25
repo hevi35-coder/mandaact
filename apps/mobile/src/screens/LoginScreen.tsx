@@ -237,7 +237,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingBottom: 50,
-    // justifyContent: 'center', // Rely on Weighted Spacers
+    paddingBottom: 50,
+    justifyContent: 'center', // REQUIRED: Centers the constrained tablet wrapper
+    alignItems: 'center'
   },
   // TOP NAV
   absHeader: {
@@ -421,10 +423,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Medium'
   },
   contentTabletWrapper: {
-    flex: 1,
+    flexGrow: 0, // STOP infinite expansion (V21)
     width: '100%',
-    maxWidth: 420, // TABLET CONSTRAINT
+    height: '100%',
+    maxHeight: 850, // VIRTUAL MOBILE VIEWPORT CONSTANT (V21)
+    maxWidth: 420,  // Existing Width Constraint
     alignSelf: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 })
