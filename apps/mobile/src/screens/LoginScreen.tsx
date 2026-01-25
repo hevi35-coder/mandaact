@@ -178,6 +178,9 @@ export default function LoginScreen() {
           </View>
         </View>
 
+        {/* SPACER: THE GOLDEN RATIO FLEXIBLE DIVIDER */}
+        <View style={{ flex: 1, minHeight: 40 }} />
+
         {/* Action Sector: High Visibility Buttons */}
         <View style={styles.actionSector}>
           <View style={styles.btnStack}>
@@ -225,12 +228,12 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
-    flexGrow: 1, // ENABLE FLEX GROW for centering
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingBottom: 80, // CONSUME BOTTOM SPACE to bias center upwards
-    paddingTop: 0, // REMOVE FIXED ANCHOR
-    justifyContent: 'center', // ENABLE FLEX CENTERING
-    alignItems: 'center'
+    paddingBottom: 50, // FIXED FOOTER ANCHOR (Grounding)
+    paddingTop: 100, // FIXED HEADER ANCHOR (Stability)
+    // justifyContent: 'center', <-- REMOVED (No floating)
+    // alignItems: 'center' <-- REMOVED (Let children expand)
   },
   // TOP NAV
   absHeader: {
@@ -298,8 +301,6 @@ const styles = StyleSheet.create({
   // BRANDING
   brandingBody: {
     alignItems: 'center',
-    marginTop: 0, // Removed top margin to rely purely on padding
-    marginBottom: 80, // INCREASED: Separation between ID and Action
     width: '100%'
   },
   logoStack: {
