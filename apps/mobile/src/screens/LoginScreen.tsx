@@ -225,9 +225,11 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
+    flexGrow: 1, // ENABLE FLEX GROW for centering
     paddingHorizontal: 24,
-    paddingBottom: 40,
-    paddingTop: 120, // INCREASED: Optical Center Strategy
+    paddingBottom: 80, // CONSUME BOTTOM SPACE to bias center upwards
+    paddingTop: 0, // REMOVE FIXED ANCHOR
+    justifyContent: 'center', // ENABLE FLEX CENTERING
     alignItems: 'center'
   },
   // TOP NAV
