@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
-import { Globe, ChevronDown } from 'lucide-native'
+import { Globe, ChevronDown } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { changeLanguage, getCurrentLanguage, type SupportedLanguage } from '../i18n'
 import { AppleIcon } from '../components/icons/AppleIcon'
