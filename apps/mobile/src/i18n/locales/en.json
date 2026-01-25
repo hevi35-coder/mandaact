@@ -1215,6 +1215,11 @@
   "login": {
     "title": "Sign In",
     "subtitle": "Turn Goals into Action",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "googleLoginFailed": "Google login failed.",
+    "appleLoginFailed": "Apple login failed.",
+    "termsPolicy": "By continuing, you agree to our Terms and Privacy Policy.",
     "email": "Email",
     "emailPlaceholder": "your@email.com",
     "password": "Password",

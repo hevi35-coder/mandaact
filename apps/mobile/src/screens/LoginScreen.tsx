@@ -22,9 +22,9 @@ const LANGUAGES = [
 ]
 
 /**
- * SOPHISTICATED SOCIAL BUTTON (V9)
- * Expert Note: Softened borders (1.2px) and tightened spacing. 
- * Separates visual box from touch layer for rendering stability.
+ * SOPHISTICATED PERFECTION BUTTON (V10)
+ * Expert Note: Sophisticated 1.0px borders with Gray-200. 
+ * Decoupled rendering for absolute stability.
  */
 interface SocialButtonProps {
   onPress?: () => void
@@ -35,7 +35,7 @@ interface SocialButtonProps {
 function SocialLoginButton({ onPress, icon, label }: SocialButtonProps) {
   return (
     <View style={styles.sophisticatedWrapper}>
-      {/* Visual Layer: Softened for Sophistication */}
+      {/* Visual Layer: Ultra-Refined for Premium Feel */}
       <View style={styles.visualBox}>
         <View style={styles.buttonContentRow}>
           <View style={styles.iconCenterWrap}>
@@ -115,10 +115,10 @@ export default function LoginScreen() {
           )}
         </View>
 
-        {/* Hero Branding Section (Fixed Alignment) */}
+        {/* Hero Branding Section (Fixed Axial Alignment) */}
         <View style={styles.heroLayout}>
           <View style={styles.brandingCenterGroup}>
-            {/* Logo Group: Mathematically Centered */}
+            {/* Logo Group: Mathematically Calibrated Centering */}
             <View style={styles.logoRootCenter}>
               <Text style={styles.mandaTextBold}>Manda</Text>
               <MaskedView
@@ -148,7 +148,7 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Action Sector: REFINED SPACING & WEIGHT */}
+        {/* Action Sector: REFINED SPACING & SOPHISTICATED WEIGHT */}
         <View style={styles.actionSectorGroup}>
           <View style={styles.buttonStackGroup}>
             <View style={{ marginBottom: 16 }}>
@@ -158,7 +158,7 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View style={{ marginBottom: 32 }}>
+            <View style={{ marginBottom: 20 }}>
               <SocialLoginButton
                 label={t('login.continueWithGoogle')}
                 icon={<GoogleIcon width={21} height={21} />}
@@ -166,8 +166,13 @@ export default function LoginScreen() {
             </View>
           </View>
 
+          {/* Legal Footer: Optimized for Single Line */}
           <View style={styles.footerLegalZone}>
-            <Text style={styles.legalNoticeTinyText}>
+            <Text
+              style={styles.legalNoticeTinyText}
+              numberOfLines={1}
+              allowFontScaling={false}
+            >
               {t('login.termsPolicy')}
             </Text>
           </View>
@@ -246,7 +251,7 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     fontFamily: 'Pretendard-Bold'
   },
-  // HERO & BRANDING (CALIBRATED ALIGNMENT)
+  // HERO & BRANDING (AXIAL ALIGNMENT CORRECTED)
   heroLayout: {
     flex: 1,
     justifyContent: 'center',
@@ -256,25 +261,25 @@ const styles = StyleSheet.create({
   brandingCenterGroup: {
     alignItems: 'center',
     marginBottom: 44,
-    width: '100%' // Ensure center reference
+    width: '100%'
   },
   logoRootCenter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // ABSOLUTE CENTER
-    marginBottom: 10,
+    justifyContent: 'center',
+    marginBottom: 8,
     width: '100%'
   },
   mandaTextBold: {
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     color: '#111827',
-    letterSpacing: -2,
+    letterSpacing: -2.5, // Slightly tighter to pull center
   },
   actMaskFixedSize: {
-    width: 85,
+    width: 76,  // CALIBRATED: Reduced from 85/90 to perfectly frame 'Act'
     height: 64,
-    marginLeft: 0 // Explicitly zeroed
+    marginLeft: 0
   },
   actTextBold: {
     fontSize: 50,
@@ -292,27 +297,27 @@ const styles = StyleSheet.create({
   appIconVisualHalo: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 5,
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 4,
   },
   heroAppLogoImg: {
-    width: 105,
-    height: 105,
+    width: 104,
+    height: 104,
     borderRadius: 26
   },
-  // SOPHISTICATED BUTTONS
+  // SOPHISTICATED PERFECTION BUTTONS
   actionSectorGroup: {
     width: '100%',
     maxWidth: 345,
     alignSelf: 'center',
   },
   buttonStackGroup: {
-    marginTop: 10
+    marginTop: 0
   },
   sophisticatedWrapper: {
     width: '100%',
-    height: 60,
+    height: 58, // Tighter premium height
     position: 'relative'
   },
   visualBox: {
@@ -321,32 +326,32 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#f8fafc', // Light Fill
-    borderWidth: 1.2, // REFINED BORDER WEIGHT
-    borderColor: '#cbd5e1', // SOFT SLATE-300
+    backgroundColor: '#fcfdfe', // Slightly purer fill
+    borderWidth: 1.0, // ULTRA-SOPHISTICATED WEIGHT
+    borderColor: '#e2e8f0', // SOFT GRAY-200
     borderRadius: 18,
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 5,
-    elevation: 2
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 3,
+    elevation: 1
   },
   buttonContentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Perfect group center
+    justifyContent: 'center',
     paddingHorizontal: 20
   },
   iconCenterWrap: {
-    marginRight: 12,
+    marginRight: 10,
     width: 24,
     height: 24,
     alignItems: 'center',
     justifyContent: 'center'
   },
   labelPremiumText: {
-    fontSize: 18,
+    fontSize: 17, // Subtly refined font size
     fontFamily: 'Pretendard-Bold',
     color: '#1e293b',
     textAlign: 'center',
@@ -364,17 +369,18 @@ const styles = StyleSheet.create({
     zIndex: 10
   },
   touchLayerPressed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.05)'
+    backgroundColor: 'rgba(0, 0, 0, 0.04)'
   },
   footerLegalZone: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 4, // MINIMIZED for single line fit
+    marginTop: 20, // Tightened from Google button
     paddingBottom: 40
   },
   legalNoticeTinyText: {
-    fontSize: 11,
+    fontSize: 10.5, // Slightly smaller to guarantee 1-line
     color: '#94a3b8',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 14,
     fontFamily: 'Pretendard-Medium'
   }
 })
