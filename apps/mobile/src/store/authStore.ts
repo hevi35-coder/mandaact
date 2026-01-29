@@ -1,12 +1,15 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Alert } from 'react-native'
 import { supabase } from '../lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 import { logger } from '../lib/logger'
 import { useCoachingStore } from './coachingStore'
 import { useCoachingAccessStore } from './coachingAccessStore'
 import { usePlanStore } from './planStore'
+import * as AppleAuthentication from 'expo-apple-authentication'
+import * as Crypto from 'expo-crypto' // Ensure expo-crypto is installed for nonce
 // Google Sign-In (Safe Import for Simulator)
 let GoogleSignin: any = {
   configure: () => { },
@@ -14,7 +17,9 @@ let GoogleSignin: any = {
   signIn: async () => { throw new Error('Google Sign-In not available in simulator without dev client') },
   signOut: async () => { },
 }
-let statusCodes: any = {}
+let statusCodes: any = {
+  SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED_MOCK' // Prevent undefined === undefined false positive
+}
 
 try {
   const GoogleModule = require('@react-native-google-signin/google-signin')
@@ -25,7 +30,8 @@ try {
   GoogleSignin.configure({
     scopes: ['email', 'profile'],
     webClientId: '737355022545-t2220091rj6r2fkq7h4lvgo0dciqp4ne.apps.googleusercontent.com',
-    iosClientId: '737355022545-vqbqbbofdbadee4ejc4ek2jrev92mtus.apps.googleusercontent.com',
+    // iosClientId: Only provided in Dev (Simulator) to prevent crash. In Prod, rely on plist.
+    iosClientId: __DEV__ ? '737355022545-vqbqbbofdbadee4ejc4ek2jrev92mtus.apps.googleusercontent.com' : undefined,
   })
 } catch (e) {
   console.warn('Google Sign-In module not found, using mock. (This is expected in Expo Go/Simulator without dev client)')
@@ -42,6 +48,7 @@ interface AuthState {
   initialized: boolean
   signInWithGoogle: () => Promise<AuthResult>
   signInWithApple: () => Promise<AuthResult>
+  devSignIn: () => Promise<void> // For Simulator Testing
   signOut: () => Promise<void>
   initialize: () => Promise<void>
 }
@@ -85,11 +92,19 @@ export const useAuthStore = create<AuthState>()(
       signInWithApple: async () => {
         set({ loading: true })
         try {
+          const csrf = Math.random().toString(36).substring(2, 15)
+          const nonce = Math.random().toString(36).substring(2, 10)
+          const hashedNonce = await Crypto.digestStringAsync(
+            Crypto.CryptoDigestAlgorithm.SHA256,
+            nonce
+          )
+
           const credential = await AppleAuthentication.signInAsync({
             requestedScopes: [
               AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
               AppleAuthentication.AppleAuthenticationScope.EMAIL,
             ],
+            nonce: hashedNonce,
           })
 
           // Sign in to Supabase using the identity token
@@ -100,6 +115,7 @@ export const useAuthStore = create<AuthState>()(
           const { data, error } = await supabase.auth.signInWithIdToken({
             provider: 'apple',
             token: credential.identityToken,
+            nonce: nonce, // Pass the raw nonce to Supabase to verify the hashed nonce in token
           })
 
           if (error) throw error
@@ -114,6 +130,56 @@ export const useAuthStore = create<AuthState>()(
           logger.error('Apple Sign-In Error', error)
           throw error
         } finally {
+          set({ loading: false })
+        }
+      },
+
+      devSignIn: async () => {
+        set({ loading: true })
+        const DEV_EMAIL = 'dev@mandaact.com'
+        const DEV_PASS = 'dev1234!!'
+
+        try {
+          // 1. Try Signing In
+          const { data, error: signInError } = await supabase.auth.signInWithPassword({
+            email: DEV_EMAIL,
+            password: DEV_PASS,
+          })
+
+          if (!signInError && data.user) {
+            set({ user: data.user, loading: false })
+            return
+          }
+
+          // 2. If Sign In failed, Try Signing Up
+          console.log('Dev Sign-In failed, trying Sign-Up...', signInError?.message)
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: DEV_EMAIL,
+            password: DEV_PASS,
+          })
+
+          if (signUpError) {
+            console.error('Dev Sign-Up Error:', signUpError)
+            Alert.alert('Dev Login Error', `Failed to create dev account: ${signUpError.message}`)
+            // Fallback to fake user (worst case)
+            const fakeUser: any = {
+              id: '00000000-0000-0000-0000-000000000000',
+              aud: 'authenticated',
+              role: 'authenticated',
+              email: DEV_EMAIL,
+              created_at: new Date().toISOString(),
+            }
+            set({ user: fakeUser, loading: false })
+            return
+          }
+
+          if (signUpData.user) {
+            set({ user: signUpData.user, loading: false })
+            Alert.alert('Dev Account Created', 'Created and logged in as dev@mandaact.com')
+          }
+
+        } catch (e) {
+          console.error('Dev Auth Exception:', e)
           set({ loading: false })
         }
       },

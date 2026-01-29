@@ -62,4 +62,5 @@ export interface ActionItemProps {
     showYesterdayButton?: boolean
     /** Callback when yesterday check is completed */
     onYesterdayCheckCompleted?: () => void
+    isUnconfigured?: boolean
 }

@@ -60,3 +60,6 @@ sw.js
 dev-dist/
 supabase/.temp/
 .vercel
+
+# Expo Build Artifacts
+apps/mobile/MandaAct.app

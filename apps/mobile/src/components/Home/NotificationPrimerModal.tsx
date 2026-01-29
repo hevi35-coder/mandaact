@@ -4,7 +4,7 @@ import { BellRing, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
-import { registerForPushNotificationsAsync } from '../../services/notificationService'
+import { registerForPushNotificationsAsync, setNotificationsEnabled } from '../../services/notificationService'
 
 interface NotificationPrimerModalProps {
     visible: boolean
@@ -23,6 +23,8 @@ export function NotificationPrimerModal({ visible, onClose, onSuccess }: Notific
 
             if (token) {
                 // Success!
+                // Ensure persistent state is updated so Settings screen reflects the change
+                await setNotificationsEnabled(true)
                 onSuccess()
                 onClose()
             } else {

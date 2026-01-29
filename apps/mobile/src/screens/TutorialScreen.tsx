@@ -273,11 +273,13 @@ export default function TutorialScreen() {
                 style={{
                   width: '100%',
                   maxWidth: buttonMaxWidth,
-                  height: isTablet ? 620 : 520, // Slightly reduced for better fit
+                  maxWidth: buttonMaxWidth,
+                  height: isTablet ? 620 : 540, // Increased from 520 to prevent text clipping
                   justifyContent: 'flex-start', // Top-aligned, zones handle spacing
                   backgroundColor: '#ffffff',
                   borderRadius: 20,
-                  padding: 24,
+                  paddingVertical: 24,
+                  paddingHorizontal: 20, // Reduced from 24 to give text more width
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.05,
@@ -359,7 +361,7 @@ export default function TutorialScreen() {
                 </View>
 
                 {/* ═══ ZONE 2: Text Area (Fixed 100px) ═══ */}
-                <View style={{ height: isTablet ? 110 : 90, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8 }}>
+                <View style={{ height: isTablet ? 110 : 110, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 0 }}>
                   <Text
                     style={{
                       fontSize: titleSize,

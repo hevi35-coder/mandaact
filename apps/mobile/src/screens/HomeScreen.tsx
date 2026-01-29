@@ -31,6 +31,8 @@ import type { RootStackParamList, MainTabParamList } from '../navigation/RootNav
 // Sub-components
 import { ProfileCard, StreakCard, NicknameModal, BadgeDetailModal, OnboardingChecklist } from '../components/Home'
 import { BannerAd, XPBoostButton } from '../components/ads'
+import { areNotificationsEnabled } from '../services/notificationService'
+import { isTutorialCompleted } from '../screens/TutorialScreen'
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList>,
@@ -73,8 +75,33 @@ export default function HomeScreen() {
   const [hasNotificationsEnabled, setHasNotificationsEnabled] = useState(false)
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false)
 
+  // Handlers
+  const openNicknameModal = useCallback(() => {
+    setNicknameModalVisible(true)
+  }, [])
+
 
   const isLoading = gamificationLoading || profileStatsLoading
+
+  // Derived state
+  const currentLevel = gamification?.current_level || 1
+  const totalXP = gamification?.total_xp || 0
+  const nickname = gamification?.nickname || user?.email?.split('@')[0] || t('home.nickname.default', 'User')
+
+  // XP Progress Calculation
+  const { current: levelXP, required: levelRequirement, percentage: xpPercentageRaw } = getXPForCurrentLevel(totalXP, currentLevel)
+  const xpRequired = levelRequirement // This variable name in HomeScreen seems to mean "XP needed for next level" based on usage in ProfileCard
+  const xpProgress = levelXP
+  const xpPercentage = xpPercentageRaw
+
+  // Profile Stats
+  const totalChecks = profileStats?.total_checks || 0
+  const activeDays = profileStats?.active_days || 0
+  const currentStreak = profileStats?.current_streak || 0
+  const longestStreak = profileStats?.longest_streak || 0
+  const lastCheckDate = profileStats?.last_check_date
+  const longestStreakDate = profileStats?.longest_streak_date
+  const isNewRecord = currentStreak > 0 && currentStreak >= longestStreak
 
   // Invalidate and refetch data when screen is focused
   useFocusEffect(
@@ -83,47 +110,20 @@ export default function HomeScreen() {
         queryClient.invalidateQueries({ queryKey: statsKeys.user(user.id) })
         xpService.getActiveMultipliers(user.id).then(setActiveMultipliers)
 
-        // Check notification status
-        import('../services/notificationService').then(({ areNotificationsEnabled }) => {
-          areNotificationsEnabled().then(setHasNotificationsEnabled)
-        })
+        // Check notification status (static)
+        areNotificationsEnabled().then(setHasNotificationsEnabled)
 
-        // Check tutorial completion status (refreshes when returning from Tutorial)
-        import('../screens/TutorialScreen').then(({ isTutorialCompleted }) => {
-          isTutorialCompleted(user.id).then(setHasCompletedTutorial)
-        })
+        // Check tutorial completion status (static)
+        isTutorialCompleted(user.id).then(setHasCompletedTutorial)
       }
     }, [user?.id, queryClient])
   )
-
-  // Calculate XP progress
-  const totalXP = gamification?.total_xp || 0
-  const currentLevel = getLevelFromXP(totalXP)
-  const { current: xpProgress, required: xpRequired, percentage: xpPercentage } = getXPForCurrentLevel(totalXP, currentLevel)
-  const nickname = gamification?.nickname || user?.email?.split('@')[0] || 'User'
-
-  // Stats
-  const totalChecks = profileStats?.totalChecks || 0
-  const activeDays = profileStats?.activeDays || 0
-  const currentStreak = gamification?.current_streak || 0
-  const longestStreak = gamification?.longest_streak || 0
-  const lastCheckDate = gamification?.last_check_date
-  const longestStreakDate = gamification?.longest_streak_date
-
-  // Check if current equals longest (new record badge)
-  const isNewRecord = currentStreak === longestStreak && currentStreak > 0
-
-  // Open nickname edit modal
-  const openNicknameModal = useCallback(() => {
-    setNicknameModalVisible(true)
-  }, [])
-
+  // ...
   // Check tutorial status on mount
   React.useEffect(() => {
     const checkTutorial = async () => {
       if (!user?.id) return
 
-      const { isTutorialCompleted } = await import('../screens/TutorialScreen')
       const completed = await isTutorialCompleted(user.id)
       setHasCompletedTutorial(completed)
 
@@ -189,7 +189,7 @@ export default function HomeScreen() {
                 nickname={nickname}
                 totalXP={totalXP}
                 xpProgress={xpProgress}
-                xpRequired={xpRequired}
+                xpRequired={levelRequirement}
                 xpPercentage={xpPercentage}
                 totalChecks={totalChecks}
                 activeDays={activeDays}

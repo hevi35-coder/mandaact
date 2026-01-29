@@ -636,11 +636,28 @@ export function getInitialPeriod(cycle: MissionPeriodCycle): { start: Date; end:
 export function isActionConfigured(action: {
   type: ActionType
   routine_frequency?: RoutineFrequency
+  routine_weekdays?: number[]
+  routine_count_per_period?: number
   mission_completion_type?: MissionCompletionType
 }): boolean {
   switch (action.type) {
     case 'routine':
-      return !!action.routine_frequency
+      if (!action.routine_frequency) return false
+
+      // Weekly: Must have specific days OR a count target
+      if (action.routine_frequency === 'weekly') {
+        const hasWeekdays = action.routine_weekdays && action.routine_weekdays.length > 0
+        const hasCount = action.routine_count_per_period && action.routine_count_per_period > 0
+        return !!(hasWeekdays || hasCount)
+      }
+
+      // Monthly: Must have a count target
+      if (action.routine_frequency === 'monthly') {
+        return !!(action.routine_count_per_period && action.routine_count_per_period > 0)
+      }
+
+      return true // Daily requires no extra config
+
     case 'mission':
       return !!action.mission_completion_type
     case 'reference':

@@ -85,9 +85,12 @@ export default function LoginScreen() {
         identifyUser(result.user.id, { email: result.user.email })
       }
     } catch (error: any) {
-      Alert.alert(t('common.error'), t('login.googleLoginFailed'))
+      console.error('Google Login Error:', error)
+      Alert.alert(t('common.error'), error.message || t('login.googleLoginFailed'))
     }
   }, [signInWithGoogle, t])
+
+
 
   const handleAppleLogin = useCallback(async () => {
     try {
@@ -97,7 +100,8 @@ export default function LoginScreen() {
         identifyUser(result.user.id, { email: result.user.email })
       }
     } catch (error: any) {
-      Alert.alert(t('common.error'), t('login.appleLoginFailed'))
+      console.error('Apple Login Error:', error)
+      Alert.alert(t('common.error'), error.message || t('login.appleLoginFailed'))
     }
   }, [signInWithApple, t])
 
@@ -156,16 +160,18 @@ export default function LoginScreen() {
           <View style={styles.brandingBody}>
             <View style={styles.logoStack}>
               <View style={styles.logoRow}>
-                <Text style={styles.logoManda}>Manda</Text>
+                <View style={{ height: 64, justifyContent: 'center' }}>
+                  <Text style={styles.logoManda} allowFontScaling={false}>Manda</Text>
+                </View>
                 <MaskedView
                   style={styles.logoActMask}
-                  maskElement={<Text style={styles.logoAct}>Act</Text>}
+                  maskElement={<Text style={styles.logoAct} allowFontScaling={false}>Act</Text>}
                 >
                   <LinearGradient
                     colors={['#2563eb', '#9333ea', '#db2777']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   >
-                    <Text style={[styles.logoAct, { opacity: 0 }]}>Act</Text>
+                    <Text style={[styles.logoAct, { opacity: 0 }]} allowFontScaling={false}>Act</Text>
                   </LinearGradient>
                 </MaskedView>
               </View>
@@ -217,6 +223,26 @@ export default function LoginScreen() {
               >
                 {t('login.termsPolicy')}
               </Text>
+
+              {/* Dev Only: Simulator Bypass Login */}
+              {__DEV__ && (
+                <TouchableOpacity
+                  onPress={async () => {
+                    const { resetTutorial } = require('../screens/TutorialScreen')
+                    const { useAuthStore } = require('../store/authStore')
+
+                    // Reset tutorial to force it to show
+                    await resetTutorial('00000000-0000-0000-0000-000000000000')
+                    // Fake login
+                    await useAuthStore.getState().devSignIn()
+                  }}
+                  style={{ marginTop: 20, padding: 10, backgroundColor: '#f3f4f6', borderRadius: 8 }}
+                >
+                  <Text style={{ fontSize: 12, color: '#f87171', textAlign: 'center' }}>
+                    [DEV] Simulator Login & Reset Tutorial
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -323,17 +349,20 @@ const styles = StyleSheet.create({
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     color: '#111827',
-    letterSpacing: -2.5
+    letterSpacing: -2.5,
+    lineHeight: 64,
+    includeFontPadding: false
   },
   logoActMask: {
-    width: 76,
+    width: 92,
     height: 64,
   },
   logoAct: {
     fontSize: 50,
     fontFamily: 'Pretendard-Bold',
     letterSpacing: -2,
-    lineHeight: 64
+    lineHeight: 64,
+    includeFontPadding: false
   },
   logoSubtitle: {
     color: '#1e293b',
