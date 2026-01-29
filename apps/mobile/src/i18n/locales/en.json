@@ -817,7 +817,7 @@
         },
         "aiSuggest": {
           "title": "AI-Suggested Actions",
-          "subtitle": "Personalized actions to help you achieve your goal",
+          "subtitle": "Personalized actions to achieve your goal",
           "getHelp": "Get Suggestions",
           "loading": "Analyzing...",
           "analyzing": "Analyzing personalized suggestions..."
@@ -825,7 +825,7 @@
       }
     },
     "subGoalEdit": {
-      "title": "Sub-goal",
+      "title": "Sub-goal Settings",
       "description": "You can edit sub-goal and actions",
       "subGoalLabel": "Sub-goal",
       "subGoalPlaceholder": "Enter sub-goal title",

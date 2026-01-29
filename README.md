@@ -9,8 +9,10 @@ AI-powered Mandalart (9x9 goal framework) action tracker with gamification, AI c
 MandaAct transforms your Mandalart goals into actionable daily habits with a complete productivity ecosystem:
 
 ### Core Features
-- 📸 **Triple Input Methods**: Image upload (OCR), text paste, or manual template entry
-- ✅ **Smart Action Tracking**: 3 action types (루틴/미션/참고) with intelligent daily display logic
+- 🎨 **Hero UI**: Premium design overhaul for Login and Home/Today screens
+- ✨ **AI-Assisted Creation**: Manual entry with intelligent "Action Suggestions"
+- ✅ **Smart Action Tracking**: 3 action types (Routine/Mission/Mind) with refined display logic
+- 🍬 **Quick Chips**: Instant action suggestions in empty states for faster entry
 - 🎮 **Gamification System**: XP points, levels, badges, and streaks for motivation
 - 🤖 **AI Coaching**: Personalized coaching via LLM API with context-aware responses
 - 📊 **Analytics & Reports**: Weekly AI reports, goal diagnostics, and progress insights
@@ -58,9 +60,7 @@ MandaAct transforms your Mandalart goals into actionable daily habits with a com
   - **Edge Functions (Deno)** - Serverless API endpoints
   - **Realtime** - Live data subscriptions
 
-### AI & External Services
-- **Google Cloud Vision API** - OCR for mandalart image recognition
-- **Perplexity API** (`sonar` model) - AI coaching chatbot with context awareness
+- **Perplexity API** (`sonar` model) - AI coaching and smart action recommendations
 
 ### Deployment & Monitoring
 - **Vercel** - Frontend hosting with automatic deployments
@@ -100,12 +100,15 @@ The Mandalart 9x9 grid is decomposed into a hierarchical structure:
 - Database cascade: `mandalarts` → `sub_goals` → `actions` → `check_history`
 
 ### Action Type System
-Actions are classified into 3 types with AI-powered suggestions:
+Actions are automatically classified with AI-powered suggestions:
 - **루틴 (Routine)**: Recurring habits (daily/weekly/monthly)
 - **미션 (Mission)**: Completion goals (once or periodic)
-- **참고 (Reference)**: Reference/mindset items (not checkable)
+- **마인드 (Mind)**: Reference/mindset items (no check needed)
 
-Smart display logic shows only relevant actions based on frequency, completion status, and date ranges.
+### Interaction Highlights
+- **Hero UI**: Vibrant, responsive design with glassmorphism and smooth transitions.
+- **Quick Chips**: Smart suggestions in `Today` view that filter out full sub-goals.
+- **AI Recommendation**: Real-time action brainstorming in edit modals.
 
 ### Gamification
 - **XP System**: Action-based experience points with level progression
@@ -220,33 +223,25 @@ npx supabase secrets set KEY=value           # Set Edge Function secrets
 
 ## Key Features Explained
 
-### 1. Triple Input Methods
-Choose from three ways to create your Mandalart:
+### 1. AI-Assisted Creation
+Focus on high-quality, deliberate goal setting:
 
-**A. Image Upload (OCR)**
-- Upload a photo of your Mandalart template
-- System automatically extracts center goal and 8 sub-goals
-- Position-based parsing using Google Cloud Vision API
+**A. Manual Entry with AI Assist**
+- Build your Mandalart grid from scratch with a guided interactive interface.
+- Use the **"Get Suggestions"** button to brainstorm specific, measurable actions.
 
-**B. Text Paste**
-- Copy/paste structured text from existing templates
-- Automatic parsing of tab-separated or formatted text
-- Quick import from spreadsheets or documents
-
-**C. Manual Entry**
-- Build your Mandalart from scratch using the interactive grid
-- Click cells to add goals and actions one by one
-- Full customization and flexibility
-
-**Tech**: Google Cloud Vision API (OCR), custom text parsing, interactive UI
+**B. AI Coaching Flow**
+- Interactive chat-based goal setting to help you find your "Why" before "What".
 
 ### 2. Action Type Intelligence
 Each action is automatically classified using keyword analysis:
 - "매일 운동" → Routine (daily frequency)
 - "책 1권 완독" → Mission (completion goal)
-- "긍정적 마인드" → Reference (mindset reminder)
+- "긍정적 마인드" → Mind (mindset reminder)
 
-Users can override AI suggestions and customize display rules.
+### 3. Quick Chips & UX
+- **No-Dead-End UX**: Interactive chips provide one-tap suggestions when your task list is empty.
+- **Hero UI**: premium aesthetics for better engagement and focus.
 
 ### 3. Gamification
 - **XP Multipliers**: First check bonus, streak bonus, completion multipliers

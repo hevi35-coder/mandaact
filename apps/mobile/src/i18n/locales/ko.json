@@ -825,7 +825,7 @@
       },
       "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다",
       "action": {
-        "title": "실천 항목 입력",
+        "title": "실천 항목 설정",
         "inputTitle": "실천 항목 입력",
         "placeholder": "구체적인 실천 행동을 입력하세요",
         "guide": {
@@ -839,7 +839,7 @@
         },
         "aiSuggest": {
           "title": "AI 추천 실천항목",
-          "subtitle": "목표 달성을 위한 구체적인 행동을 제안해요",
+          "subtitle": "목표 달성을 위한 구체적인 행동을 제안",
           "getHelp": "추천 받기",
           "loading": "분석 중...",
           "analyzing": "맞춤형 제안을 분석 중이에요..."

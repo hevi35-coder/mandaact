@@ -18,11 +18,11 @@
 "목표를 세우는 것은 쉽지만, 실천하는 것은 어렵다" - MandaAct는 게임화와 AI 리포트로 당신의 실천을 도와줍니다.
 
 ### Key Differentiators
-- 📸 **3가지 입력 방식**: 이미지 OCR, 텍스트 파싱, 템플릿 기반 직접 입력
+- ✨ **지능형 입력 방식**: 직접 입력 + AI 실천 제안 (OCR/텍스트 파싱 제거)
 - 🎮 **게임화 시스템**: XP/레벨, 배지 21개, 스트릭, 월간 챌린지
 - 📊 **AI 리포트**: 주간 실천 리포트 & 목표 진단 (Perplexity API)
-- 📱 **PWA**: 설치 가능, 오프라인 지원, 푸시 알림
-- 🎓 **인터랙티브 튜토리얼**: 7단계 온보딩 시스템
+- 📱 **Mobile App**: iOS/Android 네이티브 앱 (Expo 52)
+- 🎓 **인터랙티브 튜토리얼**: UX 최적화 완료 ('마인드' 용어 적용)
 
 ### Implementation Status (v2.0)
 ✅ **Phase 1-2 완료**: 코어 기능 (만다라트 입력, 체크, 통계)
@@ -90,36 +90,15 @@
 
 ---
 
-**방식 1: 이미지 업로드 & AI 인식**
+**방식 1: 이미지 업로드 & AI 인식 (v1.1.0에서 제거됨)**
 
-- **이미지 업로드**
-  - 지원 포맷: JPG, PNG, HEIC
-  - 최대 크기: 10MB
-  - 드래그앤드롭 / 파일 선택 / 카메라 촬영 지원
+> [!WARNING]
+> 이 방식은 입력 데이터의 정확도와 사용성 복잡도 문제로 인해 v1.1.0에서 제거되었습니다. 현재는 '직접 입력'과 'AI 코칭'을 통한 생성을 권장합니다.
 
-- **AI 이미지 인식 (Google Cloud Vision OCR)**
-  - 9x9 만다라트 그리드 자동 감지
-  - 한글 필기체 OCR 처리
-  - 텍스트 위치 기반 구조 파싱
-  - 구조화된 JSON 데이터 추출
-  ```json
-  {
-    "center_goal": "핵심 목표",
-    "sub_goals": [
-      {
-        "position": 1,
-        "title": "세부 목표 1",
-        "actions": ["실천1", "실천2", "실천3", ...]
-      }
-    ]
-  }
-  ```
-
-- **수정 인터페이스** (이미지 & 직접 입력 공통)
-  - AI 인식 결과를 9x9 그리드로 시각화
-  - 셀 클릭 → 인라인 편집 가능
-  - 드래그로 셀 내용 재배치
-  - "인식 재시도" 버튼 제공 (이미지 업로드의 경우)
+- **이전 사양**:
+  - Google Cloud Vision OCR 기반 파싱
+  - 9x9 그리드 자동 감지 및 텍스트 추출
+  - (현재는 코드베이스에서 비활성화 또는 제거됨)
 
 ---
 
@@ -198,9 +177,7 @@ CREATE TABLE mandalarts (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   center_goal TEXT NOT NULL,
-  input_method TEXT CHECK (input_method IN ('image', 'manual')) NOT NULL,
-  image_url TEXT, -- NULL if input_method = 'manual'
-  raw_ocr_data JSONB, -- NULL if input_method = 'manual'
+  input_method TEXT CHECK (input_method IN ('manual')) NOT NULL, -- v1.1.0 'manual'로 고정
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -340,6 +317,13 @@ CREATE TABLE check_history (
 - **프리즈 기능**: 하루 놓쳐도 스트릭 유지 (제한적)
 - **스트릭 배지**: 7일, 30일, 60일, 100일, 150일
 
+#### F4.4 퀵 칩 (Quick Chips) ✅ **NEW**
+**목표**: 실천 항목이 비어있을 때 사용자의 입력을 유도하는 지능형 UX
+**구현 내용**:
+- **필터링 로직**: 현재 세부목표 중 실천 항목이 8개 미만인 항목만 추천
+- **제한**: 최대 4개의 칩 노출
+- **인터랙션**: 칩 클릭 시 해당 세부목표의 실천 항목 추가 모달로 즉시 이동
+
 ---
 
 ### Phase 5: Tutorial & Onboarding (v1.6) ✅ **COMPLETED**
@@ -384,6 +368,12 @@ CREATE TABLE check_history (
 - **SMART 기준 분석**: 만다라트 구조 진단
 - **개선 제안**: AI 기반 구체적 피드백
 - **Edge Function**: `generate-goal-diagnosis`
+
+#### F6.3 AI 실천 추천 (Motivation Assist) ✅ **NEW**
+**구현 내용**:
+- **브레인스토밍 버튼**: 세부목표 및 실천 항목 편집 모달 내 '추천 받기' 버튼 추가
+- **AI 로직**: 현재 상위 목표의 맥락을 분석하여 구체적이고 측정 가능한 실천 행동 3~5개 제안
+- **통합**: 제안된 항목을 클릭하여 즉시 입력창에 반영 가능
 
 ### Phase 8: Conversational Coaching (v2.0) ⏳ **PLANNING**
 **목표**: 단순 리포트를 넘어 사용자와 대화하며 목표를 함께 수립하는 'AI 코칭 컴패니언'
