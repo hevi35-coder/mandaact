@@ -635,3 +635,71 @@ export function useYesterdayCheck() {
     },
   })
 }
+
+/**
+ * Hook to create a new action
+ */
+export function useCreateAction() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      sub_goal_id,
+      position, // Optional, generic add
+      ...actionData
+    }: Partial<Action> & { sub_goal_id: string }) => {
+
+      // If position is not provided, find the next available slot or default logic
+      // For quick add, we might default to first empty slot, or just let DB default?
+      // "position" is usually 1-8 for Mandalart grid.
+      // If we are adding via Today View, we might need to find an empty slot.
+      // However, Quick Add is for "Daily Practice", usually "Routine" or "Mission".
+      // In Mandalart logic, Actions reside in slots 1-8.
+      // If we add without position, does it break the grid?
+      // Yes, Actions MUST have a position (1-8).
+
+      // We need to find an empty slot for this sub_goal.
+      // Fetch existing actions for this sub_goal first.
+      const { data: existingActions, error: fetchError } = await supabase
+        .from('actions')
+        .select('position')
+        .eq('sub_goal_id', sub_goal_id)
+
+      if (fetchError) throw fetchError
+
+      const occupied = new Set(existingActions?.map(a => a.position));
+      let newPosition = position;
+
+      if (!newPosition) {
+        for (let i = 1; i <= 8; i++) {
+          if (!occupied.has(i)) {
+            newPosition = i;
+            break;
+          }
+        }
+      }
+
+      if (!newPosition) {
+        throw new Error('No empty slots available for this goal.')
+      }
+
+      const { data, error } = await supabase
+        .from('actions')
+        .insert({
+          sub_goal_id,
+          position: newPosition,
+          ...actionData
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: actionKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['mandalarts', 'detail'] })
+      queryClient.invalidateQueries({ queryKey: ['mandalarts', 'list'] })
+    },
+  })
+}

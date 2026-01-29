@@ -33,6 +33,7 @@ import {
   useUpdateAction,
   actionKeys,
   // useYesterdayMissed, // DISABLED - rewarded ad feature removed per AdMob policy review
+  useCreateAction,
 } from '../hooks/useActions'
 import { useDailyStats, useXPUpdate, statsKeys } from '../hooks/useStats'
 import { badgeKeys } from '../hooks/useBadges'
@@ -52,8 +53,11 @@ import {
   MandalartSection,
   ActionTypeIcon,
   FilteredEmptyState,
+  ActionItem,
   type ActionWithContext,
 } from '../components/Today'
+import { useMandalarts } from '../hooks/useMandalarts'
+import ActionInputModal from '../components/ActionInputModal'
 import { XPBoostButton } from '../components/ads'
 // import { useInterstitialAd } from '../hooks/useInterstitialAd' // DISABLED - level up ad harms UX
 // import { BannerAd } from '../components/ads' // REMOVED - TodayScreen is Clean Zone (focus protection)
@@ -103,6 +107,10 @@ export default function TodayScreen() {
   const [selectedActionForTypeEdit, setSelectedActionForTypeEdit] = useState<ActionWithContext | null>(null)
   const [minimumModeEnabled, setMinimumModeEnabled] = useState(false)
 
+  // Quick Add State
+  const [actionInputModalVisible, setActionInputModalVisible] = useState(false)
+  const [selectedSubGoalForInput, setSelectedSubGoalForInput] = useState<{ id: string, title: string, coreGoal: string } | null>(null)
+
   // Interstitial ad for level up - DISABLED (harms user experience)
   // const { show: showLevelUpAd } = useInterstitialAd({
   //   adType: 'INTERSTITIAL_LEVEL_UP',
@@ -146,6 +154,7 @@ export default function TodayScreen() {
   } = useTodayActions(user?.id, selectedDate)
   const { data: _dailyStats, refetch: refetchStats } = useDailyStats(user?.id)
   const { activeBySubGoal, minimumBySubGoal, mergePreferences } = usePlanStore()
+  const { data: mandalarts = [] } = useMandalarts(user?.id)
 
   const hasMinimumSelections = useMemo(() => {
     return actions.some((action) =>
@@ -208,6 +217,7 @@ export default function TodayScreen() {
   // Mutations
   const toggleCheck = useToggleActionCheck()
   const updateAction = useUpdateAction()
+  const createAction = useCreateAction()
   const { awardXP, subtractXP, checkPerfectDay, checkPerfectWeek } = useXPUpdate()
 
   // Invalidate and refetch data when screen is focused
@@ -351,15 +361,22 @@ export default function TodayScreen() {
   const [unconfiguredCollapsed, setUnconfiguredCollapsed] = useState(true)
   const [completedCollapsed, setCompletedCollapsed] = useState(true)
 
+  // Auto-expand unconfigured section if no configured actions exist (Heroic Mode)
+  useEffect(() => {
+    if (configuredActions.length === 0 && unconfiguredActions.length > 0) {
+      setUnconfiguredCollapsed(false)
+    }
+  }, [configuredActions.length, unconfiguredActions.length])
+
   // Determine empty state scenario for when filteredActions is empty
   const emptyStateScenario = useMemo(() => {
     // Only determine scenario if we have actions but filtered result is empty
     if (actions.length === 0 || filteredActions.length > 0) return null
 
-    // Scenario 1: All actions are unconfigured
-    if (configuredActions.length === 0 && unconfiguredActions.length > 0) {
-      return 'unconfigured' as const
-    }
+    // Scenario 1: All actions are unconfigured - REMOVED (Redundant with list)
+    // if (configuredActions.length === 0 && unconfiguredActions.length > 0) {
+    //   return 'unconfigured' as const
+    // }
 
     // Scenario 2: Active filters but no matches
     if (activeFilters.size > 0) {
@@ -406,6 +423,61 @@ export default function TodayScreen() {
         break
     }
   }, [emptyStateScenario, clearAllFilters])
+
+  // Quick Chips logic
+  const quickChips = useMemo(() => {
+    if (!mandalarts || mandalarts.length === 0) return []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chips: { id: string, title: string, coreGoal: string }[] = []
+
+    mandalarts.forEach((m) => {
+      if (m.is_active === false) return
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      m.sub_goals?.forEach((sg: any) => {
+        // Filter out if sub_goal is full (8 actions max)
+        const actionCount = sg.actions?.length || 0
+        if (sg.title && sg.title.trim() && actionCount < 8) {
+          chips.push({
+            id: sg.id,
+            title: sg.title,
+            coreGoal: m.center_goal || m.title // Fallback to title
+          })
+        }
+      })
+    })
+
+    // Shuffle and take up to 4
+    return chips.sort(() => 0.5 - Math.random()).slice(0, 4)
+  }, [mandalarts])
+
+  const handleQuickChipPress = useCallback((id: string) => {
+    const chip = quickChips.find((c) => c.id === id)
+    if (chip) {
+      setSelectedSubGoalForInput(chip)
+      setActionInputModalVisible(true)
+    }
+  }, [quickChips])
+
+  const handleCreateActionSave = useCallback(async (title: string, type: string, details: any) => {
+    if (!selectedSubGoalForInput || !user?.id) return
+
+    try {
+      await createAction.mutateAsync({
+        sub_goal_id: selectedSubGoalForInput.id,
+        title,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        type: type as any,
+        ...details
+      })
+      toast.success(t('common.saved'))
+      setActionInputModalVisible(false)
+      // Refetch is handled by hook
+      refetch()
+    } catch (e) {
+      toast.error(t('common.error'))
+      logger.error('Create action error', e)
+    }
+  }, [selectedSubGoalForInput, user, createAction, t, toast, refetch])
 
   // Group actions by mandalart and sort by sub_goal.position, then action.position
   const actionsByMandalart = useMemo(() => {
@@ -763,6 +835,8 @@ export default function TodayScreen() {
                 scenario={emptyStateScenario}
                 onAction={handleEmptyStateAction}
                 hasCompletedActions={completedActions.length > 0}
+                suggestions={quickChips}
+                onSuggestionPress={handleQuickChipPress}
               />
             )
           }
@@ -815,7 +889,10 @@ export default function TodayScreen() {
                       {/* Section Header */}
                       <Pressable
                         onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
-                        className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                        className={`flex-row items-center justify-between p-4 rounded-lg border ${configuredActions.length === 0
+                          ? 'bg-amber-50 border-amber-200 shadow-sm' // Heroic style
+                          : 'bg-gray-50 border-gray-200'
+                          }`}
                       >
                         <View className="flex-1">
                           <View className="flex-row items-center">
@@ -849,32 +926,16 @@ export default function TodayScreen() {
                       {!unconfiguredCollapsed && (
                         <View className="mt-2 space-y-2">
                           {unconfiguredActions.map((action) => (
-                            <Pressable
+                            <ActionItem
                               key={action.id}
-                              className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
-                              onPress={() => handleTypeBadgePress(action)}
-                            >
-                              <View className="flex-1">
-                                <Text
-                                  className="text-base text-gray-900"
-                                  numberOfLines={1}
-                                >
-                                  {action.title}
-                                </Text>
-                                <Text
-                                  className="text-xs text-gray-400 mt-1"
-                                  numberOfLines={1}
-                                >
-                                  {action.sub_goal.title}
-                                </Text>
-                              </View>
-                              <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-                                <ActionTypeIcon type={action.type} size={14} />
-                                <Text className="text-xs text-amber-600 ml-1">
-                                  {t('actionType.unconfigured')}
-                                </Text>
-                              </View>
-                            </Pressable>
+                              action={action}
+                              onToggleCheck={handleToggleCheck}
+                              onTypeBadgePress={handleTypeBadgePress}
+                              canCheck={canCheck}
+                              isChecking={checkingActions.has(action.id)}
+                              isTablet={isTablet}
+                              isUnconfigured={true}
+                            />
                           ))}
                         </View>
                       )}
@@ -997,7 +1058,10 @@ export default function TodayScreen() {
                     {/* Section Header */}
                     <Pressable
                       onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
-                      className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                      className={`flex-row items-center justify-between p-4 rounded-lg border ${configuredActions.length === 0
+                        ? 'bg-amber-50 border-amber-200 shadow-sm' // Heroic style
+                        : 'bg-gray-50 border-gray-200'
+                        }`}
                       onLayout={(e) => {
                         unconfiguredSectionYRef.current = e.nativeEvent.layout.y
                       }}
@@ -1036,32 +1100,16 @@ export default function TodayScreen() {
                       return (
                         <View className="mt-2 space-y-2">
                           {unconfiguredActions.map((action) => (
-                            <Pressable
+                            <ActionItem
                               key={action.id}
-                              className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
-                              onPress={() => handleTypeBadgePress(action)}
-                            >
-                              <View className="flex-1">
-                                <Text
-                                  className="text-base text-gray-900"
-                                  numberOfLines={1}
-                                >
-                                  {action.title}
-                                </Text>
-                                <Text
-                                  className="text-xs text-gray-400 mt-1"
-                                  numberOfLines={1}
-                                >
-                                  {action.sub_goal.title}
-                                </Text>
-                              </View>
-                              <View className="flex-row items-center bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-                                <ActionTypeIcon type={action.type} size={14} />
-                                <Text className="text-xs text-amber-600 ml-1">
-                                  {t('actionType.unconfigured')}
-                                </Text>
-                              </View>
-                            </Pressable>
+                              action={action}
+                              onToggleCheck={handleToggleCheck}
+                              onTypeBadgePress={handleTypeBadgePress}
+                              canCheck={canCheck}
+                              isChecking={checkingActions.has(action.id)}
+                              isTablet={isTablet}
+                              isUnconfigured={true}
+                            />
                           ))}
                         </View>
                       )
@@ -1184,6 +1232,20 @@ export default function TodayScreen() {
 
       {/* Banner Ad REMOVED - TodayScreen is Clean Zone (focus protection) */}
       {/* See ADMOB_MONETIZATION_STRATEGY.md for details */}
+
+      {/* Quick Action Creation Modal */}
+      {selectedSubGoalForInput && (
+        <ActionInputModal
+          visible={actionInputModalVisible}
+          initialTitle=""
+          subGoalTitle={selectedSubGoalForInput.title}
+          coreGoal={selectedSubGoalForInput.coreGoal}
+          existingActions={[]}
+          onClose={() => setActionInputModalVisible(false)}
+          onSave={handleCreateActionSave}
+          isSaving={createAction.isPending}
+        />
+      )}
     </View >
   )
 }

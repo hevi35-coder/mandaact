@@ -969,8 +969,9 @@ Rules:
 - Return JSON only without code blocks
 - structure_metrics must have exactly 3 items: Completion, Clarity, Measurability
 - Include actual numbers in structure_metrics values
-- Clarity: % of items with specific expressions (e.g., "30 min", "every morning", "3 times/week")
-- Measurability: % of items with numeric achievement verification (e.g., "3 times", "5 pages")
+- Clarity: % of Action Items (Routine/Mission) with specific expressions (e.g., "30 min", "every morning", "3 times/week"). EXCLUDE Mind items.
+- Measurability: % of Action Items (Routine/Mission) with numeric achievement verification (e.g., "3 times", "5 pages"). DO NOT evaluate Core Goals or Sub-goals.
+- Suggestion Rule: Do NOT suggest adding numeric targets to Sub-goals. Sub-goals should be qualitative directions. Numeric targets belong to Action Items.
 - Provide specific and actionable advice
 - Use simple language instead of jargon`
         : `당신은 만다라트 계획 점검 전문가입니다. 구체적이고 실천 가능한 개선 방향을 제시하세요.
@@ -1005,8 +1006,9 @@ Rules:
 - 코드 블록 없이 JSON만 반환하세요
 - structure_metrics는 정확히 3개 항목만 포함: 완성도, 표현 명확도, 측정 가능성
 - structure_metrics의 value는 실제 수치를 포함하세요
-- 표현 명확도: 숫자+단위, 시간대, 빈도 표현이 있는 항목 비율 (예: "30분", "매일 아침", "주 3회")
-- 측정 가능성: 숫자로 달성 여부 확인 가능한 항목 비율 (예: "3회", "5장")
+- 표현 명확도: 루틴/미션 실천항목 중 숫자+단위, 시간대, 빈도 표현이 있는 항목 비율 (예: "30분", "매일 아침", "주 3회"). 마인드(Reference/Mind) 항목은 제외.
+- 측정 가능성: 루틴/미션 실천항목 중 숫자로 달성 여부 확인 가능한 항목 비율 (예: "3회", "5장"). 핵심목표와 세부목표는 평가에서 제외하세요.
+- 제안 규칙: 세부목표(Sub-goal)에는 수치적 목표(숫자)를 강요하지 마세요. 세부목표는 정성적인 방향성을 제시해야 합니다. 수치적 목표는 실천항목(Action)에 제안하세요.
 - 구체적이고 실천 가능한 조언을 제공하세요
 - 전문 용어 대신 쉬운 표현을 사용하세요`,
 
@@ -1023,18 +1025,18 @@ Rules:
 
 [Structure Analysis]
 - Total Items: ${structure.filledItems || 0} of ${structure.totalItems || 0} filled (${structure.fillRate || 0}%)
-- Clarity: ${structure.specificRate || 0}% (${structure.specificItems || 0} of ${trackableCount} trackable items are specific)
-- Measurability: ${structure.measurableRate || 0}% (${structure.measurableItems || 0} of ${trackableCount} trackable items have frequency set)
-- Type Distribution: Routine ${structure.typeDistribution?.routine || 0}, Mission ${structure.typeDistribution?.mission || 0}, Reference ${structure.typeDistribution?.reference || 0}
+- Clarity: ${structure.specificRate || 0}% (${structure.specificItems || 0} of ${trackableCount} Routine/Mission actions are specific)
+- Measurability: ${structure.measurableRate || 0}% (${structure.measurableItems || 0} of ${trackableCount} Routine/Mission actions have frequency set)
+- Type Distribution: Routine ${structure.typeDistribution?.routine || 0}, Mission ${structure.typeDistribution?.mission || 0}, Mind ${structure.typeDistribution?.reference || 0}
 
 [Practice Status]
 - Last Week Practice: ${data.totalChecks || 0} times
 
 Analysis Perspectives:
 1. Completion rate (fill rate)
-2. Clarity evaluation (specific expressions or frequency settings)
-3. Measurability evaluation (whether achievement can be verified by frequency settings)
-4. Balanced goal composition (excluding reference items)
+2. Clarity evaluation (Specificity of Routine/Mission actions)
+3. Measurability evaluation (Whether Routine/Mission actions have frequency/numeric settings)
+4. Balanced goal composition (excluding Mind items)
 
 IMPORTANT: Respond in JSON format with actual numbers in structure_metrics. Write ALL text content in English only.`
           : `만다라트 구조를 분석하여 개선점을 제시하세요:
@@ -1045,16 +1047,16 @@ IMPORTANT: Respond in JSON format with actual numbers in structure_metrics. Writ
 
 [구조 분석]
 - 전체 항목: ${structure.totalItems || 0}개 중 ${structure.filledItems || 0}개 작성 (${structure.fillRate || 0}%)
-- 표현 명확도: ${structure.specificRate || 0}% (실천 항목 ${trackableCount}개 중 ${structure.specificItems || 0}개가 구체적)
-- 측정 가능성: ${structure.measurableRate || 0}% (실천 항목 ${trackableCount}개 중 ${structure.measurableItems || 0}개가 반복주기 설정됨)
-- 타입 분포: 루틴 ${structure.typeDistribution?.routine || 0}개, 미션 ${structure.typeDistribution?.mission || 0}개, 참고 ${structure.typeDistribution?.reference || 0}개
+- 표현 명확도: ${structure.specificRate || 0}% (루틴/미션 실천항목 ${trackableCount}개 중 ${structure.specificItems || 0}개가 구체적)
+- 측정 가능성: ${structure.measurableRate || 0}% (루틴/미션 실천항목 ${trackableCount}개 중 ${structure.measurableItems || 0}개가 반복주기 설정됨)
+- 타입 분포: 루틴 ${structure.typeDistribution?.routine || 0}개, 미션 ${structure.typeDistribution?.mission || 0}개, 마인드 ${structure.typeDistribution?.reference || 0}개
 
 [실천 현황]
 분석 관점:
 1. 완성도 평가 (항목 채움률)
-2. 표현 명확도 평가 (구체적 표현 또는 반복주기 설정 여부)
-3. 측정 가능성 평가 (반복주기가 설정되어 달성 여부 확인 가능한지)
-4. 균형잡힌 목표 구성 (참고 항목 제외 기준)
+2. 표현 명확도 평가 (루틴/미션 실천항목의 구체성)
+3. 측정 가능성 평가 (루틴/미션 실천항목의 반복주기/수치 설정 여부 - 핵심/세부목표 제외)
+4. 균형잡힌 목표 구성 (마인드 항목 제외 기준)
 
 JSON 형식으로 응답하되, structure_metrics에는 실제 수치를 포함하세요.`
       },

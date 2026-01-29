@@ -1,36 +1,47 @@
 /**
  * FilteredEmptyState Component
  *
- * Shows contextual empty states for Today screen when no actions match filters or criteria
+ * Shows contextual empty states for Today screen with Quick Chips for immediate action
  */
 
 import React, { useMemo } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import {
   Settings,
   Filter,
   CalendarX2,
   CheckCircle,
+  Plus,
 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 
-type EmptyStateScenario =
+export type EmptyStateScenario =
   | 'unconfigured'      // All actions are unconfigured
   | 'noFilterMatch'     // Active filters but no matches
   | 'noneToday'         // No actions scheduled for today
   | 'allCompleted'      // All period targets completed
 
+export interface SuggestionChip {
+  id: string
+  title: string
+  color?: string
+}
+
 interface FilteredEmptyStateProps {
   scenario: EmptyStateScenario
   onAction?: () => void
   hasCompletedActions?: boolean
+  suggestions?: SuggestionChip[]
+  onSuggestionPress?: (id: string) => void
 }
 
 export function FilteredEmptyState({
   scenario,
   onAction,
   hasCompletedActions = false,
+  suggestions = [],
+  onSuggestionPress,
 }: FilteredEmptyStateProps) {
   const { t } = useTranslation()
 
@@ -45,7 +56,6 @@ export function FilteredEmptyState({
           titleKey: 'today.emptyStates.unconfigured.title',
           descKey: 'today.emptyStates.unconfigured.description',
           actionKey: 'today.emptyStates.unconfigured.action',
-          showInfoBox: false,
         }
       case 'noFilterMatch':
         return {
@@ -55,7 +65,6 @@ export function FilteredEmptyState({
           titleKey: 'today.emptyStates.noFilterMatch.title',
           descKey: 'today.emptyStates.noFilterMatch.description',
           actionKey: 'today.emptyStates.noFilterMatch.action',
-          showInfoBox: false,
         }
       case 'noneToday':
         return {
@@ -65,7 +74,6 @@ export function FilteredEmptyState({
           titleKey: 'today.emptyStates.noneToday.title',
           descKey: 'today.emptyStates.noneToday.description',
           actionKey: null,
-          showInfoBox: true,
         }
       case 'allCompleted':
         return {
@@ -75,12 +83,11 @@ export function FilteredEmptyState({
           titleKey: 'today.emptyStates.allCompleted.title',
           descKey: 'today.emptyStates.allCompleted.description',
           actionKey: hasCompletedActions ? 'today.emptyStates.allCompleted.viewCompleted' : null,
-          showInfoBox: false,
         }
     }
   }, [scenario, hasCompletedActions])
 
-  const { Icon, iconColor, bgColor, titleKey, descKey, actionKey, showInfoBox } = config
+  const { Icon, iconColor, bgColor, titleKey, descKey, actionKey } = config
 
   return (
     <Animated.View
@@ -104,38 +111,34 @@ export function FilteredEmptyState({
 
       {/* Description */}
       <Text
-        className="text-sm text-gray-500 text-center mb-5"
+        className="text-sm text-gray-500 text-center mb-6 px-4"
         style={{ fontFamily: 'Pretendard-Regular' }}
       >
         {t(descKey)}
       </Text>
 
-      {/* Info Box - Only for 'noneToday' scenario */}
-      {showInfoBox && scenario === 'noneToday' && (
-        <View className="bg-gray-50 rounded-xl p-4 mb-5">
-          <Text
-            className="text-sm text-gray-700 mb-3"
-            style={{ fontFamily: 'Pretendard-SemiBold' }}
-          >
-            {t('today.emptyStates.noneToday.info.title')}
+      {/* Quick Chips - Only for 'noneToday' scenario */}
+      {scenario === 'noneToday' && suggestions.length > 0 && onSuggestionPress && (
+        <View className="w-full mb-4">
+          <Text className="text-xs text-gray-400 font-bold mb-3 text-center" style={{ fontFamily: 'Pretendard-Bold' }}>
+            {t('today.emptyStates.noneToday.quickAdd')}
           </Text>
-          <View className="flex-row items-start mb-2">
-            <View className="w-1 h-1 rounded-full bg-gray-400 mr-2 mt-2" />
-            <Text
-              className="flex-1 text-sm text-gray-600"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('today.emptyStates.noneToday.info.routine')}
-            </Text>
-          </View>
-          <View className="flex-row items-start">
-            <View className="w-1 h-1 rounded-full bg-gray-400 mr-2 mt-2" />
-            <Text
-              className="flex-1 text-sm text-gray-600"
-              style={{ fontFamily: 'Pretendard-Regular' }}
-            >
-              {t('today.emptyStates.noneToday.info.mission')}
-            </Text>
+          <View className="flex-row flex-wrap justify-center gap-2">
+            {suggestions.map((chip) => (
+              <Pressable
+                key={chip.id}
+                onPress={() => onSuggestionPress(chip.id)}
+                className="flex-row items-center bg-blue-50 border border-blue-100 px-3 py-2 rounded-full active:bg-blue-100"
+              >
+                <Text
+                  className="text-sm text-blue-700 font-medium mr-1"
+                  style={{ fontFamily: 'Pretendard-Medium' }}
+                >
+                  {chip.title}
+                </Text>
+                <Plus size={14} color="#3b82f6" />
+              </Pressable>
+            ))}
           </View>
         </View>
       )}
