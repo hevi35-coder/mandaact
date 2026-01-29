@@ -490,7 +490,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
 
   // Sync subscription to Supabase
   const syncToSupabase = useCallback(async (info: SubscriptionInfo) => {
-    if (!userId) return
+    if (!userId || userId === '00000000-0000-0000-0000-000000000000') return
 
     try {
       const { error: upsertError } = await supabase

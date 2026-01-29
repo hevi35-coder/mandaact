@@ -731,7 +731,7 @@
         "benefit3": "Growth: AI-powered suggestions",
         "guide": "Tutorial"
       },
-      "create": "Create My First Plan",
+      "create": "Set My First Plan",
       "coreGoal": "Core Goal"
     },
     "modal": {
@@ -1271,19 +1271,19 @@
   "tutorial": {
     "title": "Tutorial",
     "skip": "Skip",
-    "start": "Create My First Goal",
+    "start": "Set My First Goal",
     "next": "Next",
     "previous": "Previous",
     "stepOf": "Step {{current}} of {{total}}",
     "completionReward": {
       "title": "You're All Set! 🎉",
       "message": "You earned +50 XP for completing the tutorial!",
-      "button": "Create My First Goal"
+      "button": "Set My First Goal"
     },
     "completion": {
       "title": "Tutorial Completed",
       "message": "You're ready to achieve your goals!",
-      "button": "Create My First Goal"
+      "button": "Set My First Goal"
     },
     "content": {
       "welcome": {
@@ -1302,7 +1302,7 @@
         "description": "Every check earns XP.\nLevel up as you build momentum.",
         "routine": "Routine: Daily habits",
         "mission": "Mission: Goals to achieve",
-        "reference": "Reference: Mindset remainders"
+        "reference": "Mind: Mindset remainders"
       },
       "getStarted": {
         "title": "Ready to Start?",
@@ -1643,7 +1643,7 @@
   "onboarding": {
     "title": "Welcome to MandaAct!",
     "subtitle": "Complete these steps to get started.",
-    "guide": "View User Guide",
+    "guide": "View Tutorial",
     "createGoal": "Create First Goal",
     "notification": "Set Notifications",
     "firstAction": "Record First Action",

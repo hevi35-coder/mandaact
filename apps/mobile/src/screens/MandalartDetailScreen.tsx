@@ -1150,6 +1150,12 @@ export default function MandalartDetailScreen() {
         initialTitle={
           expandedSubGoal?.actions?.find(a => a.position === selectedActionPosition)?.title || ''
         }
+        initialType={
+          expandedSubGoal?.actions?.find(a => a.position === selectedActionPosition)?.type || 'routine'
+        }
+        initialDetails={
+          expandedSubGoal?.actions?.find(a => a.position === selectedActionPosition) || {}
+        }
         subGoalTitle={expandedSubGoal?.title || ''}
         coreGoal={mandalart?.center_goal || ''}
         existingActions={

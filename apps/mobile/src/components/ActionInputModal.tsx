@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { X, Lightbulb, Sparkles, RefreshCcw, ChevronDown, ChevronUp, PlusCircle, Check, ArrowLeft } from 'lucide-react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useTranslation } from 'react-i18next'
 import { coachingService } from '../services/coachingService'
@@ -37,6 +38,8 @@ interface ActionInputModalProps {
   onClose: () => void
   onSave: (title: string, type: string, details?: any) => Promise<void>
   isSaving?: boolean
+  initialType?: string
+  initialDetails?: any
 }
 
 export default function ActionInputModal({
@@ -46,8 +49,11 @@ export default function ActionInputModal({
   coreGoal,
   existingActions,
   onClose,
+
   onSave,
-  isSaving = false
+  isSaving = false,
+  initialType,
+  initialDetails,
 }: ActionInputModalProps) {
   const { t, i18n } = useTranslation()
   const inputRef = useRef<TextInput>(null)
@@ -76,26 +82,91 @@ export default function ActionInputModal({
   const [aiRecommendedType, setAiRecommendedType] = useState<'routine' | 'mission' | 'reference' | null>(null)
 
   // UI State
-  const [isGuideExpanded, setIsGuideExpanded] = useState(false)
+  const [isGuideExpanded, setIsGuideExpanded] = useState(true)
+
+  // Load persisted guide state
+  useEffect(() => {
+    const loadGuideState = async () => {
+      try {
+        const savedState = await AsyncStorage.getItem('MANDA_ACT_ACTION_TIP_EXPANDED')
+        if (savedState !== null) {
+          setIsGuideExpanded(savedState === 'true')
+        }
+      } catch (e) {
+        console.error('Failed to load guide state', e)
+      }
+    }
+    loadGuideState()
+  }, [])
+
+  const toggleGuide = async () => {
+    const newState = !isGuideExpanded
+    setIsGuideExpanded(newState)
+    try {
+      await AsyncStorage.setItem('MANDA_ACT_ACTION_TIP_EXPANDED', String(newState))
+    } catch (e) {
+      console.error('Failed to save guide state', e)
+    }
+  }
 
   // Reset on Open
   useEffect(() => {
     if (visible) {
       setStep(0)
       setTitle(initialTitle)
-      setSelectedType('routine')
-      setRoutineFrequency('daily')
-      setRoutineWeekdays([])
-      setRoutineCountPerPeriod(1)
-      setMissionType('once')
-      setMissionCycle('weekly')
+
+      // Initialize with existing values if provided
+      if (initialType && ['routine', 'mission', 'reference'].includes(initialType)) {
+        setSelectedType(initialType as 'routine' | 'mission' | 'reference')
+      } else {
+        setSelectedType('routine')
+      }
+
+      // Initialize Routine Details
+      if (initialDetails) {
+        if (initialDetails.routine_frequency) {
+          setRoutineFrequency(initialDetails.routine_frequency)
+        } else {
+          setRoutineFrequency('daily')
+        }
+
+        if (initialDetails.routine_weekdays && Array.isArray(initialDetails.routine_weekdays)) {
+          setRoutineWeekdays(initialDetails.routine_weekdays)
+        } else {
+          setRoutineWeekdays([])
+        }
+
+        if (initialDetails.routine_count_per_period) {
+          setRoutineCountPerPeriod(initialDetails.routine_count_per_period)
+        } else {
+          setRoutineCountPerPeriod(1)
+        }
+
+        // Initialize Mission Details
+        if (initialDetails.mission_completion_type) {
+          setMissionType(initialDetails.mission_completion_type)
+        } else {
+          setMissionType('once')
+        }
+
+        if (initialDetails.mission_period_cycle) {
+          setMissionCycle(initialDetails.mission_period_cycle)
+        } else {
+          setMissionCycle('weekly')
+        }
+      } else {
+        // Defaults if no details
+        setRoutineFrequency('daily')
+        setRoutineWeekdays([])
+        setRoutineCountPerPeriod(1)
+        setMissionType('once')
+        setMissionCycle('weekly')
+      }
+
       setSuggestions([])
       setAiRecommendedType(null)
-      setIsGuideExpanded(false)
-
-      setTimeout(() => {
-        inputRef.current?.focus()
-      }, 100)
+      setAiRecommendedType(null)
+      // setIsGuideExpanded(false) - Removed to persist user preferenceState
     }
   }, [visible, initialTitle])
 
@@ -214,7 +285,12 @@ export default function ActionInputModal({
 
   // Render Step 1: Input (Refined - Removed Chips)
   const renderInputStep = () => (
-    <ScrollView className="px-5 py-4" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="px-5 py-4"
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
       {/* Context Label (SubGoal Title) - Single Line */}
       <View className="mb-4 px-1">
         <Text className="text-gray-500 text-[14px]" style={{ fontFamily: 'Pretendard-Medium' }} numberOfLines={1}>
@@ -238,7 +314,7 @@ export default function ActionInputModal({
       {/* Guide Section */}
       <View className="bg-blue-50/50 rounded-3xl mb-6 border border-blue-100/50 overflow-hidden">
         <Pressable
-          onPress={() => setIsGuideExpanded(!isGuideExpanded)}
+          onPress={toggleGuide}
           className="p-5 flex-row items-center justify-between"
         >
           <View className="flex-row items-center">
@@ -341,8 +417,8 @@ export default function ActionInputModal({
                         <View className="flex-row items-start">
                           <View className="flex-1">
                             <View className="flex-row items-center mb-2 flex-wrap gap-y-1">
-                              <View className="bg-purple-100/80 px-2.5 py-1.5 rounded-lg border border-purple-200 mr-2">
-                                <Text className="text-[13px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                              <View className="mr-2 p-1">
+                                <Text className="text-[15px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
                                   {cleanKeyword(itemKeyword)}
                                 </Text>
                               </View>
@@ -381,7 +457,12 @@ export default function ActionInputModal({
 
   // Render Step 2: Details (Using shared ActionTypeSettingsView)
   const renderDetailStep = () => (
-    <ScrollView className="px-5 py-4" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="px-5 py-4"
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
       <ActionTypeSettingsView
         type={selectedType}
         actionTitle={title}

@@ -798,7 +798,7 @@
         "mandalartTitle": "만다라트 제목",
         "titlePlaceholder": "예: 건강한 삶, 자기계발",
         "coreGoalLabel": "핵심 목표",
-        "coreGoalPlaceholder": "이루고 싶은 핵심 목표를 입력하세요",
+        "coreGoalPlaceholder": "핵심 목표를 입력하세요",
         "aiSuggest": "AI 세부목표 추천",
         "guide": {
           "title": "핵심 목표 작성 팁",
@@ -960,7 +960,7 @@
         "action": "실천",
         "back": "뒤로",
         "saving": "저장 중...",
-        "titlePlaceholder": "이루고 싶은 핵심 목표를 입력하세요",
+        "titlePlaceholder": "핵심 목표를 입력하세요",
         "backToOverview": "전체 보기로 돌아가기",
         "tapToEdit": "셀을 탭하여 수정하세요",
         "tapActionToEdit": "실천 항목을 탭하여 수정하세요",
@@ -1157,7 +1157,7 @@
       "deleteButton": "데이터 완전 삭제",
       "deleteSuccess": "AI 코칭 데이터가 삭제되었습니다."
     },
-    "tutorial": "사용 가이드",
+    "tutorial": "튜토리얼",
     "version": "버전",
     "support": {
       "title": "지원",
@@ -1335,7 +1335,7 @@
         "description": "체크할 때마다 XP가 쌓이고,\n레벨업하며 성장을 느껴보세요.",
         "routine": "루틴: 매일 쌓이는 습관",
         "mission": "미션: 달성해야 할 목표",
-        "reference": "참고: 마음에 새기는 원칙"
+        "reference": "마인드: 마음에 새기는 원칙"
       },
       "getStarted": {
         "title": "시작할 준비가 되셨나요?",
@@ -1348,12 +1348,12 @@
     }
   },
   "badges": {
-    "title": "뱃지",
-    "subtitle": "다양한 도전을 완료하고 뱃지를 수집하세요",
-    "collected": "수집한 뱃지",
+    "title": "배지",
+    "subtitle": "다양한 도전을 완료하고 배지를 수집하세요",
+    "collected": "수집한 배지",
     "repeatable": "반복",
     "detail": {
-      "title": "뱃지 상세",
+      "title": "배지 상세",
       "unlocked": "배지 획득 완료!",
       "firstUnlockDate": "(최초 획득일)",
       "totalCount": "누적 획득 횟수",
@@ -1675,7 +1675,7 @@
   "onboarding": {
     "title": "MandaAct에 오신 것을 환영합니다!",
     "subtitle": "아래 단계를 완료하고 앱을 시작해보세요.",
-    "guide": "사용 가이드 보기",
+    "guide": "튜토리얼 보기",
     "createGoal": "첫 번째 목표 만들기",
     "notification": "알림 설정하기",
     "firstAction": "첫 실천 기록하기",

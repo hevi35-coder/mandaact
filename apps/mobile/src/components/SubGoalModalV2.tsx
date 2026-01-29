@@ -12,6 +12,7 @@ import {
   Easing,
 } from 'react-native'
 import { X, Check, Lightbulb, Sparkles, RefreshCcw, ChevronDown, ChevronUp, PlusCircle } from 'lucide-react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { LinearGradient } from 'expo-linear-gradient'
 import MaskedView from '@react-native-masked-view/masked-view'
 import { useTranslation } from 'react-i18next'
@@ -47,7 +48,32 @@ export default function SubGoalModalV2({
   const [title, setTitle] = useState('')
   const [suggestions, setSuggestions] = useState<{ keyword: string; description: string }[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
-  const [isGuideExpanded, setIsGuideExpanded] = useState(false)
+  const [isGuideExpanded, setIsGuideExpanded] = useState(true)
+
+  // Load persisted guide state
+  useEffect(() => {
+    const loadGuideState = async () => {
+      try {
+        const savedState = await AsyncStorage.getItem('MANDA_ACT_SUBGOAL_TIP_EXPANDED')
+        if (savedState !== null) {
+          setIsGuideExpanded(savedState === 'true')
+        }
+      } catch (e) {
+        console.error('Failed to load guide state', e)
+      }
+    }
+    loadGuideState()
+  }, [])
+
+  const toggleGuide = async () => {
+    const newState = !isGuideExpanded
+    setIsGuideExpanded(newState)
+    try {
+      await AsyncStorage.setItem('MANDA_ACT_SUBGOAL_TIP_EXPANDED', String(newState))
+    } catch (e) {
+      console.error('Failed to save guide state', e)
+    }
+  }
 
   // Animation for loading spinner
   const [spinValue] = useState(new Animated.Value(0))
@@ -176,9 +202,10 @@ export default function SubGoalModalV2({
           className="flex-1 bg-black/50 justify-end"
           onPress={onClose}
         >
-          <Pressable
+          <View
             className="bg-white rounded-t-3xl max-h-[90%]"
-            onPress={(e) => e.stopPropagation()}
+            onStartShouldSetResponder={() => true}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <View className="flex-row items-center justify-between p-5 border-b border-gray-100">
@@ -207,7 +234,12 @@ export default function SubGoalModalV2({
               </Pressable>
             </View>
 
-            <ScrollView className="p-5" showsVerticalScrollIndicator={false}>
+            <ScrollView
+              className="p-5"
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ flexGrow: 1 }}
+            >
               {/* Sub Goal Title Input */}
               <View className="mb-6">
                 <TextInput
@@ -232,7 +264,7 @@ export default function SubGoalModalV2({
               {/* Goal Writing Guide (Collapsible) */}
               <View className="bg-blue-50/50 rounded-3xl mb-6 border border-blue-100/50 overflow-hidden">
                 <Pressable
-                  onPress={() => setIsGuideExpanded(!isGuideExpanded)}
+                  onPress={toggleGuide}
                   className="p-5 flex-row items-center justify-between"
                 >
                   <View className="flex-row items-center">
@@ -366,8 +398,8 @@ export default function SubGoalModalV2({
                                   <View className="flex-row items-start">
                                     <View className="flex-1">
                                       <View className="flex-row items-center mb-2 flex-wrap gap-y-1">
-                                        <View className="bg-purple-100/80 px-3 py-1.5 rounded-lg border border-purple-200 mr-2">
-                                          <Text className="text-[13px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                        <View className="mr-2 p-1">
+                                          <Text className="text-[15px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
                                             {cleanKeyword(itemKeyword)}
                                           </Text>
                                         </View>
@@ -404,7 +436,7 @@ export default function SubGoalModalV2({
               {/* Bottom padding for safe area */}
               <View className="h-10" />
             </ScrollView>
-          </Pressable>
+          </View>
         </Pressable>
       </KeyboardAvoidingView>
     </Modal >

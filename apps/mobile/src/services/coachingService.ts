@@ -75,6 +75,15 @@ export interface RealityCorrection {
 class CoachingService {
     private async invokeFunction(action: string, payload: unknown, sessionId?: string | null) {
         try {
+            // Debug: Check Session
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+                console.log(`[AI-Coaching] Has Session? YES. User: ${session.user.email} (ID: ${session.user.id})`)
+                // console.log(`[AI-Coaching] Token start: ${session.access_token.substring(0, 10)}...`)
+            } else {
+                console.warn(`[AI-Coaching] Has Session? NO. Requesting as ANONYMOUS.`)
+            }
+
             const { data, error } = await supabase.functions.invoke('ai-coaching', {
                 body: { action, payload, sessionId },
             })
