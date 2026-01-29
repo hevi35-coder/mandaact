@@ -571,7 +571,7 @@
     "achievementRate": "오늘의 달성율",
     "dateRestriction": "오늘과 어제 날짜만 달성(체크) 가능합니다",
     "typeFilter": "타입 필터",
-    "referenceNote": "참고 타입은 달성율에 포함되지 않습니다",
+    "referenceNote": "마인드 타입은 달성율에 포함되지 않습니다",
     "noFilterResult": "필터에 맞는 항목이 없습니다",
     "tryOtherFilter": "다른 타입 필터를 선택해보세요",
     "coreGoal": "핵심 목표",
@@ -587,13 +587,9 @@
         "action": "필터 초기화"
       },
       "noneToday": {
-        "title": "오늘 실천할 항목이 없어요",
-        "description": "설정한 반복 주기에 따라 내일 다시 표시될 거예요",
-        "info": {
-          "title": "실천 항목이 표시되지 않는 이유",
-          "routine": "루틴: 요일/주기 설정에 따라 오늘은 표시되지 않습니다",
-          "mission": "미션: 이번 기간 목표를 이미 달성했습니다"
-        }
+        "title": "오늘, 잠시 쉬어가나요?",
+        "description": "가벼운 활동 하나를 추가하고 XP를 챙겨보세요",
+        "quickAdd": "이 목표를 위한 실천 추가:",
       },
       "allCompleted": {
         "title": "모든 목표를 달성했어요!",
@@ -630,8 +626,8 @@
     "typeChangedDesc": "실천 항목 타입이 변경되었습니다",
     "typeChangeError": "타입 변경 중 오류가 발생했습니다",
     "unconfigured": {
-      "title": "설정 필요",
-      "hint": "탭하여 반복주기 설정"
+      "title": "추가 설정이 필요한 항목",
+      "hint": "탭하여 세부 내용(반복주기 등) 설정하기"
     },
     "completed": {
       "title": "달성 완료",
@@ -642,8 +638,8 @@
   "actionType": {
     "routine": "루틴",
     "mission": "미션",
-    "reference": "참고",
-    "unconfigured": "미설정",
+    "reference": "마인드",
+    "unconfigured": "설정 필요",
     "daily": "매일",
     "weekly": "주간",
     "monthly": "월간",
@@ -677,7 +673,7 @@
       "onceDesc": "단 1번 완료",
       "periodicDesc": "기간별 반복 완료",
       "periodCycle": "반복 주기",
-      "referenceInfo": "참고 타입은 달성률에 포함되지 않습니다",
+      "referenceInfo": "마인드 타입은 달성률에 포함되지 않습니다",
       "reasonRoutine": "반복 실천으로 보여요",
       "reasonRoutineLow": "루틴으로 추정됩니다 (주기나 완료 조건을 추가하면 더 정확해져요)",
       "reasonMission": "완료 목표로 보여요",
@@ -770,22 +766,8 @@
         "subGoalPlaceholder": "세부 목표를 입력하세요",
         "actionsLabel": "실천 항목 (8개)",
         "actionPlaceholder": "실천 항목 {{index}}",
-        "aiSuggest": "AI 실천 항목 추천",
-        "typeSettings": "타입 설정",
-        "selectType": "\"{{title}}\"의 타입을 선택하세요",
-        "actionTypeLabel": "실천 항목 타입",
-        "notSet": "미설정",
-        "guide": {
-          "title": "실천 행동 작성 팁",
-          "tip1_title": "명확하고 구체적으로",
-          "tip1_desc": "누가 봐도 바로 행동할 수 있을 만큼 구체적이어야 합니다.",
-          "tip2_title": "측정 가능하게",
-          "tip2_desc": "완료했는지 여부를 확실히 알 수 있는 기준을 세워보세요.",
-          "tip3_title": "작은 습관부터",
-          "tip3_desc": "너무 거창한 계획보다는 매일 실천 가능한 작은 단위가 좋습니다."
-        },
         "aiSuggest": {
-          "title": "세부목표 AI 추천",
+          "title": "세부 목표 AI 추천",
           "subtitle": "핵심 목표에 어울리는 세부 목표 제안",
           "emptyHint": "핵심 목표에 어울리는 세부 목표 제안",
           "getHelp": "추천 받기",
@@ -793,9 +775,22 @@
           "empty": "추천 버튼을 눌러 아이디어를 받아보세요",
           "applying": "생성된 계획 적용 중...",
           "tapToApply": "탭하여 바로 적용",
-          "suggested": "추천됨",
+          "suggested": "추천",
           "getStarted": "AI에게 아이디어 받기",
           "refresh": "새로운 추천 받기"
+        },
+        "typeSettings": "타입 설정",
+        "selectType": "\"{{title}}\"의 타입을 선택하세요",
+        "actionTypeLabel": "실천 항목 타입",
+        "notSet": "미설정",
+        "guide": {
+          "title": "세부목표 작성 팁",
+          "tip1_title": "핵심 목표와의 연관성",
+          "tip1_desc": "핵심 목표 달성을 위해 꼭 필요한 재료인지 확인해보세요.",
+          "tip2_title": "다양한 영역 고려",
+          "tip2_desc": "기술 뿐만 아니라 멘탈, 운, 태도까지 넓게 보세요.",
+          "tip3_title": "포괄적인 키워드",
+          "tip3_desc": "하위 실천항목 8개를 품을 수 있는 단어(예: 체력)를 쓰세요."
         }
       },
       "coreGoal": {
@@ -807,12 +802,12 @@
         "aiSuggest": "AI 세부목표 추천",
         "guide": {
           "title": "핵심 목표 작성 팁",
-          "tip1_title": "내 안의 목소리 듣기",
-          "tip1_desc": "남들의 시선이나 사회적인 요구가 아닌,\n내가 진심으로 바라는 모습인가요?",
-          "tip2_title": "이루었을 때의 감정",
-          "tip2_desc": "목표를 달성한 내 모습을 상상할 때\n가슴이 뛰고 즐거운지 느껴보세요.",
-          "tip3_title": "'왜'라고 물어보기",
-          "tip3_desc": "이 일을 왜 하고 싶은지 답이 명확할수록,\n어려움이 닥쳐도 끝까지 나아갈 힘이 생깁니다."
+          "tip1_title": "진심으로 원하는가요?",
+          "tip1_desc": "타인의 시선이 아닌, 내 가슴이 뛰는 목표여야 해요.",
+          "tip2_title": "설렘이 느껴지는가요?",
+          "tip2_desc": "상상만으로도 미소가 지어지는지 확인해보세요.",
+          "tip3_title": "명확한 이유(Why) 찾기",
+          "tip3_desc": "포기하고 싶은 순간에 나를 잡아줄 이유가 필요해요."
         }
       },
       "routine": {
@@ -1153,7 +1148,7 @@
       "language": "언어 설정",
       "timezone": "시간대 설정",
       "notifications": "알림 설정",
-      "tutorial": "사용 가이드"
+      "tutorial": "튜토리얼"
     },
     "privacy": {
       "title": "개인정보 및 AI 데이터",
@@ -1688,8 +1683,8 @@
     "almostDone": "거의 다 됐어요!"
   },
   "notification_primer": {
-    "title": "놓치지 않고 실천하기",
-    "description": "알림을 켜두면 목표 달성 확률이 3배 높아집니다.\nAI가 딱 맞는 시점에 코칭해드릴게요.",
+    "title": "실천을 놓치지 마세요",
+    "description": "알림을 켜면 목표 달성률이 3배 높아집니다.\nAI가 최적의 타이밍에 알려드릴게요.",
     "enable": "알림 켜기"
   }
 }

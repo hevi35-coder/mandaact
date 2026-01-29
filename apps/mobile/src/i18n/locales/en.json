@@ -553,7 +553,7 @@
     "achievementRate": "Today's Achievement Rate",
     "dateRestriction": "You can only check items for today and yesterday",
     "typeFilter": "Type Filter",
-    "referenceNote": "Reference type items are not included in achievement rate",
+    "referenceNote": "Mind type items are not included in achievement rate",
     "noFilterResult": "No items match the filter",
     "tryOtherFilter": "Try selecting a different type filter",
     "coreGoal": "Core Goal",
@@ -569,13 +569,9 @@
         "action": "Clear Filters"
       },
       "noneToday": {
-        "title": "No items to practice today",
-        "description": "Items will show again tomorrow based on your repeat settings",
-        "info": {
-          "title": "Why items aren't showing",
-          "routine": "Routine: Not scheduled for today based on frequency settings",
-          "mission": "Mission: Period target already completed"
-        }
+        "title": "Taking a break today?",
+        "description": "Add a quick activity and keep your streak alive!",
+        "quickAdd": "Add action for:",
       },
       "allCompleted": {
         "title": "All goals completed!",
@@ -612,8 +608,8 @@
     "typeChangedDesc": "Action type has been updated",
     "typeChangeError": "Error occurred while changing type",
     "unconfigured": {
-      "title": "Needs Setup",
-      "hint": "Tap to configure frequency"
+      "title": "Items Requiring Setup",
+      "hint": "Tap to configure details (frequency, etc.)"
     },
     "completed": {
       "title": "Completed",
@@ -628,8 +624,8 @@
   "actionType": {
     "routine": "Routine",
     "mission": "Mission",
-    "reference": "Reference",
-    "unconfigured": "Not Set",
+    "reference": "Mind",
+    "unconfigured": "Setup",
     "daily": "Daily",
     "weekly": "Weekly",
     "monthly": "Monthly",
@@ -663,7 +659,7 @@
       "onceDesc": "Complete once",
       "periodicDesc": "Repeat per period",
       "periodCycle": "Period Cycle",
-      "referenceInfo": "Reference type is not included in achievement rate",
+      "referenceInfo": "Mind type is not included in achievement rate",
       "reasonRoutine": "Looks like a recurring practice",
       "reasonRoutineLow": "Likely a routine. Add a cycle or completion condition to improve accuracy.",
       "reasonMission": "Looks like a goal to complete",
@@ -726,7 +722,6 @@
       "active": "Active",
       "inactive": "Inactive",
       "createNew": "Create New",
-      "createNew": "Create New",
       "empty": {
         "title": "Visualize Your Success",
         "description": "Turn vague dreams into concrete plans.\nStart with one core goal.",
@@ -749,20 +744,6 @@
         "subGoalPlaceholder": "Enter sub-goal",
         "actionsLabel": "Actions (8)",
         "actionPlaceholder": "Action {{index}}",
-        "aiSuggest": "AI Action Recommendations",
-        "typeSettings": "Type Settings",
-        "selectType": "Select type for \"{{title}}\"",
-        "actionTypeLabel": "Action Type",
-        "notSet": "Not Set",
-        "guide": {
-          "title": "Finding the 8 Pillars for Your Vision",
-          "tip1_title": "Alignment with Core Goal",
-          "tip1_desc": "If you achieve this, will you be one step closer\nto your vision? Think of it as an 'essential piece'\nneeded to manifest the core goal.",
-          "tip2_title": "Holistic Balance",
-          "tip2_desc": "Take a 360-degree approach. Consider aspects\nlike mindset, environment, luck, and character,\nnot just technical skills.",
-          "tip3_title": "Define with Bold Themes",
-          "tip3_desc": "Use clear keywords (e.g., Physical Strength) that\ndefine the area at a glance—acting as a 'pillar'\nthat can hold 8 different actions."
-        },
         "aiSuggest": {
           "title": "AI-Suggested Sub-Goals",
           "subtitle": "Ideas tailored to your vision",
@@ -775,6 +756,19 @@
           "suggested": "Suggested",
           "getStarted": "Get AI Ideas",
           "refresh": "Get New Ideas"
+        },
+        "typeSettings": "Type Settings",
+        "selectType": "Select type for \"{{title}}\"",
+        "actionTypeLabel": "Action Type",
+        "notSet": "Not Set",
+        "guide": {
+          "title": "Sub-Goal Tips",
+          "tip1_title": "Essential Piece",
+          "tip1_desc": "Is it a necessary step to achieve your core goal?",
+          "tip2_title": "Holistic View",
+          "tip2_desc": "Consider mindset, luck, and attitude, not just skills.",
+          "tip3_title": "Broad Keywords",
+          "tip3_desc": "Use words (e.g., Stamina) that can hold 8 actions."
         }
       },
       "coreGoal": {
@@ -785,15 +779,13 @@
         "coreGoalPlaceholder": "Enter your core goal",
         "aiSuggest": "AI Sub-goal Recommendations",
         "guide": {
-          "title": "Finding Your Heartfelt Goal",
-          "tip1_title": "Listen to Your Voice",
-          "tip1_desc": "Is this something YOU truly want,\nor is it a 'should' based on social pressure?",
-          "tip2_title": "Feel the Joy",
-          "tip2_desc": "When you visualize achieving this,\ndoes it make you feel genuinely excited?",
-          "tip3_title": "Ask Your 'Why'",
-          "tip3_desc": "A clear purpose gives you the resilience\nto keep going when things get tough.",
-          "tip4_title": "Vision Over Precision",
-          "tip4_desc": "It's okay to be abstract—save the specific\nmetrics for sub-goals and actions."
+          "title": "Core Goal Tips",
+          "tip1_title": "Truly Yours?",
+          "tip1_desc": "Make sure it's what YOU want, not others.",
+          "tip2_title": "Spark Joy?",
+          "tip2_desc": "Does imagining it make you smile?",
+          "tip3_title": "Strong Why",
+          "tip3_desc": "You need a reason to keep going when it gets tough."
         }
       },
       "routine": {
@@ -1659,8 +1651,8 @@
     "almostDone": "Almost done!"
   },
   "notification_primer": {
-    "title": "Stay on Track",
-    "description": "Enabling notifications increases your goal achievement rate by 3x.\nOur AI coach will assist you at the perfect time.",
+    "title": "Never Miss a Goal",
+    "description": "Boost your success rate by 3x.\nGet AI coaching at the perfect time.",
     "enable": "Enable Notifications"
   }
 }

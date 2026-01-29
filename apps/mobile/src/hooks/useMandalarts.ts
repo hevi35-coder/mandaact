@@ -19,7 +19,7 @@ export const mandalartKeys = {
 async function fetchMandalarts(userId: string): Promise<Mandalart[]> {
   const { data, error } = await supabase
     .from('mandalarts')
-    .select('*')
+    .select('*, sub_goals(id, title, position, mandalart_id, actions(id))')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
