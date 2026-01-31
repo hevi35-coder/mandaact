@@ -33,8 +33,8 @@ export function StreakCard({
     const displayFourWeekData = IS_SCREENSHOT_MODE
         ? (SCREENSHOT_DATA.heatmapData || Array.from({ length: 28 }, (_, i) => ({
             date: new Date(Date.now() - (27 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            // varied but deterministic green pattern
-            percentage: ((i * 13) % 10 < 1) ? 0 : (45 + (i * 17) % 55)
+            // varied but deterministic green pattern (minimum 15% to avoid gray)
+            percentage: (15 + (i * 17) % 86)
         })))
         : fourWeekData
 
