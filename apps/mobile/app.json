@@ -16,7 +16,7 @@
     "ios": {
       "bundleIdentifier": "com.mandaact.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "147",
+      "buildNumber": "148",
       "appleTeamId": "NRHYC97U5U",
       "supportsTablet": true,
       "requireFullScreen": false,

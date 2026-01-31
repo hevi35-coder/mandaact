@@ -96,18 +96,16 @@ DEVICES = {
 # Content Localization (Full 5-screen set for each language)
 CONTENT = {
     "en": [
-        {"id": "1_vision", "title": "Visualize Your\nBig Dreams", "raw_filename": "screen_1_vision.png", "out_filename": "01_vision.png"},
-        {"id": "2_action", "title": "Don't Just Plan.\nDo.", "raw_filename": "screen_2_action.png", "out_filename": "02_action.png"},
-        {"id": "3_magic", "title": "Snap & Digitize\nInstantly", "raw_filename": "screen_3_magic.png", "out_filename": "03_magic.png"},
-        {"id": "4_reward", "title": "Make Growth\nAddictive", "raw_filename": "screen_4_reward.png", "out_filename": "04_reward.png"},
-        {"id": "5_insight", "title": "Smart Weekly\nInsights", "raw_filename": "screen_5_insight.png", "out_filename": "05_insight.png"}
+        {"id": "1_home", "title": "Turn Ambition\ninto Daily Action", "raw_filename": "01_home.png", "out_filename": "01_home.png"},
+        {"id": "2_modal", "title": "AI Auto-Organizes\nYour Plans", "raw_filename": "02_modal.png", "out_filename": "02_modal.png"},
+        {"id": "3_report", "title": "Weekly AI Analysis\n& Feedback", "raw_filename": "03_report.png", "out_filename": "03_report.png"},
+        {"id": "4_gamification", "title": "Level Up\nYour Life", "raw_filename": "04_gamification.png", "out_filename": "04_gamification.png"}
     ],
     "ko": [
-        {"id": "1_vision", "title": "원대한 꿈을\n시각화하세요", "raw_filename": "screen_1_vision.png", "out_filename": "01_vision.png"},
-        {"id": "2_action", "title": "계획만 하지 말고,\n실천하세요", "raw_filename": "screen_2_action.png", "out_filename": "02_action.png"},
-        {"id": "3_magic", "title": "찰나의 순간,\n디지털로 변환", "raw_filename": "screen_3_magic.png", "out_filename": "03_magic.png"},
-        {"id": "4_reward", "title": "성장이 즐거운\n갓생 루틴", "raw_filename": "screen_4_reward.png", "out_filename": "04_reward.png"},
-        {"id": "5_insight", "title": "똑똑한\n주간 리포트", "raw_filename": "screen_5_insight.png", "out_filename": "05_insight.png"}
+        {"id": "1_home", "title": "목표를 현실로 만드는\n하루 루틴", "raw_filename": "01_home.png", "out_filename": "01_home.png"},
+        {"id": "2_modal", "title": "AI가 제안하는\n스마트한 실행 계획", "raw_filename": "02_modal.png", "out_filename": "02_modal.png"},
+        {"id": "3_report", "title": "매주 도착하는\nAI 정밀 코칭 리포트", "raw_filename": "03_report.png", "out_filename": "03_report.png"},
+        {"id": "4_gamification", "title": "게임처럼 즐기는\n자기계발", "raw_filename": "04_gamification.png", "out_filename": "04_gamification.png"}
     ]
 }
 
