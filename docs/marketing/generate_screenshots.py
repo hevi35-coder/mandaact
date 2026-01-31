@@ -132,9 +132,12 @@ def apply_rounded_corners(img, radius):
 
 def generate_screenshot(lang, device_key, only_id=None):
     device = DEVICES[device_key]
-    lang_dir = f"ipad_{lang}" if device_key == "ipad" else lang
-    if device_key == "ipad_13":
+    
+    # Standardized Folder Strategy: iphone_en, iphone_ko, ipad_en, ipad_ko
+    if "ipad" in device_key:
         lang_dir = f"ipad_{lang}"
+    else:
+        lang_dir = f"iphone_{lang}"
     
     input_dir = os.path.join(RAW_DIR, lang_dir)
     output_dir = os.path.join(FINAL_DIR, lang_dir)

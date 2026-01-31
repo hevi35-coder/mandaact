@@ -11,8 +11,8 @@ This guide explains how to use `generate_screenshots.py` to create the official 
 Take screenshots from the iOS Simulator. Name them exactly as follows and place them in the device-specific folders.
 
 ### 📁 Folder Structure
-- **iPhone (6.7" Mandatory)**: `docs/marketing/assets/raw/iphone/[lang]/`
-- **iPad (12.9" Mandatory)**: `docs/marketing/assets/raw/ipad/[lang]/`
+- **iPhone (6.7" Mandatory)**: `docs/marketing/assets/raw/iphone_[lang]/`
+- **iPad (12.9" Mandatory)**: `docs/marketing/assets/raw/ipad_[lang]/`
 *(Replace `[lang]` with `en` or `ko`)*
 
 ### 📸 Visual Checklist (Required for High Conversion)
