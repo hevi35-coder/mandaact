@@ -88,6 +88,19 @@ export default function LoginScreen() {
     }
   }, [signInWithPassword])
 
+  const handleGoogleLogin = useCallback(async () => {
+    try {
+      const result = await signInWithGoogle()
+      if (result.user) {
+        trackLogin('google')
+        identifyUser(result.user.id, { email: result.user.email })
+      }
+    } catch (error: any) {
+      console.error('Google Login Error:', error)
+      Alert.alert(t('common.error'), error.message || t('login.googleLoginFailed'))
+    }
+  }, [signInWithGoogle, t])
+
   const handleAppleLogin = useCallback(async () => {
     try {
       const result = await signInWithApple()
