@@ -459,10 +459,11 @@ CREATE TABLE check_history (
   - Cost: $1.50 per 1,000 images (~$0.0015 per image)
   - Free tier: 1,000 units/month
 
-- **Coaching Chatbot**:
-  - Provider: Perplexity AI
-  - Model: sonar-pro (initial), flexible for future change
-  - Cost: ~$0.01 per conversation
+- **Coaching Chatbot & Reports**:
+  - Provider: Flexible (Perplexity, Gemini, OpenAI) - Switchable via Env Vars
+  - Default: Perplexity (sonar) or Gemini (gemini-1.5-flash)
+  - Management: See **[AI Model Management Guide](../../.gemini/antigravity/brain/147a9338-92cf-4332-9335-ed209eb6e58d/llm_management_guide.md)**
+  - Cost: ~$0.01 per conversation (Perplexity/OpenAI), Free tier available (Gemini)
 
 #### Infrastructure
 - **Hosting**: Vercel (frontend), Supabase (backend)

@@ -22,8 +22,6 @@ export interface ProgressCardProps {
     totalCount: number
     progressPercentage: number
     activeFilters: Set<ActionType>
-    typeFilterCollapsed: boolean
-    onToggleTypeFilter: () => void
     onToggleFilter: (type: ActionType) => void
     onClearAllFilters: () => void
 }

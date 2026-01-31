@@ -580,8 +580,14 @@ export default function ReportsScreen() {
 
     // Policy:
     // - Premium users: can generate without ads.
-    // - Free users: 1 rewarded ad = 1 report generation (no weekly hard-stop in UI).
-    if (!isPremium && trigger !== 'rewarded') {
+    // - First Report: can generate without ads (free for all).
+    // - Free users (subsequent): 1 rewarded ad = 1 report generation.
+    //
+    // So if (Premium OR FirstTime OR AdWatched), proceed.
+    // Otherwise, show alert.
+    const isFreeAccess = isPremium || canGenerateFirstReport
+
+    if (!isFreeAccess && trigger !== 'rewarded') {
       Alert.alert(
         t('ads.notReady.title'),
         t('ads.reportGenerate.subtitle')
@@ -700,77 +706,69 @@ export default function ReportsScreen() {
 
           {/* 첫 리포트 생성 CTA (리포트 0개 + 실천 1회 이상) */}
           {canGenerateFirstReport && (
-            <>
-              {isPremium ? (
-                <Pressable
-                  onPress={() => handleGenerateAll('direct')}
-                  disabled={isGenerating}
-                  className="rounded-2xl overflow-hidden"
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.04,
-                    shadowRadius: 8,
-                    elevation: 2,
-                  }}
-                >
-                  <LinearGradient
-                    colors={['#2563eb', '#9333ea', '#db2777']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={{ padding: 1, borderRadius: 16 }}
-                  >
-                    <View className="bg-white rounded-2xl py-4 items-center justify-center">
-                      {isGenerating ? (
+            <Pressable
+              onPress={() => handleGenerateAll('direct')}
+              disabled={isGenerating}
+              className="rounded-2xl overflow-hidden"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.04,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
+            >
+              <LinearGradient
+                colors={['#2563eb', '#9333ea', '#db2777']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ padding: 1, borderRadius: 16 }}
+              >
+                <View className="bg-white rounded-2xl py-4 items-center justify-center">
+                  {isGenerating ? (
+                    <View className="flex-row items-center">
+                      <ActivityIndicator size="small" color="#2563eb" />
+                      <Text
+                        className="text-primary text-base ml-2"
+                        style={{ fontFamily: 'Pretendard-SemiBold' }}
+                      >
+                        {t('reports.generating')}
+                      </Text>
+                    </View>
+                  ) : (
+                    <MaskedView
+                      maskElement={
                         <View className="flex-row items-center">
-                          <ActivityIndicator size="small" color="#2563eb" />
+                          <Sparkles size={18} color="#000" />
                           <Text
-                            className="text-primary text-base ml-2"
+                            className="text-base ml-2"
                             style={{ fontFamily: 'Pretendard-SemiBold' }}
                           >
-                            {t('reports.generating')}
+                            {t('reports.empty.generateFirst')}
                           </Text>
                         </View>
-                      ) : (
-                        <MaskedView
-                          maskElement={
-                            <View className="flex-row items-center">
-                              <Sparkles size={18} color="#000" />
-                              <Text
-                                className="text-base ml-2"
-                                style={{ fontFamily: 'Pretendard-SemiBold' }}
-                              >
-                                {t('reports.empty.generateFirst')}
-                              </Text>
-                            </View>
-                          }
-                        >
-                          <LinearGradient
-                            colors={['#2563eb', '#9333ea', '#db2777']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
+                      }
+                    >
+                      <LinearGradient
+                        colors={['#2563eb', '#9333ea', '#db2777']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <View className="flex-row items-center opacity-0">
+                          <Sparkles size={18} color="#000" />
+                          <Text
+                            className="text-base ml-2"
+                            style={{ fontFamily: 'Pretendard-SemiBold' }}
                           >
-                            <View className="flex-row items-center opacity-0">
-                              <Sparkles size={18} color="#000" />
-                              <Text
-                                className="text-base ml-2"
-                                style={{ fontFamily: 'Pretendard-SemiBold' }}
-                              >
-                                {t('reports.empty.generateFirst')}
-                              </Text>
-                            </View>
-                          </LinearGradient>
-                        </MaskedView>
-                      )}
-                    </View>
-                  </LinearGradient>
-                </Pressable>
-              ) : (
-                <View className="mt-4">
-                  <ReportGenerateButton onGenerateReport={() => handleGenerateAll('rewarded')} />
+                            {t('reports.empty.generateFirst')}
+                          </Text>
+                        </View>
+                      </LinearGradient>
+                    </MaskedView>
+                  )}
                 </View>
-              )}
-            </>
+              </LinearGradient>
+            </Pressable>
           )}
 
           {/* 다음 리포트 안내 (Free 유저, 자동 생성 일정) - 그라디언트 테두리 + 텍스트 */}

@@ -84,12 +84,11 @@ serve(withErrorHandler('parse-mandalart-text', async (req) => {
   }
 }))
 
-async function parseTextWithAI(text: string): Promise<MandalartData> {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
+import { LLMFactory } from '../_shared/llm-provider.ts'
 
-  if (!perplexityApiKey) {
-    throw new Error('Missing Perplexity API key')
-  }
+async function parseTextWithAI(text: string): Promise<MandalartData> {
+  const providerName = Deno.env.get('LLM_PROVIDER') || 'perplexity'
+  const provider = LLMFactory.create(providerName)
 
   const systemPrompt = `당신은 만다라트(Mandalart) 구조를 분석하는 전문가입니다.
 
@@ -121,39 +120,24 @@ async function parseTextWithAI(text: string): Promise<MandalartData> {
   const userPrompt = `다음 텍스트를 만다라트 구조로 파싱해주세요:\n\n${text}`
 
   try {
-    console.log('Calling Perplexity API...')
+    console.log(`Calling AI (${providerName}) for parsing...`)
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${perplexityApiKey}`,
-        'Content-Type': 'application/json',
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
       },
-      body: JSON.stringify({
-        model: 'sonar',
-        messages: [
-          {
-            role: 'user',
-            content: `${systemPrompt}\n\n${userPrompt}`,
-          },
-        ],
-        temperature: 0.1, // Low temperature for consistent parsing
-        max_tokens: 4000,
-      }),
-    })
+      {
+        role: 'user',
+        content: userPrompt,
+      },
+    ];
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Perplexity API error:', errorText)
-      throw new Error(`Perplexity API request failed: ${response.status}`)
-    }
+    const response = await provider.chatComplete(messages as any);
+    const content = response.content;
 
-    const data = await response.json()
-    console.log('Perplexity API response received')
-
-    const content = data.choices?.[0]?.message?.content
     if (!content) {
-      throw new Error('No content in Perplexity response')
+      throw new Error('No content in AI response')
     }
 
     // Extract JSON from response (in case AI adds explanation text)

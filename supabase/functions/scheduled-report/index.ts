@@ -306,46 +306,46 @@ serve(async (req: Request) => {
         const promptVersion = getPromptVersion(report.report_type)
         const modelConfig = getModelConfig(report.report_type)
 
-    let reportContent: string
-    let usedModel = modelConfig.primary
-    let cachedFrom: string | null = null
-    let inputSummary: unknown
-    let inputHash: string
-    let cacheKey: string | null = null
+        let reportContent: string
+        let usedModel = modelConfig.primary
+        let cachedFrom: string | null = null
+        let inputSummary: unknown
+        let inputHash: string
+        let cacheKey: string | null = null
 
-    if (report.report_type === 'weekly') {
-      const bounds = await getRollingWeeklyBounds(supabaseAdmin, report.user_id)
-      cacheKey = buildCacheKey('weekly', language, {
-        userTimezone: bounds.userTimezone,
-        periodStart: bounds.periodStart,
-        periodEnd: bounds.periodEnd,
-      })
+        if (report.report_type === 'weekly') {
+          const bounds = await getRollingWeeklyBounds(supabaseAdmin, report.user_id)
+          cacheKey = buildCacheKey('weekly', language, {
+            userTimezone: bounds.userTimezone,
+            periodStart: bounds.periodStart,
+            periodEnd: bounds.periodEnd,
+          })
 
-      const reportData = await collectUserReportData(
-        supabaseAdmin,
-        report.user_id,
-        bounds.userTimezone,
-        language,
-        new Date(bounds.startTs),
-        new Date(bounds.endTsExclusive),
-        bounds.periodStart,
-        bounds.periodEnd
-      )
-      inputSummary = reportData
+          const reportData = await collectUserReportData(
+            supabaseAdmin,
+            report.user_id,
+            bounds.userTimezone,
+            language,
+            new Date(bounds.startTs),
+            new Date(bounds.endTsExclusive),
+            bounds.periodStart,
+            bounds.periodEnd
+          )
+          inputSummary = reportData
 
-      inputHash = await sha256Hex(stableStringify({ promptVersion, report_type: 'weekly', language, data: reportData }))
-      if (cacheEnabled) {
-        const { data: cached } = await supabaseAdmin
-          .from('ai_reports')
-          .select('id, content, model')
-          .eq('user_id', report.user_id)
-          .eq('report_type', 'weekly')
-          .eq('cache_key', cacheKey)
-          .eq('input_hash', inputHash)
-          .neq('id', report.report_id)
-          .order('generated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
+          inputHash = await sha256Hex(stableStringify({ promptVersion, report_type: 'weekly', language, data: reportData }))
+          if (cacheEnabled) {
+            const { data: cached } = await supabaseAdmin
+              .from('ai_reports')
+              .select('id, content, model')
+              .eq('user_id', report.user_id)
+              .eq('report_type', 'weekly')
+              .eq('cache_key', cacheKey)
+              .eq('input_hash', inputHash)
+              .neq('id', report.report_id)
+              .order('generated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
 
             if (cached?.content && !String(cached.content).includes('"status": "pending"')) {
               reportContent = String(cached.content)
@@ -364,24 +364,24 @@ serve(async (req: Request) => {
             weeklyReportsGenerated++
           }
         } else if (report.report_type === 'diagnosis') {
-      // Diagnosis is structure-only; do not include practice/streak in input
-      const diagnosisData = await collectDiagnosisData(
-        supabaseAdmin,
-        report.user_id,
-        report.metadata.mandalart_id,
-        language
-      )
-      inputSummary = diagnosisData
+          // Diagnosis is structure-only; do not include practice/streak in input
+          const diagnosisData = await collectDiagnosisData(
+            supabaseAdmin,
+            report.user_id,
+            report.metadata.mandalart_id,
+            language
+          )
+          inputSummary = diagnosisData
 
-      inputHash = await sha256Hex(stableStringify({ promptVersion, report_type: 'diagnosis', language, data: diagnosisData }))
-      cacheKey = buildCacheKey('diagnosis', language, {
-        mandalartId: diagnosisData.mandalart_id || undefined,
-        mandalartHash: diagnosisData.mandalart_hash,
-      })
-      if (cacheEnabled) {
-        const { data: cached } = await supabaseAdmin
-          .from('ai_reports')
-          .select('id, content, model')
+          inputHash = await sha256Hex(stableStringify({ promptVersion, report_type: 'diagnosis', language, data: diagnosisData }))
+          cacheKey = buildCacheKey('diagnosis', language, {
+            mandalartId: diagnosisData.mandalart_id || undefined,
+            mandalartHash: diagnosisData.mandalart_hash,
+          })
+          if (cacheEnabled) {
+            const { data: cached } = await supabaseAdmin
+              .from('ai_reports')
+              .select('id, content, model')
               .eq('user_id', report.user_id)
               .eq('report_type', 'diagnosis')
               .eq('cache_key', cacheKey)
@@ -412,25 +412,25 @@ serve(async (req: Request) => {
           continue
         }
 
-    // Update the report with generated content (not insert new)
-    if (!inputHash) {
-      throw new Error('Missing input_hash for scheduled report')
-    }
-    if (!cacheKey) {
-      throw new Error('Missing cache_key for scheduled report')
-    }
+        // Update the report with generated content (not insert new)
+        if (!inputHash) {
+          throw new Error('Missing input_hash for scheduled report')
+        }
+        if (!cacheKey) {
+          throw new Error('Missing cache_key for scheduled report')
+        }
 
-    const { error: updateError } = await supabaseAdmin
-      .from('ai_reports')
-      .update({
-        content: reportContent,
-        language,
-        cache_key: cacheKey,
-        input_hash: inputHash,
-        prompt_version: promptVersion,
-        model: usedModel,
-        metadata: {
-          ...report.metadata,
+        const { error: updateError } = await supabaseAdmin
+          .from('ai_reports')
+          .update({
+            content: reportContent,
+            language,
+            cache_key: cacheKey,
+            input_hash: inputHash,
+            prompt_version: promptVersion,
+            model: usedModel,
+            metadata: {
+              ...report.metadata,
               generated_at: new Date().toISOString(),
               language,
               input_summary: inputSummary,
@@ -605,9 +605,9 @@ async function collectUserReportData(
     worstDay: worstDay ? { day: locale.dayNames[parseInt(worstDay[0])], count: worstDay[1] } : null,
     bestTime: bestTime
       ? {
-          period: locale.timeNames[bestTime[0] as keyof typeof locale.timeNames],
-          count: bestTime[1],
-        }
+        period: locale.timeNames[bestTime[0] as keyof typeof locale.timeNames],
+        count: bestTime[1],
+      }
       : null,
     bestSubGoal,
     worstSubGoal,
@@ -791,73 +791,83 @@ JSON 형식으로 응답하되, key_metrics에는 실제 수치를 포함하세�
 /**
  * Generate weekly report using Perplexity AI with i18n support
  */
+import { LLMFactory } from '../_shared/llm-provider.ts'
+
+/**
+ * Generate weekly report using AI with i18n support
+ */
 async function generateWeeklyReport(
   data: ReportData,
   language: Language,
   modelConfig: { primary: string; fallback: string | null; maxTokens: number; temperature: number }
 ): Promise<{ content: string; usedModel: string }> {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
-  if (!perplexityApiKey) {
-    throw new Error('PERPLEXITY_API_KEY not configured')
-  }
+  const providerName = Deno.env.get('LLM_PROVIDER') || 'perplexity'
+  const provider = LLMFactory.create(providerName)
+
+  // Use provider-specific model config if needed, or default to provider's internal
+  // For now we map primary/fallback model names if they are generic, but usually they are provider specific.
+  // We trust env vars or internal defaults for simplicity.
 
   const locale = LOCALES[language]
   const prompts = getLocalizedPrompts(language)
   const badges = data.recentBadges?.map((b) => b.achievement?.title).join(', ') || locale.noBadges
 
   const tryGenerateOnce = async (model: string): Promise<{ content: string; isValidJson: boolean; usedModel: string }> => {
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${perplexityApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data, badges)}`,
-          },
-        ],
-        temperature: modelConfig.temperature,
-        max_tokens: modelConfig.maxTokens,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
-    }
-
-    const result = await response.json()
-    let aiResponse = result.choices[0].message.content
-
-    aiResponse = aiResponse.trim()
-    if (aiResponse.startsWith('```json')) {
-      aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-    } else if (aiResponse.startsWith('```')) {
-      aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
-    }
-
     try {
-      JSON.parse(aiResponse)
-      return { content: aiResponse, isValidJson: true, usedModel: model }
-    } catch {
-      return { content: aiResponse, isValidJson: false, usedModel: model }
+      const messages = [
+        {
+          role: 'user', // System prompt logic baked into user msg or prepended depending on provider flexibility
+          content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data, badges)}`,
+        },
+      ];
+      // LLMFactory providers usually handle system messages if we passed role: 'system'.
+      // But here the prompt structure combined them. Let's split them for better provider support.
+      const structuredMessages = [
+        { role: 'system', content: prompts.systemPrompt },
+        { role: 'user', content: prompts.userPromptTemplate(data, badges) }
+      ];
+
+      const response = await provider.chatComplete(structuredMessages as any);
+      let aiResponse = response.content;
+
+      if (!aiResponse) throw new Error('Empty response');
+
+      aiResponse = aiResponse.trim()
+      if (aiResponse.startsWith('```json')) {
+        aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (aiResponse.startsWith('```')) {
+        aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+
+      try {
+        JSON.parse(aiResponse)
+        return { content: aiResponse, isValidJson: true, usedModel: model }
+      } catch {
+        return { content: aiResponse, isValidJson: false, usedModel: model }
+      }
+    } catch (e) {
+      console.error('AI generation failed', e);
+      // Return placeholder or rethrow depending on logic. Original threw error wrapped in "Perplexity API error"
+      throw e;
     }
   }
 
-  const primary = await tryGenerateOnce(modelConfig.primary)
-  if (primary.isValidJson || !modelConfig.fallback || modelConfig.fallback === modelConfig.primary) {
-    if (!primary.isValidJson) console.warn('Weekly AI response is not valid JSON, returning as-is')
-    return { content: primary.content, usedModel: primary.usedModel }
+  // We loop through models if needed, but LLMFactory abstracts a single provider.
+  // Fallback logic here was for Perplexity models (sonar-small vs medium).
+  // With LLMFactory, we usually stick to one model per provider config.
+  // We will try once with the primary model.
+  const result = await tryGenerateOnce(modelConfig.primary);
+
+  // If invalid JSON and there was a fallback configured INTENDED for the SAME provider, we could retry.
+  // But LLM_PROVIDER switch changes the whole backend.
+  // We'll keep simple logic: try once. If invalid, return as-is (original logic did double try).
+  if (!result.isValidJson && modelConfig.fallback && modelConfig.fallback !== modelConfig.primary) {
+    console.warn(`Primary model ${modelConfig.primary} failed JSON, retrying with fallback ${modelConfig.fallback}`);
+    const resultFallback = await tryGenerateOnce(modelConfig.fallback);
+    return { content: resultFallback.content, usedModel: resultFallback.usedModel };
   }
 
-  console.warn(`Weekly report invalid JSON (primary=${modelConfig.primary}), retrying fallback=${modelConfig.fallback}`)
-  const fallback = await tryGenerateOnce(modelConfig.fallback)
-  if (!fallback.isValidJson) console.warn('Weekly AI response is not valid JSON even after fallback, returning as-is')
-  return { content: fallback.content, usedModel: fallback.usedModel }
+  return { content: result.content, usedModel: result.usedModel }
 }
 
 /**
@@ -1042,10 +1052,10 @@ async function collectDiagnosisData(
     mandalart_hash,
     mandalart: mandalarts
       ? {
-          id: mandalarts.id,
-          title: mandalarts.title,
-          center_goal: mandalarts.center_goal,
-        }
+        id: mandalarts.id,
+        title: mandalarts.title,
+        center_goal: mandalarts.center_goal,
+      }
       : null,
     structure: {
       totalItems,
@@ -1198,53 +1208,39 @@ async function generateDiagnosisReport(
   language: Language,
   modelConfig: { primary: string; fallback: string | null; maxTokens: number; temperature: number }
 ): Promise<{ content: string; usedModel: string }> {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
-  if (!perplexityApiKey) {
-    throw new Error('PERPLEXITY_API_KEY not configured')
-  }
+  const providerName = Deno.env.get('LLM_PROVIDER') || 'perplexity'
+  const provider = LLMFactory.create(providerName)
 
   const prompts = getDiagnosisPrompts(language)
 
   const tryGenerateOnce = async (model: string): Promise<{ content: string; isValidJson: boolean; usedModel: string }> => {
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${perplexityApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: `${prompts.systemPrompt}\n\n${prompts.userPromptTemplate(data)}`,
-          },
-        ],
-        temperature: modelConfig.temperature,
-        max_tokens: modelConfig.maxTokens,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
-    }
-
-    const result = await response.json()
-    let aiResponse = result.choices[0].message.content
-
-    aiResponse = aiResponse.trim()
-    if (aiResponse.startsWith('```json')) {
-      aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-    } else if (aiResponse.startsWith('```')) {
-      aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
-    }
-
     try {
-      JSON.parse(aiResponse)
-      return { content: aiResponse, isValidJson: true, usedModel: model }
-    } catch {
-      return { content: aiResponse, isValidJson: false, usedModel: model }
+      const structuredMessages = [
+        { role: 'system', content: prompts.systemPrompt },
+        { role: 'user', content: prompts.userPromptTemplate(data) }
+      ];
+
+      const response = await provider.chatComplete(structuredMessages as any);
+      let aiResponse = response.content;
+
+      if (!aiResponse) throw new Error('Empty response');
+
+      aiResponse = aiResponse.trim()
+      if (aiResponse.startsWith('```json')) {
+        aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (aiResponse.startsWith('```')) {
+        aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+
+      try {
+        JSON.parse(aiResponse)
+        return { content: aiResponse, isValidJson: true, usedModel: model }
+      } catch {
+        return { content: aiResponse, isValidJson: false, usedModel: model }
+      }
+    } catch (e) {
+      console.error('AI generation failed', e);
+      throw e;
     }
   }
 
