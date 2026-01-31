@@ -58,16 +58,6 @@ DEVICES = {
         "line_spacing": 150,
         "corner_radius": 80,
     },
-    "iphone_14_pro": {
-        "width": 1179,
-        "height": 2556,
-        "screenshot_scale": 0.88,
-        "bottom_margin": 130,
-        "title_step_y": 260,
-        "title_size": 120,
-        "line_spacing": 140,
-        "corner_radius": 75,
-    },
     "iphone_6_9": {
         # Apple (6.9" Display) portrait: 1320 x 2868
         "width": 1320,
@@ -88,16 +78,6 @@ DEVICES = {
         "title_size": 150,
         "line_spacing": 180,
         "corner_radius": 60,
-    },
-    "ipad_10_5": {
-        "width": 1668,
-        "height": 2224,
-        "screenshot_scale": 0.72,
-        "bottom_margin": 100,
-        "title_step_y": 250,
-        "title_size": 130,
-        "line_spacing": 160,
-        "corner_radius": 50,
     },
     "ipad_13": {
         # Apple (iPad Air M2/M3 etc.) portrait: 2064 x 2752
