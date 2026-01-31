@@ -68,7 +68,17 @@ export default function HomeScreen() {
   const { data: profileStats, isLoading: profileStatsLoading } = useProfileStats(user?.id)
   const { data: fourWeekData = [], isLoading: fourWeekLoading } = use4WeekHeatmap(user?.id)
   const { data: badges = [], isLoading: badgesLoading } = useBadgeDefinitions()
-  const { data: userBadges = [] } = useUserBadges(user?.id)
+  const { data: realUserBadges = [] } = useUserBadges(user?.id)
+
+  // MOCK BADGES FOR SCREENSHOT MODE
+  const userBadges = IS_SCREENSHOT_MODE && SCREENSHOT_DATA.badges
+    ? SCREENSHOT_DATA.badges.map((key: string) => ({
+      id: key,
+      achievement_id: key,
+      user_id: user?.id || 'mock',
+      unlocked_at: new Date().toISOString()
+    }))
+    : realUserBadges
   const { data: badgeProgress = [] } = useBadgeProgress(user?.id)
   const { data: activeMandalarts = [] } = useActiveMandalarts(user?.id)
   const hasActiveMandalarts = activeMandalarts.length > 0
@@ -108,8 +118,8 @@ export default function HomeScreen() {
   const xpPercentage = IS_SCREENSHOT_MODE ? (SCREENSHOT_DATA.xpProgress * 100) : xpPercentageRaw
 
   // Profile Stats
-  const totalChecks = IS_SCREENSHOT_MODE ? 850 : (profileStats?.total_checks || 0)
-  const activeDays = IS_SCREENSHOT_MODE ? 150 : (profileStats?.active_days || 0)
+  const totalChecks = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.totalChecks : (profileStats?.total_checks || 0)
+  const activeDays = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.activeDays : (profileStats?.active_days || 0)
   const currentStreak = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.currentStreak : (profileStats?.current_streak || 0)
   const longestStreak = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.longestStreak : (profileStats?.longest_streak || 0)
   const lastCheckDate = IS_SCREENSHOT_MODE ? new Date(SCREENSHOT_DATA.lastCheckDate) : profileStats?.last_check_date
