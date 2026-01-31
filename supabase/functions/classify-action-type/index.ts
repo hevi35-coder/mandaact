@@ -108,12 +108,11 @@ serve(async (req) => {
   }
 })
 
-async function classifyActionWithAI(actionTitle: string): Promise<ClassificationResult> {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
+import { LLMFactory } from '../_shared/llm-provider.ts'
 
-  if (!perplexityApiKey) {
-    throw new Error('Missing Perplexity API key')
-  }
+async function classifyActionWithAI(actionTitle: string): Promise<ClassificationResult> {
+  const providerName = Deno.env.get('LLM_PROVIDER') || 'perplexity'
+  const provider = LLMFactory.create(providerName)
 
   const systemPrompt = `당신은 한국어 실천 항목(action)을 3가지 타입으로 정확하게 분류하는 전문가입니다.
 
@@ -129,6 +128,12 @@ async function classifyActionWithAI(actionTitle: string): Promise<Classification
 3. reference (참고): 마음가짐/가치관 (체크 불필요)
 
 === 핵심 분류 규칙 ===
+
+📍 1순위: 텍스트에 명시된 빈도 (최우선)
+- 텍스트 안에 "Weekly", "주간", "매주", "주N회"가 포함되면 무조건 → weekly
+- 텍스트 안에 "Daily", "매일", "일간"이 포함되면 무조건 → daily
+- 텍스트 안에 "Monthly", "월간", "매월", "월N회"가 포함되면 무조건 → monthly
+- 예: "Weekly Squats" → routine, weekly (운동이라도 Daily 아님)
 
 📍 빈도 표현이 있으면 → routine
 - "주N회", "월 N회": routine (weekly/monthly)
@@ -210,39 +215,24 @@ REFERENCE (마음가짐):
   const userPrompt = `다음 실천 항목을 분류해주세요: "${actionTitle}"`
 
   try {
-    console.log('Calling Perplexity API for classification...')
+    console.log(`Calling AI (${providerName}) for classification...`)
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${perplexityApiKey}`,
-        'Content-Type': 'application/json',
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
       },
-      body: JSON.stringify({
-        model: 'sonar',  // Fast model for speed priority
-        messages: [
-          {
-            role: 'user',
-            content: `${systemPrompt}\n\n${userPrompt}`,
-          },
-        ],
-        temperature: 0.1,  // Low temperature for consistent classification
-        max_tokens: 500,   // Small response expected
-      }),
-    })
+      {
+        role: 'user',
+        content: userPrompt,
+      },
+    ];
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Perplexity API error:', errorText)
-      throw new Error(`Perplexity API request failed: ${response.status}`)
-    }
+    const response = await provider.chatComplete(messages as any);
+    const content = response.content;
 
-    const data = await response.json()
-    console.log('Perplexity API response received')
-
-    const content = data.choices?.[0]?.message?.content
     if (!content) {
-      throw new Error('No content in Perplexity response')
+      throw new Error('No content in AI response')
     }
 
     // Extract JSON from response (in case AI adds explanation text)

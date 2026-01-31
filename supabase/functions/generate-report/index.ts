@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { LLMFactory } from '../_shared/llm-provider.ts'
 import {
   withErrorHandler,
   createSuccessResponse,
@@ -1081,10 +1082,20 @@ async function generateAIReport(
   language: Language = 'ko',
   modelConfig: { primary: string; fallback: string | null; maxTokens: number; temperature: number }
 ): Promise<string> {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
-  if (!perplexityApiKey) {
-    throw new Error('PERPLEXITY_API_KEY not configured')
-  }
+  // Use the provider specified in env or default to perplexity
+  const providerName = Deno.env.get('LLM_PROVIDER') || 'perplexity'
+  const provider = LLMFactory.create(providerName)
+
+  // Note: modelConfig passed might be specific to report type (e.g. sonar), 
+  // but provider factory might expect generic model names or handle them differently.
+  // Ideally, factory should handle model selection or we just pass the primary model if it matches provider expectations.
+  // For simplicity, we trust the factory's default or the env var override over the hardcoded 'sonar' in getModelConfig if provider is switched.
+  // Actually, LLMFactory defaults use env vars like PERPLEXITY_MODEL, GEMINI_MODEL.
+  // So we don't strictly *need* to pass the model from modelConfig if we rely on factory defaults/env, 
+  // but generate-report has logic to fetch model name from env.
+  // Let's defer to the factory's internal config for the provider's model, effectively ignoring modelConfig.primary 
+  // unless we want to dynamically override the factory's model.
+  // Given the complexity, let's just use the factory as intended.
 
   let systemPrompt = ''
   let userPrompt = ''
@@ -1133,50 +1144,38 @@ async function generateAIReport(
   }
 
   const tryGenerateOnce = async (model: string): Promise<{ content: string; isValidJson: boolean }> => {
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${perplexityApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: `${systemPrompt}\n\n${userPrompt}`,
-          },
-        ],
-        temperature: modelConfig.temperature,
-        max_tokens: modelConfig.maxTokens,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Perplexity API error:', response.status, errorText)
-      throw new Error(`Perplexity API error ${response.status}: ${errorText.substring(0, 200)}`)
-    }
-
-    const result = await response.json()
-    let aiResponse = result.choices[0].message.content
-
-    aiResponse = aiResponse.trim()
-    if (aiResponse.startsWith('```json')) {
-      aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-    } else if (aiResponse.startsWith('```')) {
-      aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
-    }
-
     try {
-      const jsonResponse = JSON.parse(aiResponse) as Record<string, unknown>
-      const normalized = normalizeAIResponse(jsonResponse, reportType)
-      if (!validateAIResponse(normalized, reportType)) {
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ];
+
+      const response = await provider.chatComplete(messages as any);
+      let aiResponse = response.content;
+
+      if (!aiResponse) throw new Error('Empty response from AI');
+
+      // Clean content
+      aiResponse = aiResponse.trim()
+      if (aiResponse.startsWith('```json')) {
+        aiResponse = aiResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (aiResponse.startsWith('```')) {
+        aiResponse = aiResponse.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+
+      try {
+        const jsonResponse = JSON.parse(aiResponse) as Record<string, unknown>
+        const normalized = normalizeAIResponse(jsonResponse, reportType)
+        if (!validateAIResponse(normalized, reportType)) {
+          return { content: aiResponse, isValidJson: false }
+        }
+        return { content: JSON.stringify(normalized), isValidJson: true }
+      } catch {
         return { content: aiResponse, isValidJson: false }
       }
-      return { content: JSON.stringify(normalized), isValidJson: true }
-    } catch {
-      return { content: aiResponse, isValidJson: false }
+    } catch (error) {
+      console.error(`Generation failed with model ${model}:`, error);
+      throw error;
     }
   }
 

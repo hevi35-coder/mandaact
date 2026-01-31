@@ -15,6 +15,7 @@
 - **기능**: Quick Chips (Today), AI 실천 추천 로직 (Sub-goal/Action Edit)
 - **정리**: Mandalart 생성 방식 단순화 (직접 입력 및 AI 코칭 위주, OCR/텍스트 분석 제거)
 - **백엔드**: 리포트 생성 로직 Supabase Edge Function으로 이전
+- **백엔드**: 다중 LLM (Gemini, OpenAI, Perplexity) 지원 추가 ([관리가이드](../../.gemini/antigravity/brain/147a9338-92cf-4332-9335-ed209eb6e58d/llm_management_guide.md))
 
 ## 다음 예정 사항
 - v1.1.0 App Store 정식 업데이트 제출

@@ -92,7 +92,7 @@ serve(async (req) => {
           result = await generateActions(payload, sessionId, user.id, supabase)
           break
         case 'suggest_actions_v2':
-          result = await suggestActionsV2(payload, sessionId, user.id, supabase)
+          result = await suggestActionsV3(payload, sessionId, user.id, supabase)
           break
         case 'reality_check':
           result = await realityCheck(payload, sessionId, user.id, supabase)
@@ -150,6 +150,8 @@ serve(async (req) => {
   }
 })
 
+import { LLMFactory } from '../_shared/llm-provider.ts'
+
 async function callPerplexity(
   messages: { role: string; content: string }[],
   sessionId?: string,
@@ -157,57 +159,48 @@ async function callPerplexity(
   supabase?: any,
   temperature = 0.5
 ) {
-  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
-  if (!perplexityApiKey) throw new Error('Missing PERPLEXITY_API_KEY environment variable')
+  // Use the provider specified in env or default to perplexity
+  const providerName = Deno.env.get('LLM_PROVIDER') || 'perplexity'
+  const provider = LLMFactory.create(providerName)
 
-  const model = 'sonar'
-
-  console.log(`[Perplexity Call] Model: ${model} | Session: ${sessionId || 'none'} | Temp: ${temperature}`)
+  console.log(`[LLM Call] Provider: ${providerName} | Session: ${sessionId || 'none'} | Temp: ${temperature}`)
   console.log(`[Messages Count] ${messages.length}`);
 
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${perplexityApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages: messages,
-      temperature,
-      max_tokens: 4000,
-      top_p: 0.9
-      // Note: Perplexity Sonar doesn't support response_format: json_object
-    }),
-  })
+  // Map roles if necessary (factory/provider handles most, but ensuring types match)
+  const llmResponse = await provider.chatComplete(messages as any);
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error(`[Perplexity Error] ${response.status}: ${errorText}`)
-    // Return detailed error to help identifying if it's a model name issue or API key issue
-    throw new Error(`[PERPLEXITY_ERROR_v3.2] (HTTP ${response.status}): ${errorText}`)
-  }
-
-  const data = await response.json()
-  let content = data.choices?.[0]?.message?.content
+  let content = llmResponse.content;
   if (!content) throw new Error('No content in AI response')
 
-  // Clean citations like [1], [1][2], [1, 2], (1), etc.
+  // Clean citations like [1], [1][2], [1, 2], (1), etc. (Perplexity specific usually, but safe to keep)
   content = content.replace(/\[\d+(?:,\s*\d+)*\]/g, '')
   content = content.replace(/\s*\[\s*\]\s*/g, ' ') // Clean empty brackets if any
 
   console.log(`[Clean Content Snippet] ${content.substring(0, 100)}...`)
 
   // Step 1: Pre-parsing extraction (Find the largest JSON block)
-  const startIdx = content.indexOf('{')
-  const endIdx = content.lastIndexOf('}')
+  const firstOpenBrace = content.indexOf('{');
+  const firstOpenBracket = content.indexOf('[');
+
+  let startIdx = -1;
+  let endIdx = -1;
+
+  // Determine if it starts with { or [
+  if (firstOpenBrace !== -1 && (firstOpenBracket === -1 || firstOpenBrace < firstOpenBracket)) {
+    startIdx = firstOpenBrace;
+    endIdx = content.lastIndexOf('}');
+  } else if (firstOpenBracket !== -1) {
+    startIdx = firstOpenBracket;
+    endIdx = content.lastIndexOf(']');
+  }
+
   let jsonStr = ''
 
   if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
     jsonStr = content.substring(startIdx, endIdx + 1)
   } else {
     // Regex fallback
-    const match = content.match(/\{[\s\S]*\}/)
+    const match = content.match(/(\{[\s\S]*\}|\[[\s\S]*\])/)
     jsonStr = match ? match[0] : content.trim()
   }
 
@@ -227,11 +220,12 @@ async function callPerplexity(
 
   const sanitizedJsonStr = cleanJson(jsonStr)
 
-  const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 }
+  const usage = llmResponse.usage || { prompt_tokens: 0, completion_tokens: 0 }
   console.log(`[Usage] Tokens: ${usage.prompt_tokens} in, ${usage.completion_tokens} out`)
 
-  // Log cost
+  // Log cost (approximate, different models have different pricing)
   if (supabase && userId) {
+    // Simple cost estimation placeholder (actual cost depends on model)
     const cost = (usage.prompt_tokens + usage.completion_tokens) * 0.0002 / 1000
     // v20.5: Do NOT await costing to avoid blocking the main result
     supabase.from('coaching_costs').insert({
@@ -239,8 +233,9 @@ async function callPerplexity(
       user_id: userId,
       tokens_in: usage.prompt_tokens,
       tokens_out: usage.completion_tokens,
-      cost_usd: cost
-    }).then(() => { }).catch(e => console.warn('[Cost Logging Failed]', e.message))
+      cost_usd: cost,
+      model: providerName // Log which model was used
+    }).then(() => { }).catch((e: any) => console.warn('[Cost Logging Failed]', e.message))
   }
 
   // Step 3: Try parsing multiple ways
@@ -944,13 +939,12 @@ Detailed Context: ${payload.detailedContext || 'None'} `;
 /**
  * v20.4: New suggestion logic for manual input mode.
  * Generates 8 specific actions for a SINGLE sub-goal.
- */
-/* 
+ * 
  * v20.4.2: Action Types Support (Smart Inference)
  * - Returns { title, type } objects instead of plain strings.
  * - type: 'routine' | 'mission'
  */
-async function suggestActionsV2(
+async function suggestActionsV3(
   payload: {
     subGoal: string
     coreGoal?: string
@@ -961,15 +955,16 @@ async function suggestActionsV2(
   userId?: string,
   supabase?: any
 ) {
-  const isEn = payload.language && payload.language.startsWith('en');
-  const existingActions = payload.existingActions || [];
+  try {
+    const isEn = payload.language && payload.language.startsWith('en');
+    const existingActions = payload.existingActions || [];
 
-  // Build exclusion context
-  const exclusionContext = existingActions.length > 0
-    ? `\n### ALREADY SELECTED (MUST EXCLUDE):\n${existingActions.map(s => `- "${s}"`).join('\n')}\n\n⚠️ DO NOT suggest anything similar to the above. PIVOT to different methods or aspects.`
-    : '';
+    // Build exclusion context
+    const exclusionContext = existingActions.length > 0
+      ? `\n### ALREADY SELECTED (MUST EXCLUDE):\n${existingActions.map(s => `- "${s}"`).join('\n')}\n\n⚠️ DO NOT suggest anything similar to the above. PIVOT to different methods or aspects.`
+      : '';
 
-  const systemPrompt = `
+    const systemPrompt = `
 ### IDENTITY: You are a Strategic Action Planner.
 ### TASK: Design exactly 3 high-impact, actionable items for the given sub-goal.
 
@@ -981,114 +976,117 @@ async function suggestActionsV2(
 5. TYPE & SCHEDULE DEFINITION:
    - "routine": Recurring habits. MUST include "frequency".
    - "mission": One-time milestones with a review cycle. MUST include "cycle".
-   - "reference": Mindset, philosophy, or non-actionable guidelines (e.g., "시장 중심 사고", "사용자 경험 우선"). Does NOT need frequency/cycle.
-   - Analyze keyword and description to set correct type. Mindset/Values should be "reference".
+   - "reference": Mindset, philosophy, or non-actionable guidelines.
 
 ${exclusionContext}
 
-### RULES FOR "keyword":
-- MUST be 2-4 words MAXIMUM
-- MUST be a NOUN PHRASE or short action phrase
-- Max ${isEn ? '25' : '15'} characters
-- Think: "What would this appear as on a BADGE or CATEGORY LABEL?"
-
-### RULES FOR "description":
-- MUST be a COMPLETE SENTENCE (15-30 words)
-- Explain WHY this action matters and HOW it contributes to the sub-goal
-- MUST be significantly longer than the keyword
-
-### EXAMPLES (Korean):
-Sub-goal: "체력 증진"
-{
-  "actions": [
-    { "keyword": "매일 7,000보 걷기", "description": "일상적인 활동량을 확보하여 기초 체력을 다지고 신체 리듬을 개선합니다.", "type": "routine", "frequency": "daily" },
-    { "keyword": "주 3회 고강도 운동", "description": "전문적인 프로그램을 통해 근력을 강화하고 체내 에너지 대사를 최적화합니다.", "type": "routine", "frequency": "weekly" },
-    { "keyword": "전문 피티 10회 등록", "description": "체계적인 지도를 받기 위한 환경을 구축하여 장기적인 운동 습관의 기초를 마련합니다.", "type": "mission", "cycle": "weekly" }
-  ]
-}
-
 ### CRITICAL LANGUAGE RULE:
-LANGUAGE: ${isEn ? 'ENGLISH ONLY. ALL keywords and descriptions MUST be in English. NO Korean characters allowed.' : 'Korean (Polite). 모든 키워드와 설명은 한국어로 작성하세요.'}
+LANGUAGE: ${isEn ? 'ENGLISH ONLY.' : 'Korean (Polite).'}
 `;
 
-  const userPrompt = `Sub-Goal: ${payload.subGoal}
+    const userPrompt = `Sub-Goal: ${payload.subGoal}
 ${payload.coreGoal ? `Context (Core Goal): ${payload.coreGoal}` : ''}
-${existingActions.length > 0 ? `\nExisting Actions Count: ${existingActions.length}` : ''}
 Generate 3 actions.`;
 
-  // Increase temperature slightly for variety
-  const temperature = 0.6;
+    const temperature = 0.6;
 
-  const response = await callPerplexity([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt }
-  ], sessionId, userId, supabase, temperature);
 
-  let rawActions: any[] = [];
 
-  // 1. Attempt to extract array from various response structures
-  if (response && Array.isArray(response.actions)) {
-    rawActions = response.actions;
-  } else if (Array.isArray(response)) {
-    rawActions = response;
-  } else if (response && response.message && typeof response.message === 'string') {
-    try {
-      // Try to find JSON array in message
-      const arrayMatch = response.message.match(/\[[\s\S]*\]/);
-      if (arrayMatch) {
-        const parsed = JSON.parse(arrayMatch[0]);
-        if (Array.isArray(parsed)) rawActions = parsed;
-      } else {
-        // Try to find JSON object with actions key
-        const objectMatch = response.message.match(/\{[\s\S]*\}/);
-        if (objectMatch) {
-          const parsed = JSON.parse(objectMatch[0]);
-          if (parsed.actions && Array.isArray(parsed.actions)) {
-            rawActions = parsed.actions;
-          }
-        }
+    // Call LLM
+    const response = await callPerplexity([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], sessionId, userId, supabase, temperature);
+
+
+
+    let rawActions: any[] = [];
+
+    // Extract Actions
+    if (response && Array.isArray(response.actions)) {
+      rawActions = response.actions;
+    } else if (Array.isArray(response)) {
+      rawActions = response;
+    } else if (response && response.message) {
+      // Regex parse fallback
+      try {
+        const match = typeof response.message === 'string' ? response.message.match(/\[[\s\S]*\]/) : null;
+        if (match) rawActions = JSON.parse(match[0]);
+      } catch (e) {
+
       }
-    } catch (e) {
-      console.warn('Failed to recover actions from message:', e);
     }
+
+
+
+    // Sanitize
+    const cleanActions = rawActions
+      .map(item => {
+        if (!item || typeof item !== 'object') return null;
+        return {
+          keyword: item.keyword || "No Keyword",
+          description: item.description || "No Description",
+          type: item.type || "routine",
+          frequency: item.frequency || "daily",
+          cycle: item.cycle,
+          completion: item.completion_type || item.completion,
+          period_cycle: item.period_cycle || item.mission_period_cycle,
+        };
+      })
+      .filter(item => item !== null)
+      .slice(0, 3);
+
+
+
+    if (cleanActions.length > 0) {
+      return { actions: cleanActions };
+    }
+
+    // Fallback if parsing failed
+    const rawSnippet = response?.message?.substring(0, 100) || 'No response';
+    console.warn(`[suggestActionsV3] Parsing failed. Raw: ${rawSnippet}. Using fallback.`);
+
+    return {
+      actions: [
+        {
+          keyword: "조사하기 (Fallback)",
+          description: `${payload.subGoal} 달성을 위한 구체적인 방법과 사례를 3가지 이상 찾아보세요.`,
+          type: "routine",
+          frequency: "weekly"
+        },
+        {
+          keyword: "계획 수립 (Fallback)",
+          description: "조사한 내용을 바탕으로 실행 가능한 주간/월간 계획을 세워보세요.",
+          type: "mission",
+          cycle: "weekly"
+        },
+        {
+          keyword: "일단 시작하기 (Fallback)",
+          description: "완벽하지 않아도 좋으니, 가장 작은 단위의 행동부터 오늘 바로 시작해보세요.",
+          type: "routine",
+          frequency: "daily"
+        }
+      ]
+    };
+
+  } catch (error: any) {
+    console.error("Critical Error in suggestActionsV3", error);
+
+    // Return friendly error action so user isn't blocked by empty screen
+    const isQuota = error.message && (error.message.includes('429') || error.message.includes('Quota') || error.message.includes('RESOURCE_EXHAUSTED'));
+    const message = isQuota
+      ? "AI 사용량이 많아 잠시 지연되고 있습니다. 잠시 후 다시 시도해주세요."
+      : `오류가 발생했습니다: ${error.message.substring(0, 50)}...`;
+
+    return {
+      actions: [{
+        keyword: "⚠️ AI 응답 지연",
+        description: message,
+        type: "routine",
+        frequency: "daily"
+      }]
+    };
   }
-
-  // 2. Sanitize and Normalize
-  const cleanActions = rawActions
-    .map(item => {
-      // Handle string fallback (default to routine)
-      if (typeof item === 'string') {
-        const trimmed = item.trim();
-        return trimmed ? { keyword: trimmed, description: '', type: 'routine' } : null;
-      }
-
-      // Handle object
-      if (typeof item === 'object' && item !== null) {
-        let keyword = item.keyword || item.title || item.action || item.summary || Object.values(item).find(v => typeof v === 'string') || '';
-        keyword = String(keyword).trim();
-
-        let description = item.description || item.reason || '';
-        description = String(description).trim();
-
-        let type = String(item.type || 'routine').toLowerCase();
-        if (type !== 'routine' && type !== 'mission' && type !== 'reference') type = 'routine';
-
-        let frequency = item.frequency ? String(item.frequency).toLowerCase() : undefined;
-        if (frequency && !['daily', 'weekly', 'monthly'].includes(frequency)) frequency = undefined;
-
-        let cycle = item.cycle ? String(item.cycle).toLowerCase() : undefined;
-        if (cycle && !['daily', 'weekly', 'monthly', 'quarterly', 'yearly'].includes(cycle)) cycle = undefined;
-
-        return keyword ? { keyword, description, type, frequency, cycle } : null;
-      }
-      return null;
-    })
-    .filter(item => item !== null)
-    .slice(0, 3);
-
-  console.log(`[suggestActionsV2] Final actions: ${JSON.stringify(cleanActions)}`);
-
-  return { actions: cleanActions };
 }
 
 async function realityCheck(

@@ -994,7 +994,7 @@ export default function MandalartDetailScreen() {
                     elevation: 3,
                   }}
                 >
-                  {expandedSection === null ? (
+                  {!expandedSubGoal ? (
                     /* Creation Guide - Visible only in Overview */
                     <MandalartCreationGuide />
                   ) : (

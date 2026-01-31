@@ -11,6 +11,7 @@ import {
   Animated,
   Easing,
   ActivityIndicator,
+  Alert,
 } from 'react-native'
 import { X, Lightbulb, Sparkles, RefreshCcw, ChevronDown, ChevronUp, PlusCircle, Check, ArrowLeft } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -203,8 +204,22 @@ export default function ActionInputModal({
         existingActions: existingActions
       })
       setSuggestions(results)
-    } catch (e) {
+
+      if (!results || results.length === 0) {
+        Alert.alert(t('common.notice'), 'No suggestions were generated. Please try again.')
+      }
+    } catch (e: any) {
       console.error('Failed to suggest actions', e)
+      const errorMessage = e?.message || 'Unknown error occurred'
+
+      // Filter out technical jargon if possible, or just show it for debugging
+      if (errorMessage.includes('Missing')) {
+        Alert.alert(t('common.error'), `Configuration Missing: ${errorMessage}`)
+      } else if (errorMessage.includes('[DEBUG]')) {
+        Alert.alert('Debug Info', errorMessage)
+      } else {
+        Alert.alert(t('common.error'), errorMessage) // Show actual error for better debugging
+      }
     } finally {
       setIsSuggesting(false)
     }
