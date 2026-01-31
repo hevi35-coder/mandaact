@@ -29,12 +29,12 @@ export function StreakCard({
     const { timezone } = useUserProfile(user?.id)
 
     // SCREENSHOT MODE OVERRIDE
-    const { IS_SCREENSHOT_MODE } = require('../../lib/config')
+    const { IS_SCREENSHOT_MODE, SCREENSHOT_DATA } = require('../../lib/config')
     const displayFourWeekData = IS_SCREENSHOT_MODE
-        ? Array.from({ length: 28 }, (_, i) => ({
+        ? (SCREENSHOT_DATA.heatmapData || Array.from({ length: 28 }, (_, i) => ({
             date: new Date(Date.now() - (27 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            count: i % 7 === 0 ? 0 : 1 // Mostly active for visual impact
-        }))
+            percentage: i % 7 === 0 ? 0 : 85 // High intensity for vibrant green
+        })))
         : fourWeekData
 
     return (

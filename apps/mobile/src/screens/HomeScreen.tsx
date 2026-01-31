@@ -88,7 +88,16 @@ export default function HomeScreen() {
 
   // Derived state
   const currentLevel = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.level : (gamification?.current_level || 1)
-  const totalXP = IS_SCREENSHOT_MODE ? 1000000 : (gamification?.total_xp || 0) // Arbitrary high XP for level 15
+
+  // XP Progress Calculation
+  const nextLevelXPReq = getXPForCurrentLevel(0, currentLevel).required
+  const mockProgressXP = Math.floor(nextLevelXPReq * (SCREENSHOT_DATA.xpProgress || 0.85))
+  const mockTotalXP = calculateXPForLevel(currentLevel) + mockProgressXP
+
+  const totalXP = IS_SCREENSHOT_MODE
+    ? (SCREENSHOT_DATA.totalXP > 0 ? SCREENSHOT_DATA.totalXP : mockTotalXP)
+    : (gamification?.total_xp || 0)
+
   const nickname = IS_SCREENSHOT_MODE ? 'ASO_Expert' : (gamification?.nickname || user?.email?.split('@')[0] || t('home.nickname.default', 'User'))
 
   // XP Progress Calculation
