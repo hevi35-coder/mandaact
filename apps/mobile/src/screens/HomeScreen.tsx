@@ -116,7 +116,7 @@ export default function HomeScreen() {
     ? (SCREENSHOT_DATA.totalXP > 0 ? SCREENSHOT_DATA.totalXP : mockTotalXP)
     : (gamification?.total_xp || 0)
 
-  const nickname = IS_SCREENSHOT_MODE ? 'ASO_Expert' : (gamification?.nickname || user?.email?.split('@')[0] || t('home.nickname.default', 'User'))
+  const nickname = IS_SCREENSHOT_MODE ? (SCREENSHOT_DATA.nickname || 'ASO_Expert') : (gamification?.nickname || user?.email?.split('@')[0] || t('home.nickname.default', 'User'))
 
   // XP Progress Calculation
   const { current: levelXP, required: levelRequirement, percentage: xpPercentageRaw } = getXPForCurrentLevel(totalXP, currentLevel)
@@ -200,13 +200,15 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <OnboardingChecklist
-            hasCreatedGoal={hasActiveMandalarts}
-            hasSetNotifications={hasNotificationsEnabled}
-            hasFirstAction={totalChecks > 0}
-            hasCompletedTutorial={hasCompletedTutorial}
-            signupDate={user?.created_at}
-          />
+          {!IS_SCREENSHOT_MODE && (
+            <OnboardingChecklist
+              hasCreatedGoal={hasActiveMandalarts}
+              hasSetNotifications={hasNotificationsEnabled}
+              hasFirstAction={totalChecks > 0}
+              hasCompletedTutorial={hasCompletedTutorial}
+              signupDate={user?.created_at}
+            />
+          )}
 
 
 
