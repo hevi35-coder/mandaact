@@ -13,17 +13,32 @@ Name them exactly as follows and place them in the correct folders:
 
 ### 🇺🇸 English
 Folder: `docs/marketing/assets/raw/en/`
-- `01_home.png`: Home screen showing "Today" view with progress.
-- `02_modal.png`: Action Input Modal showing AI suggestions (Routine/Weekly).
-- `03_report.png`: Report screen showing the "First Report Free" button.
-- `04_gamification.png`: Profile or Badge screen showing levels/badges.
+- `01_home.png`: **Action & Streak**
+  - [ ] Progress bar must be > 80% full (Green/Blue).
+  - [ ] Show a "Streak" (fire icon) active (e.g., 3 days).
+  - [ ] At least one chip/section marked as completed.
+- `02_modal.png`: **AI Magic Moment**
+  - [ ] Type a simple goal (e.g., "Run 5km").
+  - [ ] **Critical**: Capture the moment the AI bubble appears showing `[Routine | Weekly]`.
+- `03_report.png`: **Visual Feedback**
+  - [ ] Show the "Score" or "Graph" section of the report.
+  - [ ] Ensure the "Generate" button is visible.
+- `04_gamification.png`: **Progress & Badge**
+  - [ ] Show a Level (e.g., Lv. 5) with high XP progress.
+  - [ ] Show at least one colorful, unlocked badge.
 
 ### 🇰🇷 Korean
 Folder: `docs/marketing/assets/raw/ko/`
-- `01_home.png`: "오늘의 실천" 화면.
-- `02_modal.png`: AI 추천(루틴/매일 등)이 떠있는 입력 모달 화면.
-- `03_report.png`: "리포트 생성(무료)" 버튼이 보이는 화면.
-- `04_gamification.png`: 배지 또는 레벨 화면.
+- `01_home.png`: **성취감 강조**
+  - [ ] 진행률 80% 이상, 스트릭(불꽃) 활성화 상태.
+  - [ ] "오늘의 실천" 체크가 된 상태.
+- `02_modal.png`: **AI 자동 완성**
+  - [ ] "매일 스쿼트" 입력 중.
+  - [ ] **필수**: AI 말풍선이 `[Routine | 매일]`을 제안하는 순간 포착.
+- `03_report.png`: **전문성 강조**
+  - [ ] 주간 리포트의 그래프/점수 화면.
+- `04_gamification.png`: **레벨업/배지**
+  - [ ] 레벨 5 이상, 배지 획득 화면.
 
 ## 3. Run the Script
 From the project root:

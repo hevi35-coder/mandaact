@@ -96,16 +96,16 @@ DEVICES = {
 # Content Localization (Full 5-screen set for each language)
 CONTENT = {
     "en": [
-        {"id": "1_home", "title": "Turn Ambition\ninto Daily Action", "raw_filename": "01_home.png", "out_filename": "01_home.png"},
-        {"id": "2_modal", "title": "AI Auto-Organizes\nYour Plans", "raw_filename": "02_modal.png", "out_filename": "02_modal.png"},
-        {"id": "3_report", "title": "Weekly AI Analysis\n& Feedback", "raw_filename": "03_report.png", "out_filename": "03_report.png"},
-        {"id": "4_gamification", "title": "Level Up\nYour Life", "raw_filename": "04_gamification.png", "out_filename": "04_gamification.png"}
+        {"id": "1_home", "title": "Crush Your\nGoals Daily", "raw_filename": "01_home.png", "out_filename": "01_home.png"},
+        {"id": "2_modal", "title": "Just Type.\nAI Does the Rest.", "raw_filename": "02_modal.png", "out_filename": "02_modal.png"},
+        {"id": "3_report", "title": "Get Your\n1:1 Coaching", "raw_filename": "03_report.png", "out_filename": "03_report.png"},
+        {"id": "4_gamification", "title": "Make Success\nAddictive", "raw_filename": "04_gamification.png", "out_filename": "04_gamification.png"}
     ],
     "ko": [
-        {"id": "1_home", "title": "목표를 현실로 만드는\n하루 루틴", "raw_filename": "01_home.png", "out_filename": "01_home.png"},
-        {"id": "2_modal", "title": "AI가 제안하는\n스마트한 실행 계획", "raw_filename": "02_modal.png", "out_filename": "02_modal.png"},
-        {"id": "3_report", "title": "매주 도착하는\nAI 정밀 코칭 리포트", "raw_filename": "03_report.png", "out_filename": "03_report.png"},
-        {"id": "4_gamification", "title": "게임처럼 즐기는\n자기계발", "raw_filename": "04_gamification.png", "out_filename": "04_gamification.png"}
+        {"id": "1_home", "title": "목표 달성을\n습관으로", "raw_filename": "01_home.png", "out_filename": "01_home.png"},
+        {"id": "2_modal", "title": "입력만 하세요\nAI가 완성합니다", "raw_filename": "02_modal.png", "out_filename": "02_modal.png"},
+        {"id": "3_report", "title": "내 손안의\n전담 코치", "raw_filename": "03_report.png", "out_filename": "03_report.png"},
+        {"id": "4_gamification", "title": "게임처럼 빠져드는\n성장 시스템", "raw_filename": "04_gamification.png", "out_filename": "04_gamification.png"}
     ]
 }
 
