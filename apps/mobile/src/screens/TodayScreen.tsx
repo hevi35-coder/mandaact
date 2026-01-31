@@ -81,7 +81,6 @@ export default function TodayScreen() {
 
   // Scroll to top on tab re-press
   const scrollRef = useRef<ScrollView>(null)
-  const unconfiguredSectionYRef = useRef<number | null>(null)
   useScrollToTop('Today', scrollRef)
 
   // Calculate "today" in user's timezone
@@ -300,13 +299,20 @@ export default function TodayScreen() {
     const completed: typeof actions = []
 
     actions.forEach((action) => {
-      if (!isActionConfigured(action)) {
-        unconfigured.push(action)
-      } else if (action.period_progress?.isCompleted && !action.is_checked) {
+      if (action.period_progress?.isCompleted && !action.is_checked) {
         // Period target completed and not checked today - move to completed section
+        // Note: We might want to rethink if this should also be mixed in, but for now only Unconfigured was requested.
         completed.push(action)
       } else {
+        // Configured AND Unconfigured go here now (Mixed)
         configured.push(action)
+
+        if (!isActionConfigured(action)) {
+          unconfigured.push(action) // Keep tracking for count if needed, or remove. 
+          // actually we assume unconfiguredActions is used for "Heroic Mode" check (line 366).
+          // If we mix them, 'filteredActions' will have them.
+          // Let's keep 'unconfigured' array for now to avoid breaking other logic, but 'configured' will contain ALL non-completed.
+        }
       }
     })
 
@@ -344,6 +350,9 @@ export default function TodayScreen() {
     })
 
     return visibleConfigured.filter((action) => {
+      // Always show unconfigured actions (Setup needed)
+      if (!isActionConfigured(action)) return true
+
       // Apply shouldShowToday logic
       const shouldShow = shouldShowToday(action, selectedDate)
       if (!shouldShow) return false
@@ -357,23 +366,15 @@ export default function TodayScreen() {
     })
   }, [configuredActions, activeFilters, selectedDate, activeBySubGoal, minimumBySubGoal, minimumModeEnabled])
 
-  // State for unconfigured and completed section collapse
-  const [unconfiguredCollapsed, setUnconfiguredCollapsed] = useState(true)
+  // State for completed section collapse
   const [completedCollapsed, setCompletedCollapsed] = useState(true)
-
-  // Auto-expand unconfigured section if no configured actions exist (Heroic Mode)
-  useEffect(() => {
-    if (configuredActions.length === 0 && unconfiguredActions.length > 0) {
-      setUnconfiguredCollapsed(false)
-    }
-  }, [configuredActions.length, unconfiguredActions.length])
 
   // Determine empty state scenario for when filteredActions is empty
   const emptyStateScenario = useMemo(() => {
     // Only determine scenario if we have actions but filtered result is empty
     if (actions.length === 0 || filteredActions.length > 0) return null
 
-    // Scenario 1: All actions are unconfigured - REMOVED (Redundant with list)
+    // Scenario 1: All actions are unconfigured - REMOVED (Mixed in now)
     // if (configuredActions.length === 0 && unconfiguredActions.length > 0) {
     //   return 'unconfigured' as const
     // }
@@ -402,13 +403,9 @@ export default function TodayScreen() {
 
     switch (emptyStateScenario) {
       case 'unconfigured':
-        // Expand unconfigured section and scroll to it
-        setUnconfiguredCollapsed(false)
-        requestAnimationFrame(() => {
-          const y = unconfiguredSectionYRef.current
-          if (y == null) return
-          scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true })
-        })
+        // Unconfigured logic is now mixed in, so this case might be unreachable.
+        // But we keep it empty or remove it if 'white' empty state returns it?
+        // Actually we removed the return of 'unconfigured' scenario, so this is dead code.
         break
       case 'noFilterMatch':
         // Clear all filters
@@ -759,7 +756,7 @@ export default function TodayScreen() {
         >
           {/* Page Title - Center Aligned */}
           <View className="mb-5">
-            <View className="items-center mb-4">
+            <View className="items-center">
               <View className="flex-row items-center">
                 <Text
                   className="text-3xl text-gray-900"
@@ -776,16 +773,20 @@ export default function TodayScreen() {
               </View>
             </View>
 
-            {/* Date Navigation */}
-            <DateNavigation
-              selectedDate={selectedDate}
-              isToday={isToday}
-              timezone={timezone}
-              onPreviousDay={handlePreviousDay}
-              onNextDay={handleNextDay}
-              onToday={handleToday}
-              onDateSelect={handleDateSelect}
-            />
+            {/* Date Navigation - Hide when empty */}
+            {actions.length > 0 && (
+              <View className="mt-4">
+                <DateNavigation
+                  selectedDate={selectedDate}
+                  isToday={isToday}
+                  timezone={timezone}
+                  onPreviousDay={handlePreviousDay}
+                  onNextDay={handleNextDay}
+                  onToday={handleToday}
+                  onDateSelect={handleDateSelect}
+                />
+              </View>
+            )}
           </View>
 
           {/* Progress Card with Type Filter */}
@@ -1049,73 +1050,7 @@ export default function TodayScreen() {
                   </View>
                 )}
 
-                {/* Unconfigured Actions Section */}
-                {unconfiguredActions.length > 0 && (
-                  <Animated.View
-                    entering={FadeInUp.delay(300).duration(400)}
-                    className="mb-4"
-                  >
-                    {/* Section Header */}
-                    <Pressable
-                      onPress={() => setUnconfiguredCollapsed(!unconfiguredCollapsed)}
-                      className={`flex-row items-center justify-between p-4 rounded-lg border ${configuredActions.length === 0
-                        ? 'bg-amber-50 border-amber-200 shadow-sm' // Heroic style
-                        : 'bg-gray-50 border-gray-200'
-                        }`}
-                      onLayout={(e) => {
-                        unconfiguredSectionYRef.current = e.nativeEvent.layout.y
-                      }}
-                    >
-                      <View className="flex-1">
-                        <View className="flex-row items-center">
-                          <Settings size={16} color="#6b7280" />
-                          <Text
-                            className="text-base font-semibold text-gray-900 ml-2"
-                            style={{ fontFamily: 'Pretendard-SemiBold' }}
-                          >
-                            {t('today.unconfigured.title')}
-                          </Text>
-                          <Text className="text-sm text-gray-500 ml-2">
-                            {unconfiguredActions.length}
-                          </Text>
-                        </View>
-                        <Text
-                          className="text-sm text-gray-500 mt-1"
-                          numberOfLines={1}
-                          style={{ fontFamily: 'Pretendard-Regular' }}
-                        >
-                          {t('today.unconfigured.hint')}
-                        </Text>
-                      </View>
-                      {unconfiguredCollapsed ? (
-                        <ChevronRight size={20} color="#6b7280" />
-                      ) : (
-                        <ChevronDown size={20} color="#6b7280" />
-                      )}
-                    </Pressable>
-
-                    {/* Unconfigured Items - Same style as ActionItem */}
-                    {!unconfiguredCollapsed && (() => {
-                      // Phone: single column (iPad has its own layout at top level)
-                      return (
-                        <View className="mt-2 space-y-2">
-                          {unconfiguredActions.map((action) => (
-                            <ActionItem
-                              key={action.id}
-                              action={action}
-                              onToggleCheck={handleToggleCheck}
-                              onTypeBadgePress={handleTypeBadgePress}
-                              canCheck={canCheck}
-                              isChecking={checkingActions.has(action.id)}
-                              isTablet={isTablet}
-                              isUnconfigured={true}
-                            />
-                          ))}
-                        </View>
-                      )
-                    })()}
-                  </Animated.View>
-                )}
+                {/* Unconfigured Actions Section - REMOVED (Mixed into main list) */}
 
                 {/* Completed Actions Section - Period target achieved */}
                 {completedActions.length > 0 && (

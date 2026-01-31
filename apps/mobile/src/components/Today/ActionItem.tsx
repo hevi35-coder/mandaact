@@ -71,40 +71,34 @@ export const ActionItem = React.memo(({
         }
 
         return (
-            <View className="flex-row items-center gap-1.5 flex-wrap justify-end">
+            <View className="flex-col items-center gap-1">
                 {/* Type Badge */}
                 <Pressable
                     onPress={() => onTypeBadgePress(action)}
-                    className="flex-row items-center bg-gray-100 px-2 py-1 rounded-lg border border-gray-200 active:bg-gray-200"
+                    className="flex-row items-center bg-gray-100 px-2 py-1.5 rounded-lg border border-gray-200 active:bg-gray-200"
                 >
                     <ActionTypeIcon type={action.type} size={14} />
-                    <Text className="text-xs text-gray-600 ml-1">
+                    <Text className="text-xs text-gray-600 ml-1 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>
                         {formatTypeDetailsLocalized(action, t) ||
                             t(`actionType.${action.type}`)}
                     </Text>
                 </Pressable>
 
-                {/* Period Progress Badge */}
+                {/* Period Progress Text */}
                 {!isTablet && action.period_progress && action.period_progress.target !== null && (!action.routine_weekdays || action.routine_weekdays.length === 0) && (
-                    <View
-                        className={`px-2 py-1 rounded-lg ${action.period_progress.isCompleted
-                            ? 'bg-green-100 border border-green-200'
-                            : 'bg-gray-100 border border-gray-200'
+                    <Text
+                        className={`text-[11px] ${action.period_progress.isCompleted
+                            ? 'text-green-600 font-bold'
+                            : 'text-gray-400 font-medium'
                             }`}
+                        style={{ fontFamily: 'Pretendard-Medium' }}
                     >
-                        <Text
-                            className={`text-xs ${action.period_progress.isCompleted
-                                ? 'text-green-700'
-                                : 'text-gray-600'
-                                }`}
-                        >
-                            {t(`actionType.periodLabel.${action.period_progress.periodLabel}`, {
-                                defaultValue: action.period_progress.periodLabel
-                            })}{' '}
-                            {action.period_progress.checkCount}/{action.period_progress.target}
-                            {action.period_progress.isCompleted && ' ✓'}
-                        </Text>
-                    </View>
+                        {t(`actionType.periodLabel.${action.period_progress.periodLabel}`, {
+                            defaultValue: action.period_progress.periodLabel
+                        })}{' '}
+                        {action.period_progress.checkCount}/{action.period_progress.target}
+                        {action.period_progress.isCompleted && ' ✓'}
+                    </Text>
                 )}
             </View>
         )

@@ -159,13 +159,13 @@
       "changed": "닉네임이 변경되었습니다.",
       "errors": {
         "tooShort": "닉네임은 최소 2자 이상이어야 합니다",
-        "tooLong": "닉네임은 최대 12자까지 가능합니다",
-        "invalidChars": "닉네임은 한글, 영문, 숫자만 사용 가능합니다",
+        "tooLong": "닉네임은 최대 20자까지 가능합니다",
+        "invalidChars": "사용할 수 없는 문자가 포함되어 있습니다",
         "alreadyTaken": "이미 사용 중인 닉네임입니다",
         "saveError": "닉네임 저장 중 오류가 발생했습니다",
         "updateError": "닉네임 변경 중 오류가 발생했습니다"
       },
-      "hint": "한글, 영문, 숫자 허용 (2~12자)"
+      "hint": "자유롭게 입력해주세요 (이모지 포함 최대 20자)"
     },
     "coachingResume": {
       "title": "AI 코칭 진행 중",
@@ -411,7 +411,7 @@
       "validationMin": "최소 {{count}}개의 서브 목표가 필요해요.",
       "summary": "서브 목표 저장됨.",
       "prompt": "다음: 서브 목표 작성",
-      "aiSuggest": "AI 추천 받기",
+      "aiSuggest": "추천 받기",
       "loadingText": "AI 코치가 목표를 분석 중입니다..."
     },
     "step4": {
@@ -767,7 +767,7 @@
         "actionsLabel": "실천 항목 (8개)",
         "actionPlaceholder": "실천 항목 {{index}}",
         "aiSuggest": {
-          "title": "세부 목표 AI 추천",
+          "title": "AI 추천 세부 목표",
           "subtitle": "핵심 목표에 어울리는 세부 목표 제안",
           "emptyHint": "핵심 목표에 어울리는 세부 목표 제안",
           "getHelp": "추천 받기",
@@ -838,11 +838,11 @@
           "tip3_desc": "당장 오늘 시작할 수 있을 만큼 부담 없는 크기로 쪼개보세요."
         },
         "aiSuggest": {
-          "title": "AI 추천 실천항목",
-          "subtitle": "목표 달성을 위한 구체적인 행동을 제안",
+          "title": "AI 추천 실천 항목",
+          "subtitle": "목표 달성을 위한 구체적인 행동 제안",
           "getHelp": "추천 받기",
           "loading": "분석 중...",
-          "analyzing": "맞춤형 제안을 분석 중이에요..."
+          "analyzing": "분석 중..."
         }
       }
     },
@@ -939,11 +939,17 @@
         "title": "새로 시작하기",
         "description": "AI 추천과 함께 처음부터 작성",
         "tapToEdit": "셀을 탭하여 목표와 실천 항목을 입력하세요",
-        "guideTitle": "만다라트 작성 안내",
+        "guideTitle": "나만의 지도 설계하기",
         "guideItems": [
-          "중앙의 핵심 목표를 먼저 작성하세요",
-          "주변 8칸에 세부 목표를 작성하세요",
-          "각 세부 목표마다 8개의 실천 항목을 추가하세요"
+          "가장 중요한 핵심 목표를 중앙에 적어보세요.",
+          "목표를 지탱할 8가지 키워드를 떠올려보세요.",
+          "거창하지 않아도 좋습니다. 단순한 단어로 시작하세요."
+        ],
+        "subGoalGuideTitle": "나만의 속도로 시작하세요",
+        "subGoalGuideItems": [
+          "빈 칸이 있어도 괜찮습니다. 천천히 채워가세요.",
+          "완벽한 계획보다는 꾸준함이 더 중요합니다.",
+          "막막할 땐 '추천 받기'로 AI의 도움을 받아보세요."
         ]
       },
       "confirmDiscard": "작성 중인 내용을 취소하시겠습니까?",
@@ -970,7 +976,9 @@
       },
       "validation": {
         "enterTitle": "핵심 목표를 입력해주세요.",
-        "enterCoreGoal": "핵심 목표를 입력해주세요."
+        "enterCoreGoal": "핵심 목표를 입력해주세요.",
+        "enterSubGoal": "세부 목표를 먼저 입력해주세요.",
+        "subGoalRequiredTitle": "순서대로 채워보세요"
       },
       "success": {
         "title": "성공",
@@ -1017,13 +1025,13 @@
       },
       "usage": {
         "title": "사용 방법",
-        "tapToView": "각 영역을 탭하여 상세보기 및 수정이 가능합니다.",
-        "backToOverview": "상단 뒤로가기(<) 버튼을 눌러 전체 보기로 돌아갑니다.",
+        "tapToView": "각 영역을 탭하여 구체적인 목표와 실천 계획을 고도화하세요.",
+        "backToOverview": "상단 뒤로가기(<) 버튼으로 전체 구도를 확인하며 밸런스를 맞춰보세요.",
         "smallActions": "작은 실천들이 모여 큰 변화를 만듭니다. 매일의 성장을 기록해보세요.",
-        "typeLabel": "타입 구분:",
+        "typeLabel": "실천 스타일:",
         "routine": "루틴",
         "mission": "미션",
-        "reference": "참고"
+        "mind": "마인드"
       }
     },
     "delete": {

@@ -25,7 +25,7 @@ import Animated, {
     Easing
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChevronLeft, Info, Check, RotateCw, Target, Lightbulb, Plus } from 'lucide-react-native'
+import { ChevronLeft, Info, Check, RotateCw, Target, Lightbulb, Plus, Sparkles } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
@@ -364,6 +364,23 @@ export function PreviewStep({
 
     // Handler for action cell press - open action modal
     const handleActionPress = (subGoalDataPos: number, actionDataPos: number) => {
+        const subGoal = getSubGoalByDataPosition(subGoalDataPos)
+
+        // Enforce Sub Goal first
+        if (!subGoal?.title?.trim()) {
+            Alert.alert(
+                t('mandalart.create.validation.subGoalRequiredTitle', '순서대로 채워보세요'),
+                t('mandalart.create.validation.enterSubGoal', '세부 목표를 먼저 입력해주세요.'),
+                [
+                    {
+                        text: t('common.confirm', '확인'),
+                        onPress: () => handleSubGoalEdit(subGoalDataPos)
+                    }
+                ]
+            )
+            return
+        }
+
         setSelectedSubGoalPosition(subGoalDataPos)
         setSelectedActionPosition(actionDataPos)
         setActionModalOpen(true)
@@ -494,7 +511,7 @@ export function PreviewStep({
                         {/* Progress Stats Bar - Permanently Visible */}
                         <View className="mb-3 justify-center">
                             <View
-                                className="bg-white px-5 py-3 rounded-2xl border border-gray-100 flex-row items-center justify-center"
+                                className="bg-white px-4 py-3 rounded-2xl border border-gray-100 flex-row items-center justify-center"
                                 style={{
                                     shadowColor: '#000',
                                     shadowOffset: { width: 0, height: 2 },
@@ -503,7 +520,7 @@ export function PreviewStep({
                                     elevation: 2,
                                 }}
                             >
-                                <View className="flex-row items-center gap-x-5">
+                                <View className="flex-row items-center gap-x-2">
                                     <View className="flex-row items-center">
                                         <Text className="text-[13px] text-gray-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>{t('mandalart.detail.stats.coreGoal', '핵심목표')} </Text>
                                         <Text className="text-[14px] text-gray-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
@@ -650,74 +667,25 @@ export function PreviewStep({
                                     /* Usage Instructions - Visible only when Expanded */
                                     <>
                                         <View className="flex-row items-center mb-4">
-                                            <Lightbulb size={20} color="#3b82f6" />
+                                            <Sparkles size={20} color="#3b82f6" />
                                             <Text
                                                 className="text-base text-gray-900 ml-2"
                                                 style={{ fontFamily: 'Pretendard-SemiBold' }}
                                             >
-                                                {t('mandalart.detail.usage.title', '사용 방법')}
+                                                {t('mandalart.create.manualInput.subGoalGuideTitle', '나만의 속도로 시작하세요')}
                                             </Text>
                                         </View>
-
-                                        {/* Item 1: Tap to View */}
-                                        <View className="flex-row items-start mb-2.5">
-                                            <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
-                                            <Text
-                                                className="text-sm text-gray-600 ml-2 flex-1"
-                                                style={{ fontFamily: 'Pretendard-Regular' }}
-                                            >
-                                                {t('mandalart.detail.usage.tapToView', '각 영역을 탭하여 상세보기 및 수정이 가능합니다.')}
-                                            </Text>
-                                        </View>
-
-                                        {/* Item 2: Navigation Hint */}
-                                        <View className="flex-row items-start mb-2.5">
-                                            <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
-                                            <Text
-                                                className="text-sm text-gray-600 ml-2 flex-1"
-                                                style={{ fontFamily: 'Pretendard-Regular' }}
-                                            >
-                                                {t('mandalart.detail.usage.backToOverview', '상단 뒤로가기(<) 버튼을 눌러 전체 보기로 돌아갑니다.')}
-                                            </Text>
-                                        </View>
-
-                                        {/* Item 3: Types Explanation */}
-                                        <View className="flex-row items-start">
-                                            <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
-                                            <View className="ml-2 flex-1">
-                                                <View className="flex-row items-center">
-                                                    <Text
-                                                        className="text-sm text-gray-600"
-                                                        style={{ fontFamily: 'Pretendard-Regular' }}
-                                                    >
-                                                        {t('mandalart.detail.usage.typeLabel', '타입 구분:')}{' '}
-                                                    </Text>
-                                                    <View className="flex-row items-center bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
-                                                        <RotateCw size={12} color="#3b82f6" />
-                                                        <Text
-                                                            className="text-[12px] text-gray-500 ml-1 mr-2"
-                                                            style={{ fontFamily: 'Pretendard-Medium' }}
-                                                        >
-                                                            {t('mandalart.detail.usage.routine')}
-                                                        </Text>
-                                                        <Target size={12} color="#10b981" />
-                                                        <Text
-                                                            className="text-[12px] text-gray-500 ml-1 mr-2"
-                                                            style={{ fontFamily: 'Pretendard-Medium' }}
-                                                        >
-                                                            {t('mandalart.detail.usage.mission')}
-                                                        </Text>
-                                                        <Lightbulb size={12} color="#f59e0b" />
-                                                        <Text
-                                                            className="text-[12px] text-gray-500 ml-1"
-                                                            style={{ fontFamily: 'Pretendard-Medium' }}
-                                                        >
-                                                            {t('mandalart.detail.usage.reference')}
-                                                        </Text>
-                                                    </View>
-                                                </View>
+                                        {(t('mandalart.create.manualInput.subGoalGuideItems', { returnObjects: true }) as string[] || []).map((item, index, arr) => (
+                                            <View key={index} className={`flex-row items-start ${index === arr.length - 1 ? '' : 'mb-2.5'}`}>
+                                                <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
+                                                <Text
+                                                    className="text-sm text-gray-600 ml-2 flex-1"
+                                                    style={{ fontFamily: 'Pretendard-Regular' }}
+                                                >
+                                                    {item}
+                                                </Text>
                                             </View>
-                                        </View>
+                                        ))}
                                     </>
                                 )}
                             </View>

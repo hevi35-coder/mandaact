@@ -370,8 +370,8 @@ export default function ActionInputModal({
               disabled={isSuggesting}
               className="ml-2 px-4 py-2 bg-purple-600 rounded-xl active:bg-purple-700 disabled:bg-purple-300"
             >
-              <Text className="text-white font-bold text-xs" style={{ fontFamily: 'Pretendard-Bold' }}>
-                {isSuggesting ? t('mandalart.modal.action.aiSuggest.loading', 'Analyzing...') : t('mandalart.modal.subGoal.aiSuggest.getHelp', 'Get Ideas')}
+              <Text className="text-white font-bold text-sm" style={{ fontFamily: 'Pretendard-Bold' }}>
+                {isSuggesting ? t('mandalart.modal.action.aiSuggest.loading', 'Analyzing...') : t('mandalart.modal.action.aiSuggest.getHelp', 'Get Ideas')}
               </Text>
             </Pressable>
           )}
@@ -385,7 +385,7 @@ export default function ActionInputModal({
                   <RefreshCcw size={24} color="#9333ea" />
                 </Animated.View>
                 <Text className="text-sm text-purple-400 font-medium" style={{ fontFamily: 'Pretendard-Medium' }}>
-                  {t('mandalart.modal.action.aiSuggest.analyzing', 'Analyzing personalized suggestions...')}
+                  {t('mandalart.modal.action.aiSuggest.loading', 'Analyzing...')}
                 </Text>
               </View>
             ) : (
@@ -423,9 +423,9 @@ export default function ActionInputModal({
                                 </Text>
                               </View>
                               {index === 0 && (
-                                <View className="bg-purple-600 px-2 py-0.5 rounded-full shadow-sm">
-                                  <Text className="text-[10px] text-white font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
-                                    ✨ {t('mandalart.modal.subGoal.aiSuggest.suggested') || '추천'}
+                                <View className="bg-purple-100 border border-purple-400 px-2 py-0.5 rounded-full">
+                                  <Text className="text-[10px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                    {t('mandalart.modal.subGoal.aiSuggest.suggested') || '추천'}
                                   </Text>
                                 </View>
                               )}

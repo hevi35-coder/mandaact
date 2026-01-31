@@ -69,7 +69,7 @@ export function ActiveEmptyState({
                     {title}
                 </Text>
                 <Text
-                    className="text-base text-gray-500 text-center mb-6 leading-relaxed px-2 h-[48px]"
+                    className="text-base text-gray-500 text-center mb-6 leading-relaxed px-2"
                     numberOfLines={2}
                     style={{ fontFamily: 'Pretendard-Regular' }}
                 >

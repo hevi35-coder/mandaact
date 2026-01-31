@@ -180,8 +180,8 @@ export function ActionTypeSettingsView({
                                 {option.label}
                             </Text>
                             {isAiSuggested && (
-                                <View className="bg-purple-100 px-1 py-0.5 rounded ml-0.5">
-                                    <Text className="text-[9px] text-purple-600 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                <View className="bg-purple-100 border border-purple-400 px-1.5 py-0.5 rounded-full ml-1">
+                                    <Text className="text-[9px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
                                         {t('mandalart.modal.subGoal.aiSuggest.suggested', 'Suggested')}
                                     </Text>
                                 </View>

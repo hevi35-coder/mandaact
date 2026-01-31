@@ -11,6 +11,7 @@ import { ChevronDown, ChevronRight, Grid3X3 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { ActionItem } from './ActionItem'
 import { formatNumericDateTime } from '../../lib/dateFormat'
+import { isActionConfigured } from '@mandaact/shared'
 import type { MandalartSectionProps } from './types'
 
 export const MandalartSection = React.memo(({
@@ -89,6 +90,7 @@ export const MandalartSection = React.memo(({
                             canCheck={canCheck}
                             isChecking={checkingActions.has(action.id)}
                             isTablet={isTablet}
+                            isUnconfigured={!isActionConfigured(action)}
                             showYesterdayButton={yesterdayMissedIds?.has(action.id)}
                             onYesterdayCheckCompleted={onYesterdayCheckCompleted}
                         />

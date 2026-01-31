@@ -60,19 +60,8 @@ export function NicknameModal({
         setNicknameError('')
 
         try {
-            // Check if nickname is already taken
-            const { data: existing } = await supabase
-                .from('user_levels')
-                .select('nickname')
-                .ilike('nickname', newNickname)
-                .neq('user_id', user.id)
-                .maybeSingle()
-
-            if (existing) {
-                setNicknameError(t(NICKNAME_ERRORS.ALREADY_TAKEN))
-                setNicknameSaving(false)
-                return
-            }
+            // Uniqueness check removed - Duplicates allowed per new policy
+            // if (existing) logic deleted
 
             // Update nickname
             const { error: updateError } = await supabase
@@ -120,21 +109,13 @@ export function NicknameModal({
                         </Pressable>
                     </View>
 
-                    {/* Description */}
-                    <Text className="text-sm text-gray-500 mb-4">
-                        {t('home.nickname.description')}
-                    </Text>
-
                     {/* Input */}
                     <View className="mb-4">
-                        <Text className="text-sm font-medium text-gray-700 mb-2">
-                            {t('home.nickname.label')}
-                        </Text>
                         <TextInput
                             value={newNickname}
                             onChangeText={setNewNickname}
                             placeholder={t('home.nickname.placeholder')}
-                            maxLength={12}
+                            maxLength={20}
                             editable={!nicknameSaving}
                             className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
                             placeholderTextColor="#9ca3af"
