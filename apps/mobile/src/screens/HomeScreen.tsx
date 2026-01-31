@@ -63,6 +63,9 @@ export default function HomeScreen() {
   // Translation for badges
   const translateBadge = useTranslateBadge()
 
+  // SCREENSHOT MODE OVERRIDE
+  const { IS_SCREENSHOT_MODE, SCREENSHOT_DATA } = require('../lib/config')
+
   // Data fetching
   const { data: gamification, isLoading: gamificationLoading } = useUserGamification(user?.id)
   const { data: profileStats, isLoading: profileStatsLoading } = useProfileStats(user?.id)
@@ -71,23 +74,27 @@ export default function HomeScreen() {
   const { data: realUserBadges = [] } = useUserBadges(user?.id)
 
   // MOCK BADGES FOR SCREENSHOT MODE
-  const userBadges = IS_SCREENSHOT_MODE && SCREENSHOT_DATA.badges
-    ? SCREENSHOT_DATA.badges.map((key: string) => ({
-      id: key,
-      achievement_id: key,
-      user_id: user?.id || 'mock',
-      unlocked_at: new Date().toISOString()
-    }))
-    : realUserBadges
+  const userBadges = React.useMemo(() => {
+    if (!IS_SCREENSHOT_MODE || !SCREENSHOT_DATA.badges) return realUserBadges;
+
+    return SCREENSHOT_DATA.badges.map((key: string) => {
+      // Try to find the actual UUID from badge definitions for reliable UI coloring
+      const badgeDef = badges.find(b => b.key === key);
+      return {
+        id: key,
+        achievement_id: badgeDef?.id || key,
+        user_id: user?.id || 'mock',
+        unlocked_at: new Date().toISOString()
+      };
+    });
+  }, [IS_SCREENSHOT_MODE, SCREENSHOT_DATA.badges, realUserBadges, badges, user?.id]);
+
   const { data: badgeProgress = [] } = useBadgeProgress(user?.id)
   const { data: activeMandalarts = [] } = useActiveMandalarts(user?.id)
   const hasActiveMandalarts = activeMandalarts.length > 0
   const { profile: userProfile } = useUserProfile(user?.id)
   const [hasNotificationsEnabled, setHasNotificationsEnabled] = useState(false)
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false)
-
-  // SCREENSHOT MODE OVERRIDE
-  const { IS_SCREENSHOT_MODE, SCREENSHOT_DATA } = require('../lib/config')
 
   // Handlers
   const openNicknameModal = useCallback(() => {
