@@ -69,9 +69,33 @@ xcrun simctl status_bar booted clear
    - Password: `Review2025!`
 5. **Auto-confirm User**를 체크하거나, 생성 후 이메일 인증을 수동으로 'Confirmed' 처리합니다.
 
-### 앱에서 확인 방법
-1. 로그인 화면에서 상단 **"MandaAct" 로고를 10번 연속으로** 누릅니다.
-2. 하단에 나타나는 `Reviewer Login` 버튼을 누르면 위 계정으로 즉시 로그인됩니다.
+### 앱 심사 정보 (App Store Review Notes) 통합 정리
+심사 제출 시 **[앱 심사 정보 > 메모]** 칸에 아래 내용을 그대로 복사해서 넣으시면 됩니다. 기존의 테스트 시나리오와 비밀 로그인 방법을 하나로 합쳐 심사 위원이 길을 잃지 않게 최적화했습니다.
+
+---
+
+**MandaAct is a goal-tracking app that uses the Mandalart (9x9 grid) methodology to help users turn their big visions into actionable daily habits.**
+
+**[How to Login for Review]**
+Since the app primarily uses social logins, we have provided a hidden entry point for the review credentials:
+1. Open the app to the initial Login screen.
+2. **Tap the "MandaAct" branding logo** at the top of the screen exactly **10 times consecutively**.
+3. A "Reviewer Mode" alert will appear, and a hidden **"Reviewer Login"** button will be revealed at the bottom.
+4. Tap the button to sign in using the provided credentials (review@mandaact.com).
+
+**[Test Instructions]**
+1. Log in using the hidden reviewer backdoor described above.
+2. Create a new Mandalart either by using **"Manual Input"** or by generating one via **"AI Suggestions"** for a chosen goal.
+3. Track daily habits and check off actions in the **"Today"** tab.
+4. View progress insights and comprehensive AI coaching reports in the **"Reports"** tab.
+
+**[Notes]**
+- AI capabilities: Features like coaching and goal suggestions require an active internet connection.
+- Premium features: Can be tested and verified using an Apple Sandbox tester account.
+
+**Please contact support@unwrittenbd.com if you have any questions or require further assistance during the review process.**
+
+---
 
 ---
 

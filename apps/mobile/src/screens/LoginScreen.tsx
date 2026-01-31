@@ -216,7 +216,7 @@ export default function LoginScreen() {
           {/* Action Sector: High Visibility Buttons */}
           <View style={styles.actionSector}>
             <View style={styles.btnStack}>
-              {logoPressCount >= 5 && (
+              {logoPressCount >= 10 && (
                 <View style={{ marginBottom: 16 }}>
                   <TouchableOpacity
                     onPress={handleReviewerLogin}
