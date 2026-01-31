@@ -70,7 +70,7 @@ xcrun simctl status_bar booted clear
 5. **Auto-confirm User**를 체크하거나, 생성 후 이메일 인증을 수동으로 'Confirmed' 처리합니다.
 
 ### 앱에서 확인 방법
-1. 로그인 화면에서 상단 **"MandaAct" 로고를 5초 내에 5번** 누릅니다.
+1. 로그인 화면에서 상단 **"MandaAct" 로고를 10번 연속으로** 누릅니다.
 2. 하단에 나타나는 `Reviewer Login` 버튼을 누르면 위 계정으로 즉시 로그인됩니다.
 
 ---

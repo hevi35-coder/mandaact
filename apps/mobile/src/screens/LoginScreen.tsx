@@ -169,14 +169,13 @@ export default function LoginScreen() {
           <View style={styles.brandingBody}>
             <TouchableOpacity
               activeOpacity={1}
-              onLongPress={() => {
+              onPress={() => {
                 const nextCount = logoPressCount + 1
                 setLogoPressCount(nextCount)
-                if (nextCount >= 5) {
+                if (nextCount === 10) {
                   Alert.alert('Reviewer Mode', 'Secret login enabled.')
                 }
               }}
-              delayLongPress={1000}
             >
               <View style={styles.logoStack}>
                 <View style={styles.logoRow}>
