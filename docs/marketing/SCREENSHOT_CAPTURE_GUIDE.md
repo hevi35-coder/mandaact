@@ -18,7 +18,7 @@ https://developer.apple.com/help/app-store-connect/reference/screenshot-specific
 - **광고 제거**: 설정에서 Ad-Free(또는 테스트 빌드)로 광고가 보이지 않게.
 - **데이터 정리**: 리스트가 너무 길면 오히려 글자가 작아 보임 → 핵심 요소만 보이도록 데이터/상태를 단순화.
 - **언어**: `en` / `ko` 각각 캡처(가능하면 iOS 시스템 언어/앱 언어 모두 일치).
-- **시간/배터리**: 상태바가 지저분하면 시선이 분산됨 → 가능하면 깔끔한 상태로 캡처.
+- **시간/배터리**: 상태바가 지저분하면 시선이 분산됨 → [스크린샷 모드 가이드](./SCREENSHOT_MODE_GUIDE.md)의 `xcrun simctl` 명령어로 깔끔하게 정리 권장.
 
 ## 3) iOS Simulator로 캡처(추천)
 

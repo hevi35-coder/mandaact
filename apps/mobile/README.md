@@ -235,3 +235,6 @@ cd ios && pod install --repo-update
 - [React Navigation](https://reactnavigation.org/)
 - [NativeWind](https://www.nativewind.dev/)
 - [Supabase JS Client](https://supabase.com/docs/reference/javascript)
+
+## 마케팅 및 앱 심사
+- [Screenshot Mode 가이드](../../docs/marketing/SCREENSHOT_MODE_GUIDE.md): 스크린샷용 수치 조작 및 비밀 로그인 방법

@@ -129,6 +129,7 @@ Actions are automatically classified with AI-powered suggestions:
 - **[Deployment Guide](./docs/development/DEPLOYMENT_GUIDE.md)** - Production deployment instructions
 - **[API Spec](./docs/development/API_SPEC.md)** - Backend API documentation
 - **[AI Model Management](../../.gemini/antigravity/brain/147a9338-92cf-4332-9335-ed209eb6e58d/llm_management_guide.md)** - Guide for switching backend LLM providers
+- **[Screenshot Mode Guide](./docs/marketing/SCREENSHOT_MODE_GUIDE.md)** - **(New)** Manual value manipulation & status bar cleaning for marketing
 - **[CLAUDE.md](./CLAUDE.md)** - AI assistant development guide
 
 ### 📋 Project Management
