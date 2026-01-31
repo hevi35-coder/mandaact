@@ -23,6 +23,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useAdFree } from '../../hooks'
 import { useSubscriptionContextSafe } from '../../context'
 import { trackAdClicked, trackAdFailed, trackAdImpression, trackAdRevenue } from '../../lib'
+import { IS_SCREENSHOT_MODE } from '../../lib/config'
 
 type BannerLocation = 'home' | 'today' | 'list' | 'reports'
 
@@ -199,12 +200,13 @@ export function BannerAd({ location, style }: BannerAdProps) {
     return () => clearTimeout(timeout)
   }, [location, reloadSeq, bannerSize])
 
-  // Hide banner if Premium, Ad-Free mode is active, or new user protection
-  if (isPremium || adRestriction === 'no_ads' || isAdFree) {
+  // Hide banner if Premium, Ad-Free mode is active, new user protection, or Screenshot Mode
+  if (isPremium || adRestriction === 'no_ads' || isAdFree || IS_SCREENSHOT_MODE) {
     console.log('[BannerAd] 🚫 Ad hidden - reason:', {
       isPremium,
       adRestriction,
       isAdFree,
+      IS_SCREENSHOT_MODE,
     })
     return null
   }
