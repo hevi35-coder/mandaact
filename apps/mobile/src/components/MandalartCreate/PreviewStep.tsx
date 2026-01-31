@@ -31,7 +31,10 @@ import { useResponsive } from '../../hooks/useResponsive'
 import CoreGoalModal from '../CoreGoalModal'
 import SubGoalModalV2 from '../SubGoalModalV2'
 import ActionInputModal from '../ActionInputModal'
-import { CenterGoalCell, SubGoalCell, MandalartFullGrid, TabletGuidance } from '..'
+import {
+    CenterGoalCell, SubGoalCell, MandalartFullGrid, TabletGuidance,
+    MandalartCreationGuide, MandalartUsageGuide
+} from '..'
 import type { PreviewStepProps } from './types'
 
 // Grid layout constants
@@ -474,7 +477,7 @@ export function PreviewStep({
                             gridSize={Math.min(screenWidth - 64, screenHeight - 200)}
                             onCenterGoalPress={handleCenterGoalPress}
                             onSubGoalPress={(subGoal) => handleSubGoalEdit(subGoal.position)}
-                            onActionPress={(subGoal, action) => {
+                            onActionPress={(subGoal, position, action) => {
                                 // Enforce Core Goal first
                                 if (!data.center_goal?.trim()) {
                                     Alert.alert(
@@ -496,7 +499,7 @@ export function PreviewStep({
                                     return
                                 }
 
-                                handleActionPress(subGoal.position, action?.position || 1)
+                                handleActionPress(subGoal.position, position)
                             }}
                         />
 
@@ -630,7 +633,6 @@ export function PreviewStep({
                         {/* Footer Guide/Usage (Phone only) */}
                         <View className="mt-3 pb-8">
                             <View
-                                className="bg-white rounded-2xl p-6 border border-gray-100"
                                 style={{
                                     shadowColor: '#000',
                                     shadowOffset: { width: 0, height: 4 },
@@ -641,52 +643,10 @@ export function PreviewStep({
                             >
                                 {expandedSection === null ? (
                                     /* Creation Guide - Visible only in Overview */
-                                    <>
-                                        <View className="flex-row items-center mb-4">
-                                            <Info size={20} color="#3b82f6" />
-                                            <Text
-                                                className="text-base text-gray-900 ml-2"
-                                                style={{ fontFamily: 'Pretendard-SemiBold' }}
-                                            >
-                                                {t('mandalart.create.manualInput.guideTitle', '만다라트 작성 안내')}
-                                            </Text>
-                                        </View>
-                                        {(t('mandalart.create.manualInput.guideItems', { returnObjects: true }) as string[] || []).map((item, index, arr) => (
-                                            <View key={index} className={`flex-row items-start ${index === arr.length - 1 ? '' : 'mb-2.5'}`}>
-                                                <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
-                                                <Text
-                                                    className="text-sm text-gray-600 ml-2 flex-1"
-                                                    style={{ fontFamily: 'Pretendard-Regular' }}
-                                                >
-                                                    {item}
-                                                </Text>
-                                            </View>
-                                        ))}
-                                    </>
+                                    <MandalartCreationGuide />
                                 ) : (
                                     /* Usage Instructions - Visible only when Expanded */
-                                    <>
-                                        <View className="flex-row items-center mb-4">
-                                            <Sparkles size={20} color="#3b82f6" />
-                                            <Text
-                                                className="text-base text-gray-900 ml-2"
-                                                style={{ fontFamily: 'Pretendard-SemiBold' }}
-                                            >
-                                                {t('mandalart.create.manualInput.subGoalGuideTitle', '나만의 속도로 시작하세요')}
-                                            </Text>
-                                        </View>
-                                        {(t('mandalart.create.manualInput.subGoalGuideItems', { returnObjects: true }) as string[] || []).map((item, index, arr) => (
-                                            <View key={index} className={`flex-row items-start ${index === arr.length - 1 ? '' : 'mb-2.5'}`}>
-                                                <Check size={16} color="#3b82f6" style={{ marginTop: 2 }} />
-                                                <Text
-                                                    className="text-sm text-gray-600 ml-2 flex-1"
-                                                    style={{ fontFamily: 'Pretendard-Regular' }}
-                                                >
-                                                    {item}
-                                                </Text>
-                                            </View>
-                                        ))}
-                                    </>
+                                    <MandalartUsageGuide />
                                 )}
                             </View>
                         </View>

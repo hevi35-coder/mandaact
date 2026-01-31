@@ -98,8 +98,6 @@ export default function TodayScreen() {
 
   // Type filter state - multiple selection using Set (Web과 동일)
   const [activeFilters, setActiveFilters] = useState<Set<ActionType>>(new Set())
-  // Type filter collapse state - default collapsed (Web과 동일)
-  const [typeFilterCollapsed, setTypeFilterCollapsed] = useState(true)
 
   // Action type selector state
   const [typeSelectorVisible, setTypeSelectorVisible] = useState(false)
@@ -796,8 +794,6 @@ export default function TodayScreen() {
               totalCount={totalCount}
               progressPercentage={progressPercentage}
               activeFilters={activeFilters}
-              typeFilterCollapsed={typeFilterCollapsed}
-              onToggleTypeFilter={() => setTypeFilterCollapsed(!typeFilterCollapsed)}
               onToggleFilter={toggleFilter}
               onClearAllFilters={clearAllFilters}
             />

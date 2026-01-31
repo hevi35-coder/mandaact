@@ -65,3 +65,6 @@ export {
 // Full 9x9 Mandalart Grid (for iPad)
 export { default as MandalartFullGrid } from './MandalartFullGrid'
 export { TabletGuidance } from './Mandalart/TabletGuidance'
+export { MandalartCreationGuide } from './Mandalart/MandalartCreationGuide'
+export { MandalartUsageGuide } from './Mandalart/MandalartUsageGuide'
+

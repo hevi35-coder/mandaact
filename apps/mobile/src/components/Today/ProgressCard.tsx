@@ -5,9 +5,9 @@
  */
 
 import React from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, ChevronRight, Info } from 'lucide-react-native'
+import { Info } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { TypeFilterSection } from './TypeFilterSection'
@@ -68,38 +68,14 @@ export function ProgressCard({
                 </Animated.View>
             </View>
 
-            {/* Info Text */}
-            <View className="flex-row items-center mt-3">
-                <Info size={12} color="#9ca3af" />
-                <Text className="text-xs text-gray-400 ml-1">
-                    {t('today.dateRestriction')}
-                </Text>
-            </View>
 
-            {/* Type Filter - Collapsible Section */}
-            <View className="border-t border-gray-100 mt-4 pt-4">
-                <Pressable
-                    onPress={onToggleTypeFilter}
-                    className="flex-row items-center justify-between"
-                >
-                    <Text className="text-sm font-medium text-gray-900">
-                        {t('today.typeFilter')}
-                    </Text>
-                    {typeFilterCollapsed ? (
-                        <ChevronRight size={16} color="#6b7280" />
-                    ) : (
-                        <ChevronDown size={16} color="#6b7280" />
-                    )}
-                </Pressable>
 
-                {!typeFilterCollapsed && (
-                    <TypeFilterSection
-                        activeFilters={activeFilters}
-                        onToggleFilter={onToggleFilter}
-                        onClearAllFilters={onClearAllFilters}
-                    />
-                )}
-            </View>
+            {/* Active Type Filter (Horizontal Chips) */}
+            <TypeFilterSection
+                activeFilters={activeFilters}
+                onToggleFilter={onToggleFilter}
+                onClearAllFilters={onClearAllFilters}
+            />
         </Animated.View>
     )
 }
