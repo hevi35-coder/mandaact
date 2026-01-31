@@ -80,7 +80,15 @@ export default function LoginScreen() {
 
   const handleReviewerLogin = useCallback(async () => {
     try {
-      await signInWithPassword('review@mandaact.com', 'Review2025!')
+      const { resetTutorial } = require('../screens/TutorialScreen')
+
+      const result = await signInWithPassword('review@mandaact.com', 'Review2025!')
+
+      // If login successful, reset tutorial specifically for this user to force it to show
+      if (useAuthStore.getState().user?.id) {
+        await resetTutorial(useAuthStore.getState().user?.id)
+      }
+
       trackLogin('reviewer_backdoor')
     } catch (error: any) {
       console.error('Reviewer Login Error:', error)
