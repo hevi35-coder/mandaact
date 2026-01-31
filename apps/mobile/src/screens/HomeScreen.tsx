@@ -24,6 +24,7 @@ import { useBadgeDefinitions, useUserBadges, useBadgeProgress, useTranslateBadge
 import {
   getXPForCurrentLevel,
   getLevelFromXP,
+  calculateXPForLevel,
 } from '@mandaact/shared'
 import { xpService } from '../lib/xp'
 import type { XPMultiplier } from '@mandaact/shared'
