@@ -104,7 +104,7 @@ export default function HomeScreen() {
   // XP Progress Calculation
   const { current: levelXP, required: levelRequirement, percentage: xpPercentageRaw } = getXPForCurrentLevel(totalXP, currentLevel)
   const xpRequired = levelRequirement // This variable name in HomeScreen seems to mean "XP needed for next level" based on usage in ProfileCard
-  const xpProgress = IS_SCREENSHOT_MODE ? (levelRequirement * SCREENSHOT_DATA.xpProgress) : levelXP
+  const xpProgress = IS_SCREENSHOT_MODE ? Math.floor(levelRequirement * SCREENSHOT_DATA.xpProgress) : levelXP
   const xpPercentage = IS_SCREENSHOT_MODE ? (SCREENSHOT_DATA.xpProgress * 100) : xpPercentageRaw
 
   // Profile Stats
