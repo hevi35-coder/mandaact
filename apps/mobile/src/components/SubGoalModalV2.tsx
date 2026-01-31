@@ -404,9 +404,9 @@ export default function SubGoalModalV2({
                                           </Text>
                                         </View>
                                         {isBestMatch && (
-                                          <View className="bg-purple-600 px-2 py-0.5 rounded-full shadow-sm">
-                                            <Text className="text-[10px] text-white font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
-                                              ✨ {t('mandalart.modal.subGoal.aiSuggest.suggested', 'Suggested')}
+                                          <View className="bg-purple-100 border border-purple-400 px-2 py-0.5 rounded-full">
+                                            <Text className="text-[10px] text-purple-700 font-bold" style={{ fontFamily: 'Pretendard-Bold' }}>
+                                              {t('mandalart.modal.subGoal.aiSuggest.suggested', 'Suggested')}
                                             </Text>
                                           </View>
                                         )}

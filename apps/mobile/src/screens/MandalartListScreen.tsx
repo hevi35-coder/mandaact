@@ -180,7 +180,7 @@ export default function MandalartListScreen() {
       >
         {/* Page Title - Center Aligned */}
         <View className="mb-5">
-          <View className="items-center mb-4">
+          <View className="items-center">
             <View className="flex-row items-center">
               <Text
                 className="text-3xl text-gray-900"
@@ -197,8 +197,12 @@ export default function MandalartListScreen() {
             </View>
           </View>
 
-          {/* Create Button */}
-          <CreateButton onPress={handleCreateNew} />
+          {/* Create Button - Hide when empty (EmptyState has its own create button) */}
+          {mandalarts.length > 0 && (
+            <View className="mt-4">
+              <CreateButton onPress={handleCreateNew} />
+            </View>
+          )}
         </View>
 
         {/* Empty State */}

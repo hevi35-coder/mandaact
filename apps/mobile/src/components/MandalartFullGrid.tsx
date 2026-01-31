@@ -20,7 +20,7 @@ interface MandalartFullGridProps {
   gridSize: number // Total grid width
   onCenterGoalPress?: () => void
   onSubGoalPress?: (subGoal: SubGoalWithActions) => void
-  onActionPress?: (subGoal: SubGoalWithActions, action?: Action) => void
+  onActionPress?: (subGoal: SubGoalWithActions, position: number, action?: Action) => void
 }
 
 /**
@@ -181,7 +181,7 @@ export default function MandalartFullGrid({
       return (
         <Pressable
           key={`${sectionPos}-${cellPos}`}
-          onPress={() => subGoal && onActionPress?.(subGoal, action)}
+          onPress={() => subGoal && onActionPress?.(subGoal, actionPosition, action)}
           style={[
             cellStyle,
             {

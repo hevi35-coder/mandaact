@@ -1,25 +1,26 @@
 # CURRENT_STATUS
 
-**최종 업데이트**: 2025-12-25  
-**상태**: iOS 1.1.0 TestFlight 준비 / AI 코칭 Phase 2 구현 진행
+**최종 업데이트**: 2026-01-30  
+**상태**: v1.1.0 TestFlight 배포 완료 및 최종 QA 진행 중
 
 ## Mobile (iOS)
-- **App Store**: v1.0 승인/출시 ✅
-- **현재 빌드**: v1.1.0 (build 120) 로컬 빌드 완료 ✅
-- **다음 릴리즈**: v1.1.0 TestFlight 제출 및 QA 🔄
-- **주의**: TestFlight/App Store 제출 시 `CFBundleVersion`(Expo `expo.ios.buildNumber`)는 항상 증가해야 함.
+- **현재 빌드**: v1.1.0 (build 145) TestFlight 업로드 완료 ✅
+- **주요 사항**: 
+  - Hero-style 로그인 및 홈 UI 적용
+  - 튜토리얼 텍스트 및 버튼 레이블 최적화 (Set My First Goal)
+  - '참고' 타입을 '마인드'로 용어 변경 완료
 
-## 최근 반영된 변경(요약)
-- (모바일) AI 코칭 Step 1–7 UI 구현(페르소나~최종 검토)
-- (모바일) Plan 모달 + 활성/최소 실천 선택 + 투데이 최소모드 토글
-- (백엔드) action_preferences 테이블 추가로 Plan 선택값 서버 동기화
-- (모바일) AI 코칭 인프라: 세션 스토어, 리줌 카드, 코칭 플로우 스크린 연결
-- (문서) AI 코칭 이행 문서 Phase 2–3 진행 사항 업데이트
+## 최근 반영된 변경(v1.1.0)
+- **UI/UX**: Hero UI (Login, Today), Tutorial Polish, Slogan 업데이트
+- **기능**: Quick Chips (Today), AI 실천 추천 로직 (Sub-goal/Action Edit)
+- **정리**: Mandalart 생성 방식 단순화 (직접 입력 및 AI 코칭 위주, OCR/텍스트 분석 제거)
+- **백엔드**: 리포트 생성 로직 Supabase Edge Function으로 이전
 
-## 바로 다음 해야 할 일(Release-Blocking)
-- (iOS) v1.1.0 TestFlight 제출 및 실제 기기 테스트(로그인/홈/리포트/광고)
-- (모바일) AI 코칭 Phase 2 (Steps 1–3) 구현
+## 다음 예정 사항
+- v1.1.0 App Store 정식 업데이트 제출
+- AI 코칭 Phase 3 (대화 데이터 분석 및 인사이트 정교화)
 
 ## 문서
 - 로드맵: `docs/project/ROADMAP.md`
-- TestFlight 제출: `docs/development/TESTFLIGHT_SUBMIT_GUIDE.md`
+- PRD: `docs/project/PRD_mandaact.md`
+

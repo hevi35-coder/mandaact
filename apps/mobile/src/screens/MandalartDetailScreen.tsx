@@ -848,7 +848,7 @@ export default function MandalartDetailScreen() {
                       setSelectedSubGoalForTitle(subGoal)
                       setSubGoalModalV2Visible(true)
                     }}
-                    onActionPress={(subGoal, action) => {
+                    onActionPress={(subGoal, position, action) => {
                       // Set expandedSubGoal context for modal saving
                       setExpandedSubGoal(subGoal)
 
@@ -859,7 +859,7 @@ export default function MandalartDetailScreen() {
                         return
                       }
 
-                      setSelectedActionPosition(action?.position || 1) // Default to 1 if missing, though unlikely on grid tap
+                      setSelectedActionPosition(position)
                       setActionInputModalVisible(true)
                     }}
                   />

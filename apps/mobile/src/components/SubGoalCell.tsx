@@ -57,10 +57,7 @@ export default function SubGoalCell({
       {/* Minimalist design: only show title when filled */}
       {title ? (
         <Text
-          style={[
-            styles.title,
-            isCenter && styles.titleCenter,
-          ]}
+          style={styles.title}
           numberOfLines={3}
           lineBreakStrategyIOS="hangul-word-priority"
           textBreakStrategy="balanced"
@@ -110,10 +107,5 @@ const styles = StyleSheet.create({
     color: '#1f2937', // text-gray-800
     textAlign: 'center',
     lineHeight: 20,
-  },
-  titleCenter: {
-    fontSize: 18, // Match CenterGoalCell
-    fontFamily: 'Pretendard-Bold',
-    lineHeight: 22,
   },
 })

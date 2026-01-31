@@ -161,13 +161,13 @@
       "changed": "Nickname has been changed.",
       "errors": {
         "tooShort": "Nickname must be at least 2 characters.",
-        "tooLong": "Nickname can be up to 12 characters.",
-        "invalidChars": "Use only Korean/English letters and numbers.",
+        "tooLong": "Nickname can be up to 20 characters.",
+        "invalidChars": "Contains invalid characters.",
         "alreadyTaken": "That nickname is already taken.",
         "saveError": "Failed to save nickname.",
         "updateError": "Failed to update nickname."
       },
-      "hint": "Letters, numbers allowed (2-12 characters)"
+      "hint": "Letters, numbers, emojis allowed (2-20 characters)"
     },
     "coachingResume": {
       "title": "AI Coaching in Progress",
@@ -645,7 +645,7 @@
       "actionLabel": "Action",
       "routineDesc": "Recurring actions like daily, weekly, monthly",
       "missionDesc": "Goal with an end (read a book, get certification)",
-      "referenceDesc": "Mindset, values - no check needed",
+      "referenceDesc": "Principles to keep in mind - no checking needed",
       "routineSettings": "",
       "repeatCycle": "Repeat Cycle",
       "weekdaySelect": "Select weekdays (optional)",
@@ -753,9 +753,23 @@
           "empty": "Tap the button to get AI-powered ideas",
           "applying": "Applying generated plan...",
           "tapToApply": "Tap to apply",
-          "suggested": "Suggested",
+          "tapToApply": "Tap to apply",
+          "suggested": "AI Pick",
           "getStarted": "Get AI Ideas",
           "refresh": "Get New Ideas"
+        },
+        "aiSuggest": {
+          "title": "AI Sub-Goal Suggestion",
+          "subtitle": "Sub-goals matching your core goal",
+          "emptyHint": "Sub-goals matching your core goal",
+          "getHelp": "Get Ideas",
+          "loading": "Analyzing...",
+          "empty": "Tap the button to get ideas",
+          "applying": "Applying plan...",
+          "tapToApply": "Tap to apply",
+          "suggested": "AI Pick",
+          "getStarted": "Get ideas from AI",
+          "refresh": "Get new ideas"
         },
         "typeSettings": "Type Settings",
         "selectType": "Select type for \"{{title}}\"",
@@ -816,16 +830,16 @@
           "tip3_desc": "Break it down into something you can start today without pressure."
         },
         "aiSuggest": {
-          "title": "AI-Suggested Actions",
-          "subtitle": "Personalized actions to help you achieve your goal",
-          "getHelp": "Get Suggestions",
+          "title": "AI Action Suggestion",
+          "subtitle": "Specific actions for your goal",
+          "getHelp": "Get Ideas",
           "loading": "Analyzing...",
-          "analyzing": "Analyzing personalized suggestions..."
+          "analyzing": "Analyzing..."
         }
       }
     },
     "subGoalEdit": {
-      "title": "Sub-goal",
+      "title": "Sub-goal Settings",
       "description": "You can edit sub-goal and actions",
       "subGoalLabel": "Sub-goal",
       "subGoalPlaceholder": "Enter sub-goal title",
@@ -916,11 +930,17 @@
         "title": "Start Fresh",
         "description": "Build comfortably with AI",
         "tapToEdit": "Tap cells to enter goals and actions",
-        "guideTitle": "How to Create Mandalart",
+        "guideTitle": "Designing Your Map",
         "guideItems": [
-          "Start with your core goal in the center",
-          "Add 8 sub-goals in surrounding cells",
-          "Fill in 8 action items for each sub-goal"
+          "Place your most important goal in the center.",
+          "Think of 8 keywords to support that goal.",
+          "Simple words are enough to start."
+        ],
+        "subGoalGuideTitle": "Start at Your Own Pace",
+        "subGoalGuideItems": [
+          "It's okay to leave blanks. Fill them as you grow.",
+          "Creating a habit matters more than a full grid.",
+          "Stuck? Tap 'Get Ideas' for AI help."
         ]
       },
       "confirmDiscard": "Are you sure you want to discard changes?",
@@ -947,7 +967,9 @@
       },
       "validation": {
         "enterTitle": "Please enter your core goal.",
-        "enterCoreGoal": "Please enter your core goal."
+        "enterCoreGoal": "Please enter your core goal.",
+        "enterSubGoal": "Please enter a sub-goal first.",
+        "subGoalRequiredTitle": "Step by Step"
       },
       "success": {
         "title": "Success",
@@ -995,11 +1017,11 @@
       "usage": {
         "title": "How to Use",
         "tapToView": "Tap each area to view details and edit.",
-        "backToOverview": "Press the back button (<) at the top to return to overview.",
-        "typeLabel": "Type guide:",
+        "backToOverview": "Navigate back to the main grid to see your bird's-eye progress.",
+        "typeLabel": "Practice styles:",
         "routine": "Routine",
         "mission": "Mission",
-        "reference": "Reference"
+        "mind": "Mind"
       }
     },
     "delete": {

@@ -13,18 +13,22 @@ export interface NicknameValidationResult {
  * Validate nickname format
  * Rules:
  * - 2-12 characters
- * - Korean, English, numbers only
+ * - Emojis and special characters allowed
  */
 export function validateNickname(nickname: string): NicknameValidationResult {
+  if (!nickname || nickname.trim().length === 0) {
+    return { isValid: false, error: 'Nickname is required.', errorCode: 'TOO_SHORT' }
+  }
+
+  // Count characters (Note: Some emojis are 2 chars in length, which is acceptable for limit)
   if (nickname.length < 2) {
     return { isValid: false, error: 'Nickname must be at least 2 characters.', errorCode: 'TOO_SHORT' }
   }
-  if (nickname.length > 12) {
-    return { isValid: false, error: 'Nickname can be up to 12 characters.', errorCode: 'TOO_LONG' }
+  if (nickname.length > 20) {
+    return { isValid: false, error: 'Nickname can be up to 20 characters.', errorCode: 'TOO_LONG' }
   }
-  if (!/^[가-힣a-zA-Z0-9]+$/.test(nickname)) {
-    return { isValid: false, error: 'Use only Korean/English letters and numbers.', errorCode: 'INVALID_CHARS' }
-  }
+
+  // Allowed all characters
   return { isValid: true, error: null }
 }
 
@@ -34,7 +38,7 @@ export function validateNickname(nickname: string): NicknameValidationResult {
 export const NICKNAME_ERRORS = {
   TOO_SHORT: 'home.nickname.errors.tooShort',
   TOO_LONG: 'home.nickname.errors.tooLong',
-  INVALID_CHARS: 'home.nickname.errors.invalidChars',
+  INVALID_CHARS: 'home.nickname.errors.invalidChars', // Reused for restricted words
   ALREADY_TAKEN: 'home.nickname.errors.alreadyTaken',
   SAVE_ERROR: 'home.nickname.errors.saveError',
   UPDATE_ERROR: 'home.nickname.errors.updateError',
