@@ -4,7 +4,8 @@ This guide explains how to use `generate_screenshots.py` to create the official 
 
 ## 1. Prerequisites
 - Python 3 installed
-- Install Pillow: `pip install Pillow` (or `pip3 install Pillow`)
+- Install Pillow: `pip install Pillow`
+- **Recommended**: Read the [Screenshot Mode Guide](file:///Users/jhsy/mandaact/docs/marketing/SCREENSHOT_MODE_GUIDE.md) to manage mock data and clean status bar.
 - Ensure you have the bold font: `apps/mobile/assets/fonts/Pretendard-Bold.otf`
 
 ## 2. Prepare Raw Assets
