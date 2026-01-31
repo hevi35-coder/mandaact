@@ -48,7 +48,7 @@ interface AuthState {
   initialized: boolean
   signInWithGoogle: () => Promise<AuthResult>
   signInWithApple: () => Promise<AuthResult>
-  devSignIn: () => Promise<void> // For Simulator Testing
+  signInWithPassword: (email?: string, password?: string) => Promise<void> // For Simulator & Reviewer Access
   signOut: () => Promise<void>
   initialize: () => Promise<void>
 }
@@ -134,16 +134,16 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      devSignIn: async () => {
+      signInWithPassword: async (email?: string, password?: string) => {
         set({ loading: true })
-        const DEV_EMAIL = 'dev@mandaact.com'
-        const DEV_PASS = 'dev1234!!'
+        const TARGET_EMAIL = email || 'dev@mandaact.com'
+        const TARGET_PASS = password || 'dev1234!!'
 
         try {
           // 1. Try Signing In
           const { data, error: signInError } = await supabase.auth.signInWithPassword({
-            email: DEV_EMAIL,
-            password: DEV_PASS,
+            email: TARGET_EMAIL,
+            password: TARGET_PASS,
           })
 
           if (!signInError && data.user) {
@@ -151,35 +151,25 @@ export const useAuthStore = create<AuthState>()(
             return
           }
 
-          // 2. If Sign In failed, Try Signing Up
-          console.log('Dev Sign-In failed, trying Sign-Up...', signInError?.message)
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: DEV_EMAIL,
-            password: DEV_PASS,
-          })
+          // 2. If Sign In failed, and it's NOT the reviewer account, Try Signing Up (for dev convenience)
+          if (TARGET_EMAIL === 'dev@mandaact.com') {
+            console.log('Dev Sign-In failed, trying Sign-Up...', signInError?.message)
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email: TARGET_EMAIL,
+              password: TARGET_PASS,
+            })
 
-          if (signUpError) {
-            console.error('Dev Sign-Up Error:', signUpError)
-            Alert.alert('Dev Login Error', `Failed to create dev account: ${signUpError.message}`)
-            // Fallback to fake user (worst case)
-            const fakeUser: any = {
-              id: '00000000-0000-0000-0000-000000000000',
-              aud: 'authenticated',
-              role: 'authenticated',
-              email: DEV_EMAIL,
-              created_at: new Date().toISOString(),
+            if (!signUpError && signUpData.user) {
+              set({ user: signUpData.user, loading: false })
+              Alert.alert('Dev Account Created', 'Created and logged in as dev@mandaact.com')
+              return
             }
-            set({ user: fakeUser, loading: false })
-            return
           }
 
-          if (signUpData.user) {
-            set({ user: signUpData.user, loading: false })
-            Alert.alert('Dev Account Created', 'Created and logged in as dev@mandaact.com')
-          }
-
-        } catch (e) {
-          console.error('Dev Auth Exception:', e)
+          if (signInError) throw signInError
+        } catch (e: any) {
+          console.error('Sign-In Exception:', e)
+          Alert.alert('Login Error', e.message || 'Failed to sign in')
           set({ loading: false })
         }
       },

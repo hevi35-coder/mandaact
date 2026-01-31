@@ -75,22 +75,18 @@ export default function LoginScreen() {
     await changeLanguage(langCode as SupportedLanguage)
   }, [])
 
-  const { signInWithGoogle, signInWithApple } = useAuthStore()
+  const { signInWithGoogle, signInWithApple, signInWithPassword } = useAuthStore()
+  const [logoPressCount, setLogoPressCount] = useState(0)
 
-  const handleGoogleLogin = useCallback(async () => {
+  const handleReviewerLogin = useCallback(async () => {
     try {
-      const result = await signInWithGoogle()
-      if (result.user) {
-        trackLogin('google')
-        identifyUser(result.user.id, { email: result.user.email })
-      }
+      await signInWithPassword('review@mandaact.com', 'Review2025!')
+      trackLogin('reviewer_backdoor')
     } catch (error: any) {
-      console.error('Google Login Error:', error)
-      Alert.alert(t('common.error'), error.message || t('login.googleLoginFailed'))
+      console.error('Reviewer Login Error:', error)
+      Alert.alert('Reviewer Login Failed', 'Please contact support or try again.')
     }
-  }, [signInWithGoogle, t])
-
-
+  }, [signInWithPassword])
 
   const handleAppleLogin = useCallback(async () => {
     try {
@@ -158,28 +154,40 @@ export default function LoginScreen() {
 
           {/* Branding Body */}
           <View style={styles.brandingBody}>
-            <View style={styles.logoStack}>
-              <View style={styles.logoRow}>
-                <View style={{ height: 64, justifyContent: 'center' }}>
-                  <Text style={styles.logoManda} allowFontScaling={false}>Manda</Text>
-                </View>
-                <MaskedView
-                  style={styles.logoActMask}
-                  maskElement={<Text style={styles.logoAct} allowFontScaling={false}>Act</Text>}
-                >
-                  <LinearGradient
-                    colors={['#2563eb', '#9333ea', '#db2777']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            <TouchableOpacity
+              activeOpacity={1}
+              onLongPress={() => {
+                const nextCount = logoPressCount + 1
+                setLogoPressCount(nextCount)
+                if (nextCount >= 5) {
+                  Alert.alert('Reviewer Mode', 'Secret login enabled.')
+                }
+              }}
+              delayLongPress={1000}
+            >
+              <View style={styles.logoStack}>
+                <View style={styles.logoRow}>
+                  <View style={{ height: 64, justifyContent: 'center' }}>
+                    <Text style={styles.logoManda} allowFontScaling={false}>Manda</Text>
+                  </View>
+                  <MaskedView
+                    style={styles.logoActMask}
+                    maskElement={<Text style={styles.logoAct} allowFontScaling={false}>Act</Text>}
                   >
-                    <Text style={[styles.logoAct, { opacity: 0 }]} allowFontScaling={false}>Act</Text>
-                  </LinearGradient>
-                </MaskedView>
-              </View>
+                    <LinearGradient
+                      colors={['#2563eb', '#9333ea', '#db2777']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={[styles.logoAct, { opacity: 0 }]} allowFontScaling={false}>Act</Text>
+                    </LinearGradient>
+                  </MaskedView>
+                </View>
 
-              <Text style={styles.logoSubtitle}>
-                {currentLang === 'ko' ? '목표를 실천으로' : 'Turn Goals into Action'}
-              </Text>
-            </View>
+                <Text style={styles.logoSubtitle}>
+                  {currentLang === 'ko' ? '목표를 실천으로' : 'Turn Goals into Action'}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
             <View style={styles.heroImgBox}>
               <Image
@@ -196,6 +204,28 @@ export default function LoginScreen() {
           {/* Action Sector: High Visibility Buttons */}
           <View style={styles.actionSector}>
             <View style={styles.btnStack}>
+              {logoPressCount >= 5 && (
+                <View style={{ marginBottom: 16 }}>
+                  <TouchableOpacity
+                    onPress={handleReviewerLogin}
+                    style={{
+                      height: 50,
+                      backgroundColor: '#f1f5f9',
+                      borderRadius: 12,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: '#e2e8f0',
+                      borderStyle: 'dashed'
+                    }}
+                  >
+                    <Text style={{ color: '#64748b', fontSize: 14, fontFamily: 'Pretendard-Bold' }}>
+                      Reviewer Login
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               <View style={{ marginBottom: 16 }}>
                 <SocialLoginButton
                   variant="apple"
@@ -224,17 +254,15 @@ export default function LoginScreen() {
                 {t('login.termsPolicy')}
               </Text>
 
-              {/* Dev Only: Simulator Bypass Login */}
+              {/* Dev Only: Simulator Bypass Login - Using generalized method */}
               {__DEV__ && (
                 <TouchableOpacity
                   onPress={async () => {
                     const { resetTutorial } = require('../screens/TutorialScreen')
-                    const { useAuthStore } = require('../store/authStore')
-
                     // Reset tutorial to force it to show
                     await resetTutorial('00000000-0000-0000-0000-000000000000')
                     // Fake login
-                    await useAuthStore.getState().devSignIn()
+                    await signInWithPassword()
                   }}
                   style={{ marginTop: 20, padding: 10, backgroundColor: '#f3f4f6', borderRadius: 8 }}
                 >

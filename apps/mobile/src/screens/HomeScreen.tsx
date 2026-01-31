@@ -75,6 +75,9 @@ export default function HomeScreen() {
   const [hasNotificationsEnabled, setHasNotificationsEnabled] = useState(false)
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false)
 
+  // SCREENSHOT MODE OVERRIDE
+  const { IS_SCREENSHOT_MODE, SCREENSHOT_DATA } = require('../lib/config')
+
   // Handlers
   const openNicknameModal = useCallback(() => {
     setNicknameModalVisible(true)
@@ -84,23 +87,23 @@ export default function HomeScreen() {
   const isLoading = gamificationLoading || profileStatsLoading
 
   // Derived state
-  const currentLevel = gamification?.current_level || 1
-  const totalXP = gamification?.total_xp || 0
-  const nickname = gamification?.nickname || user?.email?.split('@')[0] || t('home.nickname.default', 'User')
+  const currentLevel = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.level : (gamification?.current_level || 1)
+  const totalXP = IS_SCREENSHOT_MODE ? 1000000 : (gamification?.total_xp || 0) // Arbitrary high XP for level 15
+  const nickname = IS_SCREENSHOT_MODE ? 'ASO_Expert' : (gamification?.nickname || user?.email?.split('@')[0] || t('home.nickname.default', 'User'))
 
   // XP Progress Calculation
   const { current: levelXP, required: levelRequirement, percentage: xpPercentageRaw } = getXPForCurrentLevel(totalXP, currentLevel)
   const xpRequired = levelRequirement // This variable name in HomeScreen seems to mean "XP needed for next level" based on usage in ProfileCard
-  const xpProgress = levelXP
-  const xpPercentage = xpPercentageRaw
+  const xpProgress = IS_SCREENSHOT_MODE ? (levelRequirement * SCREENSHOT_DATA.xpProgress) : levelXP
+  const xpPercentage = IS_SCREENSHOT_MODE ? (SCREENSHOT_DATA.xpProgress * 100) : xpPercentageRaw
 
   // Profile Stats
-  const totalChecks = profileStats?.total_checks || 0
-  const activeDays = profileStats?.active_days || 0
-  const currentStreak = profileStats?.current_streak || 0
-  const longestStreak = profileStats?.longest_streak || 0
-  const lastCheckDate = profileStats?.last_check_date
-  const longestStreakDate = profileStats?.longest_streak_date
+  const totalChecks = IS_SCREENSHOT_MODE ? 850 : (profileStats?.total_checks || 0)
+  const activeDays = IS_SCREENSHOT_MODE ? 150 : (profileStats?.active_days || 0)
+  const currentStreak = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.currentStreak : (profileStats?.current_streak || 0)
+  const longestStreak = IS_SCREENSHOT_MODE ? SCREENSHOT_DATA.longestStreak : (profileStats?.longest_streak || 0)
+  const lastCheckDate = IS_SCREENSHOT_MODE ? new Date(SCREENSHOT_DATA.lastCheckDate) : profileStats?.last_check_date
+  const longestStreakDate = IS_SCREENSHOT_MODE ? new Date(SCREENSHOT_DATA.lastCheckDate) : profileStats?.longest_streak_date
   const isNewRecord = currentStreak > 0 && currentStreak >= longestStreak
 
   // Invalidate and refetch data when screen is focused
